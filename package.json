@@ -1,0 +1,50 @@
+{
+  "name": "computer-room",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "preview": "vite preview",
+    "typegen": "wrangler types",
+    "check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate:local": "wrangler d1 migrations apply computer-room-db --local",
+    "db:migrate:remote": "wrangler d1 migrations apply computer-room-db --remote",
+    "test": "npm run test:worker && npm run test:client",
+    "test:worker": "vitest run --config vitest.config.ts",
+    "test:client": "vitest run --config vitest.client.config.ts",
+    "build": "vite build",
+    "deploy": "vite build && wrangler deploy"
+  },
+  "dependencies": {
+    "drizzle-orm": "^0.45.2",
+    "jose": "^6.2.9",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "react-grid-layout": "^2.2.4"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "^1.53.0",
+    "@cloudflare/vitest-pool-workers": "^0.22.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.5",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "drizzle-kit": "^0.31.10",
+    "jsdom": "^29.1.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.10",
+    "wrangler": "^4.124.0"
+  },
+  "overrides": {
+    "@esbuild-kit/core-utils": {
+      "esbuild": "0.25.12"
+    }
+  }
+}

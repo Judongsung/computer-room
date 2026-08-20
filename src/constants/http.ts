@@ -1,0 +1,75 @@
+export const HTTP_METHOD = {
+  GET: "GET",
+  POST: "POST",
+  PUT: "PUT",
+  DELETE: "DELETE",
+} as const;
+
+export const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  NO_CONTENT: 204,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  METHOD_NOT_ALLOWED: 405,
+  CONTENT_TOO_LARGE: 413,
+  UNSUPPORTED_MEDIA_TYPE: 415,
+  INTERNAL_SERVER_ERROR: 500,
+  SERVICE_UNAVAILABLE: 503,
+} as const;
+
+export const HTTP_HEADERS = {
+  CACHE_CONTROL: "Cache-Control",
+  CONTENT_DISPOSITION: "Content-Disposition",
+  CONTENT_LENGTH: "Content-Length",
+  CONTENT_TYPE: "Content-Type",
+  ETAG: "ETag",
+  FILE_SIZE: "X-File-Size",
+  ORIGIN: "Origin",
+  REFERRER_POLICY: "Referrer-Policy",
+  X_CONTENT_TYPE_OPTIONS: "X-Content-Type-Options",
+} as const;
+
+export const HTTP_MEDIA_TYPE = {
+  JSON: "application/json",
+} as const;
+
+const CACHE_CONTROL = {
+  NO_STORE: "no-store",
+  PRIVATE_NO_STORE: "private, no-store",
+} as const;
+
+const REFERRER_POLICY = {
+  NO_REFERRER: "no-referrer",
+} as const;
+
+const CONTENT_TYPE_OPTIONS = {
+  NO_SNIFF: "nosniff",
+} as const;
+
+const JSON_RESPONSE_CONTENT_TYPE = `${HTTP_MEDIA_TYPE.JSON}; charset=utf-8`;
+
+const BASE_RESPONSE_HEADERS = {
+  [HTTP_HEADERS.CACHE_CONTROL]: CACHE_CONTROL.NO_STORE,
+  [HTTP_HEADERS.X_CONTENT_TYPE_OPTIONS]: CONTENT_TYPE_OPTIONS.NO_SNIFF,
+} as const satisfies HeadersInit;
+
+export const API_RESPONSE_HEADERS: HeadersInit = {
+  ...BASE_RESPONSE_HEADERS,
+  [HTTP_HEADERS.CONTENT_TYPE]: JSON_RESPONSE_CONTENT_TYPE,
+  [HTTP_HEADERS.REFERRER_POLICY]: REFERRER_POLICY.NO_REFERRER,
+};
+
+export const MAX_JSON_REQUEST_BYTES = 65_536;
+
+export const EMPTY_RESPONSE_HEADERS: HeadersInit = {
+  ...BASE_RESPONSE_HEADERS,
+};
+
+export const FILE_DOWNLOAD_RESPONSE_HEADERS: HeadersInit = {
+  ...BASE_RESPONSE_HEADERS,
+  [HTTP_HEADERS.CACHE_CONTROL]: CACHE_CONTROL.PRIVATE_NO_STORE,
+  [HTTP_HEADERS.REFERRER_POLICY]: REFERRER_POLICY.NO_REFERRER,
+};

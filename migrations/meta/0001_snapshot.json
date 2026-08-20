@@ -1,0 +1,197 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "e2ae2896-c41b-4fd4-8226-04efc877ae72",
+  "prevId": "3cfd10f2-088c-4519-a057-ee636aa99cf5",
+  "tables": {
+    "dashboard_widgets": {
+      "name": "dashboard_widgets",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'blank'"
+        },
+        "grid_column": {
+          "name": "grid_column",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "grid_row": {
+          "name": "grid_row",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "grid_columns": {
+          "name": "grid_columns",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "grid_rows": {
+          "name": "grid_rows",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_dashboard_widgets_position": {
+          "name": "idx_dashboard_widgets_position",
+          "columns": [
+            "grid_row",
+            "grid_column"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "dashboard_widgets_type_check": {
+          "name": "dashboard_widgets_type_check",
+          "value": "\"dashboard_widgets\".\"type\" = 'blank'"
+        },
+        "dashboard_widgets_column_check": {
+          "name": "dashboard_widgets_column_check",
+          "value": "\"dashboard_widgets\".\"grid_column\" >= 0 AND \"dashboard_widgets\".\"grid_column\" < 12"
+        },
+        "dashboard_widgets_row_check": {
+          "name": "dashboard_widgets_row_check",
+          "value": "\"dashboard_widgets\".\"grid_row\" >= 0 AND \"dashboard_widgets\".\"grid_row\" <= 999"
+        },
+        "dashboard_widgets_width_check": {
+          "name": "dashboard_widgets_width_check",
+          "value": "\"dashboard_widgets\".\"grid_columns\" >= 2 AND \"dashboard_widgets\".\"grid_columns\" <= 12"
+        },
+        "dashboard_widgets_height_check": {
+          "name": "dashboard_widgets_height_check",
+          "value": "\"dashboard_widgets\".\"grid_rows\" >= 2 AND \"dashboard_widgets\".\"grid_rows\" <= 12"
+        },
+        "dashboard_widgets_horizontal_bounds_check": {
+          "name": "dashboard_widgets_horizontal_bounds_check",
+          "value": "\"dashboard_widgets\".\"grid_column\" + \"dashboard_widgets\".\"grid_columns\" <= 12"
+        }
+      }
+    },
+    "files": {
+      "name": "files",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "object_key": {
+          "name": "object_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "original_name": {
+          "name": "original_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "content_type": {
+          "name": "content_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "size": {
+          "name": "size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "etag": {
+          "name": "etag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'pending'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "files_object_key_unique": {
+          "name": "files_object_key_unique",
+          "columns": [
+            "object_key"
+          ],
+          "isUnique": true
+        },
+        "idx_files_status_created_at": {
+          "name": "idx_files_status_created_at",
+          "columns": [
+            "status",
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "files_size_check": {
+          "name": "files_size_check",
+          "value": "\"files\".\"size\" >= 0 AND \"files\".\"size\" <= 100000000"
+        },
+        "files_status_check": {
+          "name": "files_status_check",
+          "value": "\"files\".\"status\" IN ('pending', 'ready')"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
+  }
+}
