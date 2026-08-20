@@ -1,0 +1,174 @@
+import { useEffect, useId, useMemo, useState } from "react";
+import { CHECKLIST_EVENT_ACTION } from "../../../constants/checklist";
+import { KOREA_TIME_ZONE } from "../../../constants/date";
+import type { ChecklistLogEvent } from "../../../types/widget";
+import { CHECKLIST_WIDGET_COPY } from "../../constants/content";
+import { LUNA_TITLE_BAR_ACTION } from "../../constants/luna";
+import type { DashboardGateway } from "../../types/api";
+import { LunaTitleBarButton } from "../ui/luna-title-bar-button";
+
+const LOG_TIME_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: KOREA_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+});
+
+interface ChecklistLogDialogProps {
+  readonly widgetId: string;
+  readonly gateway: DashboardGateway;
+  readonly onClose: () => void;
+}
+
+export function ChecklistLogDialog({
+  widgetId,
+  gateway,
+  onClose,
+}: ChecklistLogDialogProps) {
+  const titleId = useId();
+  const [events, setEvents] = useState<readonly ChecklistLogEvent[]>([]);
+  const [nextOffset, setNextOffset] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setIsLoading(true);
+    setError(null);
+    void gateway
+      .listChecklistLogs(widgetId)
+      .then((page) => {
+        if (active) {
+          setEvents(page.items);
+          setNextOffset(page.nextOffset);
+        }
+      })
+      .catch((loadError: unknown) => {
+        if (active) {
+          setError(
+            errorMessage(loadError, CHECKLIST_WIDGET_COPY.LOG_LOAD_FAILED),
+          );
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setIsLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [gateway, widgetId]);
+
+  useEffect(() => {
+    const closeOnEscape = (event: KeyboardEvent): void => {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [onClose]);
+
+  const groups = useMemo(() => groupEventsByDate(events), [events]);
+
+  const loadMore = async (): Promise<void> => {
+    if (nextOffset === null || isLoading) {
+      return;
+    }
+    setIsLoading(true);
+    setError(null);
+    try {
+      const page = await gateway.listChecklistLogs(widgetId, nextOffset);
+      setEvents((current) => [...current, ...page.items]);
+      setNextOffset(page.nextOffset);
+    } catch (loadError) {
+      setError(errorMessage(loadError, CHECKLIST_WIDGET_COPY.LOG_LOAD_FAILED));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="dialog-backdrop" onMouseDown={onClose}>
+      <section
+        className="checklist-log-dialog window"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <header className="dialog-header title-bar">
+          <h3 className="title-bar-text" id={titleId}>
+            {CHECKLIST_WIDGET_COPY.LOG_TITLE}
+          </h3>
+          <div className="title-bar-controls">
+            <LunaTitleBarButton
+              action={LUNA_TITLE_BAR_ACTION.CLOSE}
+              label={CHECKLIST_WIDGET_COPY.CLOSE}
+              onClick={onClose}
+            />
+          </div>
+        </header>
+
+        <div className="checklist-log-dialog__body window-body sunken-panel">
+          {isLoading && events.length === 0 ? (
+            <p className="widget-empty">{CHECKLIST_WIDGET_COPY.LOG_LOADING}</p>
+          ) : null}
+          {!isLoading && groups.length === 0 && !error ? (
+            <p className="widget-empty">{CHECKLIST_WIDGET_COPY.LOG_EMPTY}</p>
+          ) : null}
+          {groups.map(([businessDate, groupedEvents]) => (
+            <section className="checklist-log-group" key={businessDate}>
+              <h4>{businessDate}</h4>
+              <ol>
+                {groupedEvents.map((event) => (
+                  <li key={event.id}>
+                    <time dateTime={event.occurredAt}>
+                      {LOG_TIME_FORMATTER.format(new Date(event.occurredAt))}
+                    </time>
+                    <span>{event.itemLabel}</span>
+                    <small>
+                      {event.action === CHECKLIST_EVENT_ACTION.CHECKED
+                        ? CHECKLIST_WIDGET_COPY.CHECKED
+                        : CHECKLIST_WIDGET_COPY.UNCHECKED}
+                    </small>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          ))}
+          {error ? <p className="widget-error" role="alert">{error}</p> : null}
+        </div>
+
+        {nextOffset !== null ? (
+          <footer className="dialog-footer">
+            <button
+              type="button"
+              onClick={() => void loadMore()}
+              disabled={isLoading}
+            >
+              {CHECKLIST_WIDGET_COPY.LOAD_MORE}
+            </button>
+          </footer>
+        ) : null}
+      </section>
+    </div>
+  );
+}
+
+function groupEventsByDate(
+  events: readonly ChecklistLogEvent[],
+): Array<readonly [string, readonly ChecklistLogEvent[]]> {
+  const groups = new Map<string, ChecklistLogEvent[]>();
+  for (const event of events) {
+    const group = groups.get(event.businessDate) ?? [];
+    group.push(event);
+    groups.set(event.businessDate, group);
+  }
+  return [...groups.entries()];
+}
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error && error.message ? error.message : fallback;
+}

@@ -7,8 +7,8 @@ import {
 } from "../src/domain/widget-layout";
 import { validateWidgetLayout } from "../src/domain/widget-layout-validation";
 import {
-  BLANK_WIDGET_SIZE,
   GRID_COLUMN_COUNT,
+  WIDGET_SIZE_BY_TYPE,
   WIDGET_TYPE,
 } from "../src/constants/widget";
 import type { WidgetLayout } from "../src/types/widget";
@@ -22,7 +22,7 @@ describe("widget layout rules", () => {
       row: 0,
     });
     expect(findFirstAvailablePosition([first], DEFAULT_WIDGET_SIZE)).toEqual({
-      column: BLANK_WIDGET_SIZE.DEFAULT_COLUMNS,
+      column: MEMO_WIDGET_SIZE.DEFAULT_COLUMNS,
       row: 0,
     });
   });
@@ -31,7 +31,7 @@ describe("widget layout rules", () => {
     const left = defaultWidget("00000000-0000-4000-8000-000000000001", 0, 0);
     const right = defaultWidget(
       "00000000-0000-4000-8000-000000000002",
-      BLANK_WIDGET_SIZE.DEFAULT_COLUMNS,
+      MEMO_WIDGET_SIZE.DEFAULT_COLUMNS,
       0,
     );
 
@@ -57,7 +57,7 @@ describe("widget layout rules", () => {
       validateWidgetLayout([
         defaultWidget(
           "00000000-0000-4000-8000-000000000003",
-          GRID_COLUMN_COUNT - BLANK_WIDGET_SIZE.DEFAULT_COLUMNS + 1,
+          GRID_COLUMN_COUNT - MEMO_WIDGET_SIZE.DEFAULT_COLUMNS + 1,
           0,
         ),
       ]),
@@ -67,9 +67,11 @@ describe("widget layout rules", () => {
   });
 });
 
+const MEMO_WIDGET_SIZE = WIDGET_SIZE_BY_TYPE[WIDGET_TYPE.MEMO];
+
 const DEFAULT_WIDGET_SIZE = {
-  columns: BLANK_WIDGET_SIZE.DEFAULT_COLUMNS,
-  rows: BLANK_WIDGET_SIZE.DEFAULT_ROWS,
+  columns: MEMO_WIDGET_SIZE.DEFAULT_COLUMNS,
+  rows: MEMO_WIDGET_SIZE.DEFAULT_ROWS,
 } as const;
 
 function defaultWidget(id: string, column: number, row: number): WidgetLayout {
@@ -91,7 +93,7 @@ function widget(
 ): WidgetLayout {
   return {
     id,
-    type: WIDGET_TYPE.BLANK,
+    type: WIDGET_TYPE.MEMO,
     position: { column, row },
     size: { columns, rows },
   };

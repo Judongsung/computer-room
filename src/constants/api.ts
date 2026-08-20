@@ -4,6 +4,14 @@ export const API_PATHS = {
   WIDGETS: "/api/widgets",
 } as const;
 
+export const API_PATH_SEGMENTS = {
+  MEMO: "memo",
+  CHECKLIST: "checklist",
+  ITEMS: "items",
+  CHECK: "check",
+  LOGS: "logs",
+} as const;
+
 export const API_QUERY_PARAMETERS = {
   OFFSET: "offset",
   LIMIT: "limit",

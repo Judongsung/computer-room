@@ -28,4 +28,19 @@ export const WIDGET_ERRORS = {
     code: "INVALID_STORED_WIDGET",
     message: "저장된 위젯 정보가 올바르지 않습니다.",
   },
+  WIDGET_NOT_FOUND: {
+    status: HTTP_STATUS.NOT_FOUND,
+    code: "WIDGET_NOT_FOUND",
+    message: "위젯을 찾을 수 없습니다.",
+  },
+  WIDGET_TYPE_MISMATCH: {
+    status: HTTP_STATUS.CONFLICT,
+    code: "WIDGET_TYPE_MISMATCH",
+    message: "요청한 기능과 위젯 종류가 일치하지 않습니다.",
+  },
+  WIDGET_TYPE_CHANGE_NOT_ALLOWED: {
+    status: HTTP_STATUS.CONFLICT,
+    code: "WIDGET_TYPE_CHANGE_NOT_ALLOWED",
+    message: "기존 위젯의 종류는 변경할 수 없습니다.",
+  },
 } as const satisfies Record<string, AppErrorDefinition>;

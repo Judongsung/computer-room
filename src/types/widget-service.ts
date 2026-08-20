@@ -1,6 +1,8 @@
-import type { WidgetLayout } from "./widget";
+import type { DashboardWidget, WidgetLayout } from "./widget";
 
 export interface WidgetLayoutUseCases {
-  listWidgets(): Promise<WidgetLayout[]>;
-  replaceWidgets(widgets: readonly WidgetLayout[]): Promise<WidgetLayout[]>;
+  listWidgets(): Promise<DashboardWidget[]>;
+  replaceWidgets(
+    widgets: readonly WidgetLayout[],
+  ): Promise<DashboardWidget[]>;
 }

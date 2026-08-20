@@ -1,10 +1,5 @@
-import {
-  API_PATHS,
-  API_QUERY_PARAMETERS,
-} from "../constants/api";
-import {
-  ACCESS_LOGOUT_PATH,
-} from "../constants/auth";
+import { API_PATHS, API_QUERY_PARAMETERS } from "../constants/api";
+import { ACCESS_LOGOUT_PATH } from "../constants/auth";
 import { FILE_ERRORS } from "../constants/errors/file";
 import { HTTP_ERRORS } from "../constants/errors/http";
 import { MAX_FILE_SIZE_BYTES } from "../constants/file";
@@ -22,10 +17,9 @@ import {
 import { AppError } from "../domain/errors";
 import type { Identity, IdentityVerifier, SessionInfo } from "../types/auth";
 import type { FileUseCases } from "../types/file-service";
-import type { WidgetLayoutUseCases } from "../types/widget-service";
-import { isWidgetLayoutCollection } from "../domain/widget-layout";
+import type { FeatureApiHandler } from "../types/http";
+import { parseIntegerParameter } from "./query-parameters";
 import { emptyResponse, errorResponse, jsonResponse } from "./responses";
-import { readJsonBody } from "./request-body";
 
 const FILE_DOWNLOAD_PATH = new RegExp(`^${API_PATHS.FILES}/([^/]+)/download$`);
 const FILE_PATH = new RegExp(`^${API_PATHS.FILES}/([^/]+)$`);
@@ -33,7 +27,7 @@ const FILE_PATH = new RegExp(`^${API_PATHS.FILES}/([^/]+)$`);
 export class ApiRouter {
   constructor(
     private readonly files: FileUseCases,
-    private readonly widgets: WidgetLayoutUseCases,
+    private readonly widgets: FeatureApiHandler,
     private readonly identities: IdentityVerifier,
   ) {}
 
@@ -46,13 +40,13 @@ export class ApiRouter {
       if (url.pathname === API_PATHS.SESSION) {
         return this.handleSession(request, identity);
       }
-
       if (url.pathname === API_PATHS.FILES) {
         return await this.handleFiles(request, url);
       }
 
-      if (url.pathname === API_PATHS.WIDGETS) {
-        return await this.handleWidgets(request);
+      const widgetResponse = await this.widgets.handle(request, url);
+      if (widgetResponse !== null) {
+        return widgetResponse;
       }
 
       const downloadMatch = FILE_DOWNLOAD_PATH.exec(url.pathname);
@@ -94,11 +88,9 @@ export class ApiRouter {
         url.searchParams.get(API_QUERY_PARAMETERS.LIMIT),
         DEFAULT_PAGE_LIMIT,
       );
-
       if (limit < 1 || limit > MAX_PAGE_LIMIT) {
         throw new AppError(HTTP_ERRORS.INVALID_LIMIT);
       }
-
       return jsonResponse(await this.files.listFiles(offset, limit));
     }
 
@@ -113,27 +105,7 @@ export class ApiRouter {
         declaredSize,
         body: request.body,
       });
-
       return jsonResponse({ file }, HTTP_STATUS.CREATED);
-    }
-
-    throw methodNotAllowed();
-  }
-
-  private async handleWidgets(request: Request): Promise<Response> {
-    if (request.method === HTTP_METHOD.GET) {
-      return jsonResponse({ items: await this.widgets.listWidgets() });
-    }
-
-    if (request.method === HTTP_METHOD.PUT) {
-      const body = await readJsonBody(request);
-      if (!isWidgetLayoutCollection(body)) {
-        throw new AppError(HTTP_ERRORS.INVALID_JSON);
-      }
-
-      return jsonResponse({
-        items: await this.widgets.replaceWidgets(body.items),
-      });
     }
 
     throw methodNotAllowed();
@@ -172,7 +144,6 @@ export class ApiRouter {
     if (request.method === HTTP_METHOD.GET) {
       return;
     }
-
     const origin = request.headers.get(HTTP_HEADERS.ORIGIN);
     if (origin !== url.origin) {
       throw new AppError(HTTP_ERRORS.CROSS_ORIGIN_REQUEST);
@@ -180,33 +151,14 @@ export class ApiRouter {
   }
 }
 
-function parseIntegerParameter(value: string | null, fallback: number): number {
-  if (value === null) {
-    return fallback;
-  }
-
-  if (!/^\d+$/.test(value)) {
-    throw new AppError(HTTP_ERRORS.INVALID_QUERY);
-  }
-
-  const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed)) {
-    throw new AppError(HTTP_ERRORS.INVALID_QUERY);
-  }
-
-  return parsed;
-}
-
 function parseFileSize(value: string | null): number {
   if (!value || !/^\d+$/.test(value)) {
     throw new AppError(FILE_ERRORS.INVALID_FILE_SIZE);
   }
-
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed)) {
     throw new AppError(FILE_ERRORS.INVALID_FILE_SIZE);
   }
-
   return parsed;
 }
 

@@ -1,9 +1,9 @@
 import { WIDGET_ERRORS } from "../constants/errors/widget";
 import {
-  BLANK_WIDGET_SIZE,
   GRID_COLUMN_COUNT,
   GRID_MAX_START_ROW,
   MAX_WIDGET_COUNT,
+  WIDGET_SIZE_BY_TYPE,
 } from "../constants/widget";
 import type { WidgetLayout } from "../types/widget";
 import { AppError } from "./errors";
@@ -67,15 +67,16 @@ function hasValidGridValues(widget: WidgetLayout): boolean {
     return false;
   }
 
+  const sizePolicy = WIDGET_SIZE_BY_TYPE[widget.type];
   return (
     widget.position.column >= 0 &&
     widget.position.column < GRID_COLUMN_COUNT &&
     widget.position.row >= 0 &&
     widget.position.row <= GRID_MAX_START_ROW &&
-    widget.size.columns >= BLANK_WIDGET_SIZE.MIN_COLUMNS &&
-    widget.size.columns <= BLANK_WIDGET_SIZE.MAX_COLUMNS &&
-    widget.size.rows >= BLANK_WIDGET_SIZE.MIN_ROWS &&
-    widget.size.rows <= BLANK_WIDGET_SIZE.MAX_ROWS &&
+    widget.size.columns >= sizePolicy.MIN_COLUMNS &&
+    widget.size.columns <= sizePolicy.MAX_COLUMNS &&
+    widget.size.rows >= sizePolicy.MIN_ROWS &&
+    widget.size.rows <= sizePolicy.MAX_ROWS &&
     widget.position.column + widget.size.columns <= GRID_COLUMN_COUNT
   );
 }

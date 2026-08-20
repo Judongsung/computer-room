@@ -1,22 +1,25 @@
 import { describe, expect, it } from "vitest";
 import {
-  BLANK_WIDGET_SIZE,
+  WIDGET_SIZE_BY_TYPE,
   WIDGET_TYPE,
 } from "../../src/constants/widget";
 import {
   fromGridLayout,
   toGridLayout,
 } from "../../src/client/components/dashboard/desktop-widget-grid";
-import type { WidgetLayout } from "../../src/types/widget";
+import type { DashboardWidget } from "../../src/types/widget";
 
-const WIDGET: WidgetLayout = {
+const MEMO_WIDGET_SIZE = WIDGET_SIZE_BY_TYPE[WIDGET_TYPE.MEMO];
+
+const WIDGET: DashboardWidget = {
   id: "00000000-0000-4000-8000-000000000001",
-  type: WIDGET_TYPE.BLANK,
+  type: WIDGET_TYPE.MEMO,
   position: { column: 2, row: 3 },
   size: {
-    columns: BLANK_WIDGET_SIZE.DEFAULT_COLUMNS,
-    rows: BLANK_WIDGET_SIZE.DEFAULT_ROWS,
+    columns: MEMO_WIDGET_SIZE.DEFAULT_COLUMNS,
+    rows: MEMO_WIDGET_SIZE.DEFAULT_ROWS,
   },
+  data: { markdown: "", updatedAt: null },
 };
 
 describe("React Grid Layout adapter", () => {
@@ -26,8 +29,8 @@ describe("React Grid Layout adapter", () => {
         i: WIDGET.id,
         x: 2,
         y: 3,
-        w: BLANK_WIDGET_SIZE.DEFAULT_COLUMNS,
-        h: BLANK_WIDGET_SIZE.DEFAULT_ROWS,
+        w: MEMO_WIDGET_SIZE.DEFAULT_COLUMNS,
+        h: MEMO_WIDGET_SIZE.DEFAULT_ROWS,
         isDraggable: true,
         isResizable: true,
       }),

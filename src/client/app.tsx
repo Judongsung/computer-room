@@ -1,4 +1,5 @@
 import { useState, type CSSProperties } from "react";
+import { WIDGET_TYPE } from "../constants/widget";
 import { DashboardApiClient } from "./api/dashboard-api-client";
 import { DashboardToolbar } from "./components/dashboard/dashboard-toolbar";
 import { WidgetBoard } from "./components/dashboard/widget-board";
@@ -37,8 +38,15 @@ export function App({ api }: AppProps) {
   if (state.loadStatus === LOAD_STATUS.LOADING) {
     return (
       <main className="centered-state">
-        <h1>{SITE_COPY.TITLE}</h1>
-        <p>{UI_MESSAGES.LOADING}</p>
+        <section className="state-window window" aria-busy="true">
+          <div className="title-bar">
+            <h1 className="title-bar-text">{SITE_COPY.TITLE}</h1>
+          </div>
+          <div className="window-body">
+            <p>{UI_MESSAGES.LOADING}</p>
+            <progress />
+          </div>
+        </section>
       </main>
     );
   }
@@ -46,11 +54,17 @@ export function App({ api }: AppProps) {
   if (state.loadStatus === LOAD_STATUS.ERROR || !state.session) {
     return (
       <main className="centered-state">
-        <h1>{SITE_COPY.TITLE}</h1>
-        <p role="alert">{state.message?.text}</p>
-        <button type="button" onClick={dashboard.retry}>
-          {DASHBOARD_COPY.RETRY}
-        </button>
+        <section className="state-window window">
+          <div className="title-bar">
+            <h1 className="title-bar-text">{SITE_COPY.TITLE}</h1>
+          </div>
+          <div className="window-body state-window__body">
+            <p role="alert">{state.message?.text}</p>
+            <button type="button" onClick={dashboard.retry}>
+              {DASHBOARD_COPY.RETRY}
+            </button>
+          </div>
+        </section>
       </main>
     );
   }
@@ -64,42 +78,49 @@ export function App({ api }: AppProps) {
       style={DASHBOARD_STYLE_VARIABLES}
     >
       <SiteHeader session={state.session} />
-      <main className="dashboard">
-        <div className="dashboard-heading">
-          <div>
-            <h2>{DASHBOARD_COPY.TITLE}</h2>
+      <main className="dashboard window">
+        <div className="title-bar">
+          <h2 className="title-bar-text">{DASHBOARD_COPY.TITLE}</h2>
+        </div>
+        <div className="dashboard__body window-body">
+          <div className="dashboard-heading">
             <p>{DASHBOARD_COPY.DESCRIPTION}</p>
+            <DashboardToolbar
+              mode={state.mode}
+              isDesktop={isDesktop}
+              isDirty={dashboard.isDirty}
+              isSaving={state.isSaving}
+              onStartEditing={dashboard.startEditing}
+              onAddMemoWidget={() => dashboard.addWidget(WIDGET_TYPE.MEMO)}
+              onAddChecklistWidget={() =>
+                dashboard.addWidget(WIDGET_TYPE.DAILY_CHECKLIST)
+              }
+              onSave={() => void dashboard.save()}
+              onCancel={dashboard.cancelEditing}
+            />
           </div>
-          <DashboardToolbar
-            mode={state.mode}
+
+          {state.message ? (
+            <div
+              className="status-bar status-message"
+              role={
+                state.message.kind === MESSAGE_KIND.ERROR ? "alert" : "status"
+              }
+            >
+              <p className="status-bar-field">{state.message.text}</p>
+            </div>
+          ) : null}
+
+          <WidgetBoard
+            widgets={widgets}
             isDesktop={isDesktop}
-            isDirty={dashboard.isDirty}
-            isSaving={state.isSaving}
-            onStartEditing={dashboard.startEditing}
-            onAddWidget={dashboard.addBlankWidget}
-            onSave={() => void dashboard.save()}
-            onCancel={dashboard.cancelEditing}
+            isEditing={isEditing}
+            onLayoutChange={dashboard.replaceDraft}
+            onDelete={dashboard.removeWidget}
+            gateway={dashboard.gateway}
+            onWidgetChange={dashboard.updateWidget}
           />
         </div>
-
-        {state.message ? (
-          <p
-            className="status-message"
-            role={
-              state.message.kind === MESSAGE_KIND.ERROR ? "alert" : "status"
-            }
-          >
-            {state.message.text}
-          </p>
-        ) : null}
-
-        <WidgetBoard
-          widgets={widgets}
-          isDesktop={isDesktop}
-          isEditing={isEditing}
-          onLayoutChange={dashboard.replaceDraft}
-          onDelete={dashboard.removeWidget}
-        />
       </main>
     </div>
   );

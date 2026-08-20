@@ -1,0 +1,12 @@
+export const CHECKLIST_EVENT_ACTION = {
+  CHECKED: "checked",
+  UNCHECKED: "unchecked",
+} as const;
+
+export const CHECKLIST_EVENT_ACTION_VALUES = [
+  CHECKLIST_EVENT_ACTION.CHECKED,
+  CHECKLIST_EVENT_ACTION.UNCHECKED,
+] as const;
+
+export const CHECKLIST_ITEM_LABEL_MAX_LENGTH = 200;
+export const MAX_ACTIVE_CHECKLIST_ITEMS = 100;

@@ -17,3 +17,31 @@ export interface WidgetRow {
   grid_columns: number;
   grid_rows: number;
 }
+
+export interface MemoRow {
+  widget_id: string;
+  markdown: string;
+  updated_at: number | null;
+}
+
+export interface ChecklistItemRow {
+  id: string;
+  widget_id: string;
+  label: string;
+  sort_order: number;
+  checked: number;
+}
+
+export interface ChecklistEventRow {
+  id: string;
+  widget_id: string;
+  item_id: string;
+  item_label: string;
+  action: string;
+  business_date: string;
+  occurred_at: number;
+}
+
+export interface CountRow {
+  count: number;
+}

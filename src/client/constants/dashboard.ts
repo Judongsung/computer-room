@@ -33,6 +33,7 @@ export const DASHBOARD_ACTION_TYPE = {
   SAVE_SUCCEEDED: "save-succeeded",
   SAVE_FAILED: "save-failed",
   MESSAGE_SET: "message-set",
+  WIDGET_UPDATED: "widget-updated",
 } as const;
 
 export const UI_MESSAGES = {
@@ -43,7 +44,7 @@ export const UI_MESSAGES = {
   MAX_WIDGETS: "더 이상 위젯을 추가할 수 없습니다.",
   NO_AVAILABLE_POSITION: "위젯을 놓을 빈 공간이 없습니다.",
   EMPTY_BOARD: "아직 추가한 위젯이 없습니다.",
-  EMPTY_BOARD_HELP: "꾸미기 모드에서 빈 위젯을 추가해 보세요.",
+  EMPTY_BOARD_HELP: "꾸미기 모드에서 위젯을 추가해 보세요.",
   MOBILE_EDIT_NOTICE: `위젯 편집은 ${DASHBOARD_LAYOUT.DESKTOP_MIN_WIDTH_PX}px 이상의 화면에서 사용할 수 있습니다.`,
   UNSAVED_CHANGES: "저장하지 않은 위젯 배치가 있습니다.",
 } as const;

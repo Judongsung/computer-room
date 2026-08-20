@@ -1,12 +1,29 @@
-import { API_PATHS } from "../../constants/api";
+import {
+  API_PATHS,
+  API_PATH_SEGMENTS,
+  API_QUERY_PARAMETERS,
+} from "../../constants/api";
 import {
   HTTP_HEADERS,
   HTTP_MEDIA_TYPE,
   HTTP_METHOD,
 } from "../../constants/http";
-import { isWidgetLayoutCollection } from "../../domain/widget-layout";
+import {
+  isChecklistItem,
+  isChecklistLogPage,
+  isDailyChecklistData,
+  isDashboardWidgetCollection,
+  isMemoData,
+} from "../../domain/widget-contract";
 import type { SessionInfo } from "../../types/auth";
-import type { WidgetLayout } from "../../types/widget";
+import type {
+  ChecklistItem,
+  ChecklistLogPage,
+  DailyChecklistData,
+  DashboardWidget,
+  MemoData,
+  WidgetLayout,
+} from "../../types/widget";
 import { API_REQUEST_OPTIONS } from "../constants/api";
 import { CLIENT_ERRORS } from "../constants/errors";
 import { ClientError } from "../errors/client-error";
@@ -21,9 +38,9 @@ export class DashboardApiClient implements DashboardGateway {
     return value;
   }
 
-  async listWidgets(): Promise<WidgetLayout[]> {
+  async listWidgets(): Promise<DashboardWidget[]> {
     const value = await this.requestJson(API_PATHS.WIDGETS);
-    if (!isWidgetLayoutCollection(value)) {
+    if (!isDashboardWidgetCollection(value)) {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
     }
     return [...value.items];
@@ -31,18 +48,94 @@ export class DashboardApiClient implements DashboardGateway {
 
   async replaceWidgets(
     widgets: readonly WidgetLayout[],
-  ): Promise<WidgetLayout[]> {
-    const value = await this.requestJson(API_PATHS.WIDGETS, {
-      method: HTTP_METHOD.PUT,
-      headers: {
-        [HTTP_HEADERS.CONTENT_TYPE]: HTTP_MEDIA_TYPE.JSON,
-      },
-      body: JSON.stringify({ items: widgets }),
-    });
-    if (!isWidgetLayoutCollection(value)) {
+  ): Promise<DashboardWidget[]> {
+    const value = await this.requestJson(
+      API_PATHS.WIDGETS,
+      jsonRequest(HTTP_METHOD.PUT, { items: widgets }),
+    );
+    if (!isDashboardWidgetCollection(value)) {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
     }
     return [...value.items];
+  }
+
+  async updateMemo(widgetId: string, markdown: string): Promise<MemoData> {
+    const value = await this.requestJson(
+      memoPath(widgetId),
+      jsonRequest(HTTP_METHOD.PUT, { markdown }),
+    );
+    if (!isMemoData(value)) {
+      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    }
+    return value;
+  }
+
+  async getChecklist(widgetId: string): Promise<DailyChecklistData> {
+    const value = await this.requestJson(checklistPath(widgetId));
+    if (!isDailyChecklistData(value)) {
+      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    }
+    return value;
+  }
+
+  async addChecklistItem(
+    widgetId: string,
+    label: string,
+  ): Promise<ChecklistItem> {
+    const value = await this.requestJson(
+      checklistItemsPath(widgetId),
+      jsonRequest(HTTP_METHOD.POST, { label }),
+    );
+    return readChecklistItemEnvelope(value);
+  }
+
+  async updateChecklistItem(
+    widgetId: string,
+    itemId: string,
+    label: string,
+  ): Promise<ChecklistItem> {
+    const value = await this.requestJson(
+      checklistItemPath(widgetId, itemId),
+      jsonRequest(HTTP_METHOD.PUT, { label }),
+    );
+    return readChecklistItemEnvelope(value);
+  }
+
+  async deleteChecklistItem(
+    widgetId: string,
+    itemId: string,
+  ): Promise<void> {
+    await this.requestJson(checklistItemPath(widgetId, itemId), {
+      method: HTTP_METHOD.DELETE,
+    });
+  }
+
+  async setChecklistItemChecked(
+    widgetId: string,
+    itemId: string,
+    checked: boolean,
+  ): Promise<ChecklistItem> {
+    const value = await this.requestJson(
+      `${checklistItemPath(widgetId, itemId)}/${API_PATH_SEGMENTS.CHECK}`,
+      jsonRequest(HTTP_METHOD.PUT, { checked }),
+    );
+    return readChecklistItemEnvelope(value);
+  }
+
+  async listChecklistLogs(
+    widgetId: string,
+    offset = 0,
+  ): Promise<ChecklistLogPage> {
+    const query = new URLSearchParams({
+      [API_QUERY_PARAMETERS.OFFSET]: String(offset),
+    });
+    const value = await this.requestJson(
+      `${checklistPath(widgetId)}/${API_PATH_SEGMENTS.LOGS}?${query}`,
+    );
+    if (!isChecklistLogPage(value)) {
+      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    }
+    return value;
   }
 
   private async requestJson(
@@ -62,6 +155,43 @@ export class DashboardApiClient implements DashboardGateway {
 
     return payload;
   }
+}
+
+function jsonRequest(method: string, body: unknown): RequestInit {
+  return {
+    method,
+    headers: {
+      [HTTP_HEADERS.CONTENT_TYPE]: HTTP_MEDIA_TYPE.JSON,
+    },
+    body: JSON.stringify(body),
+  };
+}
+
+function memoPath(widgetId: string): string {
+  return `${widgetPath(widgetId)}/${API_PATH_SEGMENTS.MEMO}`;
+}
+
+function checklistPath(widgetId: string): string {
+  return `${widgetPath(widgetId)}/${API_PATH_SEGMENTS.CHECKLIST}`;
+}
+
+function checklistItemsPath(widgetId: string): string {
+  return `${checklistPath(widgetId)}/${API_PATH_SEGMENTS.ITEMS}`;
+}
+
+function checklistItemPath(widgetId: string, itemId: string): string {
+  return `${checklistItemsPath(widgetId)}/${encodeURIComponent(itemId)}`;
+}
+
+function widgetPath(widgetId: string): string {
+  return `${API_PATHS.WIDGETS}/${encodeURIComponent(widgetId)}`;
+}
+
+function readChecklistItemEnvelope(value: unknown): ChecklistItem {
+  if (!isRecord(value) || !isChecklistItem(value.item)) {
+    throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+  }
+  return value.item;
 }
 
 export class ApiError extends ClientError {

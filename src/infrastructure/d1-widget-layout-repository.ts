@@ -1,5 +1,5 @@
 import { WIDGET_ERRORS } from "../constants/errors/widget";
-import { WIDGET_TYPE } from "../constants/widget";
+import { WIDGET_TYPE_VALUES } from "../constants/widget";
 import { AppError } from "../domain/errors";
 import type { WidgetRow } from "../types/database";
 import type { WidgetLayout } from "../types/widget";
@@ -20,10 +20,21 @@ export class D1WidgetLayoutRepository implements WidgetLayoutRepository {
     return result.results.map(mapWidgetRow);
   }
 
-  async replaceAll(widgets: readonly WidgetLayout[]): Promise<void> {
-    const statements: D1PreparedStatement[] = [
-      this.database.prepare("DELETE FROM dashboard_widgets"),
-    ];
+  async findById(id: string): Promise<WidgetLayout | null> {
+    const row = await this.database
+      .prepare(
+        `SELECT id, type, grid_column, grid_row, grid_columns, grid_rows
+         FROM dashboard_widgets
+         WHERE id = ?1`,
+      )
+      .bind(id)
+      .first<WidgetRow>();
+
+    return row ? mapWidgetRow(row) : null;
+  }
+
+  async synchronize(widgets: readonly WidgetLayout[]): Promise<void> {
+    const statements: D1PreparedStatement[] = [];
 
     for (const widget of widgets) {
       statements.push(
@@ -31,7 +42,12 @@ export class D1WidgetLayoutRepository implements WidgetLayoutRepository {
           .prepare(
             `INSERT INTO dashboard_widgets (
               id, type, grid_column, grid_row, grid_columns, grid_rows
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)`,
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+            ON CONFLICT(id) DO UPDATE SET
+              grid_column = excluded.grid_column,
+              grid_row = excluded.grid_row,
+              grid_columns = excluded.grid_columns,
+              grid_rows = excluded.grid_rows`,
           )
           .bind(
             widget.id,
@@ -44,18 +60,30 @@ export class D1WidgetLayoutRepository implements WidgetLayoutRepository {
       );
     }
 
+    if (widgets.length === 0) {
+      statements.push(this.database.prepare("DELETE FROM dashboard_widgets"));
+    } else {
+      const placeholders = widgets.map((_, index) => `?${index + 1}`).join(", ");
+      statements.push(
+        this.database
+          .prepare(`DELETE FROM dashboard_widgets WHERE id NOT IN (${placeholders})`)
+          .bind(...widgets.map((widget) => widget.id)),
+      );
+    }
+
     await this.database.batch(statements);
   }
 }
 
 function mapWidgetRow(row: WidgetRow): WidgetLayout {
-  if (row.type !== WIDGET_TYPE.BLANK) {
+  const type = WIDGET_TYPE_VALUES.find((candidate) => candidate === row.type);
+  if (!type) {
     throw new AppError(WIDGET_ERRORS.INVALID_STORED_WIDGET);
   }
 
   return {
     id: row.id,
-    type: row.type,
+    type,
     position: {
       column: row.grid_column,
       row: row.grid_row,

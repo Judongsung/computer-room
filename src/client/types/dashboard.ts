@@ -4,7 +4,7 @@ import type {
   MESSAGE_KIND,
 } from "../constants/dashboard";
 import type { SessionInfo } from "../../types/auth";
-import type { WidgetLayout } from "../../types/widget";
+import type { DashboardWidget } from "../../types/widget";
 
 export type DashboardMode =
   (typeof DASHBOARD_MODE)[keyof typeof DASHBOARD_MODE];
@@ -20,8 +20,8 @@ export interface DashboardState {
   readonly loadStatus: LoadStatus;
   readonly mode: DashboardMode;
   readonly session: SessionInfo | null;
-  readonly persistedWidgets: readonly WidgetLayout[];
-  readonly draftWidgets: readonly WidgetLayout[];
+  readonly persistedWidgets: readonly DashboardWidget[];
+  readonly draftWidgets: readonly DashboardWidget[];
   readonly isSaving: boolean;
   readonly message: StatusMessage | null;
 }

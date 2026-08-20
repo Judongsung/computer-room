@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react";
 import {
-  BLANK_WIDGET_SIZE,
   MAX_WIDGET_COUNT,
+  WIDGET_SIZE_BY_TYPE,
   WIDGET_TYPE,
 } from "../../constants/widget";
 import {
@@ -9,7 +9,11 @@ import {
   findFirstAvailablePosition,
   widgetLayoutsEqual,
 } from "../../domain/widget-layout";
-import type { WidgetLayout } from "../../types/widget";
+import type {
+  DashboardWidget,
+  WidgetLayout,
+  WidgetType,
+} from "../../types/widget";
 import {
   DASHBOARD_ACTION_TYPE,
   DASHBOARD_MODE,
@@ -71,11 +75,11 @@ export function useDashboard(api: DashboardGateway) {
     dispatch({ type: DASHBOARD_ACTION_TYPE.EDIT_CANCELLED });
   }, []);
 
-  const replaceDraft = useCallback((widgets: readonly WidgetLayout[]) => {
+  const replaceDraft = useCallback((widgets: readonly DashboardWidget[]) => {
     dispatch({ type: DASHBOARD_ACTION_TYPE.DRAFT_REPLACED, widgets });
   }, []);
 
-  const addBlankWidget = useCallback(() => {
+  const addWidget = useCallback((type: WidgetType) => {
     if (state.draftWidgets.length >= MAX_WIDGET_COUNT) {
       dispatch({
         type: DASHBOARD_ACTION_TYPE.MESSAGE_SET,
@@ -84,9 +88,10 @@ export function useDashboard(api: DashboardGateway) {
       return;
     }
 
+    const sizePolicy = WIDGET_SIZE_BY_TYPE[type];
     const size = {
-      columns: BLANK_WIDGET_SIZE.DEFAULT_COLUMNS,
-      rows: BLANK_WIDGET_SIZE.DEFAULT_ROWS,
+      columns: sizePolicy.DEFAULT_COLUMNS,
+      rows: sizePolicy.DEFAULT_ROWS,
     };
     const position = findFirstAvailablePosition(state.draftWidgets, size);
     if (!position) {
@@ -100,12 +105,13 @@ export function useDashboard(api: DashboardGateway) {
       return;
     }
 
-    const widget: WidgetLayout = {
+    const layout: WidgetLayout = {
       id: crypto.randomUUID(),
-      type: WIDGET_TYPE.BLANK,
+      type,
       position,
       size,
     };
+    const widget = DRAFT_WIDGET_FACTORY[type](layout);
     dispatch({
       type: DASHBOARD_ACTION_TYPE.DRAFT_REPLACED,
       widgets: [...state.draftWidgets, widget],
@@ -145,18 +151,42 @@ export function useDashboard(api: DashboardGateway) {
     setLoadAttempt((attempt) => attempt + 1);
   }, []);
 
+  const updateWidget = useCallback((widget: DashboardWidget) => {
+    dispatch({ type: DASHBOARD_ACTION_TYPE.WIDGET_UPDATED, widget });
+  }, []);
+
   return {
     state,
     isDirty,
     startEditing,
     cancelEditing,
     replaceDraft,
-    addBlankWidget,
+    addWidget,
     removeWidget,
+    updateWidget,
+    gateway: api,
     save,
     retry,
   };
 }
+
+const DRAFT_WIDGET_FACTORY = {
+  [WIDGET_TYPE.MEMO]: (layout: WidgetLayout): DashboardWidget => ({
+    ...layout,
+    type: WIDGET_TYPE.MEMO,
+    data: { markdown: "", updatedAt: null },
+  }),
+  [WIDGET_TYPE.DAILY_CHECKLIST]: (
+    layout: WidgetLayout,
+  ): DashboardWidget => ({
+    ...layout,
+    type: WIDGET_TYPE.DAILY_CHECKLIST,
+    data: { businessDate: "", nextResetAt: "", items: [] },
+  }),
+} satisfies Record<
+  WidgetType,
+  (layout: WidgetLayout) => DashboardWidget
+>;
 
 function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message ? error.message : fallback;

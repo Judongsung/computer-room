@@ -2,8 +2,10 @@ import {
   GRID_COLUMN_COUNT,
   GRID_MAX_START_ROW,
   WIDGET_TYPE,
+  WIDGET_TYPE_VALUES,
 } from "../constants/widget";
 import type {
+  DashboardWidget,
   GridPosition,
   GridSize,
   WidgetLayout,
@@ -20,9 +22,9 @@ export function isWidgetLayoutCollection(
   return value.items.every(isWidgetLayout);
 }
 
-export function sortWidgetLayouts(
-  widgets: readonly WidgetLayout[],
-): WidgetLayout[] {
+export function sortWidgetLayouts<T extends WidgetLayout>(
+  widgets: readonly T[],
+): T[] {
   return [...widgets].sort(
     (left, right) =>
       left.position.row - right.position.row ||
@@ -40,6 +42,38 @@ export function cloneWidgetLayouts(
     position: { ...widget.position },
     size: { ...widget.size },
   }));
+}
+
+export function toWidgetLayout(widget: WidgetLayout): WidgetLayout {
+  return {
+    id: widget.id,
+    type: widget.type,
+    position: { ...widget.position },
+    size: { ...widget.size },
+  };
+}
+
+export function cloneDashboardWidgets(
+  widgets: readonly DashboardWidget[],
+): DashboardWidget[] {
+  return widgets.map((widget) => {
+    const layout = toWidgetLayout(widget);
+    if (widget.type === WIDGET_TYPE.MEMO) {
+      return {
+        ...layout,
+        type: WIDGET_TYPE.MEMO,
+        data: { ...widget.data },
+      };
+    }
+    return {
+      ...layout,
+      type: WIDGET_TYPE.DAILY_CHECKLIST,
+      data: {
+        ...widget.data,
+        items: widget.data.items.map((item) => ({ ...item })),
+      },
+    };
+  });
 }
 
 export function widgetLayoutsEqual(
@@ -67,8 +101,8 @@ export function widgetLayoutsEqual(
 }
 
 export function widgetsOverlap(
-  left: WidgetLayout,
-  right: WidgetLayout,
+  left: Pick<WidgetLayout, "position" | "size">,
+  right: Pick<WidgetLayout, "position" | "size">,
 ): boolean {
   return (
     left.position.column < right.position.column + right.size.columns &&
@@ -88,9 +122,7 @@ export function findFirstAvailablePosition(
       column <= GRID_COLUMN_COUNT - size.columns;
       column += 1
     ) {
-      const candidate: WidgetLayout = {
-        id: "candidate",
-        type: WIDGET_TYPE.BLANK,
+      const candidate = {
         position: { column, row },
         size,
       };
@@ -111,7 +143,7 @@ function isWidgetLayout(value: unknown): value is WidgetLayout {
 
   return (
     typeof value.id === "string" &&
-    value.type === WIDGET_TYPE.BLANK &&
+    WIDGET_TYPE_VALUES.some((type) => value.type === type) &&
     typeof value.position.column === "number" &&
     typeof value.position.row === "number" &&
     typeof value.size.columns === "number" &&

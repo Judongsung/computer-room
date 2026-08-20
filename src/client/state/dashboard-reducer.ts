@@ -5,9 +5,12 @@ import {
   MESSAGE_KIND,
   UI_MESSAGES,
 } from "../constants/dashboard";
-import { cloneWidgetLayouts, sortWidgetLayouts } from "../../domain/widget-layout";
+import {
+  cloneDashboardWidgets,
+  sortWidgetLayouts,
+} from "../../domain/widget-layout";
 import type { SessionInfo } from "../../types/auth";
-import type { WidgetLayout } from "../../types/widget";
+import type { DashboardWidget } from "../../types/widget";
 import type { DashboardState, StatusMessage } from "../types/dashboard";
 
 export type DashboardAction =
@@ -15,7 +18,7 @@ export type DashboardAction =
   | {
       readonly type: typeof DASHBOARD_ACTION_TYPE.LOAD_SUCCEEDED;
       readonly session: SessionInfo;
-      readonly widgets: readonly WidgetLayout[];
+      readonly widgets: readonly DashboardWidget[];
     }
   | {
       readonly type: typeof DASHBOARD_ACTION_TYPE.LOAD_FAILED;
@@ -24,13 +27,13 @@ export type DashboardAction =
   | { readonly type: typeof DASHBOARD_ACTION_TYPE.EDIT_STARTED }
   | {
       readonly type: typeof DASHBOARD_ACTION_TYPE.DRAFT_REPLACED;
-      readonly widgets: readonly WidgetLayout[];
+      readonly widgets: readonly DashboardWidget[];
     }
   | { readonly type: typeof DASHBOARD_ACTION_TYPE.EDIT_CANCELLED }
   | { readonly type: typeof DASHBOARD_ACTION_TYPE.SAVE_STARTED }
   | {
       readonly type: typeof DASHBOARD_ACTION_TYPE.SAVE_SUCCEEDED;
-      readonly widgets: readonly WidgetLayout[];
+      readonly widgets: readonly DashboardWidget[];
     }
   | {
       readonly type: typeof DASHBOARD_ACTION_TYPE.SAVE_FAILED;
@@ -39,6 +42,10 @@ export type DashboardAction =
   | {
       readonly type: typeof DASHBOARD_ACTION_TYPE.MESSAGE_SET;
       readonly message: StatusMessage | null;
+    }
+  | {
+      readonly type: typeof DASHBOARD_ACTION_TYPE.WIDGET_UPDATED;
+      readonly widget: DashboardWidget;
     };
 
 export const INITIAL_DASHBOARD_STATE: DashboardState = {
@@ -69,7 +76,7 @@ export function dashboardReducer(
         loadStatus: LOAD_STATUS.READY,
         session: action.session,
         persistedWidgets: widgets,
-        draftWidgets: cloneWidgetLayouts(widgets),
+        draftWidgets: cloneDashboardWidgets(widgets),
         mode: DASHBOARD_MODE.VIEW,
         isSaving: false,
         message: null,
@@ -86,7 +93,7 @@ export function dashboardReducer(
       return {
         ...state,
         mode: DASHBOARD_MODE.EDIT,
-        draftWidgets: cloneWidgetLayouts(state.persistedWidgets),
+        draftWidgets: cloneDashboardWidgets(state.persistedWidgets),
         message: null,
       };
     case DASHBOARD_ACTION_TYPE.DRAFT_REPLACED:
@@ -99,7 +106,7 @@ export function dashboardReducer(
       return {
         ...state,
         mode: DASHBOARD_MODE.VIEW,
-        draftWidgets: cloneWidgetLayouts(state.persistedWidgets),
+        draftWidgets: cloneDashboardWidgets(state.persistedWidgets),
         message: null,
       };
     case DASHBOARD_ACTION_TYPE.SAVE_STARTED:
@@ -109,7 +116,7 @@ export function dashboardReducer(
       return {
         ...state,
         persistedWidgets: widgets,
-        draftWidgets: cloneWidgetLayouts(widgets),
+        draftWidgets: cloneDashboardWidgets(widgets),
         mode: DASHBOARD_MODE.VIEW,
         isSaving: false,
         message: {
@@ -126,9 +133,26 @@ export function dashboardReducer(
       };
     case DASHBOARD_ACTION_TYPE.MESSAGE_SET:
       return { ...state, message: action.message };
+    case DASHBOARD_ACTION_TYPE.WIDGET_UPDATED:
+      return {
+        ...state,
+        persistedWidgets: replaceWidget(state.persistedWidgets, action.widget),
+        draftWidgets: replaceWidget(state.draftWidgets, action.widget),
+      };
   }
 }
 
-function normalizeWidgets(widgets: readonly WidgetLayout[]): WidgetLayout[] {
-  return sortWidgetLayouts(cloneWidgetLayouts(widgets));
+function normalizeWidgets(
+  widgets: readonly DashboardWidget[],
+): DashboardWidget[] {
+  return sortWidgetLayouts(cloneDashboardWidgets(widgets));
+}
+
+function replaceWidget(
+  widgets: readonly DashboardWidget[],
+  replacement: DashboardWidget,
+): DashboardWidget[] {
+  return widgets.map((widget) =>
+    widget.id === replacement.id ? replacement : widget,
+  );
 }

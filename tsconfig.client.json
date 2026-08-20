@@ -19,6 +19,7 @@
     "src/constants/api.ts",
     "src/constants/widget.ts",
     "src/domain/widget-layout.ts",
+    "src/domain/widget-contract.ts",
     "src/types/auth.ts",
     "src/types/file.ts",
     "src/types/widget.ts",

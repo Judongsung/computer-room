@@ -6,13 +6,14 @@ import ReactGridLayout, {
   type LayoutItem,
 } from "react-grid-layout";
 import {
-  BLANK_WIDGET_SIZE,
   GRID_COLUMN_COUNT,
+  WIDGET_SIZE_BY_TYPE,
 } from "../../../constants/widget";
 import { sortWidgetLayouts } from "../../../domain/widget-layout";
-import type { WidgetLayout } from "../../../types/widget";
+import type { DashboardWidget, WidgetLayout } from "../../../types/widget";
 import { DASHBOARD_LAYOUT } from "../../constants/dashboard";
-import { BlankWidget } from "./blank-widget";
+import type { DashboardGateway } from "../../types/api";
+import { WidgetRenderer } from "./widget-renderer";
 
 const FIXED_GRID_COMPACTOR: Compactor = {
   ...noCompactor,
@@ -20,10 +21,12 @@ const FIXED_GRID_COMPACTOR: Compactor = {
 };
 
 interface DesktopWidgetGridProps {
-  readonly widgets: readonly WidgetLayout[];
+  readonly widgets: readonly DashboardWidget[];
   readonly isEditing: boolean;
-  readonly onLayoutChange: (widgets: readonly WidgetLayout[]) => void;
+  readonly onLayoutChange: (widgets: readonly DashboardWidget[]) => void;
   readonly onDelete: (id: string) => void;
+  readonly gateway: DashboardGateway;
+  readonly onWidgetChange: (widget: DashboardWidget) => void;
 }
 
 export function DesktopWidgetGrid({
@@ -31,6 +34,8 @@ export function DesktopWidgetGrid({
   isEditing,
   onLayoutChange,
   onDelete,
+  gateway,
+  onWidgetChange,
 }: DesktopWidgetGridProps) {
   const { width, containerRef, mounted } = useContainerWidth();
   const layout = toGridLayout(widgets, isEditing);
@@ -55,7 +60,7 @@ export function DesktopWidgetGrid({
             enabled: isEditing,
             bounded: true,
             handle: ".widget-card__drag-handle",
-            cancel: ".widget-card__action",
+            cancel: ".luna-title-bar-button",
           }}
           resizeConfig={{ enabled: isEditing, handles: ["se"] }}
           compactor={FIXED_GRID_COMPACTOR}
@@ -67,9 +72,12 @@ export function DesktopWidgetGrid({
         >
           {widgets.map((widget) => (
             <div key={widget.id} className="widget-grid__item">
-              <BlankWidget
-                isEditing={isEditing}
+              <WidgetRenderer
+                widget={widget}
+                isEditingLayout={isEditing}
                 onDelete={() => onDelete(widget.id)}
+                gateway={gateway}
+                onWidgetChange={onWidgetChange}
               />
             </div>
           ))}
@@ -84,15 +92,12 @@ export function toGridLayout(
   isEditing: boolean,
 ): LayoutItem[] {
   return widgets.map((widget) => ({
+    ...gridSizeLimits(widget),
     i: widget.id,
     x: widget.position.column,
     y: widget.position.row,
     w: widget.size.columns,
     h: widget.size.rows,
-    minW: BLANK_WIDGET_SIZE.MIN_COLUMNS,
-    minH: BLANK_WIDGET_SIZE.MIN_ROWS,
-    maxW: BLANK_WIDGET_SIZE.MAX_COLUMNS,
-    maxH: BLANK_WIDGET_SIZE.MAX_ROWS,
     isDraggable: isEditing,
     isResizable: isEditing,
     isBounded: true,
@@ -101,10 +106,10 @@ export function toGridLayout(
 
 export function fromGridLayout(
   layout: Layout,
-  widgets: readonly WidgetLayout[],
-): WidgetLayout[] {
+  widgets: readonly DashboardWidget[],
+): DashboardWidget[] {
   const widgetsById = new Map(widgets.map((widget) => [widget.id, widget]));
-  const nextWidgets: WidgetLayout[] = [];
+  const nextWidgets: DashboardWidget[] = [];
 
   for (const item of layout) {
     const widget = widgetsById.get(item.i);
@@ -112,12 +117,21 @@ export function fromGridLayout(
       continue;
     }
     nextWidgets.push({
-      id: widget.id,
-      type: widget.type,
+      ...widget,
       position: { column: item.x, row: item.y },
       size: { columns: item.w, rows: item.h },
     });
   }
 
   return sortWidgetLayouts(nextWidgets);
+}
+
+function gridSizeLimits(widget: WidgetLayout) {
+  const policy = WIDGET_SIZE_BY_TYPE[widget.type];
+  return {
+    minW: policy.MIN_COLUMNS,
+    minH: policy.MIN_ROWS,
+    maxW: policy.MAX_COLUMNS,
+    maxH: policy.MAX_ROWS,
+  };
 }

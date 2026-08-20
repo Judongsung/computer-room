@@ -8,7 +8,8 @@ interface DashboardToolbarProps {
   readonly isDirty: boolean;
   readonly isSaving: boolean;
   readonly onStartEditing: () => void;
-  readonly onAddWidget: () => void;
+  readonly onAddMemoWidget: () => void;
+  readonly onAddChecklistWidget: () => void;
   readonly onSave: () => void;
   readonly onCancel: () => void;
 }
@@ -19,7 +20,8 @@ export function DashboardToolbar({
   isDirty,
   isSaving,
   onStartEditing,
-  onAddWidget,
+  onAddMemoWidget,
+  onAddChecklistWidget,
   onSave,
   onCancel,
 }: DashboardToolbarProps) {
@@ -29,7 +31,7 @@ export function DashboardToolbar({
 
   if (mode === DASHBOARD_MODE.VIEW) {
     return (
-      <div className="dashboard-toolbar">
+      <div className="dashboard-toolbar field-row">
         <button type="button" onClick={onStartEditing}>
           {DASHBOARD_COPY.EDIT}
         </button>
@@ -39,11 +41,14 @@ export function DashboardToolbar({
 
   return (
     <div
-      className="dashboard-toolbar"
+      className="dashboard-toolbar field-row"
       aria-label={DASHBOARD_COPY.EDIT_TOOLS_LABEL}
     >
-      <button type="button" onClick={onAddWidget} disabled={isSaving}>
-        {DASHBOARD_COPY.ADD_BLANK_WIDGET}
+      <button type="button" onClick={onAddMemoWidget} disabled={isSaving}>
+        {DASHBOARD_COPY.ADD_MEMO_WIDGET}
+      </button>
+      <button type="button" onClick={onAddChecklistWidget} disabled={isSaving}>
+        {DASHBOARD_COPY.ADD_CHECKLIST_WIDGET}
       </button>
       <span className="toolbar-spacer" />
       <button type="button" onClick={onSave} disabled={!isDirty || isSaving}>
