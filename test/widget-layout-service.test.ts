@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { WidgetLayoutService } from "../src/application/widget-layout-service";
-import { WIDGET_SIZE_BY_TYPE, WIDGET_TYPE } from "../src/constants/widget";
+import {
+  WIDGET_TYPE,
+  WIDGET_WINDOW_POLICY,
+  WINDOW_RESTORE_STATE,
+  WINDOW_STATE,
+} from "../src/constants/widget";
 import {
   MemoryChecklistRepository,
   MemoryMemoRepository,
@@ -8,7 +13,7 @@ import {
   StaticClock,
 } from "./fakes";
 
-const MEMO_WIDGET_SIZE = WIDGET_SIZE_BY_TYPE[WIDGET_TYPE.MEMO];
+const MEMO_WINDOW_POLICY = WIDGET_WINDOW_POLICY[WIDGET_TYPE.MEMO];
 const NOW = Date.parse("2026-08-20T01:00:00.000Z");
 
 describe("WidgetLayoutService", () => {
@@ -23,20 +28,26 @@ describe("WidgetLayoutService", () => {
     const right = {
       id: "00000000-0000-4000-8000-000000000002",
       type: WIDGET_TYPE.MEMO,
-      position: { column: MEMO_WIDGET_SIZE.DEFAULT_COLUMNS, row: 0 },
+      position: { x: 72, y: 32 },
       size: {
-        columns: MEMO_WIDGET_SIZE.DEFAULT_COLUMNS,
-        rows: MEMO_WIDGET_SIZE.DEFAULT_ROWS,
+        width: MEMO_WINDOW_POLICY.DEFAULT_WIDTH,
+        height: MEMO_WINDOW_POLICY.DEFAULT_HEIGHT,
       },
+      windowState: WINDOW_STATE.NORMAL,
+      restoreState: WINDOW_RESTORE_STATE.NORMAL,
+      stackOrder: 1,
     } as const;
     const left = {
       id: "00000000-0000-4000-8000-000000000001",
       type: WIDGET_TYPE.MEMO,
-      position: { column: 0, row: 0 },
+      position: { x: 32, y: 32 },
       size: {
-        columns: MEMO_WIDGET_SIZE.DEFAULT_COLUMNS,
-        rows: MEMO_WIDGET_SIZE.DEFAULT_ROWS,
+        width: MEMO_WINDOW_POLICY.DEFAULT_WIDTH,
+        height: MEMO_WINDOW_POLICY.DEFAULT_HEIGHT,
       },
+      windowState: WINDOW_STATE.NORMAL,
+      restoreState: WINDOW_RESTORE_STATE.NORMAL,
+      stackOrder: 0,
     } as const;
 
     const expected = [left, right].map((widget) => ({

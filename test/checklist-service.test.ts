@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { ChecklistService } from "../src/application/checklist-service";
 import { CHECKLIST_EVENT_ACTION } from "../src/constants/checklist";
-import { WIDGET_SIZE_BY_TYPE, WIDGET_TYPE } from "../src/constants/widget";
+import {
+  WIDGET_TYPE,
+  WIDGET_WINDOW_POLICY,
+  WINDOW_RESTORE_STATE,
+  WINDOW_STATE,
+} from "../src/constants/widget";
 import {
   MemoryChecklistRepository,
   MemoryWidgetLayoutRepository,
@@ -19,16 +24,19 @@ const NEXT_DAY_CHANGE_EVENT_ID = "00000000-0000-4000-8000-000000000106";
 describe("ChecklistService", () => {
   it("resets state at Korea midnight and records only actual changes", async () => {
     const layouts = new MemoryWidgetLayoutRepository();
-    const size = WIDGET_SIZE_BY_TYPE[WIDGET_TYPE.DAILY_CHECKLIST];
+    const size = WIDGET_WINDOW_POLICY[WIDGET_TYPE.DAILY_CHECKLIST];
     layouts.records = [
       {
         id: WIDGET_ID,
         type: WIDGET_TYPE.DAILY_CHECKLIST,
-        position: { column: 0, row: 0 },
+        position: { x: 32, y: 32 },
         size: {
-          columns: size.DEFAULT_COLUMNS,
-          rows: size.DEFAULT_ROWS,
+          width: size.DEFAULT_WIDTH,
+          height: size.DEFAULT_HEIGHT,
         },
+        windowState: WINDOW_STATE.NORMAL,
+        restoreState: WINDOW_RESTORE_STATE.NORMAL,
+        stackOrder: 0,
       },
     ];
     const repository = new MemoryChecklistRepository();

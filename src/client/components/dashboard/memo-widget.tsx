@@ -11,11 +11,12 @@ import remarkGfm from "remark-gfm";
 import { WIDGET_TYPE } from "../../../constants/widget";
 import type { MemoWidget as MemoWidgetData } from "../../../types/widget";
 import { MEMO_WIDGET_COPY } from "../../constants/content";
-import { LUNA_TITLE_BAR_ACTION } from "../../constants/luna";
+import { WIDGET_ICON_PATH_BY_TYPE } from "../../constants/desktop";
 import { MEMO_EDITOR_MODE } from "../../constants/memo";
+import { XP_WIDGET_TOOLBAR_ACTION } from "../../constants/xp";
 import { useUnsavedChangesWarning } from "../../hooks/use-unsaved-changes-warning";
-import { LunaTitleBarButton } from "../ui/luna-title-bar-button";
-import type { WidgetComponentProps } from "./widget-renderer";
+import type { WidgetComponentProps } from "../../types/desktop";
+import { XpWidgetToolbarButton } from "../ui/xp-widget-toolbar-button";
 import { WidgetCard } from "./widget-card";
 
 const MARKDOWN_PLUGINS = [remarkGfm, remarkBreaks];
@@ -33,8 +34,7 @@ type MemoWidgetContentProps = Omit<WidgetComponentProps, "widget"> & {
 
 function MemoWidgetContent({
   widget,
-  isEditingLayout,
-  onDelete,
+  windowControls,
   gateway,
   onWidgetChange,
 }: MemoWidgetContentProps) {
@@ -104,23 +104,22 @@ function MemoWidgetContent({
   return (
     <WidgetCard
       title={MEMO_WIDGET_COPY.TITLE}
-      deleteLabel={MEMO_WIDGET_COPY.DELETE_LABEL}
-      isEditingLayout={isEditingLayout}
-        onDelete={onDelete}
-        headerActions={
-          !isEditingContent ? (
-            <LunaTitleBarButton
-              action={LUNA_TITLE_BAR_ACTION.EDIT}
-              label={MEMO_WIDGET_COPY.EDIT}
-              onClick={() => {
-                setDraft(widget.data.markdown);
-                setEditorMode(MEMO_EDITOR_MODE.WRITE);
-                setError(null);
-                setIsEditingContent(true);
-              }}
-            />
-          ) : null
-        }
+      iconPath={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.MEMO]}
+      windowControls={windowControls}
+      toolbarActions={
+        !isEditingContent ? (
+          <XpWidgetToolbarButton
+            action={XP_WIDGET_TOOLBAR_ACTION.EDIT}
+            label={MEMO_WIDGET_COPY.EDIT}
+            onClick={() => {
+              setDraft(widget.data.markdown);
+              setEditorMode(MEMO_EDITOR_MODE.WRITE);
+              setError(null);
+              setIsEditingContent(true);
+            }}
+          />
+        ) : null
+      }
     >
       {isEditingContent ? (
         <div className="memo-editor">
@@ -139,7 +138,7 @@ function MemoWidgetContent({
               tabIndex={editorMode === MEMO_EDITOR_MODE.WRITE ? 0 : -1}
               onClick={() => setEditorMode(MEMO_EDITOR_MODE.WRITE)}
               onKeyDown={selectTabWithKeyboard}
-              disabled={isSaving || isEditingLayout}
+              disabled={isSaving}
             >
               {MEMO_WIDGET_COPY.WRITE}
             </button>
@@ -153,7 +152,7 @@ function MemoWidgetContent({
               tabIndex={editorMode === MEMO_EDITOR_MODE.PREVIEW ? 0 : -1}
               onClick={() => setEditorMode(MEMO_EDITOR_MODE.PREVIEW)}
               onKeyDown={selectTabWithKeyboard}
-              disabled={isSaving || isEditingLayout}
+              disabled={isSaving}
             >
               {MEMO_WIDGET_COPY.PREVIEW}
             </button>
@@ -175,7 +174,7 @@ function MemoWidgetContent({
                 aria-label={MEMO_WIDGET_COPY.EDITOR_LABEL}
                 value={draft}
                 onChange={(event) => setDraft(event.currentTarget.value)}
-                disabled={isSaving || isEditingLayout}
+                disabled={isSaving}
               />
             ) : (
               <MarkdownContent markdown={draft} />
@@ -191,7 +190,7 @@ function MemoWidgetContent({
             <button
               type="button"
               onClick={() => void save()}
-              disabled={isSaving || isEditingLayout}
+              disabled={isSaving}
             >
               {isSaving ? MEMO_WIDGET_COPY.SAVING : MEMO_WIDGET_COPY.SAVE}
             </button>
@@ -203,7 +202,7 @@ function MemoWidgetContent({
                 setError(null);
                 setIsEditingContent(false);
               }}
-              disabled={isSaving || isEditingLayout}
+              disabled={isSaving}
             >
               {MEMO_WIDGET_COPY.CANCEL}
             </button>

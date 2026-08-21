@@ -12,10 +12,13 @@ export interface FileRow {
 export interface WidgetRow {
   id: string;
   type: string;
-  grid_column: number;
-  grid_row: number;
-  grid_columns: number;
-  grid_rows: number;
+  position_x: number;
+  position_y: number;
+  width: number;
+  height: number;
+  window_state: string;
+  restore_state: string;
+  stack_order: number;
 }
 
 export interface MemoRow {

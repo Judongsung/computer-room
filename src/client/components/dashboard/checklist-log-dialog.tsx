@@ -1,11 +1,14 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { CHECKLIST_EVENT_ACTION } from "../../../constants/checklist";
 import { KOREA_TIME_ZONE } from "../../../constants/date";
+import { WIDGET_TYPE } from "../../../constants/widget";
 import type { ChecklistLogEvent } from "../../../types/widget";
 import { CHECKLIST_WIDGET_COPY } from "../../constants/content";
-import { LUNA_TITLE_BAR_ACTION } from "../../constants/luna";
+import { WIDGET_ICON_PATH_BY_TYPE } from "../../constants/desktop";
+import { XP_WINDOW_CONTROL_ACTION } from "../../constants/xp";
 import type { DashboardGateway } from "../../types/api";
-import { LunaTitleBarButton } from "../ui/luna-title-bar-button";
+import { XpWindowFrame } from "../desktop/xp-window-frame";
+import { XpWindowControlButton } from "../ui/xp-window-control-button";
 
 const LOG_TIME_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   timeZone: KOREA_TIME_ZONE,
@@ -99,64 +102,61 @@ export function ChecklistLogDialog({
 
   return (
     <div className="dialog-backdrop" onMouseDown={onClose}>
-      <section
-        className="checklist-log-dialog window"
+      <XpWindowFrame
+        className="checklist-log-dialog"
+        title={CHECKLIST_WIDGET_COPY.LOG_TITLE}
+        titleId={titleId}
+        iconPath={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.DAILY_CHECKLIST]}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         onMouseDown={(event) => event.stopPropagation()}
+        bodyClassName="checklist-log-dialog__body sunken-panel"
+        controls={
+          <XpWindowControlButton
+            action={XP_WINDOW_CONTROL_ACTION.CLOSE}
+            label={CHECKLIST_WIDGET_COPY.CLOSE}
+            onClick={onClose}
+          />
+        }
+        footer={
+          nextOffset !== null ? (
+            <footer className="dialog-footer">
+              <button
+                type="button"
+                onClick={() => void loadMore()}
+                disabled={isLoading}
+              >
+                {CHECKLIST_WIDGET_COPY.LOAD_MORE}
+              </button>
+            </footer>
+          ) : null
+        }
       >
-        <header className="dialog-header title-bar">
-          <h3 className="title-bar-text" id={titleId}>
-            {CHECKLIST_WIDGET_COPY.LOG_TITLE}
-          </h3>
-          <div className="title-bar-controls">
-            <LunaTitleBarButton
-              action={LUNA_TITLE_BAR_ACTION.CLOSE}
-              label={CHECKLIST_WIDGET_COPY.CLOSE}
-              onClick={onClose}
-            />
-          </div>
-        </header>
-
-        <div className="checklist-log-dialog__body window-body sunken-panel">
-          {isLoading && events.length === 0 ? (
-            <p className="widget-empty">{CHECKLIST_WIDGET_COPY.LOG_LOADING}</p>
-          ) : null}
-          {!isLoading && groups.length === 0 && !error ? (
-            <p className="widget-empty">{CHECKLIST_WIDGET_COPY.LOG_EMPTY}</p>
-          ) : null}
-          {groups.map(([businessDate, groupedEvents]) => (
-            <section className="checklist-log-group" key={businessDate}>
-              <h4>{businessDate}</h4>
-              <ol>
-                {groupedEvents.map((event) => (
-                  <li key={event.id}>
-                    <time dateTime={event.occurredAt}>
-                      {LOG_TIME_FORMATTER.format(new Date(event.occurredAt))}
-                    </time>
-                    <span>{eventLabel(event)}</span>
-                    <small>{CHECKLIST_EVENT_LABEL_BY_ACTION[event.action]}</small>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          ))}
-          {error ? <p className="widget-error" role="alert">{error}</p> : null}
-        </div>
-
-        {nextOffset !== null ? (
-          <footer className="dialog-footer">
-            <button
-              type="button"
-              onClick={() => void loadMore()}
-              disabled={isLoading}
-            >
-              {CHECKLIST_WIDGET_COPY.LOAD_MORE}
-            </button>
-          </footer>
+        {isLoading && events.length === 0 ? (
+          <p className="widget-empty">{CHECKLIST_WIDGET_COPY.LOG_LOADING}</p>
         ) : null}
-      </section>
+        {!isLoading && groups.length === 0 && !error ? (
+          <p className="widget-empty">{CHECKLIST_WIDGET_COPY.LOG_EMPTY}</p>
+        ) : null}
+        {groups.map(([businessDate, groupedEvents]) => (
+          <section className="checklist-log-group" key={businessDate}>
+            <h4>{businessDate}</h4>
+            <ol>
+              {groupedEvents.map((event) => (
+                <li key={event.id}>
+                  <time dateTime={event.occurredAt}>
+                    {LOG_TIME_FORMATTER.format(new Date(event.occurredAt))}
+                  </time>
+                  <span>{eventLabel(event)}</span>
+                  <small>{CHECKLIST_EVENT_LABEL_BY_ACTION[event.action]}</small>
+                </li>
+              ))}
+            </ol>
+          </section>
+        ))}
+        {error ? <p className="widget-error" role="alert">{error}</p> : null}
+      </XpWindowFrame>
     </div>
   );
 }

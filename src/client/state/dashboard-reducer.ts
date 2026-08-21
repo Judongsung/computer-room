@@ -1,14 +1,9 @@
 import {
   DASHBOARD_ACTION_TYPE,
-  DASHBOARD_MODE,
   LOAD_STATUS,
   MESSAGE_KIND,
-  UI_MESSAGES,
 } from "../constants/dashboard";
-import {
-  cloneDashboardWidgets,
-  sortWidgetLayouts,
-} from "../../domain/widget-layout";
+import { cloneDashboardWidgets } from "../../domain/widget-layout";
 import type { SessionInfo } from "../../types/auth";
 import type { DashboardWidget } from "../../types/widget";
 import type { DashboardState, StatusMessage } from "../types/dashboard";
@@ -24,37 +19,19 @@ export type DashboardAction =
       readonly type: typeof DASHBOARD_ACTION_TYPE.LOAD_FAILED;
       readonly message: string;
     }
-  | { readonly type: typeof DASHBOARD_ACTION_TYPE.EDIT_STARTED }
   | {
-      readonly type: typeof DASHBOARD_ACTION_TYPE.DRAFT_REPLACED;
+      readonly type: typeof DASHBOARD_ACTION_TYPE.WIDGETS_REPLACED;
       readonly widgets: readonly DashboardWidget[];
-    }
-  | { readonly type: typeof DASHBOARD_ACTION_TYPE.EDIT_CANCELLED }
-  | { readonly type: typeof DASHBOARD_ACTION_TYPE.SAVE_STARTED }
-  | {
-      readonly type: typeof DASHBOARD_ACTION_TYPE.SAVE_SUCCEEDED;
-      readonly widgets: readonly DashboardWidget[];
-    }
-  | {
-      readonly type: typeof DASHBOARD_ACTION_TYPE.SAVE_FAILED;
-      readonly message: string;
     }
   | {
       readonly type: typeof DASHBOARD_ACTION_TYPE.MESSAGE_SET;
       readonly message: StatusMessage | null;
-    }
-  | {
-      readonly type: typeof DASHBOARD_ACTION_TYPE.WIDGET_UPDATED;
-      readonly widget: DashboardWidget;
     };
 
 export const INITIAL_DASHBOARD_STATE: DashboardState = {
   loadStatus: LOAD_STATUS.LOADING,
-  mode: DASHBOARD_MODE.VIEW,
   session: null,
-  persistedWidgets: [],
-  draftWidgets: [],
-  isSaving: false,
+  widgets: [],
   message: null,
 };
 
@@ -75,10 +52,7 @@ export function dashboardReducer(
         ...state,
         loadStatus: LOAD_STATUS.READY,
         session: action.session,
-        persistedWidgets: widgets,
-        draftWidgets: cloneDashboardWidgets(widgets),
-        mode: DASHBOARD_MODE.VIEW,
-        isSaving: false,
+        widgets,
         message: null,
       };
     }
@@ -86,73 +60,21 @@ export function dashboardReducer(
       return {
         ...state,
         loadStatus: LOAD_STATUS.ERROR,
-        isSaving: false,
         message: { kind: MESSAGE_KIND.ERROR, text: action.message },
       };
-    case DASHBOARD_ACTION_TYPE.EDIT_STARTED:
+    case DASHBOARD_ACTION_TYPE.WIDGETS_REPLACED:
       return {
         ...state,
-        mode: DASHBOARD_MODE.EDIT,
-        draftWidgets: cloneDashboardWidgets(state.persistedWidgets),
+        widgets: normalizeWidgets(action.widgets),
         message: null,
-      };
-    case DASHBOARD_ACTION_TYPE.DRAFT_REPLACED:
-      return {
-        ...state,
-        draftWidgets: normalizeWidgets(action.widgets),
-        message: null,
-      };
-    case DASHBOARD_ACTION_TYPE.EDIT_CANCELLED:
-      return {
-        ...state,
-        mode: DASHBOARD_MODE.VIEW,
-        draftWidgets: cloneDashboardWidgets(state.persistedWidgets),
-        message: null,
-      };
-    case DASHBOARD_ACTION_TYPE.SAVE_STARTED:
-      return { ...state, isSaving: true, message: null };
-    case DASHBOARD_ACTION_TYPE.SAVE_SUCCEEDED: {
-      const widgets = normalizeWidgets(action.widgets);
-      return {
-        ...state,
-        persistedWidgets: widgets,
-        draftWidgets: cloneDashboardWidgets(widgets),
-        mode: DASHBOARD_MODE.VIEW,
-        isSaving: false,
-        message: {
-          kind: MESSAGE_KIND.SUCCESS,
-          text: UI_MESSAGES.SAVE_COMPLETE,
-        },
-      };
-    }
-    case DASHBOARD_ACTION_TYPE.SAVE_FAILED:
-      return {
-        ...state,
-        isSaving: false,
-        message: { kind: MESSAGE_KIND.ERROR, text: action.message },
       };
     case DASHBOARD_ACTION_TYPE.MESSAGE_SET:
       return { ...state, message: action.message };
-    case DASHBOARD_ACTION_TYPE.WIDGET_UPDATED:
-      return {
-        ...state,
-        persistedWidgets: replaceWidget(state.persistedWidgets, action.widget),
-        draftWidgets: replaceWidget(state.draftWidgets, action.widget),
-      };
   }
 }
 
 function normalizeWidgets(
   widgets: readonly DashboardWidget[],
 ): DashboardWidget[] {
-  return sortWidgetLayouts(cloneDashboardWidgets(widgets));
-}
-
-function replaceWidget(
-  widgets: readonly DashboardWidget[],
-  replacement: DashboardWidget,
-): DashboardWidget[] {
-  return widgets.map((widget) =>
-    widget.id === replacement.id ? replacement : widget,
-  );
+  return cloneDashboardWidgets(widgets);
 }

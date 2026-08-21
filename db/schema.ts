@@ -18,15 +18,22 @@ import {
 } from "../src/constants/file";
 import { EMPTY_MEMO_MARKDOWN } from "../src/constants/memo";
 import {
-  GRID_COLUMN_COUNT,
-  GRID_MAX_START_ROW,
-  WIDGET_SIZE_LIMITS,
   WIDGET_TYPE,
   WIDGET_TYPE_VALUES,
+  WINDOW_POSITION_LIMITS,
+  WINDOW_RESTORE_STATE,
+  WINDOW_RESTORE_STATE_VALUES,
+  WINDOW_SIZE_LIMITS,
+  WINDOW_STATE,
+  WINDOW_STATE_VALUES,
 } from "../src/constants/widget";
 
 const FILE_STATUS_SQL = FILE_STATUS_VALUES.map((status) => `'${status}'`).join(", ");
 const WIDGET_TYPE_SQL = WIDGET_TYPE_VALUES.map((type) => `'${type}'`).join(", ");
+const WINDOW_STATE_SQL = WINDOW_STATE_VALUES.map((state) => `'${state}'`).join(", ");
+const WINDOW_RESTORE_STATE_SQL = WINDOW_RESTORE_STATE_VALUES.map(
+  (state) => `'${state}'`,
+).join(", ");
 const CHECKLIST_EVENT_ACTION_SQL = CHECKLIST_EVENT_ACTION_VALUES.map(
   (action) => `'${action}'`,
 ).join(", ");
@@ -65,10 +72,19 @@ export const dashboardWidgets = sqliteTable(
     type: text("type", { enum: WIDGET_TYPE_VALUES })
       .notNull()
       .default(WIDGET_TYPE.MEMO),
-    gridColumn: integer("grid_column").notNull(),
-    gridRow: integer("grid_row").notNull(),
-    gridColumns: integer("grid_columns").notNull(),
-    gridRows: integer("grid_rows").notNull(),
+    positionX: integer("position_x").notNull(),
+    positionY: integer("position_y").notNull(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    windowState: text("window_state", { enum: WINDOW_STATE_VALUES })
+      .notNull()
+      .default(WINDOW_STATE.NORMAL),
+    restoreState: text("restore_state", {
+      enum: WINDOW_RESTORE_STATE_VALUES,
+    })
+      .notNull()
+      .default(WINDOW_RESTORE_STATE.NORMAL),
+    stackOrder: integer("stack_order").notNull(),
   },
   (table) => [
     check(
@@ -76,29 +92,31 @@ export const dashboardWidgets = sqliteTable(
       sql`${table.type} IN (${sql.raw(WIDGET_TYPE_SQL)})`,
     ),
     check(
-      "dashboard_widgets_column_check",
-      sql`${table.gridColumn} >= 0 AND ${table.gridColumn} < ${sql.raw(String(GRID_COLUMN_COUNT))}`,
+      "dashboard_widgets_position_x_check",
+      sql`${table.positionX} BETWEEN ${sql.raw(String(WINDOW_POSITION_LIMITS.MIN_X))} AND ${sql.raw(String(WINDOW_POSITION_LIMITS.MAX_X))}`,
     ),
     check(
-      "dashboard_widgets_row_check",
-      sql`${table.gridRow} >= 0 AND ${table.gridRow} <= ${sql.raw(String(GRID_MAX_START_ROW))}`,
+      "dashboard_widgets_position_y_check",
+      sql`${table.positionY} BETWEEN ${sql.raw(String(WINDOW_POSITION_LIMITS.MIN_Y))} AND ${sql.raw(String(WINDOW_POSITION_LIMITS.MAX_Y))}`,
     ),
     check(
       "dashboard_widgets_width_check",
-      sql`${table.gridColumns} >= ${sql.raw(String(WIDGET_SIZE_LIMITS.MIN_COLUMNS))} AND ${table.gridColumns} <= ${sql.raw(String(WIDGET_SIZE_LIMITS.MAX_COLUMNS))}`,
+      sql`${table.width} > 0 AND ${table.width} <= ${sql.raw(String(WINDOW_SIZE_LIMITS.MAX_WIDTH))}`,
     ),
     check(
       "dashboard_widgets_height_check",
-      sql`${table.gridRows} >= ${sql.raw(String(WIDGET_SIZE_LIMITS.MIN_ROWS))} AND ${table.gridRows} <= ${sql.raw(String(WIDGET_SIZE_LIMITS.MAX_ROWS))}`,
+      sql`${table.height} > 0 AND ${table.height} <= ${sql.raw(String(WINDOW_SIZE_LIMITS.MAX_HEIGHT))}`,
     ),
     check(
-      "dashboard_widgets_horizontal_bounds_check",
-      sql`${table.gridColumn} + ${table.gridColumns} <= ${sql.raw(String(GRID_COLUMN_COUNT))}`,
+      "dashboard_widgets_window_state_check",
+      sql`${table.windowState} IN (${sql.raw(WINDOW_STATE_SQL)})`,
     ),
-    index("idx_dashboard_widgets_position").on(
-      table.gridRow,
-      table.gridColumn,
+    check(
+      "dashboard_widgets_restore_state_check",
+      sql`${table.restoreState} IN (${sql.raw(WINDOW_RESTORE_STATE_SQL)})`,
     ),
+    check("dashboard_widgets_stack_order_check", sql`${table.stackOrder} >= 0`),
+    index("idx_dashboard_widgets_stack_order").on(table.stackOrder),
   ],
 );
 

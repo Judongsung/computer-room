@@ -1,0 +1,105 @@
+import type { DashboardWidget, WindowPosition, WindowSize } from "../../types/widget";
+import type { SessionInfo } from "../../types/auth";
+import type { ReactNode } from "react";
+import type { DashboardGateway } from "./api";
+import type { LayoutSaveStatus, StatusMessage } from "./dashboard";
+
+export interface DesktopDimensions {
+  readonly width: number;
+  readonly height: number;
+}
+
+export interface WindowBounds {
+  readonly position: WindowPosition;
+  readonly size: WindowSize;
+}
+
+export interface WidgetWindowControls {
+  readonly isActive: boolean;
+  readonly isMaximized: boolean;
+  readonly onFocus: () => void;
+  readonly onMinimize: () => void;
+  readonly onToggleMaximize: () => void;
+}
+
+export interface WidgetComponentProps {
+  readonly widget: DashboardWidget;
+  readonly windowControls: WidgetWindowControls;
+  readonly gateway: DashboardGateway;
+  readonly onWidgetChange: (widget: DashboardWidget) => void;
+}
+
+export interface WidgetCardProps {
+  readonly title: string;
+  readonly iconPath: string;
+  readonly windowControls: WidgetWindowControls;
+  readonly toolbarActions?: ReactNode;
+  readonly children: ReactNode;
+}
+
+export interface KoreaClock {
+  readonly time: string;
+  readonly dateTime: string;
+}
+
+export interface DesktopShellProps {
+  readonly session: SessionInfo;
+  readonly widgets: readonly DashboardWidget[];
+  readonly activeWidgetId: string | null;
+  readonly gateway: DashboardGateway;
+  readonly layoutSaveStatus: LayoutSaveStatus;
+  readonly layoutSaveError: string | null;
+  readonly message: StatusMessage | null;
+  readonly onAddWidget: (
+    type: DashboardWidget["type"],
+    desktop: DesktopDimensions,
+  ) => void;
+  readonly onFocusWindow: (widgetId: string) => void;
+  readonly onMinimizeWindow: (widgetId: string) => void;
+  readonly onToggleMaximizeWindow: (widgetId: string) => void;
+  readonly onActivateTaskbarWindow: (widgetId: string) => void;
+  readonly onCommitWindowBounds: (
+    widgetId: string,
+    bounds: WindowBounds,
+  ) => void;
+  readonly onWidgetChange: (widget: DashboardWidget) => void;
+  readonly onRetrySave: () => void;
+  readonly onDismissMessage: () => void;
+}
+
+export interface DesktopWindowProps {
+  readonly widget: DashboardWidget;
+  readonly desktop: DesktopDimensions;
+  readonly isActive: boolean;
+  readonly gateway: DashboardGateway;
+  readonly onFocus: () => void;
+  readonly onMinimize: () => void;
+  readonly onToggleMaximize: () => void;
+  readonly onCommitBounds: (bounds: WindowBounds) => void;
+  readonly onWidgetChange: (widget: DashboardWidget) => void;
+}
+
+export interface StartMenuProps {
+  readonly isOpen: boolean;
+  readonly email: string;
+  readonly logoutUrl: string;
+  readonly onClose: () => void;
+  readonly onAddMemo: () => void;
+  readonly onAddChecklist: () => void;
+}
+
+export interface TaskbarProps {
+  readonly widgets: readonly DashboardWidget[];
+  readonly activeWidgetId: string | null;
+  readonly isStartMenuOpen: boolean;
+  readonly saveStatus: LayoutSaveStatus;
+  readonly onToggleStartMenu: () => void;
+  readonly onActivateWindow: (widgetId: string) => void;
+}
+
+export interface DesktopNotificationProps {
+  readonly title: string;
+  readonly message: string;
+  readonly actionLabel: string;
+  readonly onAction: () => void;
+}

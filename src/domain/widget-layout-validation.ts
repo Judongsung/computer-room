@@ -1,16 +1,14 @@
 import { WIDGET_ERRORS } from "../constants/errors/widget";
 import {
-  GRID_COLUMN_COUNT,
-  GRID_MAX_START_ROW,
   MAX_WIDGET_COUNT,
-  WIDGET_SIZE_BY_TYPE,
+  WIDGET_WINDOW_POLICY,
+  WINDOW_POSITION_LIMITS,
 } from "../constants/widget";
 import type { WidgetLayout } from "../types/widget";
 import { AppError } from "./errors";
 import {
   cloneWidgetLayouts,
   sortWidgetLayouts,
-  widgetsOverlap,
 } from "./widget-layout";
 
 const UUID_V4 =
@@ -24,8 +22,9 @@ export function validateWidgetLayout(
   }
 
   const ids = new Set<string>();
+  const stackOrders = new Set<number>();
   for (const widget of widgets) {
-    if (!UUID_V4.test(widget.id) || !hasValidGridValues(widget)) {
+    if (!UUID_V4.test(widget.id) || !hasValidWindowValues(widget)) {
       throw new AppError(WIDGET_ERRORS.INVALID_LAYOUT);
     }
 
@@ -33,50 +32,37 @@ export function validateWidgetLayout(
       throw new AppError(WIDGET_ERRORS.DUPLICATE_WIDGET_ID);
     }
     ids.add(widget.id);
-  }
-
-  for (let leftIndex = 0; leftIndex < widgets.length; leftIndex += 1) {
-    const left = widgets[leftIndex];
-    if (!left) {
-      continue;
+    if (stackOrders.has(widget.stackOrder)) {
+      throw new AppError(WIDGET_ERRORS.DUPLICATE_STACK_ORDER);
     }
-
-    for (
-      let rightIndex = leftIndex + 1;
-      rightIndex < widgets.length;
-      rightIndex += 1
-    ) {
-      const right = widgets[rightIndex];
-      if (right && widgetsOverlap(left, right)) {
-        throw new AppError(WIDGET_ERRORS.WIDGET_COLLISION);
-      }
-    }
+    stackOrders.add(widget.stackOrder);
   }
 
   return sortWidgetLayouts(cloneWidgetLayouts(widgets));
 }
 
-function hasValidGridValues(widget: WidgetLayout): boolean {
+function hasValidWindowValues(widget: WidgetLayout): boolean {
   const values = [
-    widget.position.column,
-    widget.position.row,
-    widget.size.columns,
-    widget.size.rows,
+    widget.position.x,
+    widget.position.y,
+    widget.size.width,
+    widget.size.height,
+    widget.stackOrder,
   ];
   if (!values.every(Number.isSafeInteger)) {
     return false;
   }
 
-  const sizePolicy = WIDGET_SIZE_BY_TYPE[widget.type];
+  const sizePolicy = WIDGET_WINDOW_POLICY[widget.type];
   return (
-    widget.position.column >= 0 &&
-    widget.position.column < GRID_COLUMN_COUNT &&
-    widget.position.row >= 0 &&
-    widget.position.row <= GRID_MAX_START_ROW &&
-    widget.size.columns >= sizePolicy.MIN_COLUMNS &&
-    widget.size.columns <= sizePolicy.MAX_COLUMNS &&
-    widget.size.rows >= sizePolicy.MIN_ROWS &&
-    widget.size.rows <= sizePolicy.MAX_ROWS &&
-    widget.position.column + widget.size.columns <= GRID_COLUMN_COUNT
+    widget.position.x >= WINDOW_POSITION_LIMITS.MIN_X &&
+    widget.position.x <= WINDOW_POSITION_LIMITS.MAX_X &&
+    widget.position.y >= WINDOW_POSITION_LIMITS.MIN_Y &&
+    widget.position.y <= WINDOW_POSITION_LIMITS.MAX_Y &&
+    widget.size.width >= sizePolicy.MIN_WIDTH &&
+    widget.size.width <= sizePolicy.MAX_WIDTH &&
+    widget.size.height >= sizePolicy.MIN_HEIGHT &&
+    widget.size.height <= sizePolicy.MAX_HEIGHT &&
+    widget.stackOrder >= 0
   );
 }

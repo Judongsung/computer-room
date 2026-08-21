@@ -11,12 +11,13 @@ import {
   MAX_BROWSER_TIMER_DELAY_MILLISECONDS,
 } from "../../constants/checklist";
 import { CHECKLIST_WIDGET_COPY } from "../../constants/content";
-import { LUNA_TITLE_BAR_ACTION } from "../../constants/luna";
+import { WIDGET_ICON_PATH_BY_TYPE } from "../../constants/desktop";
+import { XP_WIDGET_TOOLBAR_ACTION } from "../../constants/xp";
 import type { DashboardGateway } from "../../types/api";
-import { LunaTitleBarButton } from "../ui/luna-title-bar-button";
+import { XpWidgetToolbarButton } from "../ui/xp-widget-toolbar-button";
 import { ChecklistLogDialog } from "./checklist-log-dialog";
 import { WidgetCard } from "./widget-card";
-import type { WidgetComponentProps } from "./widget-renderer";
+import type { WidgetComponentProps } from "../../types/desktop";
 
 export function DailyChecklistWidget(props: WidgetComponentProps) {
   if (props.widget.type !== WIDGET_TYPE.DAILY_CHECKLIST) {
@@ -31,8 +32,7 @@ type DailyChecklistContentProps = Omit<WidgetComponentProps, "widget"> & {
 
 function DailyChecklistContent({
   widget,
-  isEditingLayout,
-  onDelete,
+  windowControls,
   gateway,
   onWidgetChange,
 }: DailyChecklistContentProps) {
@@ -43,7 +43,7 @@ function DailyChecklistContent({
   const [isMutating, setIsMutating] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const canEditItems = isEditingItems && !isEditingLayout;
+  const canEditItems = isEditingItems;
 
   const publish = useCallback(
     (data: DailyChecklistData): void => {
@@ -91,15 +91,6 @@ function DailyChecklistContent({
       window.removeEventListener("focus", refreshWhenVisible);
     };
   }, [refresh]);
-
-  useEffect(() => {
-    if (isEditingLayout) {
-      setIsEditingItems(false);
-      setNewLabel("");
-      setEditingItemId(null);
-      setEditingLabel("");
-    }
-  }, [isEditingLayout]);
 
   const addItem = async (): Promise<void> => {
     if (!canEditItems || isMutating) {
@@ -194,21 +185,20 @@ function DailyChecklistContent({
     <>
       <WidgetCard
         title={CHECKLIST_WIDGET_COPY.TITLE}
-        deleteLabel={CHECKLIST_WIDGET_COPY.DELETE_LABEL}
-        isEditingLayout={isEditingLayout}
-        onDelete={onDelete}
-        headerActions={
+        iconPath={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.DAILY_CHECKLIST]}
+        windowControls={windowControls}
+        toolbarActions={
           <>
-            <LunaTitleBarButton
-              action={LUNA_TITLE_BAR_ACTION.HISTORY}
+            <XpWidgetToolbarButton
+              action={XP_WIDGET_TOOLBAR_ACTION.HISTORY}
               label={CHECKLIST_WIDGET_COPY.DETAILS}
               onClick={() => setShowLogs(true)}
             />
-            <LunaTitleBarButton
+            <XpWidgetToolbarButton
               action={
                 isEditingItems
-                  ? LUNA_TITLE_BAR_ACTION.COMPLETE
-                  : LUNA_TITLE_BAR_ACTION.EDIT
+                  ? XP_WIDGET_TOOLBAR_ACTION.COMPLETE
+                  : XP_WIDGET_TOOLBAR_ACTION.EDIT
               }
               label={
                 isEditingItems
@@ -251,12 +241,12 @@ function DailyChecklistContent({
                         onChange={(event) =>
                           setEditingLabel(event.currentTarget.value)
                         }
-                        disabled={isMutating || isEditingLayout}
+                        disabled={isMutating}
                         aria-label={CHECKLIST_WIDGET_COPY.EDIT_ITEM}
                       />
                       <button
                         type="submit"
-                        disabled={isMutating || isEditingLayout}
+                        disabled={isMutating}
                       >
                         {CHECKLIST_WIDGET_COPY.SAVE_ITEM}
                       </button>
@@ -264,7 +254,7 @@ function DailyChecklistContent({
                         className="secondary-button"
                         type="button"
                         onClick={() => setEditingItemId(null)}
-                        disabled={isMutating || isEditingLayout}
+                        disabled={isMutating}
                       >
                         {CHECKLIST_WIDGET_COPY.CANCEL_ITEM}
                       </button>
@@ -276,7 +266,7 @@ function DailyChecklistContent({
                           id={checklistItemInputId(item.id)}
                           type="checkbox"
                           checked={item.checked}
-                          disabled={isEditingLayout || isMutating}
+                          disabled={isMutating}
                           onChange={(event) =>
                             void toggleItem(item, event.currentTarget.checked)
                           }

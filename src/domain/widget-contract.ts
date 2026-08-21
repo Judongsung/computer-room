@@ -1,5 +1,9 @@
 import { CHECKLIST_EVENT_ACTION_VALUES } from "../constants/checklist";
-import { WIDGET_TYPE } from "../constants/widget";
+import {
+  WIDGET_TYPE,
+  WINDOW_RESTORE_STATE_VALUES,
+  WINDOW_STATE_VALUES,
+} from "../constants/widget";
 import type {
   ChecklistCheckInput,
   ChecklistLabelInput,
@@ -85,8 +89,13 @@ function isDashboardWidget(value: unknown): value is DashboardWidget {
   if (
     !isRecord(value) ||
     typeof value.id !== "string" ||
-    !isGridPosition(value.position) ||
-    !isGridSize(value.size)
+    !isWindowPosition(value.position) ||
+    !isWindowSize(value.size) ||
+    !WINDOW_STATE_VALUES.some((state) => value.windowState === state) ||
+    !WINDOW_RESTORE_STATE_VALUES.some(
+      (state) => value.restoreState === state,
+    ) ||
+    typeof value.stackOrder !== "number"
   ) {
     return false;
   }
@@ -116,19 +125,19 @@ function isChecklistLogEvent(value: unknown): value is ChecklistLogEvent {
   );
 }
 
-function isGridPosition(value: unknown): boolean {
+function isWindowPosition(value: unknown): boolean {
   return (
     isRecord(value) &&
-    typeof value.column === "number" &&
-    typeof value.row === "number"
+    typeof value.x === "number" &&
+    typeof value.y === "number"
   );
 }
 
-function isGridSize(value: unknown): boolean {
+function isWindowSize(value: unknown): boolean {
   return (
     isRecord(value) &&
-    typeof value.columns === "number" &&
-    typeof value.rows === "number"
+    typeof value.width === "number" &&
+    typeof value.height === "number"
   );
 }
 

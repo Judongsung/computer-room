@@ -1,23 +1,36 @@
-import type { WIDGET_TYPE } from "../constants/widget";
+import type {
+  WIDGET_TYPE,
+  WINDOW_RESTORE_STATE,
+  WINDOW_STATE,
+} from "../constants/widget";
 import type { CHECKLIST_EVENT_ACTION } from "../constants/checklist";
 
 export type WidgetType = (typeof WIDGET_TYPE)[keyof typeof WIDGET_TYPE];
 
-export interface GridPosition {
-  readonly column: number;
-  readonly row: number;
+export type WindowState =
+  (typeof WINDOW_STATE)[keyof typeof WINDOW_STATE];
+
+export type WindowRestoreState =
+  (typeof WINDOW_RESTORE_STATE)[keyof typeof WINDOW_RESTORE_STATE];
+
+export interface WindowPosition {
+  readonly x: number;
+  readonly y: number;
 }
 
-export interface GridSize {
-  readonly columns: number;
-  readonly rows: number;
+export interface WindowSize {
+  readonly width: number;
+  readonly height: number;
 }
 
 export interface WidgetLayout {
   readonly id: string;
   readonly type: WidgetType;
-  readonly position: GridPosition;
-  readonly size: GridSize;
+  readonly position: WindowPosition;
+  readonly size: WindowSize;
+  readonly windowState: WindowState;
+  readonly restoreState: WindowRestoreState;
+  readonly stackOrder: number;
 }
 
 export interface WidgetLayoutCollection {

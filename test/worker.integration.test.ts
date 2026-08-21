@@ -18,13 +18,18 @@ import {
   HTTP_METHOD,
   HTTP_STATUS,
 } from "../src/constants/http";
-import { WIDGET_SIZE_BY_TYPE, WIDGET_TYPE } from "../src/constants/widget";
+import {
+  WIDGET_TYPE,
+  WIDGET_WINDOW_POLICY,
+  WINDOW_RESTORE_STATE,
+  WINDOW_STATE,
+} from "../src/constants/widget";
 
 const ORIGIN = "http://localhost";
 const TEST_MEDIA_TYPE = {
   TEXT: "text/plain",
 } as const;
-const MEMO_WIDGET_SIZE = WIDGET_SIZE_BY_TYPE[WIDGET_TYPE.MEMO];
+const MEMO_WINDOW_POLICY = WIDGET_WINDOW_POLICY[WIDGET_TYPE.MEMO];
 
 beforeEach(async () => {
   await env.DB.prepare("DELETE FROM files").run();
@@ -131,20 +136,26 @@ describe("computer-room Worker", () => {
       {
         id: "00000000-0000-4000-8000-000000000001",
         type: WIDGET_TYPE.MEMO,
-        position: { column: 0, row: 0 },
+        position: { x: 32, y: 32 },
         size: {
-          columns: MEMO_WIDGET_SIZE.DEFAULT_COLUMNS,
-          rows: MEMO_WIDGET_SIZE.DEFAULT_ROWS,
+          width: MEMO_WINDOW_POLICY.DEFAULT_WIDTH,
+          height: MEMO_WINDOW_POLICY.DEFAULT_HEIGHT,
         },
+        windowState: WINDOW_STATE.NORMAL,
+        restoreState: WINDOW_RESTORE_STATE.NORMAL,
+        stackOrder: 0,
       },
       {
         id: "00000000-0000-4000-8000-000000000002",
         type: WIDGET_TYPE.MEMO,
-        position: { column: MEMO_WIDGET_SIZE.DEFAULT_COLUMNS, row: 0 },
+        position: { x: 64, y: 64 },
         size: {
-          columns: MEMO_WIDGET_SIZE.DEFAULT_COLUMNS,
-          rows: MEMO_WIDGET_SIZE.DEFAULT_ROWS,
+          width: MEMO_WINDOW_POLICY.DEFAULT_WIDTH,
+          height: MEMO_WINDOW_POLICY.DEFAULT_HEIGHT,
         },
+        windowState: WINDOW_STATE.NORMAL,
+        restoreState: WINDOW_RESTORE_STATE.NORMAL,
+        stackOrder: 1,
       },
     ];
 
@@ -176,28 +187,34 @@ describe("computer-room Worker", () => {
       {
         id: "00000000-0000-4000-8000-000000000001",
         type: WIDGET_TYPE.MEMO,
-        position: { column: 0, row: 0 },
+        position: { x: 32, y: 32 },
         size: {
-          columns: MEMO_WIDGET_SIZE.DEFAULT_COLUMNS,
-          rows: MEMO_WIDGET_SIZE.DEFAULT_ROWS,
+          width: MEMO_WINDOW_POLICY.DEFAULT_WIDTH,
+          height: MEMO_WINDOW_POLICY.DEFAULT_HEIGHT,
         },
+        windowState: WINDOW_STATE.NORMAL,
+        restoreState: WINDOW_RESTORE_STATE.NORMAL,
+        stackOrder: 0,
       },
     ];
     expect((await saveWidgets(original)).status).toBe(HTTP_STATUS.OK);
 
-    const collision = await saveWidgets([
+    const duplicateStackOrder = await saveWidgets([
       ...original,
       {
         id: "00000000-0000-4000-8000-000000000002",
         type: WIDGET_TYPE.MEMO,
-        position: { column: 2, row: 1 },
+        position: { x: 48, y: 48 },
         size: {
-          columns: MEMO_WIDGET_SIZE.DEFAULT_COLUMNS,
-          rows: MEMO_WIDGET_SIZE.DEFAULT_ROWS,
+          width: MEMO_WINDOW_POLICY.DEFAULT_WIDTH,
+          height: MEMO_WINDOW_POLICY.DEFAULT_HEIGHT,
         },
+        windowState: WINDOW_STATE.NORMAL,
+        restoreState: WINDOW_RESTORE_STATE.NORMAL,
+        stackOrder: 0,
       },
     ]);
-    expect(collision.status).toBe(HTTP_STATUS.BAD_REQUEST);
+    expect(duplicateStackOrder.status).toBe(HTTP_STATUS.BAD_REQUEST);
 
     const typeChange = await saveWidgets([
       { ...original[0]!, type: WIDGET_TYPE.DAILY_CHECKLIST },
@@ -228,11 +245,14 @@ describe("computer-room Worker", () => {
     const layout = {
       id,
       type: WIDGET_TYPE.MEMO,
-      position: { column: 0, row: 0 },
+      position: { x: 32, y: 32 },
       size: {
-        columns: MEMO_WIDGET_SIZE.DEFAULT_COLUMNS,
-        rows: MEMO_WIDGET_SIZE.DEFAULT_ROWS,
+        width: MEMO_WINDOW_POLICY.DEFAULT_WIDTH,
+        height: MEMO_WINDOW_POLICY.DEFAULT_HEIGHT,
       },
+      windowState: WINDOW_STATE.NORMAL,
+      restoreState: WINDOW_RESTORE_STATE.NORMAL,
+      stackOrder: 0,
     };
     expect((await saveWidgets([layout])).status).toBe(HTTP_STATUS.OK);
 
@@ -246,7 +266,7 @@ describe("computer-room Worker", () => {
     expect(
       (
         await saveWidgets([
-          { ...layout, position: { column: 3, row: 4 } },
+          { ...layout, position: { x: 303, y: 240 } },
         ])
       ).status,
     ).toBe(HTTP_STATUS.OK);
@@ -256,7 +276,7 @@ describe("computer-room Worker", () => {
       items: [
         {
           ...layout,
-          position: { column: 3, row: 4 },
+          position: { x: 303, y: 240 },
           data: {
             markdown: "# 오늘의 메모\n\n**중요**",
             updatedAt: expect.any(String),
@@ -275,15 +295,18 @@ describe("computer-room Worker", () => {
 
   it("manages daily checklist items and records each actual state change", async () => {
     const widgetId = "00000000-0000-4000-8000-000000000021";
-    const checklistSize = WIDGET_SIZE_BY_TYPE[WIDGET_TYPE.DAILY_CHECKLIST];
+    const checklistSize = WIDGET_WINDOW_POLICY[WIDGET_TYPE.DAILY_CHECKLIST];
     const layout = {
       id: widgetId,
       type: WIDGET_TYPE.DAILY_CHECKLIST,
-      position: { column: 0, row: 0 },
+      position: { x: 32, y: 32 },
       size: {
-        columns: checklistSize.DEFAULT_COLUMNS,
-        rows: checklistSize.DEFAULT_ROWS,
+        width: checklistSize.DEFAULT_WIDTH,
+        height: checklistSize.DEFAULT_HEIGHT,
       },
+      windowState: WINDOW_STATE.NORMAL,
+      restoreState: WINDOW_RESTORE_STATE.NORMAL,
+      stackOrder: 0,
     };
     expect((await saveWidgets([layout])).status).toBe(HTTP_STATUS.OK);
 

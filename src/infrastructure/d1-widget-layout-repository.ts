@@ -1,5 +1,9 @@
 import { WIDGET_ERRORS } from "../constants/errors/widget";
-import { WIDGET_TYPE_VALUES } from "../constants/widget";
+import {
+  WIDGET_TYPE_VALUES,
+  WINDOW_RESTORE_STATE_VALUES,
+  WINDOW_STATE_VALUES,
+} from "../constants/widget";
 import { AppError } from "../domain/errors";
 import type { WidgetRow } from "../types/database";
 import type { WidgetLayout } from "../types/widget";
@@ -11,9 +15,10 @@ export class D1WidgetLayoutRepository implements WidgetLayoutRepository {
   async list(): Promise<WidgetLayout[]> {
     const result = await this.database
       .prepare(
-        `SELECT id, type, grid_column, grid_row, grid_columns, grid_rows
+        `SELECT id, type, position_x, position_y, width, height,
+                window_state, restore_state, stack_order
          FROM dashboard_widgets
-         ORDER BY grid_row ASC, grid_column ASC, id ASC`,
+         ORDER BY stack_order ASC, id ASC`,
       )
       .all<WidgetRow>();
 
@@ -23,7 +28,8 @@ export class D1WidgetLayoutRepository implements WidgetLayoutRepository {
   async findById(id: string): Promise<WidgetLayout | null> {
     const row = await this.database
       .prepare(
-        `SELECT id, type, grid_column, grid_row, grid_columns, grid_rows
+        `SELECT id, type, position_x, position_y, width, height,
+                window_state, restore_state, stack_order
          FROM dashboard_widgets
          WHERE id = ?1`,
       )
@@ -41,21 +47,28 @@ export class D1WidgetLayoutRepository implements WidgetLayoutRepository {
         this.database
           .prepare(
             `INSERT INTO dashboard_widgets (
-              id, type, grid_column, grid_row, grid_columns, grid_rows
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+              id, type, position_x, position_y, width, height,
+              window_state, restore_state, stack_order
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
             ON CONFLICT(id) DO UPDATE SET
-              grid_column = excluded.grid_column,
-              grid_row = excluded.grid_row,
-              grid_columns = excluded.grid_columns,
-              grid_rows = excluded.grid_rows`,
+              position_x = excluded.position_x,
+              position_y = excluded.position_y,
+              width = excluded.width,
+              height = excluded.height,
+              window_state = excluded.window_state,
+              restore_state = excluded.restore_state,
+              stack_order = excluded.stack_order`,
           )
           .bind(
             widget.id,
             widget.type,
-            widget.position.column,
-            widget.position.row,
-            widget.size.columns,
-            widget.size.rows,
+            widget.position.x,
+            widget.position.y,
+            widget.size.width,
+            widget.size.height,
+            widget.windowState,
+            widget.restoreState,
+            widget.stackOrder,
           ),
       );
     }
@@ -77,7 +90,13 @@ export class D1WidgetLayoutRepository implements WidgetLayoutRepository {
 
 function mapWidgetRow(row: WidgetRow): WidgetLayout {
   const type = WIDGET_TYPE_VALUES.find((candidate) => candidate === row.type);
-  if (!type) {
+  const windowState = WINDOW_STATE_VALUES.find(
+    (candidate) => candidate === row.window_state,
+  );
+  const restoreState = WINDOW_RESTORE_STATE_VALUES.find(
+    (candidate) => candidate === row.restore_state,
+  );
+  if (!type || !windowState || !restoreState) {
     throw new AppError(WIDGET_ERRORS.INVALID_STORED_WIDGET);
   }
 
@@ -85,12 +104,15 @@ function mapWidgetRow(row: WidgetRow): WidgetLayout {
     id: row.id,
     type,
     position: {
-      column: row.grid_column,
-      row: row.grid_row,
+      x: row.position_x,
+      y: row.position_y,
     },
     size: {
-      columns: row.grid_columns,
-      rows: row.grid_rows,
+      width: row.width,
+      height: row.height,
     },
+    windowState,
+    restoreState,
+    stackOrder: row.stack_order,
   };
 }

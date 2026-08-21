@@ -18,10 +18,10 @@ export const WIDGET_ERRORS = {
     code: "DUPLICATE_WIDGET_ID",
     message: "중복된 위젯 ID가 있습니다.",
   },
-  WIDGET_COLLISION: {
+  DUPLICATE_STACK_ORDER: {
     status: HTTP_STATUS.BAD_REQUEST,
-    code: "WIDGET_COLLISION",
-    message: "서로 겹치는 위젯이 있습니다.",
+    code: "DUPLICATE_WIDGET_STACK_ORDER",
+    message: "중복된 위젯 창 순서가 있습니다.",
   },
   INVALID_STORED_WIDGET: {
     status: HTTP_STATUS.INTERNAL_SERVER_ERROR,

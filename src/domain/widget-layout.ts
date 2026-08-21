@@ -1,13 +1,11 @@
 import {
-  GRID_COLUMN_COUNT,
-  GRID_MAX_START_ROW,
   WIDGET_TYPE,
   WIDGET_TYPE_VALUES,
+  WINDOW_RESTORE_STATE_VALUES,
+  WINDOW_STATE_VALUES,
 } from "../constants/widget";
 import type {
   DashboardWidget,
-  GridPosition,
-  GridSize,
   WidgetLayout,
   WidgetLayoutCollection,
 } from "../types/widget";
@@ -27,8 +25,7 @@ export function sortWidgetLayouts<T extends WidgetLayout>(
 ): T[] {
   return [...widgets].sort(
     (left, right) =>
-      left.position.row - right.position.row ||
-      left.position.column - right.position.column ||
+      left.stackOrder - right.stackOrder ||
       left.id.localeCompare(right.id),
   );
 }
@@ -41,6 +38,9 @@ export function cloneWidgetLayouts(
     type: widget.type,
     position: { ...widget.position },
     size: { ...widget.size },
+    windowState: widget.windowState,
+    restoreState: widget.restoreState,
+    stackOrder: widget.stackOrder,
   }));
 }
 
@@ -50,6 +50,9 @@ export function toWidgetLayout(widget: WidgetLayout): WidgetLayout {
     type: widget.type,
     position: { ...widget.position },
     size: { ...widget.size },
+    windowState: widget.windowState,
+    restoreState: widget.restoreState,
+    stackOrder: widget.stackOrder,
   };
 }
 
@@ -76,6 +79,36 @@ export function cloneDashboardWidgets(
   });
 }
 
+export function replaceDashboardWidgetData(
+  widgets: readonly DashboardWidget[],
+  replacement: DashboardWidget,
+): DashboardWidget[] {
+  return widgets.map((widget) => {
+    if (widget.id !== replacement.id || widget.type !== replacement.type) {
+      return widget;
+    }
+    if (
+      widget.type === WIDGET_TYPE.MEMO &&
+      replacement.type === WIDGET_TYPE.MEMO
+    ) {
+      return { ...widget, data: { ...replacement.data } };
+    }
+    if (
+      widget.type === WIDGET_TYPE.DAILY_CHECKLIST &&
+      replacement.type === WIDGET_TYPE.DAILY_CHECKLIST
+    ) {
+      return {
+        ...widget,
+        data: {
+          ...replacement.data,
+          items: replacement.data.items.map((item) => ({ ...item })),
+        },
+      };
+    }
+    return widget;
+  });
+}
+
 export function widgetLayoutsEqual(
   left: readonly WidgetLayout[],
   right: readonly WidgetLayout[],
@@ -92,48 +125,15 @@ export function widgetLayoutsEqual(
       candidate !== undefined &&
       widget.id === candidate.id &&
       widget.type === candidate.type &&
-      widget.position.column === candidate.position.column &&
-      widget.position.row === candidate.position.row &&
-      widget.size.columns === candidate.size.columns &&
-      widget.size.rows === candidate.size.rows
+      widget.position.x === candidate.position.x &&
+      widget.position.y === candidate.position.y &&
+      widget.size.width === candidate.size.width &&
+      widget.size.height === candidate.size.height &&
+      widget.windowState === candidate.windowState &&
+      widget.restoreState === candidate.restoreState &&
+      widget.stackOrder === candidate.stackOrder
     );
   });
-}
-
-export function widgetsOverlap(
-  left: Pick<WidgetLayout, "position" | "size">,
-  right: Pick<WidgetLayout, "position" | "size">,
-): boolean {
-  return (
-    left.position.column < right.position.column + right.size.columns &&
-    left.position.column + left.size.columns > right.position.column &&
-    left.position.row < right.position.row + right.size.rows &&
-    left.position.row + left.size.rows > right.position.row
-  );
-}
-
-export function findFirstAvailablePosition(
-  widgets: readonly WidgetLayout[],
-  size: GridSize,
-): GridPosition | null {
-  for (let row = 0; row <= GRID_MAX_START_ROW; row += 1) {
-    for (
-      let column = 0;
-      column <= GRID_COLUMN_COUNT - size.columns;
-      column += 1
-    ) {
-      const candidate = {
-        position: { column, row },
-        size,
-      };
-
-      if (!widgets.some((widget) => widgetsOverlap(candidate, widget))) {
-        return candidate.position;
-      }
-    }
-  }
-
-  return null;
 }
 
 function isWidgetLayout(value: unknown): value is WidgetLayout {
@@ -144,10 +144,15 @@ function isWidgetLayout(value: unknown): value is WidgetLayout {
   return (
     typeof value.id === "string" &&
     WIDGET_TYPE_VALUES.some((type) => value.type === type) &&
-    typeof value.position.column === "number" &&
-    typeof value.position.row === "number" &&
-    typeof value.size.columns === "number" &&
-    typeof value.size.rows === "number"
+    typeof value.position.x === "number" &&
+    typeof value.position.y === "number" &&
+    typeof value.size.width === "number" &&
+    typeof value.size.height === "number" &&
+    WINDOW_STATE_VALUES.some((state) => value.windowState === state) &&
+    WINDOW_RESTORE_STATE_VALUES.some(
+      (state) => value.restoreState === state,
+    ) &&
+    typeof value.stackOrder === "number"
   );
 }
 

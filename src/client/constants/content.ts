@@ -1,24 +1,33 @@
+import { WIDGET_TYPE } from "../../constants/widget";
+import { LAYOUT_SAVE_STATUS } from "./layout-save";
+
 export const SITE_COPY = {
   TITLE: "computer-room",
-  TAGLINE: "나만의 위젯 홈페이지",
-  LOGOUT: "로그아웃",
 } as const;
 
 export const DASHBOARD_COPY = {
-  TITLE: "홈",
-  DESCRIPTION: "원하는 기능을 위젯으로 배치하는 개인 공간입니다.",
   RETRY: "다시 시도",
-  EDIT: "꾸미기",
-  ADD_MEMO_WIDGET: "메모 추가",
-  ADD_CHECKLIST_WIDGET: "일일 체크리스트 추가",
-  SAVE: "저장",
+  CONFIRM: "확인",
+  START: "시작",
+  START_MENU: "시작 메뉴",
+  ADD_MEMO_WIDGET: "새 메모",
+  ADD_CHECKLIST_WIDGET: "새 일일 체크리스트",
+  PROGRAMS: "위젯",
+  PERSONAL_SPACE: "개인 공간",
+  ACCESS_PROTECTED: "Cloudflare Access로 보호됨",
+  POWER: "로그아웃",
+  POWER_DESCRIPTION: "Cloudflare Access 세션 종료",
+  SAVE_PENDING: "저장 대기 중",
   SAVING: "저장 중…",
-  CANCEL: "취소",
-  EDIT_TOOLS_LABEL: "위젯 편집 도구",
-} as const;
-
-export const WIDGET_COPY = {
-  DELETE_CONFIRM: "이 위젯의 내용과 로그가 모두 삭제됩니다. 위젯을 제거할까요?",
+  SAVE_COMPLETE: "저장됨",
+  SAVE_FAILED: "저장 실패",
+  CLOSE_DISABLED: "위젯 닫기는 다음 버전에서 지원합니다.",
+  MINIMIZE: "최소화",
+  MAXIMIZE: "최대화",
+  RESTORE: "이전 크기로",
+  EMPTY_DESKTOP: "시작 메뉴에서 위젯을 추가하세요.",
+  DESKTOP: "computer-room 바탕 화면",
+  TASKBAR: "작업 표시줄",
 } as const;
 
 export const MEMO_WIDGET_COPY = {
@@ -33,7 +42,6 @@ export const MEMO_WIDGET_COPY = {
   EMPTY_CONTENT: "작성된 메모가 없습니다.",
   EDITOR_LABEL: "마크다운 메모 내용",
   SAVE_FAILED: "메모를 저장하지 못했습니다.",
-  DELETE_LABEL: "메모 위젯 삭제",
 } as const;
 
 export const CHECKLIST_WIDGET_COPY = {
@@ -49,7 +57,6 @@ export const CHECKLIST_WIDGET_COPY = {
   CANCEL_ITEM: "취소",
   DELETE_ITEM: "삭제",
   DELETE_ITEM_CONFIRM: "이 항목을 삭제할까요? 과거 로그는 유지됩니다.",
-  DELETE_LABEL: "일일 체크리스트 위젯 삭제",
   LOAD_FAILED: "체크리스트를 불러오지 못했습니다.",
   CHANGE_FAILED: "체크리스트를 변경하지 못했습니다.",
   LOG_TITLE: "체크리스트 로그",
@@ -63,4 +70,17 @@ export const CHECKLIST_WIDGET_COPY = {
   DELETED: "삭제",
   CHECKED: "체크",
   UNCHECKED: "체크 취소",
+} as const;
+
+export const WIDGET_TITLE_BY_TYPE = {
+  [WIDGET_TYPE.MEMO]: MEMO_WIDGET_COPY.TITLE,
+  [WIDGET_TYPE.DAILY_CHECKLIST]: CHECKLIST_WIDGET_COPY.TITLE,
+} as const;
+
+export const LAYOUT_SAVE_COPY_BY_STATUS = {
+  [LAYOUT_SAVE_STATUS.IDLE]: "",
+  [LAYOUT_SAVE_STATUS.PENDING]: DASHBOARD_COPY.SAVE_PENDING,
+  [LAYOUT_SAVE_STATUS.SAVING]: DASHBOARD_COPY.SAVING,
+  [LAYOUT_SAVE_STATUS.SAVED]: DASHBOARD_COPY.SAVE_COMPLETE,
+  [LAYOUT_SAVE_STATUS.ERROR]: DASHBOARD_COPY.SAVE_FAILED,
 } as const;
