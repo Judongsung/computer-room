@@ -14,6 +14,7 @@ const ITEM_ID = "00000000-0000-4000-8000-000000000102";
 const FIRST_EVENT_ID = "00000000-0000-4000-8000-000000000103";
 const DUPLICATE_EVENT_ID = "00000000-0000-4000-8000-000000000104";
 const NEXT_DAY_EVENT_ID = "00000000-0000-4000-8000-000000000105";
+const NEXT_DAY_CHANGE_EVENT_ID = "00000000-0000-4000-8000-000000000106";
 
 describe("ChecklistService", () => {
   it("resets state at Korea midnight and records only actual changes", async () => {
@@ -42,6 +43,7 @@ describe("ChecklistService", () => {
         FIRST_EVENT_ID,
         DUPLICATE_EVENT_ID,
         NEXT_DAY_EVENT_ID,
+        NEXT_DAY_CHANGE_EVENT_ID,
       ]),
       clock,
     );
@@ -55,7 +57,7 @@ describe("ChecklistService", () => {
       businessDate: "2026-08-20",
       items: [{ ...item, checked: true }],
     });
-    expect(repository.events).toHaveLength(1);
+    expect(repository.events).toHaveLength(2);
 
     clock.timestamp = Date.parse("2026-08-20T15:00:00.000Z");
     await expect(service.getChecklist(WIDGET_ID)).resolves.toMatchObject({
@@ -67,13 +69,18 @@ describe("ChecklistService", () => {
     const logs = await service.listLogs(WIDGET_ID, 0, 50);
     expect(logs.items).toEqual([
       expect.objectContaining({
-        id: NEXT_DAY_EVENT_ID,
+        id: NEXT_DAY_CHANGE_EVENT_ID,
         action: CHECKLIST_EVENT_ACTION.CHECKED,
         businessDate: "2026-08-21",
       }),
       expect.objectContaining({
-        id: FIRST_EVENT_ID,
+        id: DUPLICATE_EVENT_ID,
         action: CHECKLIST_EVENT_ACTION.CHECKED,
+        businessDate: "2026-08-20",
+      }),
+      expect.objectContaining({
+        id: FIRST_EVENT_ID,
+        action: CHECKLIST_EVENT_ACTION.ADDED,
         businessDate: "2026-08-20",
       }),
     ]);

@@ -1,6 +1,9 @@
 :root {
   color-scheme: light;
-  font-family: "Pixelated MS Sans Serif", "Malgun Gothic", Arial, sans-serif;
+  --luna-font-family-ui: Tahoma, "Gulim", "굴림", "Malgun Gothic", Arial,
+    sans-serif;
+  --luna-font-family-title: "Trebuchet MS", "Malgun Gothic", sans-serif;
+  font-family: var(--luna-font-family-ui);
   line-height: 1.45;
   color: #222;
   --luna-surface: #ece9d8;
@@ -9,6 +12,10 @@
   --luna-border: #7f9db9;
   --luna-error: #a4001b;
   --luna-success: #126c2e;
+  --luna-font-size-page: 15px;
+  --luna-font-size-ui: 14px;
+  --luna-font-size-title: 16px;
+  --luna-font-size-small: 12px;
   background: var(--luna-blue);
   font-synthesis: none;
 }
@@ -27,7 +34,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   margin: 0;
-  font-family: "Pixelated MS Sans Serif", "Malgun Gothic", Arial, sans-serif;
+  font-family: var(--luna-font-family-ui);
+  font-size: var(--luna-font-size-page);
   line-height: 1.45;
   background:
     radial-gradient(circle at 50% -20%, rgb(119 190 255 / 85%), transparent 46%),
@@ -42,12 +50,21 @@ body {
 
 button,
 input,
+label,
 textarea {
-  font-family: "Pixelated MS Sans Serif", "Malgun Gothic", Arial, sans-serif;
+  font-family: var(--luna-font-family-ui);
+  font-size: var(--luna-font-size-ui);
 }
 
 button {
+  min-height: 26px;
   cursor: pointer;
+}
+
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+  height: 26px;
 }
 
 button:disabled {
@@ -75,13 +92,26 @@ p {
   margin-top: 0;
 }
 
+small {
+  font-size: var(--luna-font-size-small);
+}
+
+.window {
+  font-size: var(--luna-font-size-ui);
+}
+
+.title-bar {
+  height: 29px;
+  font-size: var(--luna-font-size-title);
+}
+
 .title-bar h1,
 .title-bar h2,
 .title-bar h3 {
   overflow: hidden;
   margin: 0;
-  font-family: "Trebuchet MS", "Malgun Gothic", sans-serif;
-  font-size: 13px;
+  font-family: var(--luna-font-family-title);
+  font-size: var(--luna-font-size-title);
   line-height: 1.2;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -89,6 +119,7 @@ p {
 
 .title-bar-text {
   min-width: 0;
+  padding-inline: 6px;
 }
 
 .title-bar-controls {
@@ -367,19 +398,19 @@ p {
 }
 
 .markdown-content h1 {
-  font-size: 20px;
+  font-size: 23px;
 }
 
 .markdown-content h2 {
-  font-size: 17px;
+  font-size: 20px;
 }
 
 .markdown-content h3 {
-  font-size: 15px;
+  font-size: 18px;
 }
 
 .markdown-content h4 {
-  font-size: 13px;
+  font-size: 16px;
 }
 
 .markdown-content img {
@@ -389,7 +420,7 @@ p {
 .markdown-content pre {
   overflow: auto;
   padding: 9px;
-  font-size: 12px;
+  font-size: 15px;
 }
 
 .markdown-content table {
@@ -543,7 +574,7 @@ p {
 
 .checklist-log-group h4 {
   margin: 0;
-  font-size: 14px;
+  font-size: 17px;
 }
 
 .checklist-log-group ol {
@@ -650,6 +681,10 @@ p {
     width: 100%;
     align-items: flex-start;
     justify-content: space-between;
+  }
+
+  .title-bar {
+    height: 34px;
   }
 
   .title-bar-controls .luna-title-bar-button {

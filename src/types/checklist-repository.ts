@@ -1,8 +1,10 @@
 import type {
+  ArchiveChecklistItemRecord,
   ChecklistEventRecord,
   ChecklistItemRecord,
   CreateChecklistItemRecord,
   SetChecklistStateRecord,
+  UpdateChecklistItemRecord,
 } from "./checklist";
 
 export interface ChecklistRepository {
@@ -18,17 +20,8 @@ export interface ChecklistRepository {
     itemId: string,
     businessDate: string,
   ): Promise<ChecklistItemRecord | null>;
-  updateItemLabel(
-    widgetId: string,
-    itemId: string,
-    label: string,
-    updatedAt: number,
-  ): Promise<void>;
-  archiveItem(
-    widgetId: string,
-    itemId: string,
-    archivedAt: number,
-  ): Promise<void>;
+  updateItemLabel(record: UpdateChecklistItemRecord): Promise<void>;
+  archiveItem(record: ArchiveChecklistItemRecord): Promise<void>;
   setChecked(record: SetChecklistStateRecord): Promise<boolean>;
   listEvents(
     widgetId: string,

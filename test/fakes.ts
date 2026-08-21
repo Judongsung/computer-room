@@ -11,10 +11,12 @@ import type { MemoRepository } from "../src/types/memo-repository";
 import type { MemoRecord } from "../src/types/memo";
 import type { ChecklistRepository } from "../src/types/checklist-repository";
 import type {
+  ArchiveChecklistItemRecord,
   ChecklistEventRecord,
   ChecklistItemRecord,
   CreateChecklistItemRecord,
   SetChecklistStateRecord,
+  UpdateChecklistItemRecord,
 } from "../src/types/checklist";
 import {
   CHECKLIST_EVENT_ACTION,
@@ -164,6 +166,16 @@ export class MemoryChecklistRepository implements ChecklistRepository {
         .length,
       checked: false,
     });
+    this.events.push({
+      id: record.eventId,
+      widgetId: record.widgetId,
+      itemId: record.id,
+      itemLabel: record.label,
+      previousItemLabel: null,
+      action: CHECKLIST_EVENT_ACTION.ADDED,
+      businessDate: record.businessDate,
+      occurredAt: record.createdAt,
+    });
   }
 
   async findActiveItem(
@@ -183,26 +195,44 @@ export class MemoryChecklistRepository implements ChecklistRepository {
       : null;
   }
 
-  async updateItemLabel(
-    widgetId: string,
-    itemId: string,
-    label: string,
-  ): Promise<void> {
+  async updateItemLabel(record: UpdateChecklistItemRecord): Promise<void> {
     const index = this.items.findIndex(
-      (item) => item.widgetId === widgetId && item.id === itemId,
+      (item) =>
+        item.widgetId === record.widgetId && item.id === record.itemId,
     );
     const item = this.items[index];
     if (item) {
-      this.items[index] = { ...item, label };
+      this.items[index] = { ...item, label: record.label };
+      this.events.push({
+        id: record.eventId,
+        widgetId: record.widgetId,
+        itemId: record.itemId,
+        itemLabel: record.label,
+        previousItemLabel: record.previousLabel,
+        action: CHECKLIST_EVENT_ACTION.RENAMED,
+        businessDate: record.businessDate,
+        occurredAt: record.updatedAt,
+      });
     }
   }
 
-  async archiveItem(widgetId: string, itemId: string): Promise<void> {
+  async archiveItem(record: ArchiveChecklistItemRecord): Promise<void> {
     const index = this.items.findIndex(
-      (item) => item.widgetId === widgetId && item.id === itemId,
+      (item) =>
+        item.widgetId === record.widgetId && item.id === record.itemId,
     );
     if (index >= 0) {
       this.items.splice(index, 1);
+      this.events.push({
+        id: record.eventId,
+        widgetId: record.widgetId,
+        itemId: record.itemId,
+        itemLabel: record.itemLabel,
+        previousItemLabel: null,
+        action: CHECKLIST_EVENT_ACTION.DELETED,
+        businessDate: record.businessDate,
+        occurredAt: record.archivedAt,
+      });
     }
   }
 
@@ -218,6 +248,7 @@ export class MemoryChecklistRepository implements ChecklistRepository {
       widgetId: record.widgetId,
       itemId: record.itemId,
       itemLabel: record.itemLabel,
+      previousItemLabel: null,
       action: record.checked
         ? CHECKLIST_EVENT_ACTION.CHECKED
         : CHECKLIST_EVENT_ACTION.UNCHECKED,

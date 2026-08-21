@@ -333,13 +333,25 @@ describe("computer-room Worker", () => {
       `${ORIGIN}${checklistPath(widgetId)}/${API_PATH_SEGMENTS.LOGS}`,
     );
     const logPage = (await logs.json()) as {
-      items: Array<{ action: string; itemLabel: string }>;
+      items: Array<{
+        action: string;
+        itemLabel: string;
+        previousItemLabel: string | null;
+      }>;
       nextOffset: number | null;
     };
     expect(logPage.nextOffset).toBeNull();
-    expect(logPage.items).toHaveLength(2);
+    expect(logPage.items).toHaveLength(4);
     expect(logPage.items.map(({ action, itemLabel }) => ({ action, itemLabel })))
-      .toEqual([
+      .toEqual(expect.arrayContaining([
+        {
+          action: CHECKLIST_EVENT_ACTION.ADDED,
+          itemLabel: "물 마시기",
+        },
+        {
+          action: CHECKLIST_EVENT_ACTION.RENAMED,
+          itemLabel: "물 두 잔 마시기",
+        },
         {
           action: CHECKLIST_EVENT_ACTION.UNCHECKED,
           itemLabel: "물 두 잔 마시기",
@@ -348,7 +360,14 @@ describe("computer-room Worker", () => {
           action: CHECKLIST_EVENT_ACTION.CHECKED,
           itemLabel: "물 마시기",
         },
-      ]);
+      ]));
+    expect(
+      logPage.items.find(
+        ({ action }) => action === CHECKLIST_EVENT_ACTION.RENAMED,
+      ),
+    ).toMatchObject({
+      previousItemLabel: "물 마시기",
+    });
 
     const deletion = await SELF.fetch(`${ORIGIN}${itemPath}`, {
       method: HTTP_METHOD.DELETE,
@@ -361,7 +380,21 @@ describe("computer-room Worker", () => {
       await env.DB.prepare("SELECT COUNT(*) AS count FROM checklist_events").first(
         "count",
       ),
-    ).toBe(2);
+    ).toBe(5);
+    const logsAfterDeletion = await SELF.fetch(
+      `${ORIGIN}${checklistPath(widgetId)}/${API_PATH_SEGMENTS.LOGS}`,
+    );
+    const deletionLogPage = (await logsAfterDeletion.json()) as {
+      items: Array<{ action: string; itemLabel: string }>;
+    };
+    expect(deletionLogPage.items).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          action: CHECKLIST_EVENT_ACTION.DELETED,
+          itemLabel: "물 두 잔 마시기",
+        }),
+      ]),
+    );
 
     expect((await saveWidgets([])).status).toBe(HTTP_STATUS.OK);
     expect(

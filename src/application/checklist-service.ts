@@ -60,9 +60,11 @@ export class ChecklistService implements ChecklistUseCases {
       id: this.ids.generate(),
       widgetId,
       label,
+      eventId: this.ids.generate(),
       createdAt: this.clock.now(),
     };
-    await this.checklists.insertItem(item);
+    const { businessDate } = getKoreaDateContext(item.createdAt);
+    await this.checklists.insertItem({ ...item, businessDate });
     return { id: item.id, label, checked: false };
   }
 
@@ -76,7 +78,18 @@ export class ChecklistService implements ChecklistUseCases {
     const now = this.clock.now();
     const { businessDate } = getKoreaDateContext(now);
     const item = await this.requireItem(widgetId, itemId, businessDate);
-    await this.checklists.updateItemLabel(widgetId, itemId, label, now);
+    if (item.label === label) {
+      return { id: item.id, label, checked: item.checked };
+    }
+    await this.checklists.updateItemLabel({
+      eventId: this.ids.generate(),
+      widgetId,
+      itemId,
+      previousLabel: item.label,
+      label,
+      businessDate,
+      updatedAt: now,
+    });
     return { id: item.id, label, checked: item.checked };
   }
 
@@ -84,8 +97,15 @@ export class ChecklistService implements ChecklistUseCases {
     await this.requireChecklist(widgetId);
     const now = this.clock.now();
     const { businessDate } = getKoreaDateContext(now);
-    await this.requireItem(widgetId, itemId, businessDate);
-    await this.checklists.archiveItem(widgetId, itemId, now);
+    const item = await this.requireItem(widgetId, itemId, businessDate);
+    await this.checklists.archiveItem({
+      eventId: this.ids.generate(),
+      widgetId,
+      itemId,
+      itemLabel: item.label,
+      businessDate,
+      archivedAt: now,
+    });
   }
 
   async setItemChecked(
@@ -127,6 +147,7 @@ export class ChecklistService implements ChecklistUseCases {
         id: event.id,
         itemId: event.itemId,
         itemLabel: event.itemLabel,
+        previousItemLabel: event.previousItemLabel,
         action: event.action,
         businessDate: event.businessDate,
         occurredAt: new Date(event.occurredAt).toISOString(),

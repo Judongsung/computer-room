@@ -5,10 +5,12 @@ import {
 import { CHECKLIST_ERRORS } from "../constants/errors/checklist";
 import { AppError } from "../domain/errors";
 import type {
+  ArchiveChecklistItemRecord,
   ChecklistEventRecord,
   ChecklistItemRecord,
   CreateChecklistItemRecord,
   SetChecklistStateRecord,
+  UpdateChecklistItemRecord,
 } from "../types/checklist";
 import type { ChecklistRepository } from "../types/checklist-repository";
 import type {
@@ -47,8 +49,8 @@ export class D1ChecklistRepository implements ChecklistRepository {
   }
 
   async insertItem(record: CreateChecklistItemRecord): Promise<void> {
-    await this.database
-      .prepare(
+    await this.database.batch([
+      this.database.prepare(
         `INSERT INTO checklist_items (
            id, widget_id, label, sort_order, created_at, updated_at
          )
@@ -56,9 +58,18 @@ export class D1ChecklistRepository implements ChecklistRepository {
            COALESCE(MAX(sort_order) + 1, 0), ?4, ?4
          FROM checklist_items
          WHERE widget_id = ?2`,
-      )
-      .bind(record.id, record.widgetId, record.label, record.createdAt)
-      .run();
+      ).bind(record.id, record.widgetId, record.label, record.createdAt),
+      this.eventStatement().bind(
+        record.eventId,
+        record.widgetId,
+        record.id,
+        record.label,
+        null,
+        CHECKLIST_EVENT_ACTION.ADDED,
+        record.businessDate,
+        record.createdAt,
+      ),
+    ]);
   }
 
   async findActiveItem(
@@ -82,35 +93,49 @@ export class D1ChecklistRepository implements ChecklistRepository {
     return row ? mapChecklistItemRow(row) : null;
   }
 
-  async updateItemLabel(
-    widgetId: string,
-    itemId: string,
-    label: string,
-    updatedAt: number,
-  ): Promise<void> {
-    await this.database
-      .prepare(
+  async updateItemLabel(record: UpdateChecklistItemRecord): Promise<void> {
+    await this.database.batch([
+      this.eventStatement().bind(
+        record.eventId,
+        record.widgetId,
+        record.itemId,
+        record.label,
+        record.previousLabel,
+        CHECKLIST_EVENT_ACTION.RENAMED,
+        record.businessDate,
+        record.updatedAt,
+      ),
+      this.database.prepare(
         `UPDATE checklist_items
          SET label = ?3, updated_at = ?4
          WHERE widget_id = ?1 AND id = ?2 AND archived_at IS NULL`,
-      )
-      .bind(widgetId, itemId, label, updatedAt)
-      .run();
+      ).bind(
+        record.widgetId,
+        record.itemId,
+        record.label,
+        record.updatedAt,
+      ),
+    ]);
   }
 
-  async archiveItem(
-    widgetId: string,
-    itemId: string,
-    archivedAt: number,
-  ): Promise<void> {
-    await this.database
-      .prepare(
+  async archiveItem(record: ArchiveChecklistItemRecord): Promise<void> {
+    await this.database.batch([
+      this.eventStatement().bind(
+        record.eventId,
+        record.widgetId,
+        record.itemId,
+        record.itemLabel,
+        null,
+        CHECKLIST_EVENT_ACTION.DELETED,
+        record.businessDate,
+        record.archivedAt,
+      ),
+      this.database.prepare(
         `UPDATE checklist_items
          SET archived_at = ?3, updated_at = ?3
          WHERE widget_id = ?1 AND id = ?2 AND archived_at IS NULL`,
-      )
-      .bind(widgetId, itemId, archivedAt)
-      .run();
+      ).bind(record.widgetId, record.itemId, record.archivedAt),
+    ]);
   }
 
   async setChecked(record: SetChecklistStateRecord): Promise<boolean> {
@@ -131,9 +156,10 @@ export class D1ChecklistRepository implements ChecklistRepository {
       this.database
         .prepare(
           `INSERT INTO checklist_events (
-             id, widget_id, item_id, item_label, action, business_date, occurred_at
+             id, widget_id, item_id, item_label, previous_item_label,
+             action, business_date, occurred_at
            )
-           SELECT ?1, ?2, ?3, ?4, ?7, ?6, ?8
+           SELECT ?1, ?2, ?3, ?4, NULL, ?7, ?6, ?8
            WHERE ${itemExists} AND ${stateChanged}`,
         )
         .bind(
@@ -179,7 +205,7 @@ export class D1ChecklistRepository implements ChecklistRepository {
   ): Promise<ChecklistEventRecord[]> {
     const result = await this.database
       .prepare(
-        `SELECT id, widget_id, item_id, item_label, action,
+        `SELECT id, widget_id, item_id, item_label, previous_item_label, action,
            business_date, occurred_at
          FROM checklist_events
          WHERE widget_id = ?1
@@ -190,6 +216,15 @@ export class D1ChecklistRepository implements ChecklistRepository {
       .all<ChecklistEventRow>();
 
     return result.results.map(mapChecklistEventRow);
+  }
+
+  private eventStatement(): D1PreparedStatement {
+    return this.database.prepare(
+      `INSERT INTO checklist_events (
+         id, widget_id, item_id, item_label, previous_item_label,
+         action, business_date, occurred_at
+       ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`,
+    );
   }
 
   private async listActiveItemsByQuery(
@@ -238,6 +273,7 @@ function mapChecklistEventRow(row: ChecklistEventRow): ChecklistEventRecord {
     widgetId: row.widget_id,
     itemId: row.item_id,
     itemLabel: row.item_label,
+    previousItemLabel: row.previous_item_label,
     action,
     businessDate: row.business_date,
     occurredAt: row.occurred_at,

@@ -37,6 +37,7 @@ export interface ChecklistEventRow {
   widget_id: string;
   item_id: string;
   item_label: string;
+  previous_item_label: string | null;
   action: string;
   business_date: string;
   occurred_at: number;

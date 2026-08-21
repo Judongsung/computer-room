@@ -64,6 +64,7 @@ export interface ChecklistLogEvent {
   readonly id: string;
   readonly itemId: string;
   readonly itemLabel: string;
+  readonly previousItemLabel: string | null;
   readonly action: ChecklistEventAction;
   readonly businessDate: string;
   readonly occurredAt: string;

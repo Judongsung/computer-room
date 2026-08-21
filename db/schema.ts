@@ -168,6 +168,7 @@ export const checklistEvents = sqliteTable(
       .notNull()
       .references(() => checklistItems.id, { onDelete: "cascade" }),
     itemLabel: text("item_label").notNull(),
+    previousItemLabel: text("previous_item_label"),
     action: text("action", { enum: CHECKLIST_EVENT_ACTION_VALUES }).notNull(),
     businessDate: text("business_date").notNull(),
     occurredAt: integer("occurred_at").notNull(),
@@ -176,6 +177,10 @@ export const checklistEvents = sqliteTable(
     check(
       "checklist_events_action_check",
       sql`${table.action} IN (${sql.raw(CHECKLIST_EVENT_ACTION_SQL)})`,
+    ),
+    check(
+      "checklist_events_previous_label_check",
+      sql`${table.previousItemLabel} IS NULL OR length(${table.previousItemLabel}) BETWEEN 1 AND ${sql.raw(String(CHECKLIST_ITEM_LABEL_MAX_LENGTH))}`,
     ),
     index("idx_checklist_events_widget_time").on(
       table.widgetId,

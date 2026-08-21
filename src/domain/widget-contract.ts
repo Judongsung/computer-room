@@ -106,6 +106,8 @@ function isChecklistLogEvent(value: unknown): value is ChecklistLogEvent {
     typeof value.id === "string" &&
     typeof value.itemId === "string" &&
     typeof value.itemLabel === "string" &&
+    (value.previousItemLabel === null ||
+      typeof value.previousItemLabel === "string") &&
     CHECKLIST_EVENT_ACTION_VALUES.some(
       (action) => value.action === action,
     ) &&

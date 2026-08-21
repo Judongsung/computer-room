@@ -14,6 +14,14 @@ const LOG_TIME_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
   second: "2-digit",
 });
 
+const CHECKLIST_EVENT_LABEL_BY_ACTION = {
+  [CHECKLIST_EVENT_ACTION.ADDED]: CHECKLIST_WIDGET_COPY.ADDED,
+  [CHECKLIST_EVENT_ACTION.RENAMED]: CHECKLIST_WIDGET_COPY.RENAMED,
+  [CHECKLIST_EVENT_ACTION.DELETED]: CHECKLIST_WIDGET_COPY.DELETED,
+  [CHECKLIST_EVENT_ACTION.CHECKED]: CHECKLIST_WIDGET_COPY.CHECKED,
+  [CHECKLIST_EVENT_ACTION.UNCHECKED]: CHECKLIST_WIDGET_COPY.UNCHECKED,
+} as const;
+
 interface ChecklistLogDialogProps {
   readonly widgetId: string;
   readonly gateway: DashboardGateway;
@@ -127,12 +135,8 @@ export function ChecklistLogDialog({
                     <time dateTime={event.occurredAt}>
                       {LOG_TIME_FORMATTER.format(new Date(event.occurredAt))}
                     </time>
-                    <span>{event.itemLabel}</span>
-                    <small>
-                      {event.action === CHECKLIST_EVENT_ACTION.CHECKED
-                        ? CHECKLIST_WIDGET_COPY.CHECKED
-                        : CHECKLIST_WIDGET_COPY.UNCHECKED}
-                    </small>
+                    <span>{eventLabel(event)}</span>
+                    <small>{CHECKLIST_EVENT_LABEL_BY_ACTION[event.action]}</small>
                   </li>
                 ))}
               </ol>
@@ -155,6 +159,16 @@ export function ChecklistLogDialog({
       </section>
     </div>
   );
+}
+
+function eventLabel(event: ChecklistLogEvent): string {
+  if (
+    event.action === CHECKLIST_EVENT_ACTION.RENAMED &&
+    event.previousItemLabel !== null
+  ) {
+    return `${event.previousItemLabel} → ${event.itemLabel}`;
+  }
+  return event.itemLabel;
 }
 
 function groupEventsByDate(

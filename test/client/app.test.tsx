@@ -255,6 +255,21 @@ describe("App", () => {
     ).toBeInTheDocument();
 
     await user.click(
+      screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.EDIT_ITEM }),
+    );
+    const itemEditor = screen.getByRole("textbox", {
+      name: CHECKLIST_WIDGET_COPY.EDIT_ITEM,
+    });
+    await user.clear(itemEditor);
+    await user.type(itemEditor, "물 두 잔 마시기");
+    await user.click(
+      screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.SAVE_ITEM }),
+    );
+    const renamedCheckbox = await screen.findByRole("checkbox", {
+      name: "물 두 잔 마시기",
+    });
+
+    await user.click(
       screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.FINISH_EDITING }),
     );
     expect(
@@ -269,13 +284,18 @@ describe("App", () => {
       screen.queryByRole("button", { name: CHECKLIST_WIDGET_COPY.DELETE_ITEM }),
     ).not.toBeInTheDocument();
 
-    await user.click(checkbox);
-    await waitFor(() => expect(screen.getByText("물 마시기").tagName).toBe("DEL"));
+    await user.click(renamedCheckbox);
+    await waitFor(() =>
+      expect(screen.getByText("물 두 잔 마시기").tagName).toBe("DEL"),
+    );
 
     await user.click(
       screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.DETAILS }),
     );
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByText(CHECKLIST_WIDGET_COPY.ADDED)).toBeInTheDocument();
+    expect(screen.getByText(CHECKLIST_WIDGET_COPY.RENAMED)).toBeInTheDocument();
+    expect(screen.getByText("물 마시기 → 물 두 잔 마시기")).toBeInTheDocument();
     expect(screen.getByText(CHECKLIST_WIDGET_COPY.CHECKED)).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.CLOSE }),
@@ -356,6 +376,15 @@ class FakeDashboardGateway implements DashboardGateway {
     const id = `00000000-0000-4000-8000-${String(this.nextChecklistItem).padStart(12, "0")}`;
     this.nextChecklistItem += 1;
     this.checklistLabels.set(id, label);
+    this.checklistLogs.unshift({
+      id: `event-${this.checklistLogs.length + 1}`,
+      itemId: id,
+      itemLabel: label,
+      previousItemLabel: null,
+      action: CHECKLIST_EVENT_ACTION.ADDED,
+      businessDate: "2026-08-20",
+      occurredAt: "2026-08-20T01:00:00.000Z",
+    });
     return { id, label, checked: false };
   }
 
@@ -364,12 +393,32 @@ class FakeDashboardGateway implements DashboardGateway {
     itemId: string,
     label: string,
   ): Promise<ChecklistItem> {
+    const previousItemLabel = this.checklistLabels.get(itemId) ?? null;
     this.checklistLabels.set(itemId, label);
+    this.checklistLogs.unshift({
+      id: `event-${this.checklistLogs.length + 1}`,
+      itemId,
+      itemLabel: label,
+      previousItemLabel,
+      action: CHECKLIST_EVENT_ACTION.RENAMED,
+      businessDate: "2026-08-20",
+      occurredAt: "2026-08-20T01:00:00.000Z",
+    });
     return { id: itemId, label, checked: false };
   }
 
   async deleteChecklistItem(_widgetId: string, itemId: string): Promise<void> {
+    const itemLabel = this.checklistLabels.get(itemId) ?? "항목";
     this.checklistLabels.delete(itemId);
+    this.checklistLogs.unshift({
+      id: `event-${this.checklistLogs.length + 1}`,
+      itemId,
+      itemLabel,
+      previousItemLabel: null,
+      action: CHECKLIST_EVENT_ACTION.DELETED,
+      businessDate: "2026-08-20",
+      occurredAt: "2026-08-20T01:00:00.000Z",
+    });
   }
 
   async setChecklistItemChecked(
@@ -382,6 +431,7 @@ class FakeDashboardGateway implements DashboardGateway {
       id: `event-${this.checklistLogs.length + 1}`,
       itemId,
       itemLabel: label,
+      previousItemLabel: null,
       action: checked
         ? CHECKLIST_EVENT_ACTION.CHECKED
         : CHECKLIST_EVENT_ACTION.UNCHECKED,
