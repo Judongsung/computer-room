@@ -1,4 +1,10 @@
-import type { DashboardWidget, WindowPosition, WindowSize } from "../../types/widget";
+import type {
+  DashboardWidget,
+  WindowPosition,
+  WindowRestoreState,
+  WindowSize,
+  WindowState,
+} from "../../types/widget";
 import type { SessionInfo } from "../../types/auth";
 import type { ReactNode } from "react";
 import type { DashboardGateway } from "./api";
@@ -13,6 +19,47 @@ export interface DesktopDimensions {
 export interface WindowBounds {
   readonly position: WindowPosition;
   readonly size: WindowSize;
+}
+
+export interface WindowLifecycleState {
+  readonly windowState: WindowState;
+  readonly restoreState: WindowRestoreState;
+}
+
+export interface ManagedDesktopWindowState
+  extends WindowBounds,
+    WindowLifecycleState {}
+
+export interface DesktopAppWindowProps {
+  readonly title: string;
+  readonly iconPath: string;
+  readonly window: ManagedDesktopWindowState;
+  readonly desktop: DesktopDimensions;
+  readonly isActive: boolean;
+  readonly zIndex: number;
+  readonly minWidth: number;
+  readonly minHeight: number;
+  readonly className?: string;
+  readonly toolbar?: ReactNode;
+  readonly footer?: ReactNode;
+  readonly bodyClassName?: string;
+  readonly onFocus: () => void;
+  readonly onMinimize: () => void;
+  readonly onToggleMaximize: () => void;
+  readonly onClose: () => void;
+  readonly onCommitBounds: (bounds: WindowBounds) => void;
+  readonly children: ReactNode;
+}
+
+export interface MovableDesktopWindowProps extends WindowBounds {
+  readonly desktop: DesktopDimensions;
+  readonly windowState: WindowState;
+  readonly minWidth: number;
+  readonly minHeight: number;
+  readonly zIndex: number;
+  readonly onFocus: () => void;
+  readonly onCommitBounds: (bounds: WindowBounds) => void;
+  readonly children: ReactNode;
 }
 
 export interface WidgetWindowControls {

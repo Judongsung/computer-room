@@ -10,7 +10,11 @@ import type {
   WindowSize,
 } from "../../types/widget";
 import { DESKTOP_LAYOUT } from "../constants/desktop";
-import type { DesktopDimensions, WindowBounds } from "../types/desktop";
+import type {
+  DesktopDimensions,
+  WindowBounds,
+  WindowLifecycleState,
+} from "../types/desktop";
 
 export function activeWidgetId(
   widgets: readonly WidgetLayout[],
@@ -45,37 +49,39 @@ export function bringWidgetToFront<T extends WidgetLayout>(
   }));
 }
 
-export function minimizeWidget<T extends WidgetLayout>(widget: T): T {
-  if (widget.windowState === WINDOW_STATE.MINIMIZED) {
-    return widget;
+export function minimizeWindow<T extends WindowLifecycleState>(window: T): T {
+  if (window.windowState === WINDOW_STATE.MINIMIZED) {
+    return window;
   }
   return {
-    ...widget,
+    ...window,
     restoreState:
-      widget.windowState === WINDOW_STATE.MAXIMIZED
+      window.windowState === WINDOW_STATE.MAXIMIZED
         ? WINDOW_RESTORE_STATE.MAXIMIZED
         : WINDOW_RESTORE_STATE.NORMAL,
     windowState: WINDOW_STATE.MINIMIZED,
   };
 }
 
-export function restoreWidget<T extends WidgetLayout>(widget: T): T {
-  if (widget.windowState !== WINDOW_STATE.MINIMIZED) {
-    return widget;
+export function restoreWindow<T extends WindowLifecycleState>(window: T): T {
+  if (window.windowState !== WINDOW_STATE.MINIMIZED) {
+    return window;
   }
-  return { ...widget, windowState: widget.restoreState };
+  return { ...window, windowState: window.restoreState };
 }
 
-export function toggleMaximizeWidget<T extends WidgetLayout>(widget: T): T {
-  if (widget.windowState === WINDOW_STATE.MAXIMIZED) {
+export function toggleMaximizeWindow<T extends WindowLifecycleState>(
+  window: T,
+): T {
+  if (window.windowState === WINDOW_STATE.MAXIMIZED) {
     return {
-      ...widget,
+      ...window,
       windowState: WINDOW_STATE.NORMAL,
       restoreState: WINDOW_RESTORE_STATE.NORMAL,
     };
   }
   return {
-    ...widget,
+    ...window,
     windowState: WINDOW_STATE.MAXIMIZED,
     restoreState: WINDOW_RESTORE_STATE.NORMAL,
   };

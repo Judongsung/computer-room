@@ -1,5 +1,6 @@
 import type { KeyboardEvent } from "react";
 import { FILESYSTEM_COPY } from "../../constants/filesystem";
+import { KEYBOARD_KEY } from "../../constants/keyboard";
 import {
   SYSTEM_APP_CONFIG,
   SYSTEM_APP_ID_VALUES,
@@ -35,7 +36,7 @@ export function DesktopShortcuts({
             onClick={() => onSelect(id)}
             onDoubleClick={() => onOpen(id)}
             onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
-              if (event.key === "Enter") {
+              if (event.key === KEYBOARD_KEY.ENTER) {
                 event.preventDefault();
                 onOpen(id);
               }
@@ -49,4 +50,3 @@ export function DesktopShortcuts({
     </nav>
   );
 }
-

@@ -31,10 +31,10 @@ import {
   activeWidgetId,
   bringWidgetToFront,
   cascadeWindowPosition,
-  minimizeWidget,
+  minimizeWindow as minimizeWindowState,
   replaceWidgetBounds,
-  restoreWidget,
-  toggleMaximizeWidget,
+  restoreWindow as restoreWindowState,
+  toggleMaximizeWindow as toggleMaximizeWindowState,
 } from "../domain/window-layout";
 import {
   dashboardReducer,
@@ -183,7 +183,7 @@ export function useDashboard(api: DashboardGateway) {
     (widgetId: string): void => {
       replaceAndSave((widgets) =>
         widgets.map((widget) =>
-          widget.id === widgetId ? minimizeWidget(widget) : widget,
+          widget.id === widgetId ? minimizeWindowState(widget) : widget,
         ),
       );
     },
@@ -195,7 +195,7 @@ export function useDashboard(api: DashboardGateway) {
       replaceAndSave((widgets) => {
         const focused = bringWidgetToFront(widgets, widgetId);
         return focused.map((widget) =>
-          widget.id === widgetId ? toggleMaximizeWidget(widget) : widget,
+          widget.id === widgetId ? toggleMaximizeWindowState(widget) : widget,
         );
       });
     },
@@ -215,7 +215,9 @@ export function useDashboard(api: DashboardGateway) {
         replaceAndSave((widgets) =>
           bringWidgetToFront(
             widgets.map((candidate) =>
-              candidate.id === widgetId ? restoreWidget(candidate) : candidate,
+              candidate.id === widgetId
+                ? restoreWindowState(candidate)
+                : candidate,
             ),
             widgetId,
           ),

@@ -1,7 +1,10 @@
 import type { WindowRestoreState, WindowState } from "../../types/widget";
 import type { SYSTEM_APP_ID } from "../constants/system-app";
-import type { WindowBounds } from "./desktop";
-import type { DesktopDimensions } from "./desktop";
+import type {
+  DesktopAppWindowProps,
+  DesktopDimensions,
+  WindowBounds,
+} from "./desktop";
 
 export type SystemAppId =
   (typeof SYSTEM_APP_ID)[keyof typeof SYSTEM_APP_ID];
@@ -25,4 +28,12 @@ export interface SystemWindowChromeProps {
   readonly onToggleMaximize: () => void;
   readonly onClose: () => void;
   readonly onCommitBounds: (bounds: WindowBounds) => void;
+}
+
+export interface SystemAppWindowProps
+  extends Omit<
+    DesktopAppWindowProps,
+    "title" | "iconPath" | "minWidth" | "minHeight"
+  > {
+  readonly appId: SystemAppId;
 }

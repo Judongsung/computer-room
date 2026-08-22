@@ -17,6 +17,7 @@ export interface FilesystemGateway {
   ): Promise<FilesystemEntry>;
   trashEntry(id: string): Promise<void>;
   downloadUrl(id: string): string;
+  contentUrl(id: string): string;
   listTrash(offset?: number): Promise<FilesystemTrashPage>;
   restoreEntry(id: string): Promise<FilesystemEntry>;
   permanentlyDeleteEntry(id: string): Promise<void>;

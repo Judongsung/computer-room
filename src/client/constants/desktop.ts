@@ -34,6 +34,11 @@ export const DESKTOP_FALLBACK_WORK_AREA = {
     DESKTOP_LAYOUT.MIN_HEIGHT_PX - DESKTOP_LAYOUT.TASKBAR_HEIGHT_PX,
 } as const;
 
+export const DESKTOP_WINDOW_CLASS_NAME = {
+  ROOT: "desktop-window",
+  MAXIMIZED: "desktop-window--maximized",
+} as const;
+
 export const DESKTOP_ASSET_PATHS = {
   BACKGROUND: "/assets/windows-xp/desktop-bg.jpg",
   START_LOGO: "/assets/windows-xp/logo.svg",
@@ -46,6 +51,8 @@ export const DESKTOP_ASSET_PATHS = {
   RECYCLE_BIN_ICON: "/assets/windows-xp/recycle.png",
   FOLDER_ICON: "/assets/windows-xp/folder.png",
   FILE_ICON: "/assets/windows-xp/file.png",
+  PICTURE_VIEWER_ICON: "/assets/computer-room/picture-viewer.svg",
+  MEDIA_PLAYER_ICON: "/assets/computer-room/media-player.svg",
 } as const;
 
 export const WIDGET_ICON_PATH_BY_TYPE = {

@@ -12,6 +12,7 @@ import { WIDGET_TYPE } from "../../../constants/widget";
 import type { MemoWidget as MemoWidgetData } from "../../../types/widget";
 import { MEMO_WIDGET_COPY } from "../../constants/content";
 import { WIDGET_ICON_PATH_BY_TYPE } from "../../constants/desktop";
+import { KEYBOARD_KEY } from "../../constants/keyboard";
 import { MEMO_EDITOR_MODE } from "../../constants/memo";
 import { XP_WIDGET_TOOLBAR_ACTION } from "../../constants/xp";
 import { useUnsavedChangesWarning } from "../../hooks/use-unsaved-changes-warning";
@@ -81,11 +82,14 @@ function MemoWidgetContent({
     event: KeyboardEvent<HTMLButtonElement>,
   ): void => {
     let nextMode: (typeof MEMO_EDITOR_MODE)[keyof typeof MEMO_EDITOR_MODE];
-    if (event.key === "Home") {
+    if (event.key === KEYBOARD_KEY.HOME) {
       nextMode = MEMO_EDITOR_MODE.WRITE;
-    } else if (event.key === "End") {
+    } else if (event.key === KEYBOARD_KEY.END) {
       nextMode = MEMO_EDITOR_MODE.PREVIEW;
-    } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+    } else if (
+      event.key === KEYBOARD_KEY.ARROW_LEFT ||
+      event.key === KEYBOARD_KEY.ARROW_RIGHT
+    ) {
       nextMode =
         editorMode === MEMO_EDITOR_MODE.WRITE
           ? MEMO_EDITOR_MODE.PREVIEW

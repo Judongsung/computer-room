@@ -5,6 +5,7 @@ import { WIDGET_TYPE } from "../../../constants/widget";
 import type { ChecklistLogEvent } from "../../../types/widget";
 import { CHECKLIST_WIDGET_COPY } from "../../constants/content";
 import { WIDGET_ICON_PATH_BY_TYPE } from "../../constants/desktop";
+import { KEYBOARD_KEY } from "../../constants/keyboard";
 import { XP_WINDOW_CONTROL_ACTION } from "../../constants/xp";
 import type { DashboardGateway } from "../../types/api";
 import { XpWindowFrame } from "../desktop/xp-window-frame";
@@ -73,7 +74,7 @@ export function ChecklistLogDialog({
 
   useEffect(() => {
     const closeOnEscape = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") {
+      if (event.key === KEYBOARD_KEY.ESCAPE) {
         onClose();
       }
     };

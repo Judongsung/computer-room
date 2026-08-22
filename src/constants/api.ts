@@ -15,6 +15,7 @@ export const API_PATH_SEGMENTS = {
   DIRECTORIES: "directories",
   TRASH: "trash",
   RESTORE: "restore",
+  CONTENT: "content",
 } as const;
 
 export const API_QUERY_PARAMETERS = {

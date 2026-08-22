@@ -40,6 +40,16 @@ export const FILE_ERRORS = {
     code: "INVALID_CONTENT_TYPE",
     message: "올바르지 않은 파일 형식입니다.",
   },
+  UNSUPPORTED_MEDIA_TYPE: {
+    status: HTTP_STATUS.UNSUPPORTED_MEDIA_TYPE,
+    code: "UNSUPPORTED_MEDIA_TYPE",
+    message: "이 파일 형식은 미디어 뷰어에서 지원하지 않습니다.",
+  },
+  RANGE_NOT_SATISFIABLE: {
+    status: HTTP_STATUS.RANGE_NOT_SATISFIABLE,
+    code: "RANGE_NOT_SATISFIABLE",
+    message: "요청한 파일 범위를 읽을 수 없습니다.",
+  },
   STORAGE_WRITE_FAILED: {
     status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
     code: "FILE_STORAGE_WRITE_FAILED",

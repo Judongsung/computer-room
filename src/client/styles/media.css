@@ -1,0 +1,292 @@
+.media-viewer-window {
+  width: 100%;
+  height: 100%;
+}
+
+.media-viewer-window .xp-window-frame__title-bar {
+  cursor: grab;
+  user-select: none;
+}
+
+.desktop-window--maximized .media-viewer-window .xp-window-frame__title-bar {
+  cursor: default;
+}
+
+.media-viewer-window__body {
+  display: flex;
+  overflow: hidden;
+  flex-direction: column;
+}
+
+.picture-viewer {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  background: #ece9d8;
+}
+
+.picture-viewer__canvas {
+  position: relative;
+  display: flex;
+  overflow: auto;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border: 1px solid #7f9db9;
+  background:
+    linear-gradient(45deg, #e8e8e8 25%, transparent 25%) 0 0 / 16px 16px,
+    linear-gradient(45deg, transparent 75%, #e8e8e8 75%) 0 0 / 16px 16px,
+    linear-gradient(45deg, transparent 75%, #e8e8e8 75%) 8px -8px / 16px 16px,
+    linear-gradient(45deg, #e8e8e8 25%, #f8f8f8 25%) 8px 8px / 16px 16px;
+}
+
+.picture-viewer__stage {
+  position: relative;
+  min-width: 1px;
+  min-height: 1px;
+  flex: none;
+}
+
+.picture-viewer__stage img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  max-width: none;
+  max-height: none;
+  box-shadow: 1px 2px 8px rgb(0 0 0 / 38%);
+  image-rendering: auto;
+  user-select: none;
+}
+
+.picture-viewer__toolbar {
+  display: flex;
+  min-height: 46px;
+  padding: 6px 8px;
+  flex: none;
+  align-items: center;
+  gap: 3px;
+  border-top: 1px solid #fff;
+  background: linear-gradient(to bottom, #f8f6ed, #d8d4c5);
+  box-shadow: inset 0 1px #aca899;
+}
+
+.picture-viewer__toolbar button {
+  display: inline-flex;
+  min-width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 2px 6px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  background: transparent;
+  font-weight: 700;
+}
+
+.picture-viewer__toolbar button:focus-visible,
+.picture-viewer__toolbar button:not(:disabled):active {
+  border-color: #316ac5;
+  background: #c1d2ee;
+}
+
+.picture-viewer__toolbar output {
+  min-width: 48px;
+  color: #333;
+  text-align: center;
+}
+
+.media-toolbar__separator {
+  width: 1px;
+  height: 26px;
+  margin: 0 3px;
+  background: #aca899;
+  box-shadow: 1px 0 #fff;
+}
+
+.media-toolbar__spacer {
+  min-width: 8px;
+  flex: 1;
+}
+
+.media-viewer__loading,
+.media-viewer__failure {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: 0;
+  transform: translate(-50%, -50%);
+}
+
+.media-viewer__failure {
+  width: min(360px, calc(100% - 32px));
+  padding: 16px;
+  border: 1px solid #7f9db9;
+  background: #fff;
+  text-align: center;
+  box-shadow: 2px 3px 8px rgb(0 0 0 / 30%);
+}
+
+.media-viewer__failure p {
+  margin-bottom: 12px;
+}
+
+.media-viewer__notice {
+  margin: 0;
+  padding: 3px 8px;
+  flex: none;
+  color: var(--luna-error);
+  border-top: 1px solid #aca899;
+  background: #fffbe7;
+  font-size: var(--luna-font-size-small);
+}
+
+.windows-media-player {
+  display: flex;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  color: #fff;
+  border: 1px solid #07172d;
+  background: #102a50;
+}
+
+.windows-media-player__brandbar {
+  display: flex;
+  height: 34px;
+  padding: 0 10px;
+  flex: none;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid #041127;
+  background: linear-gradient(to bottom, #5f94c7, #1c558c 48%, #0e3765 52%, #326fa5);
+  box-shadow: inset 0 1px rgb(255 255 255 / 50%);
+  text-shadow: 1px 1px #0a2342;
+}
+
+.windows-media-player__brandbar strong {
+  flex: none;
+  font-family: var(--luna-font-family-title);
+}
+
+.windows-media-player__brandbar span {
+  overflow: hidden;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.windows-media-player__screen {
+  position: relative;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  border: 5px solid #071a34;
+  background: #000;
+  box-shadow: inset 0 0 28px #091326;
+}
+
+.windows-media-player__screen video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000;
+}
+
+.windows-media-player__seek {
+  display: grid;
+  min-height: 35px;
+  padding: 5px 10px;
+  flex: none;
+  align-items: center;
+  grid-template-columns: minmax(80px, 1fr) auto;
+  gap: 10px;
+  border-top: 1px solid #5c86b1;
+  background: linear-gradient(to bottom, #244f7d, #102f55);
+}
+
+.windows-media-player__seek input,
+.windows-media-player__volume {
+  min-width: 0;
+  accent-color: #78c8ff;
+}
+
+.windows-media-player__seek output {
+  min-width: 78px;
+  color: #e6f4ff;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.windows-media-player__controls {
+  display: flex;
+  min-height: 54px;
+  padding: 7px 9px;
+  flex: none;
+  align-items: center;
+  gap: 5px;
+  border-top: 1px solid #719bc2;
+  background:
+    linear-gradient(to bottom, rgb(255 255 255 / 22%), transparent 35%),
+    linear-gradient(to bottom, #477dad, #1b4b79 52%, #0c2d50 53%, #2a5d8c);
+  box-shadow: inset 0 1px #9fc2df;
+}
+
+.windows-media-player__controls button {
+  min-width: 32px;
+  height: 30px;
+  min-height: 30px;
+  padding: 2px 7px;
+  color: #fff;
+  border: 1px solid #08294d;
+  border-radius: 4px;
+  background: linear-gradient(to bottom, #7cacd4, #366b99 48%, #15456f 52%, #2c6797);
+  box-shadow: inset 0 1px rgb(255 255 255 / 65%), 0 1px #051a31;
+  text-shadow: 1px 1px #092844;
+}
+
+.windows-media-player__controls button:not(:disabled):active {
+  padding-top: 3px;
+  background: linear-gradient(to bottom, #174a76, #4f82ad);
+  box-shadow: inset 1px 1px 2px #061d36;
+}
+
+.windows-media-player__controls button:disabled {
+  color: #a7b8c7;
+}
+
+.windows-media-player__play {
+  width: 42px;
+  height: 38px !important;
+  border-radius: 50% !important;
+  font-size: 16px;
+}
+
+.windows-media-player__status {
+  overflow: hidden;
+  min-width: 62px;
+  flex: 1;
+  color: #dceeff;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.windows-media-player__volume {
+  width: 88px;
+  flex: none;
+}
+
+.windows-media-player .media-viewer__failure {
+  color: #222;
+}

@@ -1,0 +1,104 @@
+import { useEffect } from "react";
+import { mediaKindFromContentType } from "../../../domain/media-type";
+import { MEDIA_KIND } from "../../../constants/media";
+import {
+  MEDIA_VIEWER_COPY,
+  MEDIA_WINDOW_CONFIG,
+} from "../../constants/media";
+import { useMediaDirectory } from "../../hooks/use-media-directory";
+import type { MediaViewerWindowProps } from "../../types/media";
+import { downloadFile } from "../../utils/download-file";
+import { DesktopAppWindow } from "../desktop/desktop-app-window";
+import { PictureViewer } from "./picture-viewer";
+import { WindowsMediaPlayer } from "./windows-media-player";
+
+export function MediaViewerWindow({
+  window,
+  desktop,
+  gateway,
+  filesystemRevision,
+  isActive,
+  zIndex,
+  onFocus,
+  onMinimize,
+  onToggleMaximize,
+  onClose,
+  onCommitBounds,
+  onChangeFile,
+}: MediaViewerWindowProps) {
+  const kind = mediaKindFromContentType(window.currentFile.contentType);
+  const directory = useMediaDirectory(
+    gateway,
+    window.directoryId,
+    filesystemRevision,
+  );
+  const currentIndex = directory.entries.findIndex(
+    (entry) => entry.id === window.currentFile.id,
+  );
+  const hasPrevious = currentIndex > 0;
+  const hasNext =
+    currentIndex >= 0 && currentIndex < directory.entries.length - 1;
+
+  useEffect(() => {
+    const refreshed = directory.entries.find(
+      (entry) => entry.id === window.currentFile.id,
+    );
+    if (
+      refreshed &&
+      (refreshed.name !== window.currentFile.name ||
+        refreshed.contentType !== window.currentFile.contentType ||
+        refreshed.size !== window.currentFile.size ||
+        refreshed.parentId !== window.currentFile.parentId)
+    ) {
+      onChangeFile(refreshed);
+    }
+  }, [directory.entries, onChangeFile, window.currentFile]);
+
+  if (!kind) {
+    return null;
+  }
+  const config = MEDIA_WINDOW_CONFIG[kind];
+  const navigate = (offset: number): void => {
+    const next = directory.entries[currentIndex + offset];
+    if (next) onChangeFile(next);
+  };
+  const rendererProps = {
+    file: window.currentFile,
+    sourceUrl: gateway.contentUrl(window.currentFile.id),
+    navigationError: directory.error,
+    hasPrevious: hasPrevious && !directory.isLoading,
+    hasNext: hasNext && !directory.isLoading,
+    onPrevious: () => navigate(-1),
+    onNext: () => navigate(1),
+    onDownload: () => downloadFile(gateway.downloadUrl(window.currentFile.id)),
+  } as const;
+
+  return (
+    <DesktopAppWindow
+      title={`${window.currentFile.name} - ${config.titleSuffix}`}
+      iconPath={config.iconPath}
+      window={window}
+      desktop={desktop}
+      isActive={isActive}
+      zIndex={zIndex}
+      minWidth={config.minWidth}
+      minHeight={config.minHeight}
+      className={`media-viewer-window media-viewer-window--${kind}`}
+      bodyClassName="media-viewer-window__body"
+      onFocus={onFocus}
+      onMinimize={onMinimize}
+      onToggleMaximize={onToggleMaximize}
+      onClose={onClose}
+      onCommitBounds={onCommitBounds}
+    >
+      {kind === MEDIA_KIND.IMAGE ? (
+        <PictureViewer {...rendererProps} />
+      ) : (
+        <WindowsMediaPlayer {...rendererProps} />
+      )}
+      {directory.isLoading ? (
+        <span className="visually-hidden">{MEDIA_VIEWER_COPY.LOADING}</span>
+      ) : null}
+    </DesktopAppWindow>
+  );
+}

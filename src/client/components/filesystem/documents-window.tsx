@@ -7,12 +7,18 @@ import {
   type KeyboardEvent,
 } from "react";
 import { FILESYSTEM_ENTRY_KIND } from "../../../constants/filesystem";
+import {
+  isPotentialMediaContentType,
+  mediaKindFromContentType,
+} from "../../../domain/media-type";
 import { DESKTOP_ASSET_PATHS } from "../../constants/desktop";
 import {
   FILE_SIZE_DISPLAY,
   FILESYSTEM_COPY,
 } from "../../constants/filesystem";
 import { SYSTEM_APP_ID } from "../../constants/system-app";
+import { MEDIA_VIEWER_COPY } from "../../constants/media";
+import { KEYBOARD_KEY } from "../../constants/keyboard";
 import type {
   FilesystemDirectoryPage,
   FilesystemEntry,
@@ -22,9 +28,12 @@ import type {
   FilesystemWindowSyncProps,
 } from "../../types/filesystem";
 import type { SystemWindowChromeProps } from "../../types/system-app";
+import type { MediaViewerOpenRequest } from "../../types/media";
+import { downloadFile } from "../../utils/download-file";
 import { SystemAppWindow } from "../desktop/system-app-window";
 import {
   DirectoryPickerDialog,
+  ConfirmDialog,
   NameDialog,
 } from "./filesystem-dialogs";
 
@@ -34,10 +43,12 @@ interface DocumentsWindowProps
   extends SystemWindowChromeProps,
     FilesystemWindowSyncProps {
   readonly gateway: FilesystemGateway;
+  readonly onOpenMedia: (request: MediaViewerOpenRequest) => void;
 }
 
 export function DocumentsWindow({
   gateway,
+  onOpenMedia,
   filesystemRevision,
   onFilesystemChanged,
   ...chrome
@@ -49,6 +60,9 @@ export function DocumentsWindow({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [dialog, setDialog] = useState<DocumentsDialog>(null);
+  const [unsupportedMedia, setUnsupportedMedia] = useState<FilesystemEntry | null>(
+    null,
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -110,7 +124,16 @@ export function DocumentsWindow({
       navigate(entry.id);
       return;
     }
-    download(gateway.downloadUrl(entry.id));
+    const kind = mediaKindFromContentType(entry.contentType);
+    if (kind) {
+      onOpenMedia({ entry, directoryId: entry.parentId, kind });
+      return;
+    }
+    if (isPotentialMediaContentType(entry.contentType)) {
+      setUnsupportedMedia(entry);
+      return;
+    }
+    downloadFile(gateway.downloadUrl(entry.id));
   };
   const upload = (event: ChangeEvent<HTMLInputElement>): void => {
     const file = event.target.files?.[0];
@@ -163,7 +186,9 @@ export function DocumentsWindow({
       <button
         type="button"
         disabled={!selected || selected.kind !== FILESYSTEM_ENTRY_KIND.FILE || busy}
-        onClick={() => selected && openEntry(selected)}
+        onClick={() =>
+          selected && downloadFile(gateway.downloadUrl(selected.id))
+        }
       >
         {FILESYSTEM_COPY.DOWNLOAD}
       </button>
@@ -220,7 +245,7 @@ export function DocumentsWindow({
               onClick={() => setSelectedId(entry.id)}
               onDoubleClick={() => openEntry(entry)}
               onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
-                if (event.key === "Enter") openEntry(entry);
+                if (event.key === KEYBOARD_KEY.ENTER) openEntry(entry);
               }}
             >
               <img
@@ -276,17 +301,22 @@ export function DocumentsWindow({
           onCancel={() => setDialog(null)}
         />
       ) : null}
+      {unsupportedMedia && unsupportedMedia.kind === FILESYSTEM_ENTRY_KIND.FILE ? (
+        <ConfirmDialog
+          title={MEDIA_VIEWER_COPY.UNSUPPORTED_TITLE}
+          message={MEDIA_VIEWER_COPY.UNSUPPORTED_MESSAGE}
+          busy={false}
+          confirmLabel={MEDIA_VIEWER_COPY.DOWNLOAD_FILE}
+          cancelLabel={MEDIA_VIEWER_COPY.CANCEL}
+          onConfirm={() => {
+            downloadFile(gateway.downloadUrl(unsupportedMedia.id));
+            setUnsupportedMedia(null);
+          }}
+          onCancel={() => setUnsupportedMedia(null)}
+        />
+      ) : null}
     </SystemAppWindow>
   );
-}
-
-function download(url: string): void {
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = "";
-  document.body.append(anchor);
-  anchor.click();
-  anchor.remove();
 }
 
 function formatBytes(size: number): string {

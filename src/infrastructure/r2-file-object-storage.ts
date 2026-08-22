@@ -6,6 +6,7 @@ import type {
   FileObjectStorage,
   StoredObject,
   StoredObjectBody,
+  StoredObjectRange,
 } from "../types/storage";
 
 export class R2FileObjectStorage implements FileObjectStorage {
@@ -30,8 +31,14 @@ export class R2FileObjectStorage implements FileObjectStorage {
     };
   }
 
-  async get(key: string): Promise<StoredObjectBody | null> {
-    const object = await this.bucket.get(key);
+  async get(
+    key: string,
+    range?: StoredObjectRange,
+  ): Promise<StoredObjectBody | null> {
+    const object = await this.bucket.get(
+      key,
+      range ? { range } : undefined,
+    );
 
     if (!object) {
       return null;

@@ -53,6 +53,8 @@ interface ConfirmDialogProps {
   readonly title: string;
   readonly message: string;
   readonly busy: boolean;
+  readonly confirmLabel?: string;
+  readonly cancelLabel?: string;
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
 }
@@ -61,6 +63,8 @@ export function ConfirmDialog({
   title,
   message,
   busy,
+  confirmLabel = FILESYSTEM_COPY.CONFIRM,
+  cancelLabel = FILESYSTEM_COPY.CANCEL,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
@@ -71,10 +75,10 @@ export function ConfirmDialog({
         <p>{message}</p>
         <div className="filesystem-dialog__actions">
           <button type="button" disabled={busy} onClick={onConfirm}>
-            {busy ? FILESYSTEM_COPY.BUSY : FILESYSTEM_COPY.CONFIRM}
+            {busy ? FILESYSTEM_COPY.BUSY : confirmLabel}
           </button>
           <button type="button" disabled={busy} onClick={onCancel}>
-            {FILESYSTEM_COPY.CANCEL}
+            {cancelLabel}
           </button>
         </div>
       </section>

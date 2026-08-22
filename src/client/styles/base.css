@@ -1,0 +1,101 @@
+:root {
+  color-scheme: light;
+  --luna-font-family-ui: Tahoma, "Gulim", "굴림", "Malgun Gothic", Arial,
+    sans-serif;
+  --luna-font-family-title: "Trebuchet MS", "Malgun Gothic", sans-serif;
+  --luna-surface: #ece9d8;
+  --luna-border: #7f9db9;
+  --luna-error: #a4001b;
+  --luna-success: #126c2e;
+  --luna-font-size-page: 15px;
+  --luna-font-size-ui: 14px;
+  --luna-font-size-title: 16px;
+  --luna-font-size-small: 12px;
+  min-width: var(--desktop-min-width);
+  min-height: var(--desktop-min-height);
+  font-family: var(--luna-font-family-ui);
+  color: #222;
+  background: #245edb;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+body > div {
+  width: 100%;
+  min-width: var(--desktop-min-width);
+  height: 100%;
+  min-height: var(--desktop-min-height);
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--luna-font-family-ui);
+  font-size: var(--luna-font-size-page);
+  line-height: 1.45;
+}
+
+button,
+input,
+label,
+textarea {
+  font-family: var(--luna-font-family-ui);
+  font-size: var(--luna-font-size-ui);
+}
+
+button {
+  min-height: 26px;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 1px dotted #000;
+  outline-offset: 2px;
+}
+
+input[type="email"],
+input[type="password"],
+input[type="text"] {
+  height: 26px;
+}
+
+a {
+  color: #0000ee;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin-top: 0;
+}
+
+small {
+  font-size: var(--luna-font-size-small);
+}
+
+.visually-hidden {
+  position: absolute !important;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  margin: -1px;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

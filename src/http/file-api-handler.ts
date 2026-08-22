@@ -6,9 +6,12 @@ import {
 import { FILE_ERRORS } from "../constants/errors/file";
 import { HTTP_ERRORS } from "../constants/errors/http";
 import {
+  CONTENT_DISPOSITION_MODE,
+  FILE_CONTENT_RESPONSE_HEADERS,
   FILE_DOWNLOAD_RESPONSE_HEADERS,
   HTTP_HEADERS,
   HTTP_METHOD,
+  HTTP_RANGE_UNIT,
   HTTP_STATUS,
 } from "../constants/http";
 import {
@@ -17,6 +20,7 @@ import {
   MAX_PAGE_LIMIT,
 } from "../constants/pagination";
 import { AppError } from "../domain/errors";
+import { FileRangeNotSatisfiableError } from "../domain/file-content-error";
 import type { FileUseCases } from "../types/file-service";
 import type {
   FilesystemUseCases,
@@ -24,10 +28,14 @@ import type {
 } from "../types/filesystem-service";
 import type { FeatureApiHandler } from "../types/http";
 import { parseIntegerParameter } from "./query-parameters";
+import { parseRangeHeader } from "./byte-range";
 import { readJsonBody } from "./request-body";
 import { emptyResponse, jsonResponse } from "./responses";
 
 const FILE_DOWNLOAD_PATH = new RegExp(`^${API_PATHS.FILES}/([^/]+)/download$`);
+const FILE_CONTENT_PATH = new RegExp(
+  `^${API_PATHS.FILES}/([^/]+)/${API_PATH_SEGMENTS.CONTENT}$`,
+);
 const FILE_PATH = new RegExp(`^${API_PATHS.FILES}/([^/]+)$`);
 const FILESYSTEM_ENTRIES_PATH = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.ENTRIES}`;
 const FILESYSTEM_DIRECTORIES_PATH = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.DIRECTORIES}`;
@@ -75,6 +83,10 @@ export class FileApiHandler implements FeatureApiHandler {
     const downloadMatch = FILE_DOWNLOAD_PATH.exec(url.pathname);
     if (downloadMatch) {
       return this.handleDownload(request, readId(downloadMatch));
+    }
+    const contentMatch = FILE_CONTENT_PATH.exec(url.pathname);
+    if (contentMatch) {
+      return this.handleContent(request, readId(contentMatch));
     }
     const legacyFileMatch = FILE_PATH.exec(url.pathname);
     if (legacyFileMatch) {
@@ -183,12 +195,59 @@ export class FileApiHandler implements FeatureApiHandler {
     return new Response(object.body, {
       headers: {
         ...FILE_DOWNLOAD_RESPONSE_HEADERS,
-        [HTTP_HEADERS.CONTENT_DISPOSITION]: contentDisposition(entry.name),
+        [HTTP_HEADERS.CONTENT_DISPOSITION]: contentDisposition(
+          entry.name,
+          CONTENT_DISPOSITION_MODE.ATTACHMENT,
+        ),
         [HTTP_HEADERS.CONTENT_LENGTH]: String(object.size),
         [HTTP_HEADERS.CONTENT_TYPE]: object.contentType,
         [HTTP_HEADERS.ETAG]: object.httpEtag,
       },
     });
+  }
+
+  private async handleContent(
+    request: Request,
+    id: string,
+  ): Promise<Response> {
+    assertMethod(request, HTTP_METHOD.GET);
+    try {
+      const { entry, object, range } = await this.files.streamFile(
+        id,
+        parseRangeHeader(request.headers.get(HTTP_HEADERS.RANGE)),
+      );
+      const headers = new Headers(FILE_CONTENT_RESPONSE_HEADERS);
+      headers.set(
+        HTTP_HEADERS.CONTENT_DISPOSITION,
+        contentDisposition(entry.name, CONTENT_DISPOSITION_MODE.INLINE),
+      );
+      headers.set(HTTP_HEADERS.CONTENT_LENGTH, String(range?.length ?? object.size));
+      headers.set(HTTP_HEADERS.CONTENT_TYPE, object.contentType);
+      headers.set(HTTP_HEADERS.ETAG, object.httpEtag);
+      if (range) {
+        const lastByte = range.offset + range.length - 1;
+        headers.set(
+          HTTP_HEADERS.CONTENT_RANGE,
+          `${HTTP_RANGE_UNIT} ${range.offset}-${lastByte}/${object.size}`,
+        );
+      }
+      return new Response(object.body, {
+        status: range ? HTTP_STATUS.PARTIAL_CONTENT : HTTP_STATUS.OK,
+        headers,
+      });
+    } catch (error) {
+      if (error instanceof FileRangeNotSatisfiableError) {
+        return jsonResponse(
+          { error: { code: error.code, message: error.message } },
+          error.status,
+          {
+            ...FILE_CONTENT_RESPONSE_HEADERS,
+            [HTTP_HEADERS.CONTENT_RANGE]: `${HTTP_RANGE_UNIT} */${error.totalSize}`,
+          },
+        );
+      }
+      throw error;
+    }
   }
 }
 
@@ -246,12 +305,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function contentDisposition(fileName: string): string {
+function contentDisposition(fileName: string, mode: string): string {
   const fallback = fileName
     .replace(/[^\x20-\x7e]/g, "_")
     .replace(/["\\]/g, "_");
   const encoded = encodeURIComponent(fileName).replace(/[!'()*]/g, (character) =>
     `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
   );
-  return `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`;
+  return `${mode}; filename="${fallback}"; filename*=UTF-8''${encoded}`;
 }

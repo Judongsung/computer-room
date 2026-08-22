@@ -1,3 +1,4 @@
+import { XP_WINDOW_INTERACTION_CLASS_NAME } from "../../constants/xp";
 import type { XpWindowFrameProps } from "../../types/xp";
 
 export function XpWindowFrame({
@@ -22,7 +23,10 @@ export function XpWindowFrame({
   ]
     .filter(Boolean)
     .join(" ");
-  const titleBarClasses = ["xp-window-frame__title-bar", titleBarClassName]
+  const titleBarClasses = [
+    XP_WINDOW_INTERACTION_CLASS_NAME.TITLE_BAR,
+    titleBarClassName,
+  ]
     .filter(Boolean)
     .join(" ");
   const bodyClasses = ["xp-window-frame__body", bodyClassName]
@@ -49,7 +53,7 @@ export function XpWindowFrame({
         </strong>
         {controls ? (
           <div
-            className="xp-window-frame__controls"
+            className={XP_WINDOW_INTERACTION_CLASS_NAME.CONTROLS}
             onDoubleClick={(event) => event.stopPropagation()}
           >
             {controls}

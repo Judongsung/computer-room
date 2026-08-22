@@ -4,6 +4,7 @@ import {
   DESKTOP_ASSET_PATHS,
   WIDGET_ICON_PATH_BY_TYPE,
 } from "../../constants/desktop";
+import { KEYBOARD_KEY } from "../../constants/keyboard";
 import { WIDGET_TYPE } from "../../../constants/widget";
 import type { StartMenuProps } from "../../types/desktop";
 
@@ -32,7 +33,7 @@ export function StartMenu({
       onClose();
     };
     const closeFromKeyboard = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") {
+      if (event.key === KEYBOARD_KEY.ESCAPE) {
         onClose();
       }
     };

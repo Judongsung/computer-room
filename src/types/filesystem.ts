@@ -1,6 +1,7 @@
 import type { FILESYSTEM_ENTRY_KIND } from "../constants/filesystem";
 import type { FileStatus } from "./file";
 import type { StoredObjectBody } from "./storage";
+import type { ByteRange } from "./media";
 
 export type FilesystemEntryKind =
   (typeof FILESYSTEM_ENTRY_KIND)[keyof typeof FILESYSTEM_ENTRY_KIND];
@@ -100,6 +101,10 @@ export interface UpdateFilesystemEntryInput {
 export interface FilesystemDownload {
   readonly entry: FilesystemFileEntry;
   readonly object: StoredObjectBody;
+}
+
+export interface FilesystemContent extends FilesystemDownload {
+  readonly range: ByteRange | null;
 }
 
 export interface FilesystemFileObject {

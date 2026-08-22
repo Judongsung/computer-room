@@ -7,6 +7,7 @@ import {
   type CSSProperties,
 } from "react";
 import { WIDGET_TYPE, WINDOW_STATE } from "../../../constants/widget";
+import { mediaKindFromContentType } from "../../../domain/media-type";
 import type { WidgetType } from "../../../types/widget";
 import {
   DASHBOARD_COPY,
@@ -24,8 +25,10 @@ import {
   SYSTEM_APP_ID,
   SYSTEM_APP_ID_VALUES,
 } from "../../constants/system-app";
+import { MEDIA_WINDOW_CONFIG } from "../../constants/media";
 import { useDesktopDimensions } from "../../hooks/use-desktop-dimensions";
 import { useSystemWindows } from "../../hooks/use-system-windows";
+import { useMediaWindows } from "../../hooks/use-media-windows";
 import type {
   DesktopShellProps,
   TaskbarWindowItem,
@@ -35,6 +38,7 @@ import type { SystemAppId } from "../../types/system-app";
 import { DocumentsWindow } from "../filesystem/documents-window";
 import { MyComputerWindow } from "../filesystem/my-computer-window";
 import { RecycleBinWindow } from "../filesystem/recycle-bin-window";
+import { MediaViewerWindow } from "../media/media-viewer-window";
 import { DesktopNotification } from "./desktop-notification";
 import { DesktopShortcuts } from "./desktop-shortcuts";
 import { DesktopWindow } from "./desktop-window";
@@ -76,6 +80,7 @@ export function DesktopShell({
   const workAreaRef = useRef<HTMLElement>(null);
   const desktop = useDesktopDimensions(workAreaRef);
   const system = useSystemWindows();
+  const media = useMediaWindows();
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [selectedShortcutId, setSelectedShortcutId] = useState<SystemAppId | null>(null);
   const [activeWindowId, setActiveWindowId] = useState<string | null>(activeWidgetId);
@@ -116,6 +121,13 @@ export function DesktopShell({
     },
     [focusDesktopWindow, system],
   );
+  const openMediaViewer = useCallback(
+    (request: Parameters<typeof media.open>[0]): void => {
+      const id = media.open(request, desktop);
+      focusDesktopWindow(id);
+    },
+    [desktop, focusDesktopWindow, media.open],
+  );
   const closeSystemApp = useCallback(
     (id: SystemAppId): void => {
       system.close(id);
@@ -145,6 +157,19 @@ export function DesktopShell({
         }
         return;
       }
+      const mediaWindow = media.windows.find((window) => window.id === id);
+      if (mediaWindow) {
+        if (mediaWindow.windowState === WINDOW_STATE.MINIMIZED) {
+          media.restore(id);
+          focusDesktopWindow(id);
+        } else if (activeWindowId === id) {
+          media.minimize(id);
+          setActiveWindowId(null);
+        } else {
+          focusDesktopWindow(id);
+        }
+        return;
+      }
       const widget = widgets.find((candidate) => candidate.id === id);
       if (!widget) return;
       if (widget.windowState === WINDOW_STATE.MINIMIZED) {
@@ -161,6 +186,7 @@ export function DesktopShell({
       activeWindowId,
       focusDesktopWindow,
       minimizeSystemApp,
+      media,
       onActivateTaskbarWindow,
       onFocusWindow,
       onMinimizeWindow,
@@ -185,8 +211,20 @@ export function DesktopShell({
         isActive: activeWindowId === id,
         isMinimized: system.windows[id].windowState === WINDOW_STATE.MINIMIZED,
       })),
+      ...media.windows.flatMap((window) => {
+        const kind = mediaKindFromContentType(window.currentFile.contentType);
+        if (!kind) return [];
+        const config = MEDIA_WINDOW_CONFIG[kind];
+        return [{
+          id: window.id,
+          title: `${window.currentFile.name} - ${config.titleSuffix}`,
+          iconPath: config.iconPath,
+          isActive: activeWindowId === window.id,
+          isMinimized: window.windowState === WINDOW_STATE.MINIMIZED,
+        }];
+      }),
     ],
-    [activeWindowId, system.windows, widgets],
+    [activeWindowId, media.windows, system.windows, widgets],
   );
 
   const systemChrome = (id: SystemAppId) => ({
@@ -220,7 +258,9 @@ export function DesktopShell({
           onSelect={setSelectedShortcutId}
           onOpen={openSystemApp}
         />
-        {widgets.length === 0 && !SYSTEM_APP_ID_VALUES.some((id) => system.windows[id].isOpen) ? (
+        {widgets.length === 0 &&
+        media.windows.length === 0 &&
+        !SYSTEM_APP_ID_VALUES.some((id) => system.windows[id].isOpen) ? (
           <p className="desktop-empty-hint">{DASHBOARD_COPY.EMPTY_DESKTOP}</p>
         ) : null}
         {widgets.map((widget) => (
@@ -250,6 +290,7 @@ export function DesktopShell({
             gateway={filesystemGateway}
             filesystemRevision={filesystemRevision}
             onFilesystemChanged={notifyFilesystemChanged}
+            onOpenMedia={openMediaViewer}
           />
         ) : null}
         {system.windows[SYSTEM_APP_ID.MY_COMPUTER].isOpen ? (
@@ -266,6 +307,34 @@ export function DesktopShell({
             onFilesystemChanged={notifyFilesystemChanged}
           />
         ) : null}
+        {media.windows.map((window) => (
+          <MediaViewerWindow
+            key={window.id}
+            window={window}
+            desktop={desktop}
+            gateway={filesystemGateway}
+            filesystemRevision={filesystemRevision}
+            isActive={activeWindowId === window.id}
+            zIndex={desktopWindowZIndex(window.id, zOrders, 80)}
+            onFocus={() => focusDesktopWindow(window.id)}
+            onMinimize={() => {
+              media.minimize(window.id);
+              setActiveWindowId(null);
+            }}
+            onToggleMaximize={() => {
+              media.toggleMaximize(window.id);
+              focusDesktopWindow(window.id);
+            }}
+            onClose={() => {
+              media.close(window.id);
+              setActiveWindowId((current) =>
+                current === window.id ? null : current,
+              );
+            }}
+            onCommitBounds={(bounds) => media.commitBounds(window.id, bounds)}
+            onChangeFile={(entry) => media.changeFile(window.id, entry)}
+          />
+        ))}
       </main>
 
       {layoutSaveStatus === LAYOUT_SAVE_STATUS.ERROR && layoutSaveError ? (

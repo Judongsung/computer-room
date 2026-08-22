@@ -10,15 +10,18 @@ import {
 } from "../constants/filesystem";
 import { FILESYSTEM_ERRORS } from "../constants/errors/filesystem";
 import { AppError } from "../domain/errors";
+import { normalizeByteRange } from "../domain/byte-range";
 import {
   availableFilesystemName,
   filesystemNameKey,
   normalizeFilesystemName,
 } from "../domain/filesystem-name";
 import { normalizeContentType } from "../domain/file-name";
+import { mediaKindFromContentType } from "../domain/media-type";
 import type { FilePage, PublicFile } from "../types/file";
 import type {
   FilesystemDownload,
+  FilesystemContent,
   FilesystemEntryRecord,
   FilesystemFileEntry,
   UploadFilesystemFileInput,
@@ -26,6 +29,7 @@ import type {
 import type { FileUseCases } from "../types/file-service";
 import type { FilesystemRepository } from "../types/repository";
 import type { Clock, IdGenerator } from "../types/runtime";
+import type { RequestedByteRange } from "../types/media";
 import type { FileObjectStorage } from "../types/storage";
 import { toPublicEntry } from "./filesystem-service";
 
@@ -112,25 +116,30 @@ export class FileService implements FileUseCases {
   }
 
   async downloadFile(id: string): Promise<FilesystemDownload> {
-    const entry = await this.repository.findEntry(id);
-    if (
-      !entry ||
-      entry.kind !== FILESYSTEM_ENTRY_KIND.FILE ||
-      entry.fileStatus !== FILE_STATUS.READY ||
-      !entry.objectKey ||
-      !(await this.repository.isWithinRoot(id, FILESYSTEM_ROOT_ID.DOCUMENTS))
-    ) {
-      throw new AppError(FILE_ERRORS.FILE_NOT_FOUND);
-    }
-    const object = await this.storage.get(entry.objectKey);
+    const { entry, objectKey } = await this.requireReadyFile(id);
+    const object = await this.storage.get(objectKey);
     if (!object) {
       throw new AppError(FILE_ERRORS.FILE_CONTENT_NOT_FOUND);
     }
-    const publicEntry = toPublicEntry(entry);
-    if (publicEntry.kind !== FILESYSTEM_ENTRY_KIND.FILE) {
-      throw new AppError(FILESYSTEM_ERRORS.INVALID_STORED_ENTRY);
+    return { entry, object };
+  }
+
+  async streamFile(
+    id: string,
+    requestedRange?: RequestedByteRange,
+  ): Promise<FilesystemContent> {
+    const { entry, objectKey } = await this.requireReadyFile(id);
+    if (!mediaKindFromContentType(entry.contentType)) {
+      throw new AppError(FILE_ERRORS.UNSUPPORTED_MEDIA_TYPE);
     }
-    return { entry: publicEntry, object };
+    const range = requestedRange
+      ? normalizeByteRange(requestedRange, entry.size)
+      : null;
+    const object = await this.storage.get(objectKey, range ?? undefined);
+    if (!object) {
+      throw new AppError(FILE_ERRORS.FILE_CONTENT_NOT_FOUND);
+    }
+    return { entry, object, range };
   }
 
   private async requireActiveDirectory(id: string): Promise<void> {
@@ -142,6 +151,26 @@ export class FileService implements FileUseCases {
     ) {
       throw new AppError(FILESYSTEM_ERRORS.DIRECTORY_NOT_FOUND);
     }
+  }
+
+  private async requireReadyFile(
+    id: string,
+  ): Promise<{ entry: FilesystemFileEntry; objectKey: string }> {
+    const storedEntry = await this.repository.findEntry(id);
+    if (
+      !storedEntry ||
+      storedEntry.kind !== FILESYSTEM_ENTRY_KIND.FILE ||
+      storedEntry.fileStatus !== FILE_STATUS.READY ||
+      !storedEntry.objectKey ||
+      !(await this.repository.isWithinRoot(id, FILESYSTEM_ROOT_ID.DOCUMENTS))
+    ) {
+      throw new AppError(FILE_ERRORS.FILE_NOT_FOUND);
+    }
+    const entry = toPublicEntry(storedEntry);
+    if (entry.kind !== FILESYSTEM_ENTRY_KIND.FILE) {
+      throw new AppError(FILESYSTEM_ERRORS.INVALID_STORED_ENTRY);
+    }
+    return { entry, objectKey: storedEntry.objectKey };
   }
 
   private assertFileSize(size: number): void {

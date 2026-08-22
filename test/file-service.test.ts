@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { FileService } from "../src/application/file-service";
 import { FILE_ERRORS } from "../src/constants/errors/file";
+import { BYTE_RANGE_KIND } from "../src/constants/media";
 import {
   DEFAULT_CONTENT_TYPE,
   FILE_OBJECT_KEY_PREFIX,
@@ -128,6 +129,39 @@ describe("FileService", () => {
     await expect(service.listFiles(0, 20)).resolves.toMatchObject({
       items: [{ id: TEST_FILE.ID, name: TEST_FILE.NAME }],
       nextOffset: null,
+    });
+  });
+
+  it("streams only the requested byte range for supported media", async () => {
+    const { service } = createService();
+    await service.uploadFile({
+      originalName: "photo.png",
+      contentType: "image/png",
+      declaredSize: TEST_FILE.SIZE,
+      body: streamFromText(TEST_FILE.BODY),
+    });
+
+    const content = await service.streamFile(TEST_FILE.ID, {
+      kind: BYTE_RANGE_KIND.CLOSED,
+      start: 1,
+      end: 3,
+    });
+    expect(content.range).toEqual({ offset: 1, length: 3 });
+    await expect(new Response(content.object.body).text()).resolves.toBe("ell");
+    expect(content.object.size).toBe(TEST_FILE.SIZE);
+  });
+
+  it("rejects non-media files from the content stream", async () => {
+    const { service } = createService();
+    await service.uploadFile({
+      originalName: TEST_FILE.NAME,
+      contentType: TEST_FILE.CONTENT_TYPE,
+      declaredSize: TEST_FILE.SIZE,
+      body: streamFromText(TEST_FILE.BODY),
+    });
+
+    await expect(service.streamFile(TEST_FILE.ID)).rejects.toMatchObject({
+      code: FILE_ERRORS.UNSUPPORTED_MEDIA_TYPE.code,
     });
   });
 });

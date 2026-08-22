@@ -8,6 +8,7 @@ export const HTTP_METHOD = {
 
 export const HTTP_STATUS = {
   OK: 200,
+  PARTIAL_CONTENT: 206,
   CREATED: 201,
   NO_CONTENT: 204,
   BAD_REQUEST: 400,
@@ -18,20 +19,32 @@ export const HTTP_STATUS = {
   CONFLICT: 409,
   CONTENT_TOO_LARGE: 413,
   UNSUPPORTED_MEDIA_TYPE: 415,
+  RANGE_NOT_SATISFIABLE: 416,
   INTERNAL_SERVER_ERROR: 500,
   SERVICE_UNAVAILABLE: 503,
 } as const;
 
 export const HTTP_HEADERS = {
+  ACCEPT_RANGES: "Accept-Ranges",
   CACHE_CONTROL: "Cache-Control",
   CONTENT_DISPOSITION: "Content-Disposition",
   CONTENT_LENGTH: "Content-Length",
+  CONTENT_RANGE: "Content-Range",
   CONTENT_TYPE: "Content-Type",
+  CROSS_ORIGIN_RESOURCE_POLICY: "Cross-Origin-Resource-Policy",
   ETAG: "ETag",
   FILE_SIZE: "X-File-Size",
   ORIGIN: "Origin",
+  RANGE: "Range",
   REFERRER_POLICY: "Referrer-Policy",
   X_CONTENT_TYPE_OPTIONS: "X-Content-Type-Options",
+} as const;
+
+export const HTTP_RANGE_UNIT = "bytes";
+
+export const CONTENT_DISPOSITION_MODE = {
+  ATTACHMENT: "attachment",
+  INLINE: "inline",
 } as const;
 
 export const HTTP_MEDIA_TYPE = {
@@ -49,6 +62,10 @@ const REFERRER_POLICY = {
 
 const CONTENT_TYPE_OPTIONS = {
   NO_SNIFF: "nosniff",
+} as const;
+
+const CROSS_ORIGIN_RESOURCE_POLICY = {
+  SAME_ORIGIN: "same-origin",
 } as const;
 
 const JSON_RESPONSE_CONTENT_TYPE = `${HTTP_MEDIA_TYPE.JSON}; charset=utf-8`;
@@ -74,4 +91,11 @@ export const FILE_DOWNLOAD_RESPONSE_HEADERS: HeadersInit = {
   ...BASE_RESPONSE_HEADERS,
   [HTTP_HEADERS.CACHE_CONTROL]: CACHE_CONTROL.PRIVATE_NO_STORE,
   [HTTP_HEADERS.REFERRER_POLICY]: REFERRER_POLICY.NO_REFERRER,
+};
+
+export const FILE_CONTENT_RESPONSE_HEADERS: HeadersInit = {
+  ...FILE_DOWNLOAD_RESPONSE_HEADERS,
+  [HTTP_HEADERS.ACCEPT_RANGES]: HTTP_RANGE_UNIT,
+  [HTTP_HEADERS.CROSS_ORIGIN_RESOURCE_POLICY]:
+    CROSS_ORIGIN_RESOURCE_POLICY.SAME_ORIGIN,
 };

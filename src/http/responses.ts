@@ -9,10 +9,15 @@ import { AppError } from "../domain/errors";
 export function jsonResponse(
   data: unknown,
   status: number = HTTP_STATUS.OK,
+  additionalHeaders?: HeadersInit,
 ): Response {
+  const headers = new Headers(API_RESPONSE_HEADERS);
+  if (additionalHeaders) {
+    new Headers(additionalHeaders).forEach((value, name) => headers.set(name, value));
+  }
   return new Response(JSON.stringify(data), {
     status,
-    headers: API_RESPONSE_HEADERS,
+    headers,
   });
 }
 

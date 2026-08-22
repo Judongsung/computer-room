@@ -29,6 +29,7 @@ import {
 const ORIGIN = "http://localhost";
 const TEST_MEDIA_TYPE = {
   TEXT: "text/plain",
+  VIDEO: "video/mp4",
 } as const;
 const MEMO_WINDOW_POLICY = WIDGET_WINDOW_POLICY[WIDGET_TYPE.MEMO];
 
@@ -134,6 +135,55 @@ describe("computer-room Worker", () => {
       "same.txt",
     ]);
     expect(new Set(page.items.map((file) => file.id)).size).toBe(2);
+  });
+
+  it("streams supported media with single byte ranges", async () => {
+    const body = "0123456789";
+    const upload = await uploadFile(
+      "clip.mp4",
+      body,
+      undefined,
+      TEST_MEDIA_TYPE.VIDEO,
+    );
+    const created = (await upload.json()) as { file: { id: string } };
+    const contentPath = `${ORIGIN}${API_PATHS.FILES}/${created.file.id}/${API_PATH_SEGMENTS.CONTENT}`;
+
+    const full = await SELF.fetch(contentPath);
+    expect(full.status).toBe(HTTP_STATUS.OK);
+    expect(full.headers.get(HTTP_HEADERS.ACCEPT_RANGES)).toBe("bytes");
+    expect(full.headers.get(HTTP_HEADERS.CONTENT_DISPOSITION)).toContain("inline");
+    await expect(decodeResponseBody(full)).resolves.toBe(body);
+
+    const partial = await SELF.fetch(contentPath, {
+      headers: { [HTTP_HEADERS.RANGE]: "bytes=2-5" },
+    });
+    expect(partial.status).toBe(HTTP_STATUS.PARTIAL_CONTENT);
+    expect(partial.headers.get(HTTP_HEADERS.CONTENT_RANGE)).toBe("bytes 2-5/10");
+    expect(partial.headers.get(HTTP_HEADERS.CONTENT_LENGTH)).toBe("4");
+    await expect(decodeResponseBody(partial)).resolves.toBe("2345");
+
+    const suffix = await SELF.fetch(contentPath, {
+      headers: { [HTTP_HEADERS.RANGE]: "bytes=-3" },
+    });
+    expect(suffix.status).toBe(HTTP_STATUS.PARTIAL_CONTENT);
+    expect(suffix.headers.get(HTTP_HEADERS.CONTENT_RANGE)).toBe("bytes 7-9/10");
+    await expect(decodeResponseBody(suffix)).resolves.toBe("789");
+
+    const invalid = await SELF.fetch(contentPath, {
+      headers: { [HTTP_HEADERS.RANGE]: "bytes=0-1,4-5" },
+    });
+    expect(invalid.status).toBe(HTTP_STATUS.RANGE_NOT_SATISFIABLE);
+    expect(invalid.headers.get(HTTP_HEADERS.CONTENT_RANGE)).toBe("bytes */10");
+    expect(invalid.headers.get(HTTP_HEADERS.ACCEPT_RANGES)).toBe("bytes");
+  });
+
+  it("does not expose unsupported files through the inline content route", async () => {
+    const upload = await uploadFile("notes.txt", "notes");
+    const created = (await upload.json()) as { file: { id: string } };
+    const response = await SELF.fetch(
+      `${ORIGIN}${API_PATHS.FILES}/${created.file.id}/${API_PATH_SEGMENTS.CONTENT}`,
+    );
+    expect(response.status).toBe(HTTP_STATUS.UNSUPPORTED_MEDIA_TYPE);
   });
 
   it("creates nested folders and moves entries without changing R2 keys", async () => {
@@ -497,6 +547,7 @@ function uploadFile(
   name: string,
   content: string,
   parentId?: string,
+  contentType: string = TEST_MEDIA_TYPE.TEXT,
 ): Promise<Response> {
   const bytes = new TextEncoder().encode(content);
   const query = new URLSearchParams({ [API_QUERY_PARAMETERS.FILE_NAME]: name });
@@ -506,12 +557,16 @@ function uploadFile(
   return SELF.fetch(`${ORIGIN}${API_PATHS.FILES}?${query}`, {
     method: HTTP_METHOD.POST,
     headers: {
-      [HTTP_HEADERS.CONTENT_TYPE]: TEST_MEDIA_TYPE.TEXT,
+      [HTTP_HEADERS.CONTENT_TYPE]: contentType,
       [HTTP_HEADERS.FILE_SIZE]: String(bytes.byteLength),
       [HTTP_HEADERS.ORIGIN]: ORIGIN,
     },
     body: bytes,
   });
+}
+
+async function decodeResponseBody(response: Response): Promise<string> {
+  return new TextDecoder().decode(await response.arrayBuffer());
 }
 
 function saveWidgets(items: unknown[]): Promise<Response> {

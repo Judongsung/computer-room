@@ -2,6 +2,7 @@ import type {
   FileObjectStorage,
   StoredObject,
   StoredObjectBody,
+  StoredObjectRange,
 } from "../src/types/storage";
 import type { FilesystemRepository } from "../src/types/repository";
 import type {
@@ -313,14 +314,20 @@ export class MemoryObjectStorage implements FileObjectStorage {
     };
   }
 
-  async get(key: string): Promise<StoredObjectBody | null> {
+  async get(
+    key: string,
+    range?: StoredObjectRange,
+  ): Promise<StoredObjectBody | null> {
     const object = this.objects.get(key);
     if (!object) {
       return null;
     }
 
+    const bytes = range
+      ? object.bytes.slice(range.offset, range.offset + range.length)
+      : object.bytes;
     return {
-      body: new Blob([object.bytes]).stream(),
+      body: new Blob([bytes]).stream(),
       size: object.bytes.byteLength,
       etag: object.etag,
       httpEtag: `"${object.etag}"`,

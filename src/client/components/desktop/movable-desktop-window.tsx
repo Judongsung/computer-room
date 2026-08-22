@@ -1,8 +1,16 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { Rnd } from "react-rnd";
 import { WINDOW_STATE } from "../../../constants/widget";
+import { DESKTOP_WINDOW_CLASS_NAME } from "../../constants/desktop";
+import {
+  XP_WINDOW_INTERACTION_CLASS_NAME,
+  XP_WINDOW_INTERACTION_SELECTOR,
+} from "../../constants/xp";
 import { clampWindowBounds } from "../../domain/window-layout";
-import type { DesktopDimensions, WindowBounds } from "../../types/desktop";
+import type {
+  MovableDesktopWindowProps,
+  WindowBounds,
+} from "../../types/desktop";
 
 const RESIZE_HANDLES = {
   top: true,
@@ -14,17 +22,6 @@ const RESIZE_HANDLES = {
   bottomLeft: true,
   topLeft: true,
 } as const;
-
-interface MovableDesktopWindowProps extends WindowBounds {
-  readonly desktop: DesktopDimensions;
-  readonly windowState: string;
-  readonly minWidth: number;
-  readonly minHeight: number;
-  readonly zIndex: number;
-  readonly onFocus: () => void;
-  readonly onCommitBounds: (bounds: WindowBounds) => void;
-  readonly children: ReactNode;
-}
 
 export function MovableDesktopWindow({
   position,
@@ -58,7 +55,11 @@ export function MovableDesktopWindow({
 
   return (
     <Rnd
-      className={isMaximized ? "desktop-window desktop-window--maximized" : "desktop-window"}
+      className={
+        isMaximized
+          ? `${DESKTOP_WINDOW_CLASS_NAME.ROOT} ${DESKTOP_WINDOW_CLASS_NAME.MAXIMIZED}`
+          : DESKTOP_WINDOW_CLASS_NAME.ROOT
+      }
       style={{ zIndex }}
       bounds="parent"
       position={bounds.position}
@@ -69,8 +70,8 @@ export function MovableDesktopWindow({
       maxHeight={desktop.height}
       disableDragging={isMaximized}
       enableResizing={isMaximized ? false : RESIZE_HANDLES}
-      dragHandleClassName="xp-window-frame__title-bar"
-      cancel=".xp-window-frame__controls"
+      dragHandleClassName={XP_WINDOW_INTERACTION_CLASS_NAME.TITLE_BAR}
+      cancel={XP_WINDOW_INTERACTION_SELECTOR.CONTROLS}
       onMouseDown={onFocus}
       onDragStart={onFocus}
       onDrag={(_, nextPosition) => {
@@ -108,4 +109,3 @@ export function MovableDesktopWindow({
     </Rnd>
   );
 }
-

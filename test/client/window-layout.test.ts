@@ -10,9 +10,9 @@ import {
   bringWidgetToFront,
   cascadeWindowPosition,
   clampWindowBounds,
-  minimizeWidget,
-  restoreWidget,
-  toggleMaximizeWidget,
+  minimizeWindow,
+  restoreWindow,
+  toggleMaximizeWindow,
 } from "../../src/client/domain/window-layout";
 import type { WidgetLayout } from "../../src/types/widget";
 
@@ -41,15 +41,15 @@ describe("desktop window layout", () => {
     expect(activeWidgetId(focused)).toBe(back.id);
     const focusedBack = focused.find((widget) => widget.id === back.id);
     expect(focusedBack).toBeDefined();
-    const maximized = toggleMaximizeWidget(focusedBack!);
+    const maximized = toggleMaximizeWindow(focusedBack!);
     expect(maximized.windowState).toBe(WINDOW_STATE.MAXIMIZED);
-    const minimized = minimizeWidget(maximized);
+    const minimized = minimizeWindow(maximized);
     expect(minimized).toMatchObject({
       windowState: WINDOW_STATE.MINIMIZED,
       restoreState: WINDOW_RESTORE_STATE.MAXIMIZED,
     });
-    expect(restoreWidget(minimized).windowState).toBe(WINDOW_STATE.MAXIMIZED);
-    expect(toggleMaximizeWidget(maximized).windowState).toBe(
+    expect(restoreWindow(minimized).windowState).toBe(WINDOW_STATE.MAXIMIZED);
+    expect(toggleMaximizeWindow(maximized).windowState).toBe(
       WINDOW_STATE.NORMAL,
     );
   });

@@ -17,6 +17,7 @@ import {
 import type { DashboardGateway } from "../../src/client/types/api";
 import type { FilesystemGateway } from "../../src/client/types/filesystem";
 import { FILESYSTEM_COPY } from "../../src/client/constants/filesystem";
+import { MEDIA_VIEWER_COPY } from "../../src/client/constants/media";
 import { ACCESS_LOGOUT_PATH } from "../../src/constants/auth";
 import { CHECKLIST_EVENT_ACTION } from "../../src/constants/checklist";
 import { MAX_FILE_SIZE_BYTES } from "../../src/constants/file";
@@ -235,6 +236,97 @@ describe("App", () => {
     expect(desktopWindowTitles().filter((title) => title === "내 문서")).toHaveLength(1);
     const taskbar = screen.getByRole("contentinfo", { name: DASHBOARD_COPY.TASKBAR });
     expect(within(taskbar).getAllByRole("button", { name: "내 문서" })).toHaveLength(1);
+  });
+
+  it("opens the same supported image in independent viewer windows", async () => {
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    filesystem.addFile("photo.png", "image/png");
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
+    const documentsWindow = desktopWindowByTitle("내 문서");
+    const photo = await within(documentsWindow).findByRole("button", {
+      name: /photo\.png/,
+    });
+    await user.dblClick(photo);
+    await user.dblClick(photo);
+
+    const title = "photo.png - Windows 사진 및 팩스 뷰어";
+    await waitFor(() => {
+      expect(desktopWindowTitles().filter((candidate) => candidate === title)).toHaveLength(2);
+    });
+    expect(
+      screen.getAllByRole("button", { name: MEDIA_VIEWER_COPY.ZOOM_IN }),
+    ).toHaveLength(2);
+  });
+
+  it("navigates from the picture viewer to Windows Media Player and pauses on minimize", async () => {
+    const pause = vi
+      .spyOn(HTMLMediaElement.prototype, "pause")
+      .mockImplementation(() => undefined);
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue(undefined);
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    filesystem.addFile("photo.png", "image/png");
+    filesystem.addFile("clip.mp4", "video/mp4");
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
+    const documentsWindow = desktopWindowByTitle("내 문서");
+    await user.dblClick(
+      await within(documentsWindow).findByRole("button", { name: /photo\.png/ }),
+    );
+    const pictureTitle = "photo.png - Windows 사진 및 팩스 뷰어";
+    const pictureWindow = desktopWindowByTitle(pictureTitle);
+    await user.click(
+      await within(pictureWindow).findByRole("button", {
+        name: MEDIA_VIEWER_COPY.NEXT,
+      }),
+    );
+
+    const playerTitle = "clip.mp4 - Windows Media Player";
+    const playerWindow = await waitFor(() => desktopWindowByTitle(playerTitle));
+    expect(playerWindow.querySelector("video")).toBeInTheDocument();
+    expect(
+      within(playerWindow).getByRole("button", { name: MEDIA_VIEWER_COPY.PLAY }),
+    ).toBeInTheDocument();
+    await user.click(
+      within(playerWindow).getByRole("button", { name: DASHBOARD_COPY.MINIMIZE }),
+    );
+    expect(desktopWindowTitles()).not.toContain(playerTitle);
+    expect(pause).toHaveBeenCalled();
+  });
+
+  it("offers a download instead of opening an unsupported media type", async () => {
+    const click = vi
+      .spyOn(HTMLAnchorElement.prototype, "click")
+      .mockImplementation(() => undefined);
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    filesystem.addFile("photo.heic", "image/heic");
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
+    const documentsWindow = desktopWindowByTitle("내 문서");
+    await user.dblClick(
+      await within(documentsWindow).findByRole("button", { name: /photo\.heic/ }),
+    );
+    const dialog = screen.getByRole("dialog", {
+      name: MEDIA_VIEWER_COPY.UNSUPPORTED_TITLE,
+    });
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: MEDIA_VIEWER_COPY.DOWNLOAD_FILE,
+      }),
+    );
+    expect(click).toHaveBeenCalledOnce();
+    expect(desktopWindowTitles().some((title) => title?.includes("photo.heic"))).toBe(
+      false,
+    );
   });
 
   it("minimizes, restores, maximizes, and closes a system app", async () => {
@@ -786,6 +878,21 @@ class FakeFilesystemGateway implements FilesystemGateway {
     updatedAt: "2026-08-20T00:00:00.000Z",
   };
 
+  addFile(name: string, contentType: string): FilesystemFileEntry {
+    const entry: FilesystemFileEntry = {
+      id: `file-${this.nextId++}`,
+      parentId: this.root.id,
+      kind: FILESYSTEM_ENTRY_KIND.FILE,
+      name,
+      contentType,
+      size: 10,
+      createdAt: "2026-08-20T00:00:00.000Z",
+      updatedAt: "2026-08-20T00:00:00.000Z",
+    };
+    this.entries.push(entry);
+    return entry;
+  }
+
   async listDirectory(parentId = this.root.id): Promise<FilesystemDirectoryPage> {
     const directory =
       parentId === this.root.id
@@ -864,6 +971,10 @@ class FakeFilesystemGateway implements FilesystemGateway {
 
   downloadUrl(id: string): string {
     return `/api/files/${id}/download`;
+  }
+
+  contentUrl(id: string): string {
+    return `/api/files/${id}/content`;
   }
 
   async listTrash(): Promise<FilesystemTrashPage> {
