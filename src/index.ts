@@ -54,6 +54,8 @@ export default {
       layoutRepository,
       memoRepository,
       checklistRepository,
+      fileRepository,
+      ids,
       clock,
     );
     const memoService = new MemoService(layoutRepository, memoRepository, clock);

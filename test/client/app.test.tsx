@@ -39,6 +39,7 @@ import type {
   ChecklistLogPage,
   DailyChecklistData,
   DashboardWidget,
+  CreateWidgetInput,
   MemoData,
   WidgetLayout,
 } from "../../src/types/widget";
@@ -48,6 +49,9 @@ import type {
   FilesystemEntry,
   FilesystemFileEntry,
   FilesystemTrashPage,
+  FilesystemWidgetEntry,
+  MoveFilesystemEntryInput,
+  SaveWidgetFileInput,
   UpdateFilesystemEntryInput,
 } from "../../src/types/filesystem";
 
@@ -71,7 +75,7 @@ describe("App", () => {
   it("adds and auto-saves a memo from the start menu", async () => {
     const api = new FakeDashboardGateway();
     const user = userEvent.setup();
-    render(<App api={api} />);
+    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
 
     expect(
       await screen.findByText(DASHBOARD_COPY.EMPTY_DESKTOP),
@@ -87,8 +91,8 @@ describe("App", () => {
     );
     expect(screen.getByText(MEMO_WIDGET_COPY.EMPTY_CONTENT)).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: DASHBOARD_COPY.CLOSE_DISABLED }),
-    ).toBeDisabled();
+      screen.getByRole("button", { name: DASHBOARD_COPY.CLOSE }),
+    ).toBeEnabled();
     await waitFor(() => expect(api.savedWidgets).toHaveLength(1));
     expect(api.savedWidgets[0]).toMatchObject({
       position: { x: 32, y: 32 },
@@ -101,7 +105,7 @@ describe("App", () => {
   it("closes the start menu with Escape and a desktop click", async () => {
     const api = new FakeDashboardGateway();
     const user = userEvent.setup();
-    render(<App api={api} />);
+    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
 
     await openStartMenu(user);
     expect(screen.getByLabelText(DASHBOARD_COPY.START_MENU)).toBeInTheDocument();
@@ -123,7 +127,7 @@ describe("App", () => {
     const api = new FakeDashboardGateway();
     api.savedWidgets = [memoWidget("00000000-0000-4000-8000-000000000301")];
     const user = userEvent.setup();
-    render(<App api={api} />);
+    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
 
     await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT);
     await user.click(
@@ -157,7 +161,7 @@ describe("App", () => {
       checklistWidget("00000000-0000-4000-8000-000000000302", 1),
     ];
     const user = userEvent.setup();
-    render(<App api={api} />);
+    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
 
     const taskbar = await screen.findByRole("contentinfo", {
       name: DASHBOARD_COPY.TASKBAR,
@@ -199,7 +203,7 @@ describe("App", () => {
       memoWidget("00000000-0000-4000-8000-000000000301"),
       checklistWidget("00000000-0000-4000-8000-000000000302", 1),
     ];
-    render(<App api={api} />);
+    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
 
     await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT);
     const inactiveMemoWindow = screen.getAllByTestId("desktop-window")[0]!;
@@ -236,6 +240,38 @@ describe("App", () => {
     expect(desktopWindowTitles().filter((title) => title === "내 문서")).toHaveLength(1);
     const taskbar = screen.getByRole("contentinfo", { name: DASHBOARD_COPY.TASKBAR });
     expect(within(taskbar).getAllByRole("button", { name: "내 문서" })).toHaveLength(1);
+  });
+
+  it("keeps a desktop folder selected and opens other folders in independent windows", async () => {
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    await filesystem.createDirectory(FILESYSTEM_ROOT_ID.DESKTOP, "사진");
+    await filesystem.createDirectory(FILESYSTEM_ROOT_ID.DESKTOP, "음악");
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    const documentsShortcut = await screen.findByRole("button", {
+      name: "내 문서",
+    });
+    const picturesShortcut = await screen.findByRole("button", { name: "사진" });
+    await user.dblClick(picturesShortcut);
+
+    expect(picturesShortcut).toHaveAttribute("aria-pressed", "true");
+    expect(documentsShortcut).toHaveAttribute("aria-pressed", "false");
+    expect(desktopWindowTitles()).toContain("사진");
+
+    await user.dblClick(screen.getByRole("button", { name: "음악" }));
+
+    await waitFor(() => {
+      expect(desktopWindowTitles()).toEqual(
+        expect.arrayContaining(["사진", "음악"]),
+      );
+    });
+    const taskbar = screen.getByRole("contentinfo", {
+      name: DASHBOARD_COPY.TASKBAR,
+    });
+    expect(within(taskbar).getByRole("button", { name: "사진" })).toBeInTheDocument();
+    expect(within(taskbar).getByRole("button", { name: "음악" })).toBeInTheDocument();
   });
 
   it("opens the same supported image in independent viewer windows", async () => {
@@ -382,6 +418,87 @@ describe("App", () => {
     await user.dblClick(within(computerWindow).getByRole("button", { name: MEMO_WIDGET_COPY.TITLE }));
     expect(await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT)).toBeInTheDocument();
     await waitFor(() => expect(api.savedWidgets).toHaveLength(1));
+  });
+
+  it("saves an unsaved widget as a D1 file and closes it without a second prompt", async () => {
+    const api = new FakeDashboardGateway();
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
+
+    await addWidget(user, DASHBOARD_COPY.ADD_MEMO_WIDGET);
+    await user.click(
+      screen.getByRole("button", { name: DASHBOARD_COPY.SAVE_AS_FILE }),
+    );
+    const saveDialog = screen.getByRole("dialog", {
+      name: FILESYSTEM_COPY.SAVE_WIDGET_TITLE,
+    });
+    const nameInput = within(saveDialog).getByRole("textbox", {
+      name: FILESYSTEM_COPY.FILE_NAME,
+    });
+    await user.clear(nameInput);
+    await user.type(nameInput, "나의 메모");
+    await user.click(
+      within(saveDialog).getByRole("button", {
+        name: FILESYSTEM_COPY.SAVE_HERE,
+      }),
+    );
+
+    await waitFor(() => expect(desktopWindowTitles()).toContain("나의 메모"));
+    await user.click(
+      screen.getByRole("button", { name: DASHBOARD_COPY.CLOSE }),
+    );
+    await waitFor(() =>
+      expect(desktopWindowTitles()).not.toContain("나의 메모"),
+    );
+    expect(
+      screen.queryByRole("dialog", {
+        name: FILESYSTEM_COPY.UNSAVED_CLOSE_TITLE,
+      }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("updates an open widget title when its file is renamed in My Documents", async () => {
+    const api = new FakeDashboardGateway();
+    const widget = memoWidget("00000000-0000-4000-8000-000000000401");
+    api.savedWidgets = [widget];
+    const filesystem = new FakeFilesystemGateway();
+    filesystem.addWidgetFile(widget);
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
+    const documentsWindow = desktopWindowByTitle("내 문서");
+    await user.click(
+      await within(documentsWindow).findByRole("button", {
+        name: MEMO_WIDGET_COPY.TITLE,
+      }),
+    );
+    await user.click(
+      within(documentsWindow).getByRole("button", {
+        name: FILESYSTEM_COPY.RENAME,
+      }),
+    );
+    const renameDialog = screen.getByRole("dialog", {
+      name: FILESYSTEM_COPY.RENAME_TITLE,
+    });
+    const renameInput = within(renameDialog).getByRole("textbox");
+    await user.clear(renameInput);
+    await user.type(renameInput, "이름 바꾼 메모");
+    await user.click(
+      within(renameDialog).getByRole("button", {
+        name: FILESYSTEM_COPY.CONFIRM,
+      }),
+    );
+
+    await waitFor(() =>
+      expect(desktopWindowTitles()).toContain("이름 바꾼 메모"),
+    );
+    const taskbar = screen.getByRole("contentinfo", {
+      name: DASHBOARD_COPY.TASKBAR,
+    });
+    expect(
+      within(taskbar).getByRole("button", { name: "이름 바꾼 메모" }),
+    ).toBeInTheDocument();
   });
 
   it("creates a folder from My Documents", async () => {
@@ -540,7 +657,7 @@ describe("App", () => {
     ];
     const releaseFirstSave = api.blockNextLayoutSave();
     const user = userEvent.setup();
-    render(<App api={api} />);
+    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
 
     await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT);
     await user.click(
@@ -575,10 +692,13 @@ describe("App", () => {
     const api = new FakeDashboardGateway();
     api.layoutSaveFailures = 1;
     const user = userEvent.setup();
-    render(<App api={api} />);
+    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
 
     await addWidget(user, DASHBOARD_COPY.ADD_MEMO_WIDGET);
     expect(screen.getByText(MEMO_WIDGET_COPY.EMPTY_CONTENT)).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("button", { name: DASHBOARD_COPY.MAXIMIZE }),
+    );
     expect(await screen.findByText("테스트 저장 실패")).toBeInTheDocument();
     await user.click(
       screen.getByRole("button", { name: DASHBOARD_COPY.RETRY }),
@@ -594,7 +714,7 @@ describe("App", () => {
     const user = userEvent.setup();
     const markdown =
       "# 오늘\n\n**중요**\n다음 줄\n\n~~완료~~\n\n- [x] 확인\n\n<script>alert('x')</script>";
-    render(<App api={api} />);
+    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
     await addWidget(user, DASHBOARD_COPY.ADD_MEMO_WIDGET);
     await waitFor(() => expect(api.savedWidgets).toHaveLength(1));
 
@@ -637,7 +757,7 @@ describe("App", () => {
   it("edits checklist items only in edit state and opens the event log", async () => {
     const api = new FakeDashboardGateway();
     const user = userEvent.setup();
-    render(<App api={api} />);
+    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
     await addWidget(user, DASHBOARD_COPY.ADD_CHECKLIST_WIDGET);
     await waitFor(() => expect(api.savedWidgets).toHaveLength(1));
 
@@ -708,6 +828,7 @@ class FakeDashboardGateway implements DashboardGateway {
   readonly checklistLogs: ChecklistLogEvent[] = [];
   private nextChecklistItem = 1;
   private nextLayoutSaveGate: Promise<void> | null = null;
+  private nextWidget = 1;
 
   async getSession(): Promise<SessionInfo> {
     return SESSION;
@@ -748,11 +869,13 @@ class FakeDashboardGateway implements DashboardGateway {
         ? {
             ...layout,
             type: WIDGET_TYPE.MEMO,
+            file: null,
             data: { markdown: "", updatedAt: null },
           }
         : {
             ...layout,
             type: WIDGET_TYPE.DAILY_CHECKLIST,
+            file: null,
             data: {
               businessDate: "2026-08-20",
               nextResetAt: "2026-08-20T15:00:00.000Z",
@@ -761,6 +884,76 @@ class FakeDashboardGateway implements DashboardGateway {
           };
     });
     return cloneDashboardWidgets(this.savedWidgets);
+  }
+
+  async createWidget(input: CreateWidgetInput): Promise<DashboardWidget> {
+    const id = `00000000-0000-4000-8000-${String(this.nextWidget).padStart(12, "0")}`;
+    this.nextWidget += 1;
+    const layout: WidgetLayout = {
+      id,
+      type: input.type,
+      position: input.position,
+      size: input.size,
+      windowState: WINDOW_STATE.NORMAL,
+      restoreState: WINDOW_RESTORE_STATE.NORMAL,
+      stackOrder: this.savedWidgets.length,
+    };
+    const widget: DashboardWidget =
+      input.type === WIDGET_TYPE.MEMO
+        ? {
+            ...layout,
+            type: WIDGET_TYPE.MEMO,
+            file: null,
+            data: { markdown: "", updatedAt: null },
+          }
+        : {
+            ...layout,
+            type: WIDGET_TYPE.DAILY_CHECKLIST,
+            file: null,
+            data: {
+              businessDate: "2026-08-20",
+              nextResetAt: "2026-08-20T15:00:00.000Z",
+              items: [],
+            },
+          };
+    this.savedWidgets.push(widget);
+    return structuredClone(widget);
+  }
+
+  async saveWidgetFile(
+    widgetId: string,
+    input: SaveWidgetFileInput,
+  ): Promise<{ widget: DashboardWidget; entry: FilesystemWidgetEntry }> {
+    const widget = this.savedWidgets.find((candidate) => candidate.id === widgetId);
+    if (!widget) throw new Error("Widget not found");
+    const entry: FilesystemWidgetEntry = {
+      id: `widget-file-${widgetId}`,
+      parentId: input.parentId,
+      kind: FILESYSTEM_ENTRY_KIND.WIDGET,
+      name: input.name,
+      widgetId,
+      widgetType: widget.type,
+      createdAt: "2026-08-20T00:00:00.000Z",
+      updatedAt: "2026-08-20T00:00:00.000Z",
+      desktopOrder: null,
+    };
+    const saved = { ...widget, file: { entryId: entry.id, parentId: input.parentId, name: input.name } };
+    this.savedWidgets = this.savedWidgets.map((candidate) =>
+      candidate.id === widgetId ? saved : candidate,
+    );
+    return { widget: saved, entry };
+  }
+
+  async openWidget(widgetId: string): Promise<DashboardWidget> {
+    const widget = this.savedWidgets.find((candidate) => candidate.id === widgetId);
+    if (!widget) throw new Error("Widget not found");
+    return structuredClone(widget);
+  }
+
+  async closeWidget(_widgetId: string): Promise<void> {}
+
+  async discardWidget(widgetId: string): Promise<void> {
+    this.savedWidgets = this.savedWidgets.filter((widget) => widget.id !== widgetId);
   }
 
   async updateMemo(widgetId: string, markdown: string): Promise<MemoData> {
@@ -876,6 +1069,16 @@ class FakeFilesystemGateway implements FilesystemGateway {
     name: "내 문서",
     createdAt: "2026-08-20T00:00:00.000Z",
     updatedAt: "2026-08-20T00:00:00.000Z",
+    desktopOrder: null,
+  };
+  private readonly desktopRoot: FilesystemDirectoryEntry = {
+    id: FILESYSTEM_ROOT_ID.DESKTOP,
+    parentId: null,
+    kind: FILESYSTEM_ENTRY_KIND.DIRECTORY,
+    name: "바탕 화면",
+    createdAt: "2026-08-20T00:00:00.000Z",
+    updatedAt: "2026-08-20T00:00:00.000Z",
+    desktopOrder: null,
   };
 
   addFile(name: string, contentType: string): FilesystemFileEntry {
@@ -888,6 +1091,24 @@ class FakeFilesystemGateway implements FilesystemGateway {
       size: 10,
       createdAt: "2026-08-20T00:00:00.000Z",
       updatedAt: "2026-08-20T00:00:00.000Z",
+      desktopOrder: null,
+    };
+    this.entries.push(entry);
+    return entry;
+  }
+
+  addWidgetFile(widget: DashboardWidget): FilesystemWidgetEntry {
+    if (!widget.file) throw new Error("Widget file reference is required");
+    const entry: FilesystemWidgetEntry = {
+      id: widget.file.entryId,
+      parentId: widget.file.parentId,
+      kind: FILESYSTEM_ENTRY_KIND.WIDGET,
+      name: widget.file.name,
+      widgetId: widget.id,
+      widgetType: widget.type,
+      createdAt: "2026-08-20T00:00:00.000Z",
+      updatedAt: "2026-08-20T00:00:00.000Z",
+      desktopOrder: null,
     };
     this.entries.push(entry);
     return entry;
@@ -895,8 +1116,10 @@ class FakeFilesystemGateway implements FilesystemGateway {
 
   async listDirectory(parentId = this.root.id): Promise<FilesystemDirectoryPage> {
     const directory =
-      parentId === this.root.id
-        ? this.root
+      parentId === this.desktopRoot.id
+        ? this.desktopRoot
+        : parentId === this.root.id
+          ? this.root
         : (this.entries.find(
             (entry): entry is FilesystemDirectoryEntry =>
               entry.id === parentId &&
@@ -924,6 +1147,7 @@ class FakeFilesystemGateway implements FilesystemGateway {
       name,
       createdAt: "2026-08-20T00:00:00.000Z",
       updatedAt: "2026-08-20T00:00:00.000Z",
+      desktopOrder: null,
     };
     this.entries.push(directory);
     return directory;
@@ -939,6 +1163,7 @@ class FakeFilesystemGateway implements FilesystemGateway {
       size: file.size,
       createdAt: "2026-08-20T00:00:00.000Z",
       updatedAt: "2026-08-20T00:00:00.000Z",
+      desktopOrder: null,
     };
     this.entries.push(entry);
     return entry;
@@ -957,16 +1182,25 @@ class FakeFilesystemGateway implements FilesystemGateway {
     return updated;
   }
 
-  async trashEntry(id: string): Promise<void> {
+  async moveEntry(
+    id: string,
+    input: MoveFilesystemEntryInput,
+  ): Promise<FilesystemEntry> {
+    return this.updateEntry(id, { parentId: input.parentId });
+  }
+
+  async trashEntry(id: string) {
     const index = this.entries.findIndex((entry) => entry.id === id);
     const entry = this.entries[index];
-    if (!entry) return;
+    if (!entry) return { entry: null, closedWidgetIds: [] };
     this.entries.splice(index, 1);
     this.trash.push({
       entry,
       deletedAt: "2026-08-20T00:00:00.000Z",
+      originalParentId: entry.parentId,
       originalLocation: "내 문서",
     });
+    return { entry: null, closedWidgetIds: [] };
   }
 
   downloadUrl(id: string): string {
@@ -1029,6 +1263,11 @@ function memoWidget(id: string): DashboardWidget {
     windowState: WINDOW_STATE.NORMAL,
     restoreState: WINDOW_RESTORE_STATE.NORMAL,
     stackOrder: 0,
+    file: {
+      entryId: `entry-${id}`,
+      parentId: FILESYSTEM_ROOT_ID.DOCUMENTS,
+      name: MEMO_WIDGET_COPY.TITLE,
+    },
     data: { markdown: "", updatedAt: null },
   };
 }
@@ -1046,6 +1285,11 @@ function checklistWidget(id: string, stackOrder: number): DashboardWidget {
     windowState: WINDOW_STATE.NORMAL,
     restoreState: WINDOW_RESTORE_STATE.NORMAL,
     stackOrder,
+    file: {
+      entryId: `entry-${id}`,
+      parentId: FILESYSTEM_ROOT_ID.DOCUMENTS,
+      name: CHECKLIST_WIDGET_COPY.TITLE,
+    },
     data: {
       businessDate: "2026-08-20",
       nextResetAt: "2026-08-20T15:00:00.000Z",

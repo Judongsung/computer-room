@@ -16,6 +16,10 @@ export const API_PATH_SEGMENTS = {
   TRASH: "trash",
   RESTORE: "restore",
   CONTENT: "content",
+  MOVE: "move",
+  FILE: "file",
+  OPEN: "open",
+  CLOSE: "close",
 } as const;
 
 export const API_QUERY_PARAMETERS = {
@@ -23,4 +27,6 @@ export const API_QUERY_PARAMETERS = {
   LIMIT: "limit",
   FILE_NAME: "name",
   PARENT_ID: "parentId",
+  DESKTOP_TARGET_INDEX: "desktopTargetIndex",
+  DESKTOP_CAPACITY: "desktopCapacity",
 } as const;

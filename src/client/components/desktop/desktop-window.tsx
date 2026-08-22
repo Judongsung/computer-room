@@ -12,6 +12,8 @@ export function DesktopWindow({
   onFocus,
   onMinimize,
   onToggleMaximize,
+  onClose,
+  onSaveFile,
   onCommitBounds,
   onWidgetChange,
 }: DesktopWindowProps) {
@@ -36,6 +38,9 @@ export function DesktopWindow({
           onFocus,
           onMinimize,
           onToggleMaximize,
+          onClose,
+          onSaveFile,
+          canSaveFile: widget.file === null,
         }}
         gateway={gateway}
         onWidgetChange={onWidgetChange}

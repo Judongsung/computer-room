@@ -4,14 +4,27 @@ import type {
   ChecklistLogPage,
   DailyChecklistData,
   DashboardWidget,
+  CreateWidgetInput,
   MemoData,
   WidgetLayout,
 } from "../../types/widget";
+import type {
+  FilesystemWidgetEntry,
+  SaveWidgetFileInput,
+} from "../../types/filesystem";
 
 export interface DashboardGateway {
   getSession(): Promise<SessionInfo>;
   listWidgets(): Promise<DashboardWidget[]>;
   replaceWidgets(widgets: readonly WidgetLayout[]): Promise<DashboardWidget[]>;
+  createWidget(input: CreateWidgetInput): Promise<DashboardWidget>;
+  saveWidgetFile(
+    widgetId: string,
+    input: SaveWidgetFileInput,
+  ): Promise<{ widget: DashboardWidget; entry: FilesystemWidgetEntry }>;
+  openWidget(widgetId: string): Promise<DashboardWidget>;
+  closeWidget(widgetId: string): Promise<void>;
+  discardWidget(widgetId: string): Promise<void>;
   updateMemo(widgetId: string, markdown: string): Promise<MemoData>;
   getChecklist(widgetId: string): Promise<DailyChecklistData>;
   addChecklistItem(widgetId: string, label: string): Promise<ChecklistItem>;

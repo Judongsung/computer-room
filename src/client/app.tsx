@@ -71,6 +71,11 @@ export function App({ api, filesystemApi }: AppProps) {
       layoutSaveError={dashboard.layoutSave.error}
       message={state.message}
       onAddWidget={dashboard.addWidget}
+      onOpenWidget={dashboard.openWidget}
+      onSaveWidgetFile={dashboard.saveWidgetFile}
+      onCloseWidget={dashboard.closeWidget}
+      onDiscardWidget={dashboard.discardWidget}
+      onRemoveWidgets={dashboard.removeWidgets}
       onFocusWindow={dashboard.focusWindow}
       onMinimizeWindow={dashboard.minimizeWindow}
       onToggleMaximizeWindow={dashboard.toggleMaximizeWindow}

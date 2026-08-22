@@ -2,6 +2,7 @@ import type { FILESYSTEM_ENTRY_KIND } from "../constants/filesystem";
 import type { FileStatus } from "./file";
 import type { StoredObjectBody } from "./storage";
 import type { ByteRange } from "./media";
+import type { WidgetType } from "./widget";
 
 export type FilesystemEntryKind =
   (typeof FILESYSTEM_ENTRY_KIND)[keyof typeof FILESYSTEM_ENTRY_KIND];
@@ -13,6 +14,7 @@ export interface FilesystemDirectoryEntry {
   readonly name: string;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly desktopOrder: number | null;
 }
 
 export interface FilesystemFileEntry {
@@ -24,9 +26,25 @@ export interface FilesystemFileEntry {
   readonly size: number;
   readonly createdAt: string;
   readonly updatedAt: string;
+  readonly desktopOrder: number | null;
 }
 
-export type FilesystemEntry = FilesystemDirectoryEntry | FilesystemFileEntry;
+export interface FilesystemWidgetEntry {
+  readonly id: string;
+  readonly parentId: string;
+  readonly kind: typeof FILESYSTEM_ENTRY_KIND.WIDGET;
+  readonly name: string;
+  readonly widgetId: string;
+  readonly widgetType: WidgetType;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly desktopOrder: number | null;
+}
+
+export type FilesystemEntry =
+  | FilesystemDirectoryEntry
+  | FilesystemFileEntry
+  | FilesystemWidgetEntry;
 
 export interface FilesystemBreadcrumb {
   readonly id: string;
@@ -43,6 +61,7 @@ export interface FilesystemDirectoryPage {
 export interface TrashedFilesystemEntry {
   readonly entry: FilesystemEntry;
   readonly deletedAt: string;
+  readonly originalParentId: string | null;
   readonly originalLocation: string;
 }
 
@@ -58,6 +77,7 @@ export interface FilesystemEntryRecord {
   readonly name: string;
   readonly nameKey: string;
   readonly fileId: string | null;
+  readonly widgetId: string | null;
   readonly restoreParentId: string | null;
   readonly restorePath: string | null;
   readonly trashedAt: number | null;
@@ -68,6 +88,9 @@ export interface FilesystemEntryRecord {
   readonly size: number | null;
   readonly etag: string | null;
   readonly fileStatus: FileStatus | null;
+  readonly widgetType: WidgetType | null;
+  readonly widgetOpen: boolean | null;
+  readonly desktopOrder: number | null;
 }
 
 export interface NewFilesystemDirectory {
@@ -76,6 +99,7 @@ export interface NewFilesystemDirectory {
   readonly name: string;
   readonly nameKey: string;
   readonly createdAt: number;
+  readonly desktopOrder?: number;
 }
 
 export interface NewFilesystemFile {
@@ -91,11 +115,49 @@ export interface UploadFilesystemFileInput {
   readonly contentType: string | null;
   readonly declaredSize: number;
   readonly body: ReadableStream<Uint8Array> | null;
+  readonly desktopPlacement?: DesktopPlacement;
 }
 
 export interface UpdateFilesystemEntryInput {
   readonly name?: string;
   readonly parentId?: string;
+}
+
+export interface DesktopPlacement {
+  readonly targetIndex: number;
+  readonly capacity: number;
+}
+
+export interface MoveFilesystemEntryInput {
+  readonly parentId: string;
+  readonly desktopPlacement?: DesktopPlacement;
+}
+
+export interface RestoreFilesystemEntryInput {
+  readonly parentId?: string;
+  readonly desktopPlacement?: DesktopPlacement;
+}
+
+export interface FilesystemMutationResult {
+  readonly entry: FilesystemEntry | null;
+  readonly closedWidgetIds: readonly string[];
+}
+
+export interface SaveWidgetFileInput {
+  readonly parentId: string;
+  readonly name: string;
+  readonly desktopPlacement?: DesktopPlacement;
+}
+
+export interface NewFilesystemWidget {
+  readonly id: string;
+  readonly widgetId: string;
+  readonly widgetType: WidgetType;
+  readonly parentId: string;
+  readonly name: string;
+  readonly nameKey: string;
+  readonly createdAt: number;
+  readonly desktopOrder?: number;
 }
 
 export interface FilesystemDownload {

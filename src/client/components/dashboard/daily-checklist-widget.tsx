@@ -184,7 +184,7 @@ function DailyChecklistContent({
   return (
     <>
       <WidgetCard
-        title={CHECKLIST_WIDGET_COPY.TITLE}
+        title={widget.file?.name ?? CHECKLIST_WIDGET_COPY.UNSAVED_TITLE}
         iconPath={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.DAILY_CHECKLIST]}
         windowControls={windowControls}
         toolbarActions={

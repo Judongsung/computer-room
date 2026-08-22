@@ -41,7 +41,7 @@ export const FILESYSTEM_ERRORS = {
   ENTRY_NOT_ACTIVE: {
     status: HTTP_STATUS.CONFLICT,
     code: "FILESYSTEM_ENTRY_NOT_ACTIVE",
-    message: "내 문서에 있는 항목만 변경할 수 있습니다.",
+    message: "바탕 화면 또는 내 문서에 있는 항목만 변경할 수 있습니다.",
   },
   ENTRY_NOT_TRASHED: {
     status: HTTP_STATUS.CONFLICT,
@@ -53,5 +53,14 @@ export const FILESYSTEM_ERRORS = {
     code: "INVALID_STORED_FILESYSTEM_ENTRY",
     message: "저장된 파일 시스템 정보가 올바르지 않습니다.",
   },
+  INVALID_DESKTOP_PLACEMENT: {
+    status: HTTP_STATUS.BAD_REQUEST,
+    code: "INVALID_DESKTOP_PLACEMENT",
+    message: "바탕 화면 아이콘 배치 정보가 올바르지 않습니다.",
+  },
+  DESKTOP_FULL: {
+    status: HTTP_STATUS.CONFLICT,
+    code: "DESKTOP_FULL",
+    message: "바탕 화면에 빈 공간이 없습니다.",
+  },
 } as const satisfies Record<string, AppErrorDefinition>;
-

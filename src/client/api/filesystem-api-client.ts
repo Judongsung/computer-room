@@ -5,6 +5,7 @@ import {
 } from "../../constants/api";
 import { DEFAULT_CONTENT_TYPE } from "../../constants/file";
 import { FILESYSTEM_ENTRY_KIND } from "../../constants/filesystem";
+import { WIDGET_TYPE_VALUES } from "../../constants/widget";
 import {
   HTTP_HEADERS,
   HTTP_MEDIA_TYPE,
@@ -15,7 +16,12 @@ import type {
   FilesystemDirectoryPage,
   FilesystemEntry,
   FilesystemFileEntry,
+  FilesystemMutationResult,
   FilesystemTrashPage,
+  FilesystemWidgetEntry,
+  MoveFilesystemEntryInput,
+  RestoreFilesystemEntryInput,
+  DesktopPlacement,
   UpdateFilesystemEntryInput,
 } from "../../types/filesystem";
 import { API_REQUEST_OPTIONS } from "../constants/api";
@@ -48,10 +54,15 @@ export class FilesystemApiClient implements FilesystemGateway {
   async createDirectory(
     parentId: string,
     name: string,
+    desktopPlacement?: DesktopPlacement,
   ): Promise<FilesystemDirectoryEntry> {
     const value = await this.requestJson(
       FILESYSTEM_DIRECTORIES_PATH,
-      jsonRequest(HTTP_METHOD.POST, { parentId, name }),
+      jsonRequest(HTTP_METHOD.POST, {
+        parentId,
+        name,
+        ...placementBody(desktopPlacement),
+      }),
     );
     if (!isRecord(value) || !isDirectoryEntry(value.directory)) {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
@@ -62,11 +73,13 @@ export class FilesystemApiClient implements FilesystemGateway {
   async uploadFile(
     parentId: string,
     file: File,
+    desktopPlacement?: DesktopPlacement,
   ): Promise<FilesystemFileEntry> {
     const query = new URLSearchParams({
       [API_QUERY_PARAMETERS.PARENT_ID]: parentId,
       [API_QUERY_PARAMETERS.FILE_NAME]: file.name,
     });
+    appendPlacementQuery(query, desktopPlacement);
     const value = await this.requestJson(`${API_PATHS.FILES}?${query}`, {
       method: HTTP_METHOD.POST,
       headers: {
@@ -95,10 +108,31 @@ export class FilesystemApiClient implements FilesystemGateway {
     return value.entry;
   }
 
-  async trashEntry(id: string): Promise<void> {
-    await this.requestJson(`${FILESYSTEM_ENTRIES_PATH}/${encodeURIComponent(id)}`, {
+  async moveEntry(
+    id: string,
+    input: MoveFilesystemEntryInput,
+  ): Promise<FilesystemEntry> {
+    const value = await this.requestJson(
+      `${FILESYSTEM_ENTRIES_PATH}/${encodeURIComponent(id)}/${API_PATH_SEGMENTS.MOVE}`,
+      jsonRequest(HTTP_METHOD.POST, {
+        parentId: input.parentId,
+        ...placementBody(input.desktopPlacement),
+      }),
+    );
+    if (!isRecord(value) || !isFilesystemEntry(value.entry)) {
+      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    }
+    return value.entry;
+  }
+
+  async trashEntry(id: string): Promise<FilesystemMutationResult> {
+    const value = await this.requestJson(`${FILESYSTEM_ENTRIES_PATH}/${encodeURIComponent(id)}`, {
       method: HTTP_METHOD.DELETE,
     });
+    if (!isMutationResult(value)) {
+      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    }
+    return value;
   }
 
   downloadUrl(id: string): string {
@@ -120,10 +154,16 @@ export class FilesystemApiClient implements FilesystemGateway {
     return value;
   }
 
-  async restoreEntry(id: string): Promise<FilesystemEntry> {
+  async restoreEntry(
+    id: string,
+    input: RestoreFilesystemEntryInput = {},
+  ): Promise<FilesystemEntry> {
     const value = await this.requestJson(
       `${FILESYSTEM_TRASH_PATH}/${encodeURIComponent(id)}/${API_PATH_SEGMENTS.RESTORE}`,
-      { method: HTTP_METHOD.POST },
+      jsonRequest(HTTP_METHOD.POST, {
+        ...(input.parentId === undefined ? {} : { parentId: input.parentId }),
+        ...placementBody(input.desktopPlacement),
+      }),
     );
     if (!isRecord(value) || !isFilesystemEntry(value.entry)) {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
@@ -202,14 +242,16 @@ function isTrashPage(value: unknown): value is FilesystemTrashPage {
         isRecord(item) &&
         isFilesystemEntry(item.entry) &&
         typeof item.deletedAt === "string" &&
+        (item.originalParentId === null ||
+          typeof item.originalParentId === "string") &&
         typeof item.originalLocation === "string",
     ) &&
     (value.nextOffset === null || typeof value.nextOffset === "number")
   );
 }
 
-function isFilesystemEntry(value: unknown): value is FilesystemEntry {
-  return isDirectoryEntry(value) || isFileEntry(value);
+export function isFilesystemEntry(value: unknown): value is FilesystemEntry {
+  return isDirectoryEntry(value) || isFileEntry(value) || isWidgetEntry(value);
 }
 
 function isDirectoryEntry(value: unknown): value is FilesystemDirectoryEntry {
@@ -226,6 +268,16 @@ function isFileEntry(value: unknown): value is FilesystemFileEntry {
   );
 }
 
+export function isWidgetEntry(value: unknown): value is FilesystemWidgetEntry {
+  return (
+    isBaseEntry(value) &&
+    value.kind === FILESYSTEM_ENTRY_KIND.WIDGET &&
+    typeof value.parentId === "string" &&
+    typeof value.widgetId === "string" &&
+    WIDGET_TYPE_VALUES.some((type) => value.widgetType === type)
+  );
+}
+
 function isBaseEntry(value: unknown): value is Record<string, unknown> & {
   id: string;
   parentId: string | null;
@@ -233,6 +285,7 @@ function isBaseEntry(value: unknown): value is Record<string, unknown> & {
   name: string;
   createdAt: string;
   updatedAt: string;
+  desktopOrder: number | null;
 } {
   return (
     isRecord(value) &&
@@ -242,6 +295,42 @@ function isBaseEntry(value: unknown): value is Record<string, unknown> & {
     typeof value.name === "string" &&
     typeof value.createdAt === "string" &&
     typeof value.updatedAt === "string"
+    && (value.desktopOrder === null || typeof value.desktopOrder === "number")
+  );
+}
+
+function isMutationResult(value: unknown): value is FilesystemMutationResult {
+  return (
+    isRecord(value) &&
+    (value.entry === null || isFilesystemEntry(value.entry)) &&
+    Array.isArray(value.closedWidgetIds) &&
+    value.closedWidgetIds.every((id) => typeof id === "string")
+  );
+}
+
+function placementBody(
+  placement?: DesktopPlacement,
+): Record<string, number> {
+  return placement
+    ? {
+        [API_QUERY_PARAMETERS.DESKTOP_TARGET_INDEX]: placement.targetIndex,
+        [API_QUERY_PARAMETERS.DESKTOP_CAPACITY]: placement.capacity,
+      }
+    : {};
+}
+
+function appendPlacementQuery(
+  query: URLSearchParams,
+  placement?: DesktopPlacement,
+): void {
+  if (!placement) return;
+  query.set(
+    API_QUERY_PARAMETERS.DESKTOP_TARGET_INDEX,
+    String(placement.targetIndex),
+  );
+  query.set(
+    API_QUERY_PARAMETERS.DESKTOP_CAPACITY,
+    String(placement.capacity),
   );
 }
 

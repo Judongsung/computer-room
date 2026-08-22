@@ -1,4 +1,5 @@
 import {
+  FILESYSTEM_ACTIVE_ROOT_IDS,
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
   FILESYSTEM_ROOT_NAME,
@@ -13,12 +14,14 @@ import type {
   FilesystemEntry,
   FilesystemEntryRecord,
   FilesystemTrashPage,
+  RestoreFilesystemEntryInput,
 } from "../types/filesystem";
 import type { RecycleBinUseCases } from "../types/filesystem-service";
 import type { FilesystemRepository } from "../types/repository";
 import type { Clock } from "../types/runtime";
 import type { FileObjectStorage } from "../types/storage";
 import { toPublicEntry } from "./filesystem-service";
+import { nextDesktopOrder } from "./desktop-placement";
 
 export class RecycleBinService implements RecycleBinUseCases {
   constructor(
@@ -37,24 +40,36 @@ export class RecycleBinService implements RecycleBinUseCases {
       items: entries.slice(0, limit).map((entry) => ({
         entry: toPublicEntry(entry),
         deletedAt: new Date(requireDeletedAt(entry)).toISOString(),
+        originalParentId: entry.restoreParentId,
         originalLocation: entry.restorePath ?? FILESYSTEM_ROOT_NAME.DOCUMENTS,
       })),
       nextOffset: hasMore ? offset + limit : null,
     };
   }
 
-  async restoreEntry(id: string): Promise<FilesystemEntry> {
+  async restoreEntry(
+    id: string,
+    input: RestoreFilesystemEntryInput = {},
+  ): Promise<FilesystemEntry> {
     const entry = await this.requireTrashRoot(id);
-    const parentId = await this.resolveRestoreParent(entry.restoreParentId);
+    const parentId = input.parentId
+      ? await this.requireRestoreDestination(input.parentId)
+      : await this.resolveRestoreParent(entry.restoreParentId);
     const occupied = new Set(await this.repository.listNameKeys(parentId));
     const name = availableFilesystemName(entry.name, occupied);
     const updatedAt = this.clock.now();
+    const desktopOrder = await nextDesktopOrder(
+      this.repository,
+      parentId,
+      input.desktopPlacement,
+    );
     await this.repository.restoreEntry(
       entry.id,
       parentId,
       name,
       filesystemNameKey(name),
       updatedAt,
+      desktopOrder,
     );
     return toPublicEntry({
       ...entry,
@@ -65,6 +80,7 @@ export class RecycleBinService implements RecycleBinUseCases {
       restorePath: null,
       trashedAt: null,
       updatedAt,
+      desktopOrder: desktopOrder ?? null,
     });
   }
 
@@ -103,14 +119,32 @@ export class RecycleBinService implements RecycleBinUseCases {
     const parent = await this.repository.findEntry(restoreParentId);
     if (
       parent?.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY &&
-      (await this.repository.isWithinRoot(
-        parent.id,
-        FILESYSTEM_ROOT_ID.DOCUMENTS,
-      ))
+      (await this.isWithinActiveRoot(parent.id))
     ) {
       return parent.id;
     }
     return FILESYSTEM_ROOT_ID.DOCUMENTS;
+  }
+
+  private async requireRestoreDestination(id: string): Promise<string> {
+    const entry = await this.repository.findEntry(id);
+    if (
+      !entry ||
+      entry.kind !== FILESYSTEM_ENTRY_KIND.DIRECTORY ||
+      !(await this.isWithinActiveRoot(id))
+    ) {
+      throw new AppError(FILESYSTEM_ERRORS.INVALID_PARENT);
+    }
+    return entry.id;
+  }
+
+  private async isWithinActiveRoot(id: string): Promise<boolean> {
+    const matches = await Promise.all(
+      FILESYSTEM_ACTIVE_ROOT_IDS.map((rootId) =>
+        this.repository.isWithinRoot(id, rootId),
+      ),
+    );
+    return matches.some(Boolean);
   }
 }
 

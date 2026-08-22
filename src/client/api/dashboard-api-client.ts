@@ -13,6 +13,7 @@ import {
   isChecklistLogPage,
   isDailyChecklistData,
   isDashboardWidgetCollection,
+  isDashboardWidget,
   isMemoData,
 } from "../../domain/widget-contract";
 import type { SessionInfo } from "../../types/auth";
@@ -23,11 +24,17 @@ import type {
   DashboardWidget,
   MemoData,
   WidgetLayout,
+  CreateWidgetInput,
 } from "../../types/widget";
+import type {
+  FilesystemWidgetEntry,
+  SaveWidgetFileInput,
+} from "../../types/filesystem";
 import { API_REQUEST_OPTIONS } from "../constants/api";
 import { CLIENT_ERRORS } from "../constants/errors";
 import { ClientError } from "../errors/client-error";
 import type { DashboardGateway } from "../types/api";
+import { isWidgetEntry } from "./filesystem-api-client";
 
 export class DashboardApiClient implements DashboardGateway {
   async getSession(): Promise<SessionInfo> {
@@ -57,6 +64,61 @@ export class DashboardApiClient implements DashboardGateway {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
     }
     return [...value.items];
+  }
+
+  async createWidget(input: CreateWidgetInput): Promise<DashboardWidget> {
+    const value = await this.requestJson(
+      API_PATHS.WIDGETS,
+      jsonRequest(HTTP_METHOD.POST, input),
+    );
+    return readWidgetEnvelope(value);
+  }
+
+  async saveWidgetFile(
+    widgetId: string,
+    input: SaveWidgetFileInput,
+  ): Promise<{ widget: DashboardWidget; entry: FilesystemWidgetEntry }> {
+    const value = await this.requestJson(
+      `${widgetPath(widgetId)}/${API_PATH_SEGMENTS.FILE}`,
+      jsonRequest(HTTP_METHOD.POST, {
+        parentId: input.parentId,
+        name: input.name,
+        ...(input.desktopPlacement
+          ? {
+              desktopTargetIndex: input.desktopPlacement.targetIndex,
+              desktopCapacity: input.desktopPlacement.capacity,
+            }
+          : {}),
+      }),
+    );
+    if (
+      !isRecord(value) ||
+      !isDashboardWidget(value.widget) ||
+      !isWidgetEntry(value.entry)
+    ) {
+      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    }
+    return { widget: value.widget, entry: value.entry };
+  }
+
+  async openWidget(widgetId: string): Promise<DashboardWidget> {
+    const value = await this.requestJson(
+      `${widgetPath(widgetId)}/${API_PATH_SEGMENTS.OPEN}`,
+      { method: HTTP_METHOD.POST },
+    );
+    return readWidgetEnvelope(value);
+  }
+
+  async closeWidget(widgetId: string): Promise<void> {
+    await this.requestJson(`${widgetPath(widgetId)}/${API_PATH_SEGMENTS.CLOSE}`, {
+      method: HTTP_METHOD.POST,
+    });
+  }
+
+  async discardWidget(widgetId: string): Promise<void> {
+    await this.requestJson(widgetPath(widgetId), {
+      method: HTTP_METHOD.DELETE,
+    });
   }
 
   async updateMemo(widgetId: string, markdown: string): Promise<MemoData> {
@@ -192,6 +254,13 @@ function readChecklistItemEnvelope(value: unknown): ChecklistItem {
     throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
   }
   return value.item;
+}
+
+function readWidgetEnvelope(value: unknown): DashboardWidget {
+  if (!isRecord(value) || !isDashboardWidget(value.widget)) {
+    throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+  }
+  return value.widget;
 }
 
 export class ApiError extends ClientError {

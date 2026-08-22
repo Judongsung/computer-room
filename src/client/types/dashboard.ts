@@ -25,6 +25,7 @@ export interface WidgetLayoutAutoSaveController {
   readonly error: string | null;
   readonly hasUnsavedChanges: boolean;
   schedule(widgets: readonly WidgetLayout[]): void;
+  forget(widgetIds: readonly string[]): void;
   retry(): void;
 }
 

@@ -5,6 +5,8 @@ import {
 } from "../constants/api";
 import { HTTP_ERRORS } from "../constants/errors/http";
 import { HTTP_METHOD, HTTP_STATUS } from "../constants/http";
+import { WIDGET_TYPE_VALUES } from "../constants/widget";
+import type { WidgetType } from "../types/widget";
 import {
   DEFAULT_PAGE_LIMIT,
   DEFAULT_PAGE_OFFSET,
@@ -43,6 +45,16 @@ const CHECKLIST_ITEM_CHECK_PATH = new RegExp(
 const CHECKLIST_LOGS_PATH = new RegExp(
   `^${API_PATHS.WIDGETS}/([^/]+)/${API_PATH_SEGMENTS.CHECKLIST}/${API_PATH_SEGMENTS.LOGS}$`,
 );
+const WIDGET_FILE_PATH = new RegExp(
+  `^${API_PATHS.WIDGETS}/([^/]+)/${API_PATH_SEGMENTS.FILE}$`,
+);
+const WIDGET_OPEN_PATH = new RegExp(
+  `^${API_PATHS.WIDGETS}/([^/]+)/${API_PATH_SEGMENTS.OPEN}$`,
+);
+const WIDGET_CLOSE_PATH = new RegExp(
+  `^${API_PATHS.WIDGETS}/([^/]+)/${API_PATH_SEGMENTS.CLOSE}$`,
+);
+const WIDGET_PATH = new RegExp(`^${API_PATHS.WIDGETS}/([^/]+)$`);
 
 export class WidgetApiHandler implements FeatureApiHandler {
   constructor(
@@ -54,6 +66,46 @@ export class WidgetApiHandler implements FeatureApiHandler {
   async handle(request: Request, url: URL): Promise<Response | null> {
     if (url.pathname === API_PATHS.WIDGETS) {
       return this.handleWidgets(request);
+    }
+
+    const fileMatch = WIDGET_FILE_PATH.exec(url.pathname);
+    if (fileMatch) {
+      assertMethod(request, HTTP_METHOD.POST);
+      const body = await readRecordBody(request);
+      if (typeof body.parentId !== "string" || typeof body.name !== "string") {
+        throw new AppError(HTTP_ERRORS.INVALID_JSON);
+      }
+      const desktopPlacement = readDesktopPlacement(body);
+      return jsonResponse(
+        await this.widgets.saveWidgetFile(decodeId(fileMatch[1]), {
+          parentId: body.parentId,
+          name: body.name,
+          ...(desktopPlacement === undefined ? {} : { desktopPlacement }),
+        }),
+        HTTP_STATUS.CREATED,
+      );
+    }
+
+    const openMatch = WIDGET_OPEN_PATH.exec(url.pathname);
+    if (openMatch) {
+      assertMethod(request, HTTP_METHOD.POST);
+      return jsonResponse({
+        widget: await this.widgets.openWidget(decodeId(openMatch[1])),
+      });
+    }
+
+    const closeMatch = WIDGET_CLOSE_PATH.exec(url.pathname);
+    if (closeMatch) {
+      assertMethod(request, HTTP_METHOD.POST);
+      await this.widgets.closeWidget(decodeId(closeMatch[1]));
+      return emptyResponse();
+    }
+
+    const widgetMatch = WIDGET_PATH.exec(url.pathname);
+    if (widgetMatch) {
+      assertMethod(request, HTTP_METHOD.DELETE);
+      await this.widgets.discardWidget(decodeId(widgetMatch[1]));
+      return emptyResponse();
     }
 
     const memoMatch = MEMO_PATH.exec(url.pathname);
@@ -109,6 +161,26 @@ export class WidgetApiHandler implements FeatureApiHandler {
       return jsonResponse({
         items: await this.widgets.replaceWidgets(body.items),
       });
+    }
+    if (request.method === HTTP_METHOD.POST) {
+      const body = await readRecordBody(request);
+      if (
+        !isWidgetType(body.type) ||
+        !isPosition(body.position) ||
+        !isSize(body.size)
+      ) {
+        throw new AppError(HTTP_ERRORS.INVALID_JSON);
+      }
+      return jsonResponse(
+        {
+          widget: await this.widgets.createWidget({
+            type: body.type,
+            position: body.position,
+            size: body.size,
+          }),
+        },
+        HTTP_STATUS.CREATED,
+      );
     }
     throw methodNotAllowed();
   }
@@ -213,4 +285,65 @@ function assertMethod(request: Request, expected: string): void {
 
 function methodNotAllowed(): AppError {
   return new AppError(HTTP_ERRORS.METHOD_NOT_ALLOWED);
+}
+
+async function readRecordBody(
+  request: Request,
+): Promise<Record<string, unknown>> {
+  const body = await readJsonBody(request);
+  if (!isRecord(body)) {
+    throw new AppError(HTTP_ERRORS.INVALID_JSON);
+  }
+  return body;
+}
+
+function readDesktopPlacement(value: Record<string, unknown>) {
+  if (
+    value.desktopTargetIndex === undefined &&
+    value.desktopCapacity === undefined
+  ) {
+    return undefined;
+  }
+  if (
+    typeof value.desktopTargetIndex !== "number" ||
+    typeof value.desktopCapacity !== "number"
+  ) {
+    throw new AppError(HTTP_ERRORS.INVALID_JSON);
+  }
+  return {
+    targetIndex: value.desktopTargetIndex,
+    capacity: value.desktopCapacity,
+  };
+}
+
+function isPosition(
+  value: unknown,
+): value is { readonly x: number; readonly y: number } {
+  return (
+    isRecord(value) &&
+    typeof value.x === "number" &&
+    typeof value.y === "number"
+  );
+}
+
+function isWidgetType(value: unknown): value is WidgetType {
+  return WIDGET_TYPE_VALUES.some((type) => value === type);
+}
+
+function isSize(
+  value: unknown,
+): value is { readonly width: number; readonly height: number } {
+  return (
+    isRecord(value) &&
+    typeof value.width === "number" &&
+    typeof value.height === "number"
+  );
+}
+
+function decodeId(value: string | undefined): string {
+  return decodeURIComponent(value ?? "");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
 }

@@ -5,6 +5,7 @@ import {
   MAX_FILE_SIZE_BYTES,
 } from "../constants/file";
 import {
+  FILESYSTEM_ACTIVE_ROOT_IDS,
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "../constants/filesystem";
@@ -32,6 +33,7 @@ import type { Clock, IdGenerator } from "../types/runtime";
 import type { RequestedByteRange } from "../types/media";
 import type { FileObjectStorage } from "../types/storage";
 import { toPublicEntry } from "./filesystem-service";
+import { nextDesktopOrder } from "./desktop-placement";
 
 export class FileService implements FileUseCases {
   constructor(
@@ -67,6 +69,11 @@ export class FileService implements FileUseCases {
     const createdAt = this.clock.now();
     const objectKey = `${FILE_OBJECT_KEY_PREFIX}/${id}`;
     const contentType = normalizeContentType(input.contentType);
+    const desktopOrder = await nextDesktopOrder(
+      this.repository,
+      parentId,
+      input.desktopPlacement,
+    );
 
     await this.repository.insertPendingFile({
       entry: {
@@ -75,6 +82,7 @@ export class FileService implements FileUseCases {
         name,
         nameKey: filesystemNameKey(name),
         createdAt,
+        ...(desktopOrder === undefined ? {} : { desktopOrder }),
       },
       objectKey,
       contentType,
@@ -147,7 +155,7 @@ export class FileService implements FileUseCases {
     if (
       !entry ||
       entry.kind !== FILESYSTEM_ENTRY_KIND.DIRECTORY ||
-      !(await this.repository.isWithinRoot(id, FILESYSTEM_ROOT_ID.DOCUMENTS))
+      !(await this.isWithinActiveRoot(id))
     ) {
       throw new AppError(FILESYSTEM_ERRORS.DIRECTORY_NOT_FOUND);
     }
@@ -162,7 +170,7 @@ export class FileService implements FileUseCases {
       storedEntry.kind !== FILESYSTEM_ENTRY_KIND.FILE ||
       storedEntry.fileStatus !== FILE_STATUS.READY ||
       !storedEntry.objectKey ||
-      !(await this.repository.isWithinRoot(id, FILESYSTEM_ROOT_ID.DOCUMENTS))
+      !(await this.isWithinActiveRoot(id))
     ) {
       throw new AppError(FILE_ERRORS.FILE_NOT_FOUND);
     }
@@ -180,6 +188,15 @@ export class FileService implements FileUseCases {
     if (size > MAX_FILE_SIZE_BYTES) {
       throw new AppError(FILE_ERRORS.FILE_TOO_LARGE);
     }
+  }
+
+  private async isWithinActiveRoot(id: string): Promise<boolean> {
+    const matches = await Promise.all(
+      FILESYSTEM_ACTIVE_ROOT_IDS.map((rootId) =>
+        this.repository.isWithinRoot(id, rootId),
+      ),
+    );
+    return matches.some(Boolean);
   }
 }
 

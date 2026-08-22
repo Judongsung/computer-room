@@ -5,6 +5,7 @@ export interface FilesystemEntryRow {
   name: string;
   name_key: string;
   file_id: string | null;
+  widget_id: string | null;
   restore_parent_id: string | null;
   restore_path: string | null;
   trashed_at: number | null;
@@ -15,6 +16,9 @@ export interface FilesystemEntryRow {
   size: number | null;
   etag: string | null;
   file_status: string | null;
+  widget_type: string | null;
+  widget_open: number | null;
+  desktop_order: number | null;
 }
 
 export interface WidgetRow {
@@ -27,6 +31,10 @@ export interface WidgetRow {
   window_state: string;
   restore_state: string;
   stack_order: number;
+  is_open: number;
+  entry_id: string | null;
+  entry_parent_id: string | null;
+  entry_name: string | null;
 }
 
 export interface MemoRow {

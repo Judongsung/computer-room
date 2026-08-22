@@ -1,8 +1,12 @@
 import { DASHBOARD_COPY } from "../../constants/content";
-import { XP_WINDOW_CONTROL_ACTION } from "../../constants/xp";
+import {
+  XP_WIDGET_TOOLBAR_ACTION,
+  XP_WINDOW_CONTROL_ACTION,
+} from "../../constants/xp";
 import type { WidgetCardProps } from "../../types/desktop";
 import { XpWindowFrame } from "../desktop/xp-window-frame";
 import { XpWindowControlButton } from "../ui/xp-window-control-button";
+import { XpWidgetToolbarButton } from "../ui/xp-widget-toolbar-button";
 
 export function WidgetCard({
   title,
@@ -26,7 +30,18 @@ export function WidgetCard({
       isActive={windowControls.isActive}
       titleBarClassName="widget-card__header widget-card__drag-handle"
       bodyClassName="widget-card__body"
-      toolbar={toolbarActions}
+      toolbar={
+        <>
+          {windowControls.canSaveFile ? (
+            <XpWidgetToolbarButton
+              action={XP_WIDGET_TOOLBAR_ACTION.SAVE_FILE}
+              label={DASHBOARD_COPY.SAVE_AS_FILE}
+              onClick={windowControls.onSaveFile}
+            />
+          ) : null}
+          {toolbarActions}
+        </>
+      }
       onMouseDown={windowControls.onFocus}
       onTitleBarDoubleClick={windowControls.onToggleMaximize}
       controls={
@@ -43,8 +58,8 @@ export function WidgetCard({
           />
           <XpWindowControlButton
             action={XP_WINDOW_CONTROL_ACTION.CLOSE}
-            label={DASHBOARD_COPY.CLOSE_DISABLED}
-            disabled
+            label={DASHBOARD_COPY.CLOSE}
+            onClick={windowControls.onClose}
           />
         </>
       }

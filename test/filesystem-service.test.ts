@@ -13,6 +13,7 @@ import {
   streamFromText,
 } from "./fakes";
 
+const NOW = Date.parse("2026-08-22T01:00:00.000Z");
 const IDS = [
   "entry-1",
   "entry-2",
@@ -39,6 +40,16 @@ function createServices() {
   };
 }
 
+function createService() {
+  const repository = new MemoryFileRepository();
+  const service = new FilesystemService(
+    repository,
+    new SequenceIdGenerator(["desktop-a", "desktop-b", "desktop-c"]),
+    new StaticClock(NOW),
+  );
+  return { repository, service };
+}
+
 describe("filesystem use cases", () => {
   it("lists nested folders and rejects moving a directory into its descendant", async () => {
     const { filesystem } = createServices();
@@ -48,7 +59,10 @@ describe("filesystem use cases", () => {
     const root = await filesystem.listDirectory(null, 0, 50);
     const nested = await filesystem.listDirectory(parent.id, 0, 50);
     expect(root.items.map((entry) => entry.name)).toContain("사진");
-    expect(nested.breadcrumbs.map((entry) => entry.name)).toEqual(["내 문서", "사진"]);
+    expect(nested.breadcrumbs.map((entry) => entry.name)).toEqual([
+      "내 문서",
+      "사진",
+    ]);
     expect(nested.items.map((entry) => entry.name)).toEqual(["여행"]);
     await expect(
       filesystem.updateEntry(parent.id, { parentId: child.id }),
@@ -123,13 +137,17 @@ describe("filesystem use cases", () => {
       parentId: target.id,
       name: "기록-완료.txt",
     });
-    expect(moved).toMatchObject({ parentId: target.id, name: "기록-완료.txt" });
+    expect(moved).toMatchObject({
+      parentId: target.id,
+      name: "기록-완료.txt",
+    });
     expect(repository.records.get(file.id)?.objectKey).toBe(objectKey);
     expect(storage.objects.has(objectKey)).toBe(true);
   });
 
   it("moves a subtree to trash, restores with a numbered name, and purges its R2 files", async () => {
-    const { filesystem, files, recycleBin, repository, storage, clock } = createServices();
+    const { filesystem, files, recycleBin, repository, storage, clock } =
+      createServices();
     const folder = await filesystem.createDirectory(null, "보관함");
     const file = await files.uploadFile({
       parentId: folder.id,
@@ -155,7 +173,8 @@ describe("filesystem use cases", () => {
   });
 
   it("keeps trash metadata when R2 deletion fails", async () => {
-    const { filesystem, files, recycleBin, repository, storage } = createServices();
+    const { filesystem, files, recycleBin, repository, storage } =
+      createServices();
     const file = await files.uploadFile({
       originalName: "keep.txt",
       contentType: "text/plain",
@@ -206,5 +225,85 @@ describe("filesystem use cases", () => {
     expect(repository.records.has(first.id)).toBe(false);
     expect(repository.records.has(second.id)).toBe(false);
     expect(storage.objects.size).toBe(0);
+  });
+
+  it("swaps occupied desktop positions without changing taskbar-style order implicitly", async () => {
+    const { repository, service } = createService();
+    const first = await service.createDirectory(
+      FILESYSTEM_ROOT_ID.DESKTOP,
+      "첫 번째",
+      { targetIndex: 0, capacity: 2 },
+    );
+    const second = await service.createDirectory(
+      FILESYSTEM_ROOT_ID.DESKTOP,
+      "두 번째",
+      { targetIndex: 1, capacity: 2 },
+    );
+
+    await service.moveEntry(first.id, {
+      parentId: FILESYSTEM_ROOT_ID.DESKTOP,
+      desktopPlacement: { targetIndex: 1, capacity: 2 },
+    });
+
+    await expect(repository.listDesktopEntryIds()).resolves.toEqual([
+      second.id,
+      first.id,
+    ]);
+    expect(repository.records.get(second.id)?.desktopOrder).toBe(0);
+    expect(repository.records.get(first.id)?.desktopOrder).toBe(1);
+  });
+
+  it("rejects an incoming desktop entry when every dynamic slot is occupied", async () => {
+    const { service } = createService();
+    await service.createDirectory(FILESYSTEM_ROOT_ID.DESKTOP, "첫 번째", {
+      targetIndex: 0,
+      capacity: 2,
+    });
+    await service.createDirectory(FILESYSTEM_ROOT_ID.DESKTOP, "두 번째", {
+      targetIndex: 1,
+      capacity: 2,
+    });
+
+    await expect(
+      service.createDirectory(FILESYSTEM_ROOT_ID.DESKTOP, "세 번째", {
+        targetIndex: 2,
+        capacity: 2,
+      }),
+    ).rejects.toMatchObject({ code: FILESYSTEM_ERRORS.DESKTOP_FULL.code });
+  });
+
+  it("requires the placement-aware move contract when entering the desktop", async () => {
+    const { filesystem } = createServices();
+    const folder = await filesystem.createDirectory(null, "옮길 폴더");
+
+    await expect(
+      filesystem.updateEntry(folder.id, {
+        parentId: FILESYSTEM_ROOT_ID.DESKTOP,
+      }),
+    ).rejects.toMatchObject({
+      code: FILESYSTEM_ERRORS.INVALID_DESKTOP_PLACEMENT.code,
+    });
+  });
+
+  it("keeps a desktop item in trash when its original slot is no longer free", async () => {
+    const { filesystem, recycleBin, repository } = createServices();
+    const trashed = await filesystem.createDirectory(
+      FILESYSTEM_ROOT_ID.DESKTOP,
+      "복원할 폴더",
+      { targetIndex: 0, capacity: 1 },
+    );
+    await filesystem.trashEntry(trashed.id);
+    await filesystem.createDirectory(
+      FILESYSTEM_ROOT_ID.DESKTOP,
+      "새 폴더",
+      { targetIndex: 0, capacity: 1 },
+    );
+
+    await expect(
+      recycleBin.restoreEntry(trashed.id, {
+        desktopPlacement: { targetIndex: 0, capacity: 1 },
+      }),
+    ).rejects.toMatchObject({ code: FILESYSTEM_ERRORS.DESKTOP_FULL.code });
+    expect(repository.records.get(trashed.id)?.trashedAt).not.toBeNull();
   });
 });

@@ -7,10 +7,9 @@ import {
   useState,
 } from "react";
 import {
-  MAX_WIDGET_COUNT,
+  MAX_OPEN_WIDGET_COUNT,
   WIDGET_TYPE,
   WIDGET_WINDOW_POLICY,
-  WINDOW_RESTORE_STATE,
   WINDOW_STATE,
 } from "../../constants/widget";
 import {
@@ -19,9 +18,9 @@ import {
 } from "../../domain/widget-layout";
 import type {
   DashboardWidget,
-  WidgetLayout,
   WidgetType,
 } from "../../types/widget";
+import type { SaveWidgetFileInput } from "../../types/filesystem";
 import {
   DASHBOARD_ACTION_TYPE,
   MESSAGE_KIND,
@@ -138,9 +137,27 @@ export function useDashboard(api: DashboardGateway) {
     [scheduleLayoutSave],
   );
 
+  const updateWidgetState = useCallback((widget: DashboardWidget): void => {
+    const widgets = replaceDashboardWidgetData(widgetsRef.current, widget).map(
+      (candidate) => (candidate.id === widget.id ? widget : candidate),
+    );
+    widgetsRef.current = widgets;
+    dispatch({ type: DASHBOARD_ACTION_TYPE.WIDGETS_REPLACED, widgets });
+  }, []);
+
+  const showError = useCallback((error: unknown, fallback: string): void => {
+    dispatch({
+      type: DASHBOARD_ACTION_TYPE.MESSAGE_SET,
+      message: {
+        kind: MESSAGE_KIND.ERROR,
+        text: errorMessage(error, fallback),
+      },
+    });
+  }, []);
+
   const addWidget = useCallback(
-    (type: WidgetType, desktop: DesktopDimensions): void => {
-      if (widgetsRef.current.length >= MAX_WIDGET_COUNT) {
+    async (type: WidgetType, desktop: DesktopDimensions): Promise<void> => {
+      if (widgetsRef.current.length >= MAX_OPEN_WIDGET_COUNT) {
         dispatch({
           type: DASHBOARD_ACTION_TYPE.MESSAGE_SET,
           message: { kind: MESSAGE_KIND.ERROR, text: UI_MESSAGES.MAX_WIDGETS },
@@ -148,25 +165,111 @@ export function useDashboard(api: DashboardGateway) {
         return;
       }
 
-      replaceAndSave((widgets) => {
-        const policy = WIDGET_WINDOW_POLICY[type];
-        const size = {
-          width: policy.DEFAULT_WIDTH,
-          height: policy.DEFAULT_HEIGHT,
-        };
-        const layout: WidgetLayout = {
-          id: crypto.randomUUID(),
+      const widgets = widgetsRef.current;
+      const policy = WIDGET_WINDOW_POLICY[type];
+      const size = {
+        width: policy.DEFAULT_WIDTH,
+        height: policy.DEFAULT_HEIGHT,
+      };
+      try {
+        const widget = await api.createWidget({
           type,
           position: cascadeWindowPosition(widgets.length, size, desktop),
           size,
-          windowState: WINDOW_STATE.NORMAL,
-          restoreState: WINDOW_RESTORE_STATE.NORMAL,
-          stackOrder: nextStackOrder(widgets),
-        };
-        return [...widgets, WIDGET_FACTORY[type](layout)];
-      });
+        });
+        const next = cloneDashboardWidgets([...widgetsRef.current, widget]);
+        widgetsRef.current = next;
+        dispatch({ type: DASHBOARD_ACTION_TYPE.WIDGETS_REPLACED, widgets: next });
+      } catch (error) {
+        dispatch({
+          type: DASHBOARD_ACTION_TYPE.MESSAGE_SET,
+          message: {
+            kind: MESSAGE_KIND.ERROR,
+            text: errorMessage(error, UI_MESSAGES.SAVE_FAILED),
+          },
+        });
+      }
     },
-    [replaceAndSave],
+    [api, showError],
+  );
+
+  const saveWidgetFile = useCallback(
+    async (widgetId: string, input: SaveWidgetFileInput): Promise<void> => {
+      try {
+        const { widget } = await api.saveWidgetFile(widgetId, input);
+        updateWidgetState(widget);
+      } catch (error) {
+        showError(error, UI_MESSAGES.SAVE_FAILED);
+        throw error;
+      }
+    },
+    [api, showError, updateWidgetState],
+  );
+
+  const openWidget = useCallback(
+    async (widgetId: string): Promise<void> => {
+      const existing = widgetsRef.current.find((widget) => widget.id === widgetId);
+      if (existing) {
+        replaceAndSave((widgets) => bringWidgetToFront(widgets, widgetId));
+        return;
+      }
+      try {
+        const widget = await api.openWidget(widgetId);
+        const opened = {
+          ...widget,
+          stackOrder:
+            Math.max(
+              -1,
+              ...widgetsRef.current.map((candidate) => candidate.stackOrder),
+            ) + 1,
+        };
+        const next = cloneDashboardWidgets([...widgetsRef.current, opened]);
+        widgetsRef.current = next;
+        dispatch({ type: DASHBOARD_ACTION_TYPE.WIDGETS_REPLACED, widgets: next });
+        scheduleLayoutSave(next);
+      } catch (error) {
+        showError(error, UI_MESSAGES.LOAD_FAILED);
+      }
+    },
+    [api, replaceAndSave, scheduleLayoutSave, showError],
+  );
+
+  const removeWidgets = useCallback(
+    (widgetIds: readonly string[]): void => {
+      if (widgetIds.length === 0) return;
+      const ids = new Set(widgetIds);
+      layoutSave.forget(widgetIds);
+      const next = widgetsRef.current.filter((widget) => !ids.has(widget.id));
+      widgetsRef.current = next;
+      dispatch({ type: DASHBOARD_ACTION_TYPE.WIDGETS_REPLACED, widgets: next });
+    },
+    [layoutSave],
+  );
+
+  const closeWidget = useCallback(
+    async (widgetId: string): Promise<void> => {
+      try {
+        await api.closeWidget(widgetId);
+        removeWidgets([widgetId]);
+      } catch (error) {
+        showError(error, UI_MESSAGES.SAVE_FAILED);
+        throw error;
+      }
+    },
+    [api, removeWidgets, showError],
+  );
+
+  const discardWidget = useCallback(
+    async (widgetId: string): Promise<void> => {
+      try {
+        await api.discardWidget(widgetId);
+        removeWidgets([widgetId]);
+      } catch (error) {
+        showError(error, UI_MESSAGES.SAVE_FAILED);
+        throw error;
+      }
+    },
+    [api, removeWidgets, showError],
   );
 
   const focusWindow = useCallback(
@@ -256,10 +359,8 @@ export function useDashboard(api: DashboardGateway) {
   }, []);
 
   const updateWidget = useCallback((widget: DashboardWidget) => {
-    const widgets = replaceDashboardWidgetData(widgetsRef.current, widget);
-    widgetsRef.current = widgets;
-    dispatch({ type: DASHBOARD_ACTION_TYPE.WIDGETS_REPLACED, widgets });
-  }, []);
+    updateWidgetState(widget);
+  }, [updateWidgetState]);
 
   const currentActiveWidgetId = useMemo(
     () => activeWidgetId(state.widgets),
@@ -271,6 +372,11 @@ export function useDashboard(api: DashboardGateway) {
     activeWidgetId: currentActiveWidgetId,
     layoutSave,
     addWidget,
+    saveWidgetFile,
+    openWidget,
+    closeWidget,
+    discardWidget,
+    removeWidgets,
     focusWindow,
     minimizeWindow,
     toggleMaximizeWindow,
@@ -281,28 +387,6 @@ export function useDashboard(api: DashboardGateway) {
     retry,
     dismissMessage,
   };
-}
-
-const WIDGET_FACTORY = {
-  [WIDGET_TYPE.MEMO]: (layout: WidgetLayout): DashboardWidget => ({
-    ...layout,
-    type: WIDGET_TYPE.MEMO,
-    data: { markdown: "", updatedAt: null },
-  }),
-  [WIDGET_TYPE.DAILY_CHECKLIST]: (
-    layout: WidgetLayout,
-  ): DashboardWidget => ({
-    ...layout,
-    type: WIDGET_TYPE.DAILY_CHECKLIST,
-    data: { businessDate: "", nextResetAt: "", items: [] },
-  }),
-} satisfies Record<
-  WidgetType,
-  (layout: WidgetLayout) => DashboardWidget
->;
-
-function nextStackOrder(widgets: readonly WidgetLayout[]): number {
-  return Math.max(-1, ...widgets.map((widget) => widget.stackOrder)) + 1;
 }
 
 function errorMessage(error: unknown, fallback: string): string {

@@ -9,6 +9,7 @@ import type { SessionInfo } from "../../types/auth";
 import type { ReactNode } from "react";
 import type { DashboardGateway } from "./api";
 import type { FilesystemGateway } from "./filesystem";
+import type { SaveWidgetFileInput } from "../../types/filesystem";
 import type { LayoutSaveStatus, StatusMessage } from "./dashboard";
 
 export interface DesktopDimensions {
@@ -68,6 +69,9 @@ export interface WidgetWindowControls {
   readonly onFocus: () => void;
   readonly onMinimize: () => void;
   readonly onToggleMaximize: () => void;
+  readonly onClose: () => void;
+  readonly onSaveFile: () => void;
+  readonly canSaveFile: boolean;
 }
 
 export interface WidgetComponentProps {
@@ -102,7 +106,15 @@ export interface DesktopShellProps {
   readonly onAddWidget: (
     type: DashboardWidget["type"],
     desktop: DesktopDimensions,
-  ) => void;
+  ) => Promise<void>;
+  readonly onOpenWidget: (widgetId: string) => Promise<void>;
+  readonly onSaveWidgetFile: (
+    widgetId: string,
+    input: SaveWidgetFileInput,
+  ) => Promise<void>;
+  readonly onCloseWidget: (widgetId: string) => Promise<void>;
+  readonly onDiscardWidget: (widgetId: string) => Promise<void>;
+  readonly onRemoveWidgets: (widgetIds: readonly string[]) => void;
   readonly onFocusWindow: (widgetId: string) => void;
   readonly onMinimizeWindow: (widgetId: string) => void;
   readonly onToggleMaximizeWindow: (widgetId: string) => void;
@@ -125,6 +137,8 @@ export interface DesktopWindowProps {
   readonly onFocus: () => void;
   readonly onMinimize: () => void;
   readonly onToggleMaximize: () => void;
+  readonly onClose: () => void;
+  readonly onSaveFile: () => void;
   readonly onCommitBounds: (bounds: WindowBounds) => void;
   readonly onWidgetChange: (widget: DashboardWidget) => void;
 }

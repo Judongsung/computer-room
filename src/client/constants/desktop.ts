@@ -22,6 +22,8 @@ export const DESKTOP_LAYOUT = {
   SHORTCUT_WIDTH_PX: 88,
   SHORTCUT_ICON_SIZE_PX: 48,
   SHORTCUT_GAP_PX: 12,
+  SHORTCUT_ROW_HEIGHT_PX: 84,
+  FIXED_SHORTCUT_COUNT: 3,
   BASE_WINDOW_Z_INDEX: 10,
   START_MENU_Z_INDEX: 10_000,
   TASKBAR_Z_INDEX: 10_001,
@@ -79,3 +81,6 @@ export const KOREA_DATE_TIME_FORMAT_OPTIONS = {
 } as const satisfies Intl.DateTimeFormatOptions;
 
 export const DESKTOP_CLOCK_REFRESH_MILLISECONDS = 1_000;
+
+export const DESKTOP_DRAG_DATA_TYPE =
+  "application/x-computer-room-filesystem-entry";

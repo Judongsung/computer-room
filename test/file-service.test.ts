@@ -87,7 +87,7 @@ describe("FileService", () => {
       status: FILE_ERRORS.FILE_TOO_LARGE.status,
       code: FILE_ERRORS.FILE_TOO_LARGE.code,
     });
-    expect(repository.records.size).toBe(2);
+    expect(repository.records.size).toBe(3);
     expect(storage.objects.size).toBe(0);
   });
 

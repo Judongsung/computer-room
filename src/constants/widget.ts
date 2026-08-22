@@ -9,6 +9,7 @@ export const WIDGET_TYPE_VALUES = [
 ] as const;
 
 export const MAX_WIDGET_COUNT = 50;
+export const MAX_OPEN_WIDGET_COUNT = MAX_WIDGET_COUNT;
 
 export const WINDOW_STATE = {
   NORMAL: "normal",

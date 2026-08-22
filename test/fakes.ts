@@ -11,6 +11,7 @@ import type {
   FilesystemFileObject,
   NewFilesystemDirectory,
   NewFilesystemFile,
+  NewFilesystemWidget,
 } from "../src/types/filesystem";
 import { FILE_STATUS } from "../src/constants/file";
 import {
@@ -18,7 +19,8 @@ import {
   FILESYSTEM_ROOT_ID,
   FILESYSTEM_ROOT_NAME,
 } from "../src/constants/filesystem";
-import type { WidgetLayout } from "../src/types/widget";
+import { WIDGET_TYPE } from "../src/constants/widget";
+import type { StoredWidgetLayout, WidgetLayout } from "../src/types/widget";
 import type { WidgetLayoutRepository } from "../src/types/widget-repository";
 import type { MemoRepository } from "../src/types/memo-repository";
 import type { MemoRecord } from "../src/types/memo";
@@ -35,13 +37,13 @@ import {
   CHECKLIST_EVENT_ACTION,
 } from "../src/constants/checklist";
 import type { Clock, IdGenerator } from "../src/types/runtime";
-import { cloneWidgetLayouts } from "../src/domain/widget-layout";
 import type { MemoryObject } from "./types/fakes";
 
 export class MemoryFileRepository implements FilesystemRepository {
   readonly records = new Map<string, FilesystemEntryRecord>();
 
   constructor() {
+    this.seedRoot(FILESYSTEM_ROOT_ID.DESKTOP, FILESYSTEM_ROOT_NAME.DESKTOP);
     this.seedRoot(FILESYSTEM_ROOT_ID.DOCUMENTS, FILESYSTEM_ROOT_NAME.DOCUMENTS);
     this.seedRoot(FILESYSTEM_ROOT_ID.RECYCLE_BIN, FILESYSTEM_ROOT_NAME.RECYCLE_BIN);
   }
@@ -56,7 +58,8 @@ export class MemoryFileRepository implements FilesystemRepository {
         (entry) =>
           entry.parentId === parentId &&
           entry.trashedAt === null &&
-          (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY || entry.fileStatus === FILE_STATUS.READY),
+          (entry.kind !== FILESYSTEM_ENTRY_KIND.FILE ||
+            entry.fileStatus === FILE_STATUS.READY),
       )
       .sort(
         (left, right) =>
@@ -76,7 +79,7 @@ export class MemoryFileRepository implements FilesystemRepository {
           entry.kind === FILESYSTEM_ENTRY_KIND.FILE &&
           entry.fileStatus === FILE_STATUS.READY,
       )
-      .filter((entry) => this.isInDocuments(entry.id))
+      .filter((entry) => this.isInActiveRoot(entry.id))
       .sort(
         (left, right) =>
           right.createdAt - left.createdAt || right.id.localeCompare(left.id),
@@ -108,6 +111,17 @@ export class MemoryFileRepository implements FilesystemRepository {
       .map((entry) => entry.nameKey);
   }
 
+  async listDesktopEntryIds(): Promise<string[]> {
+    return [...this.records.values()]
+      .filter((entry) => entry.parentId === FILESYSTEM_ROOT_ID.DESKTOP)
+      .sort(
+        (left, right) =>
+          (left.desktopOrder ?? Number.MAX_SAFE_INTEGER) -
+          (right.desktopOrder ?? Number.MAX_SAFE_INTEGER),
+      )
+      .map((entry) => entry.id);
+  }
+
   async isWithinRoot(entryId: string, rootId: string): Promise<boolean> {
     let current = this.records.get(entryId);
     while (current) {
@@ -134,6 +148,7 @@ export class MemoryFileRepository implements FilesystemRepository {
       name: directory.name,
       nameKey: directory.nameKey,
       fileId: null,
+      widgetId: null,
       restoreParentId: null,
       restorePath: null,
       trashedAt: null,
@@ -144,6 +159,9 @@ export class MemoryFileRepository implements FilesystemRepository {
       size: null,
       etag: null,
       fileStatus: null,
+      widgetType: null,
+      widgetOpen: null,
+      desktopOrder: directory.desktopOrder ?? null,
     });
   }
 
@@ -155,6 +173,7 @@ export class MemoryFileRepository implements FilesystemRepository {
       name: file.entry.name,
       nameKey: file.entry.nameKey,
       fileId: file.entry.id,
+      widgetId: null,
       restoreParentId: null,
       restorePath: null,
       trashedAt: null,
@@ -165,7 +184,42 @@ export class MemoryFileRepository implements FilesystemRepository {
       size: file.size,
       etag: null,
       fileStatus: FILE_STATUS.PENDING,
+      widgetType: null,
+      widgetOpen: null,
+      desktopOrder: file.entry.desktopOrder ?? null,
     });
+  }
+
+  async insertWidget(widget: NewFilesystemWidget): Promise<void> {
+    this.records.set(widget.id, {
+      id: widget.id,
+      parentId: widget.parentId,
+      kind: FILESYSTEM_ENTRY_KIND.WIDGET,
+      name: widget.name,
+      nameKey: widget.nameKey,
+      fileId: null,
+      widgetId: widget.widgetId,
+      restoreParentId: null,
+      restorePath: null,
+      trashedAt: null,
+      createdAt: widget.createdAt,
+      updatedAt: widget.createdAt,
+      objectKey: null,
+      contentType: null,
+      size: null,
+      etag: null,
+      fileStatus: null,
+      widgetType: widget.widgetType,
+      widgetOpen: true,
+      desktopOrder: widget.desktopOrder ?? null,
+    });
+  }
+
+  async findWidgetEntry(widgetId: string): Promise<FilesystemEntryRecord | null> {
+    return cloneEntry(
+      [...this.records.values()].find((entry) => entry.widgetId === widgetId) ??
+        null,
+    );
   }
 
   async markFileReady(id: string, size: number, etag: string): Promise<void> {
@@ -177,12 +231,36 @@ export class MemoryFileRepository implements FilesystemRepository {
     this.records.delete(id);
   }
 
-  async updateEntry(id: string, parentId: string, name: string, nameKey: string, updatedAt: number): Promise<void> {
+  async updateEntry(
+    id: string,
+    parentId: string,
+    name: string,
+    nameKey: string,
+    updatedAt: number,
+    desktopEntryIds?: readonly string[],
+  ): Promise<void> {
     const entry = this.requireEntry(id);
-    this.records.set(id, { ...entry, parentId, name, nameKey, updatedAt });
+    this.records.set(id, {
+      ...entry,
+      parentId,
+      name,
+      nameKey,
+      updatedAt,
+      desktopOrder:
+        parentId === FILESYSTEM_ROOT_ID.DESKTOP
+          ? (desktopEntryIds?.indexOf(id) ?? entry.desktopOrder)
+          : null,
+    });
+    if (desktopEntryIds) this.applyDesktopOrder(desktopEntryIds);
   }
 
-  async moveToTrash(id: string, previousParentId: string, restorePath: string, trashedAt: number): Promise<void> {
+  async moveToTrash(
+    id: string,
+    previousParentId: string,
+    restorePath: string,
+    trashedAt: number,
+    desktopEntryIds?: readonly string[],
+  ): Promise<string[]> {
     const entry = this.requireEntry(id);
     this.records.set(id, {
       ...entry,
@@ -191,10 +269,21 @@ export class MemoryFileRepository implements FilesystemRepository {
       restorePath,
       trashedAt,
       updatedAt: trashedAt,
+      desktopOrder: null,
     });
+    if (desktopEntryIds) this.applyDesktopOrder(desktopEntryIds);
+    return this.subtree(id)
+      .flatMap((candidate) => (candidate.widgetId ? [candidate.widgetId] : []));
   }
 
-  async restoreEntry(id: string, parentId: string, name: string, nameKey: string, updatedAt: number): Promise<void> {
+  async restoreEntry(
+    id: string,
+    parentId: string,
+    name: string,
+    nameKey: string,
+    updatedAt: number,
+    desktopOrder?: number,
+  ): Promise<void> {
     const entry = this.requireEntry(id);
     this.records.set(id, {
       ...entry,
@@ -205,6 +294,7 @@ export class MemoryFileRepository implements FilesystemRepository {
       restorePath: null,
       trashedAt: null,
       updatedAt,
+      desktopOrder: desktopOrder ?? null,
     });
   }
 
@@ -244,6 +334,7 @@ export class MemoryFileRepository implements FilesystemRepository {
       name,
       nameKey: name,
       fileId: null,
+      widgetId: null,
       restoreParentId: null,
       restorePath: null,
       trashedAt: null,
@@ -254,6 +345,9 @@ export class MemoryFileRepository implements FilesystemRepository {
       size: null,
       etag: null,
       fileStatus: null,
+      widgetType: null,
+      widgetOpen: null,
+      desktopOrder: null,
     });
   }
 
@@ -263,10 +357,13 @@ export class MemoryFileRepository implements FilesystemRepository {
     return entry;
   }
 
-  private isInDocuments(id: string): boolean {
+  private isInActiveRoot(id: string): boolean {
     let current = this.records.get(id);
     while (current) {
-      if (current.id === FILESYSTEM_ROOT_ID.DOCUMENTS) return true;
+      if (
+        current.id === FILESYSTEM_ROOT_ID.DOCUMENTS ||
+        current.id === FILESYSTEM_ROOT_ID.DESKTOP
+      ) return true;
       current = current.parentId ? this.records.get(current.parentId) : undefined;
     }
     return false;
@@ -285,6 +382,13 @@ export class MemoryFileRepository implements FilesystemRepository {
       }
     }
     return result;
+  }
+
+  private applyDesktopOrder(ids: readonly string[]): void {
+    ids.forEach((id, desktopOrder) => {
+      const entry = this.records.get(id);
+      if (entry) this.records.set(id, { ...entry, desktopOrder });
+    });
   }
 }
 
@@ -351,19 +455,54 @@ function cloneEntry(entry: FilesystemEntryRecord | null): FilesystemEntryRecord 
 }
 
 export class MemoryWidgetLayoutRepository implements WidgetLayoutRepository {
-  records: WidgetLayout[] = [];
+  records: StoredWidgetLayout[] = [];
 
-  async list(): Promise<WidgetLayout[]> {
-    return cloneWidgetLayouts(this.records);
+  async list(): Promise<StoredWidgetLayout[]> {
+    return structuredClone(
+      this.records
+        .filter((widget) => widget.isOpen)
+        .sort(
+          (left, right) =>
+            left.stackOrder - right.stackOrder ||
+            left.id.localeCompare(right.id),
+        ),
+    );
   }
 
-  async findById(id: string): Promise<WidgetLayout | null> {
+  async findById(id: string): Promise<StoredWidgetLayout | null> {
     const widget = this.records.find((record) => record.id === id);
-    return widget ? cloneWidgetLayouts([widget])[0] ?? null : null;
+    return widget ? structuredClone(widget) : null;
   }
 
   async synchronize(widgets: readonly WidgetLayout[]): Promise<void> {
-    this.records = cloneWidgetLayouts(widgets);
+    const updates = new Map(widgets.map((widget) => [widget.id, widget] as const));
+    this.records = this.records.map((widget) => {
+      const update = updates.get(widget.id);
+      return update ? { ...structuredClone(update), isOpen: true, file: widget.file } : widget;
+    });
+  }
+
+  async insert(widget: WidgetLayout): Promise<void> {
+    this.records.push({ ...structuredClone(widget), isOpen: true, file: null });
+  }
+
+  async countOpen(): Promise<number> {
+    return this.records.filter((widget) => widget.isOpen).length;
+  }
+
+  async setOpen(id: string, isOpen: boolean): Promise<void> {
+    this.records = this.records.map((widget) =>
+      widget.id === id ? { ...widget, isOpen } : widget,
+    );
+  }
+
+  async deleteUnsaved(id: string): Promise<boolean> {
+    const index = this.records.findIndex(
+      (widget) => widget.id === id && widget.file === null,
+    );
+    if (index < 0) return false;
+    this.records.splice(index, 1);
+    return true;
   }
 }
 

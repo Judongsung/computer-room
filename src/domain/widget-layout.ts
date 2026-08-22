@@ -65,12 +65,14 @@ export function cloneDashboardWidgets(
       return {
         ...layout,
         type: WIDGET_TYPE.MEMO,
+        file: widget.file ? { ...widget.file } : null,
         data: { ...widget.data },
       };
     }
     return {
       ...layout,
       type: WIDGET_TYPE.DAILY_CHECKLIST,
+      file: widget.file ? { ...widget.file } : null,
       data: {
         ...widget.data,
         items: widget.data.items.map((item) => ({ ...item })),

@@ -21,7 +21,7 @@ export const DASHBOARD_COPY = {
   SAVING: "저장 중…",
   SAVE_COMPLETE: "저장됨",
   SAVE_FAILED: "저장 실패",
-  CLOSE_DISABLED: "위젯 닫기는 다음 버전에서 지원합니다.",
+  SAVE_AS_FILE: "파일로 저장",
   MINIMIZE: "최소화",
   MAXIMIZE: "최대화",
   RESTORE: "이전 크기로",
@@ -33,6 +33,7 @@ export const DASHBOARD_COPY = {
 
 export const MEMO_WIDGET_COPY = {
   TITLE: "메모",
+  UNSAVED_TITLE: "제목 없음 - 메모",
   EDIT: "편집",
   WRITE: "작성",
   PREVIEW: "미리보기",
@@ -47,6 +48,7 @@ export const MEMO_WIDGET_COPY = {
 
 export const CHECKLIST_WIDGET_COPY = {
   TITLE: "일일 체크리스트",
+  UNSAVED_TITLE: "제목 없음 - 일일 체크리스트",
   DETAILS: "상세보기",
   EDIT: "편집",
   FINISH_EDITING: "완료",
@@ -76,6 +78,11 @@ export const CHECKLIST_WIDGET_COPY = {
 export const WIDGET_TITLE_BY_TYPE = {
   [WIDGET_TYPE.MEMO]: MEMO_WIDGET_COPY.TITLE,
   [WIDGET_TYPE.DAILY_CHECKLIST]: CHECKLIST_WIDGET_COPY.TITLE,
+} as const;
+
+export const UNSAVED_WIDGET_TITLE_BY_TYPE = {
+  [WIDGET_TYPE.MEMO]: MEMO_WIDGET_COPY.UNSAVED_TITLE,
+  [WIDGET_TYPE.DAILY_CHECKLIST]: CHECKLIST_WIDGET_COPY.UNSAVED_TITLE,
 } as const;
 
 export const LAYOUT_SAVE_COPY_BY_STATUS = {

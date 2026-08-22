@@ -9,6 +9,7 @@ export const XP_WIDGET_TOOLBAR_ACTION = {
   EDIT: "edit",
   COMPLETE: "complete",
   HISTORY: "history",
+  SAVE_FILE: "save-file",
 } as const;
 
 export const XP_WINDOW_INTERACTION_CLASS_NAME = {

@@ -8,6 +8,8 @@ export const FILESYSTEM_COPY = {
   UP: "위로",
   NEW_FOLDER: "새 폴더",
   UPLOAD: "업로드",
+  UPLOAD_FILES: "파일 업로드",
+  UPLOAD_FOLDER: "폴더 업로드",
   DOWNLOAD: "다운로드",
   RENAME: "이름 변경",
   MOVE: "이동",
@@ -43,10 +45,46 @@ export const FILESYSTEM_COPY = {
   MY_COMPUTER_DESCRIPTION: "사용할 위젯을 선택하면 바탕 화면에 새 창이 생성됩니다.",
   RUN_WIDGET: "위젯 실행",
   BUSY: "처리 중…",
+  TRANSFER_TITLE: "파일 전송",
+  TRANSFER_PROGRESS: "항목을 전송하는 중입니다.",
+  TRANSFER_COMPLETE: "파일 전송이 완료되었습니다.",
+  TRANSFER_PARTIAL: "일부 항목을 전송하지 못했습니다.",
+  TRANSFER_FAILED: "파일 전송에 실패했습니다.",
+  TRANSFER_FAILURE_ITEM: "실패",
+  TRANSFER_SKIPPED_ITEM: "건너뜀",
+  FOLDER_DROP_UNSUPPORTED:
+    "이 브라우저에서는 폴더 드롭을 지원하지 않아 파일만 업로드했습니다.",
+  DROP_NOT_ALLOWED: "이 위치에는 항목을 놓을 수 없습니다.",
+  DESKTOP_OVERFLOW: (count: number) =>
+    `현재 화면에 표시하지 못한 바탕 화면 항목이 ${count}개 있습니다.`,
+  OPEN_DESKTOP: "바탕 화면 열기",
+  CLOSE: "닫기",
+  WIDGET: "위젯 파일",
+  SAVE_WIDGET_TITLE: "위젯 파일로 저장",
+  SAVE_LOCATION: "저장 위치",
+  FILE_NAME: "파일 이름",
+  SAVE_HERE: "저장",
+  UNSAVED_CLOSE_TITLE: "저장하지 않은 위젯",
+  UNSAVED_CLOSE_MESSAGE: "이 위젯을 파일로 저장하시겠습니까?",
+  SAVE: "저장",
+  DONT_SAVE: "저장 안 함",
   BYTE_UNIT: "B",
   KILOBYTE_UNIT: "KB",
   MEGABYTE_UNIT: "MB",
 } as const;
+
+export const FILESYSTEM_UPLOAD_POLICY = {
+  CONCURRENCY: 3,
+} as const;
+
+export const FILESYSTEM_DRAG_SOURCE = {
+  ACTIVE: "active",
+  TRASH: "trash",
+} as const;
+
+export const FILE_PICKER_ABORT_ERROR_NAME = "AbortError";
+
+export const EXPLORER_WINDOW_ID_PREFIX = "explorer-window-";
 
 export const FILE_SIZE_DISPLAY = {
   KILOBYTE_BYTES: 1_000,

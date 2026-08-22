@@ -85,7 +85,7 @@ export function isChecklistCheckInput(
   return isRecord(value) && typeof value.checked === "boolean";
 }
 
-function isDashboardWidget(value: unknown): value is DashboardWidget {
+export function isDashboardWidget(value: unknown): value is DashboardWidget {
   if (
     !isRecord(value) ||
     typeof value.id !== "string" ||
@@ -95,7 +95,8 @@ function isDashboardWidget(value: unknown): value is DashboardWidget {
     !WINDOW_RESTORE_STATE_VALUES.some(
       (state) => value.restoreState === state,
     ) ||
-    typeof value.stackOrder !== "number"
+    typeof value.stackOrder !== "number" ||
+    !isWidgetFileReference(value.file)
   ) {
     return false;
   }
@@ -106,6 +107,16 @@ function isDashboardWidget(value: unknown): value is DashboardWidget {
   return (
     value.type === WIDGET_TYPE.DAILY_CHECKLIST &&
     isDailyChecklistData(value.data)
+  );
+}
+
+function isWidgetFileReference(value: unknown): boolean {
+  return (
+    value === null ||
+    (isRecord(value) &&
+      typeof value.entryId === "string" &&
+      typeof value.parentId === "string" &&
+      typeof value.name === "string")
   );
 }
 

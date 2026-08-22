@@ -37,6 +37,8 @@ describe("ChecklistService", () => {
         windowState: WINDOW_STATE.NORMAL,
         restoreState: WINDOW_RESTORE_STATE.NORMAL,
         stackOrder: 0,
+        isOpen: true,
+        file: null,
       },
     ];
     const repository = new MemoryChecklistRepository();

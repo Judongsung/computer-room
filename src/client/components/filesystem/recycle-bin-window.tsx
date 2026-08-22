@@ -1,12 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { KOREA_LOCALE } from "../../../constants/date";
-import { FILESYSTEM_ENTRY_KIND } from "../../../constants/filesystem";
+import {
+  FILESYSTEM_ENTRY_KIND,
+  FILESYSTEM_ROOT_ID,
+} from "../../../constants/filesystem";
 import type {
   FilesystemTrashPage,
   TrashedFilesystemEntry,
 } from "../../../types/filesystem";
-import { DESKTOP_ASSET_PATHS } from "../../constants/desktop";
-import { FILESYSTEM_COPY } from "../../constants/filesystem";
+import {
+  DESKTOP_ASSET_PATHS,
+  WIDGET_ICON_PATH_BY_TYPE,
+} from "../../constants/desktop";
+import {
+  FILESYSTEM_COPY,
+  FILESYSTEM_DRAG_SOURCE,
+} from "../../constants/filesystem";
 import { SYSTEM_APP_ID } from "../../constants/system-app";
 import type {
   FilesystemGateway,
@@ -15,6 +24,7 @@ import type {
 import type { SystemWindowChromeProps } from "../../types/system-app";
 import { SystemAppWindow } from "../desktop/system-app-window";
 import { ConfirmDialog } from "./filesystem-dialogs";
+import { writeFilesystemDragPayload } from "../../domain/filesystem-drag";
 
 type RecycleDialog = "delete" | "empty" | null;
 
@@ -22,10 +32,12 @@ interface RecycleBinWindowProps
   extends SystemWindowChromeProps,
     FilesystemWindowSyncProps {
   readonly gateway: FilesystemGateway;
+  readonly desktopCapacity: number;
 }
 
 export function RecycleBinWindow({
   gateway,
+  desktopCapacity,
   filesystemRevision,
   onFilesystemChanged,
   ...chrome
@@ -97,7 +109,21 @@ export function RecycleBinWindow({
       <button
         type="button"
         disabled={!selected || busy}
-        onClick={() => selected && void runChange(() => gateway.restoreEntry(selected.entry.id))}
+        onClick={() =>
+          selected &&
+          void runChange(() =>
+            gateway.restoreEntry(selected.entry.id, {
+              ...(selected.originalParentId === FILESYSTEM_ROOT_ID.DESKTOP
+                ? {
+                    desktopPlacement: {
+                      targetIndex: 0,
+                      capacity: desktopCapacity,
+                    },
+                  }
+                : {}),
+            }),
+          )
+        }
       >
         {FILESYSTEM_COPY.RESTORE}
       </button>
@@ -190,14 +216,23 @@ function RecycleRow({
   return (
     <button
       type="button"
+      draggable
       className={selected ? "recycle-list__row recycle-list__row--selected" : "recycle-list__row"}
       onClick={onSelect}
+      onDragStart={(event) =>
+        writeFilesystemDragPayload(event.dataTransfer, {
+          id: item.entry.id,
+          source: FILESYSTEM_DRAG_SOURCE.TRASH,
+        })
+      }
     >
       <span>
         <img
           src={
             item.entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY
               ? DESKTOP_ASSET_PATHS.FOLDER_ICON
+              : item.entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET
+                ? WIDGET_ICON_PATH_BY_TYPE[item.entry.widgetType]
               : DESKTOP_ASSET_PATHS.FILE_ICON
           }
           alt=""

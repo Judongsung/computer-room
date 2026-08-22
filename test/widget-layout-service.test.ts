@@ -8,9 +8,11 @@ import {
 } from "../src/constants/widget";
 import {
   MemoryChecklistRepository,
+  MemoryFileRepository,
   MemoryMemoRepository,
   MemoryWidgetLayoutRepository,
   StaticClock,
+  SequenceIdGenerator,
 } from "./fakes";
 
 const MEMO_WINDOW_POLICY = WIDGET_WINDOW_POLICY[WIDGET_TYPE.MEMO];
@@ -23,6 +25,10 @@ describe("WidgetLayoutService", () => {
       repository,
       new MemoryMemoRepository(),
       new MemoryChecklistRepository(),
+      new MemoryFileRepository(),
+      new SequenceIdGenerator([
+        "00000000-0000-4000-8000-000000000010",
+      ]),
       new StaticClock(NOW),
     );
     const right = {
@@ -50,8 +56,11 @@ describe("WidgetLayoutService", () => {
       stackOrder: 0,
     } as const;
 
+    await repository.insert(right);
+    await repository.insert(left);
     const expected = [left, right].map((widget) => ({
       ...widget,
+      file: null,
       data: { markdown: "", updatedAt: null },
     }));
 

@@ -87,6 +87,14 @@ export function useWidgetLayoutAutoSave(
     void flush();
   }, [flush]);
 
+  const forget = useCallback((widgetIds: readonly string[]): void => {
+    if (latestSnapshot.current === null) return;
+    const ids = new Set(widgetIds);
+    latestSnapshot.current = latestSnapshot.current.filter(
+      (widget) => !ids.has(widget.id),
+    );
+  }, []);
+
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -105,6 +113,7 @@ export function useWidgetLayoutAutoSave(
       status === LAYOUT_SAVE_STATUS.SAVING ||
       status === LAYOUT_SAVE_STATUS.ERROR,
     schedule,
+    forget,
     retry,
   };
 }

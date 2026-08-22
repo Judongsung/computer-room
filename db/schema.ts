@@ -88,6 +88,11 @@ export const filesystemEntries = sqliteTable(
     fileId: text("file_id")
       .unique()
       .references(() => files.id, { onDelete: "cascade" }),
+    widgetId: text("widget_id")
+      .unique()
+      .references((): AnySQLiteColumn => dashboardWidgets.id, {
+        onDelete: "cascade",
+      }),
     restoreParentId: text("restore_parent_id").references(
       (): AnySQLiteColumn => filesystemEntries.id,
       { onDelete: "set null" },
@@ -104,7 +109,7 @@ export const filesystemEntries = sqliteTable(
     ),
     check(
       "filesystem_entries_file_check",
-      sql`(${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.DIRECTORY}'`)} AND ${table.fileId} IS NULL) OR (${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.FILE}'`)} AND ${table.fileId} IS NOT NULL)`,
+      sql`(${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.DIRECTORY}'`)} AND ${table.fileId} IS NULL AND ${table.widgetId} IS NULL) OR (${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.FILE}'`)} AND ${table.fileId} IS NOT NULL AND ${table.widgetId} IS NULL) OR (${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.WIDGET}'`)} AND ${table.fileId} IS NULL AND ${table.widgetId} IS NOT NULL)`,
     ),
     uniqueIndex("uq_filesystem_entries_active_parent_name")
       .on(table.parentId, table.nameKey)
@@ -141,6 +146,7 @@ export const dashboardWidgets = sqliteTable(
       .notNull()
       .default(WINDOW_RESTORE_STATE.NORMAL),
     stackOrder: integer("stack_order").notNull(),
+    isOpen: integer("is_open", { mode: "boolean" }).notNull().default(true),
   },
   (table) => [
     check(
@@ -172,7 +178,22 @@ export const dashboardWidgets = sqliteTable(
       sql`${table.restoreState} IN (${sql.raw(WINDOW_RESTORE_STATE_SQL)})`,
     ),
     check("dashboard_widgets_stack_order_check", sql`${table.stackOrder} >= 0`),
+    check("dashboard_widgets_is_open_check", sql`${table.isOpen} IN (0, 1)`),
     index("idx_dashboard_widgets_stack_order").on(table.stackOrder),
+  ],
+);
+
+export const desktopEntryOrder = sqliteTable(
+  "desktop_entry_order",
+  {
+    entryId: text("entry_id")
+      .primaryKey()
+      .references(() => filesystemEntries.id, { onDelete: "cascade" }),
+    sortOrder: integer("sort_order").notNull().unique(),
+  },
+  (table) => [
+    check("desktop_entry_order_value_check", sql`${table.sortOrder} >= 0`),
+    index("idx_desktop_entry_order_sort").on(table.sortOrder),
   ],
 );
 

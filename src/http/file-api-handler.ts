@@ -26,6 +26,7 @@ import type {
   FilesystemUseCases,
   RecycleBinUseCases,
 } from "../types/filesystem-service";
+import type { DesktopPlacement } from "../types/filesystem";
 import type { FeatureApiHandler } from "../types/http";
 import { parseIntegerParameter } from "./query-parameters";
 import { parseRangeHeader } from "./byte-range";
@@ -41,6 +42,9 @@ const FILESYSTEM_ENTRIES_PATH = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.ENT
 const FILESYSTEM_DIRECTORIES_PATH = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.DIRECTORIES}`;
 const FILESYSTEM_TRASH_PATH = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.TRASH}`;
 const FILESYSTEM_ENTRY_PATH = new RegExp(`^${FILESYSTEM_ENTRIES_PATH}/([^/]+)$`);
+const FILESYSTEM_MOVE_PATH = new RegExp(
+  `^${FILESYSTEM_ENTRIES_PATH}/([^/]+)/${API_PATH_SEGMENTS.MOVE}$`,
+);
 const FILESYSTEM_TRASH_ENTRY_PATH = new RegExp(`^${FILESYSTEM_TRASH_PATH}/([^/]+)$`);
 const FILESYSTEM_RESTORE_PATH = new RegExp(
   `^${FILESYSTEM_TRASH_PATH}/([^/]+)/${API_PATH_SEGMENTS.RESTORE}$`,
@@ -70,8 +74,14 @@ export class FileApiHandler implements FeatureApiHandler {
     const restoreMatch = FILESYSTEM_RESTORE_PATH.exec(url.pathname);
     if (restoreMatch) {
       assertMethod(request, HTTP_METHOD.POST);
+      const body = await readOptionalJsonObject(request);
+      const parentId = readOptionalString(body.parentId);
+      const desktopPlacement = readDesktopPlacement(body);
       return jsonResponse({
-        entry: await this.recycleBin.restoreEntry(readId(restoreMatch)),
+        entry: await this.recycleBin.restoreEntry(readId(restoreMatch), {
+          ...(parentId === undefined ? {} : { parentId }),
+          ...(desktopPlacement === undefined ? {} : { desktopPlacement }),
+        }),
       });
     }
     const trashEntryMatch = FILESYSTEM_TRASH_ENTRY_PATH.exec(url.pathname);
@@ -98,6 +108,21 @@ export class FileApiHandler implements FeatureApiHandler {
     if (entryMatch) {
       return this.handleEntry(request, readId(entryMatch));
     }
+    const moveMatch = FILESYSTEM_MOVE_PATH.exec(url.pathname);
+    if (moveMatch) {
+      assertMethod(request, HTTP_METHOD.POST);
+      const body = await readRequiredJsonObject(request);
+      if (typeof body.parentId !== "string") {
+        throw new AppError(HTTP_ERRORS.INVALID_JSON);
+      }
+      const desktopPlacement = readDesktopPlacement(body);
+      return jsonResponse({
+        entry: await this.filesystem.moveEntry(readId(moveMatch), {
+          parentId: body.parentId,
+          ...(desktopPlacement === undefined ? {} : { desktopPlacement }),
+        }),
+      });
+    }
     return null;
   }
 
@@ -117,6 +142,7 @@ export class FileApiHandler implements FeatureApiHandler {
         contentType: request.headers.get(HTTP_HEADERS.CONTENT_TYPE),
         declaredSize,
         body: request.body,
+        ...readDesktopPlacementFromQuery(url),
       });
       return jsonResponse({ file }, HTTP_STATUS.CREATED);
     }
@@ -137,22 +163,23 @@ export class FileApiHandler implements FeatureApiHandler {
 
   private async handleDirectories(request: Request): Promise<Response> {
     assertMethod(request, HTTP_METHOD.POST);
-    const body = await readJsonBody(request);
-    if (!isRecord(body) || typeof body.name !== "string") {
+    const body = await readRequiredJsonObject(request);
+    if (typeof body.name !== "string") {
       throw new AppError(HTTP_ERRORS.INVALID_JSON);
     }
     const parentId = readOptionalString(body.parentId);
+    const desktopPlacement = readDesktopPlacement(body);
     const directory = await this.filesystem.createDirectory(
       parentId ?? null,
       body.name,
+      desktopPlacement,
     );
     return jsonResponse({ directory }, HTTP_STATUS.CREATED);
   }
 
   private async handleEntry(request: Request, id: string): Promise<Response> {
     if (request.method === HTTP_METHOD.DELETE) {
-      await this.filesystem.trashEntry(id);
-      return emptyResponse();
+      return jsonResponse(await this.filesystem.trashEntry(id));
     }
     if (request.method === HTTP_METHOD.PATCH) {
       const body = await readJsonBody(request);
@@ -299,6 +326,60 @@ function readOptionalString(value: unknown): string | undefined {
     throw new AppError(HTTP_ERRORS.INVALID_JSON);
   }
   return value;
+}
+
+async function readRequiredJsonObject(
+  request: Request,
+): Promise<Record<string, unknown>> {
+  const body = await readJsonBody(request);
+  if (!isRecord(body)) {
+    throw new AppError(HTTP_ERRORS.INVALID_JSON);
+  }
+  return body;
+}
+
+async function readOptionalJsonObject(
+  request: Request,
+): Promise<Record<string, unknown>> {
+  if (!request.body) {
+    return {};
+  }
+  return readRequiredJsonObject(request);
+}
+
+function readDesktopPlacement(
+  value: Record<string, unknown>,
+): DesktopPlacement | undefined {
+  const targetIndex = value.desktopTargetIndex;
+  const capacity = value.desktopCapacity;
+  if (targetIndex === undefined && capacity === undefined) {
+    return undefined;
+  }
+  if (typeof targetIndex !== "number" || typeof capacity !== "number") {
+    throw new AppError(HTTP_ERRORS.INVALID_JSON);
+  }
+  return { targetIndex, capacity };
+}
+
+function readDesktopPlacementFromQuery(
+  url: URL,
+): { desktopPlacement?: DesktopPlacement } {
+  const targetIndex = url.searchParams.get(
+    API_QUERY_PARAMETERS.DESKTOP_TARGET_INDEX,
+  );
+  const capacity = url.searchParams.get(API_QUERY_PARAMETERS.DESKTOP_CAPACITY);
+  if (targetIndex === null && capacity === null) {
+    return {};
+  }
+  if (targetIndex === null || capacity === null) {
+    throw new AppError(HTTP_ERRORS.INVALID_JSON);
+  }
+  return {
+    desktopPlacement: {
+      targetIndex: parseIntegerParameter(targetIndex, -1),
+      capacity: parseIntegerParameter(capacity, -1),
+    },
+  };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

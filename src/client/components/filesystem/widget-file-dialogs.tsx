@@ -4,109 +4,39 @@ import {
   FILESYSTEM_ROOT_ID,
   FILESYSTEM_ROOT_NAME,
 } from "../../../constants/filesystem";
+import { WIDGET_TYPE } from "../../../constants/widget";
+import type { WidgetType } from "../../../types/widget";
 import { DESKTOP_ASSET_PATHS } from "../../constants/desktop";
+import { CHECKLIST_WIDGET_COPY, MEMO_WIDGET_COPY } from "../../constants/content";
 import { FILESYSTEM_COPY } from "../../constants/filesystem";
 import type { FilesystemGateway } from "../../types/filesystem";
 
-interface NameDialogProps {
-  readonly title: string;
-  readonly label: string;
-  readonly initialValue?: string;
-  readonly busy: boolean;
-  readonly onSubmit: (name: string) => void;
-  readonly onCancel: () => void;
-}
-
-export function NameDialog({
-  title,
-  label,
-  initialValue = "",
-  busy,
-  onSubmit,
-  onCancel,
-}: NameDialogProps) {
-  const [name, setName] = useState(initialValue);
-  const submit = (event: FormEvent): void => {
-    event.preventDefault();
-    if (name.trim()) {
-      onSubmit(name);
-    }
-  };
-  return (
-    <div className="filesystem-dialog-backdrop">
-      <form className="filesystem-dialog" role="dialog" aria-label={title} onSubmit={submit}>
-        <strong>{title}</strong>
-        <label>
-          {label}
-          <input autoFocus value={name} onChange={(event) => setName(event.target.value)} />
-        </label>
-        <div className="filesystem-dialog__actions">
-          <button type="submit" disabled={busy || !name.trim()}>
-            {busy ? FILESYSTEM_COPY.BUSY : FILESYSTEM_COPY.CONFIRM}
-          </button>
-          <button type="button" disabled={busy} onClick={onCancel}>
-            {FILESYSTEM_COPY.CANCEL}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
-
-interface ConfirmDialogProps {
-  readonly title: string;
-  readonly message: string;
-  readonly busy: boolean;
-  readonly confirmLabel?: string;
-  readonly cancelLabel?: string;
-  readonly onConfirm: () => void;
-  readonly onCancel: () => void;
-}
-
-export function ConfirmDialog({
-  title,
-  message,
-  busy,
-  confirmLabel = FILESYSTEM_COPY.CONFIRM,
-  cancelLabel = FILESYSTEM_COPY.CANCEL,
-  onConfirm,
-  onCancel,
-}: ConfirmDialogProps) {
-  return (
-    <div className="filesystem-dialog-backdrop">
-      <section className="filesystem-dialog" role="dialog" aria-label={title}>
-        <strong>{title}</strong>
-        <p>{message}</p>
-        <div className="filesystem-dialog__actions">
-          <button type="button" disabled={busy} onClick={onConfirm}>
-            {busy ? FILESYSTEM_COPY.BUSY : confirmLabel}
-          </button>
-          <button type="button" disabled={busy} onClick={onCancel}>
-            {cancelLabel}
-          </button>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-interface DirectoryPickerDialogProps {
+interface WidgetSaveDialogProps {
   readonly gateway: FilesystemGateway;
-  readonly excludedEntryId: string;
+  readonly widgetType: WidgetType;
   readonly busy: boolean;
-  readonly onSelect: (directoryId: string) => void;
+  readonly onSave: (parentId: string, name: string) => void;
   readonly onCancel: () => void;
 }
 
-export function DirectoryPickerDialog({
+export function WidgetSaveDialog({
   gateway,
-  excludedEntryId,
+  widgetType,
   busy,
-  onSelect,
+  onSave,
   onCancel,
-}: DirectoryPickerDialogProps) {
-  const [directoryId, setDirectoryId] = useState<string | undefined>();
-  const [page, setPage] = useState<Awaited<ReturnType<FilesystemGateway["listDirectory"]>> | null>(null);
+}: WidgetSaveDialogProps) {
+  const [directoryId, setDirectoryId] = useState<string>(
+    FILESYSTEM_ROOT_ID.DOCUMENTS,
+  );
+  const [page, setPage] = useState<
+    Awaited<ReturnType<FilesystemGateway["listDirectory"]>> | null
+  >(null);
+  const [name, setName] = useState<string>(
+    widgetType === WIDGET_TYPE.MEMO
+      ? MEMO_WIDGET_COPY.TITLE
+      : CHECKLIST_WIDGET_COPY.TITLE,
+  );
   const [error, setError] = useState<string | null>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -114,6 +44,7 @@ export function DirectoryPickerDialog({
     let active = true;
     setPage(null);
     setError(null);
+    setIsLoadingMore(false);
     void gateway
       .listDirectory(directoryId)
       .then((value) => {
@@ -127,6 +58,10 @@ export function DirectoryPickerDialog({
     };
   }, [directoryId, gateway]);
 
+  const submit = (event: FormEvent): void => {
+    event.preventDefault();
+    if (name.trim()) onSave(directoryId, name);
+  };
   const loadMore = (): void => {
     if (!page || page.nextOffset === null || isLoadingMore) return;
     setIsLoadingMore(true);
@@ -143,11 +78,15 @@ export function DirectoryPickerDialog({
       .catch((reason: unknown) => setError(errorMessage(reason)))
       .finally(() => setIsLoadingMore(false));
   };
-
   return (
     <div className="filesystem-dialog-backdrop">
-      <section className="filesystem-dialog filesystem-dialog--picker" role="dialog" aria-label={FILESYSTEM_COPY.MOVE_TITLE}>
-        <strong>{FILESYSTEM_COPY.MOVE_TITLE}</strong>
+      <form
+        className="filesystem-dialog filesystem-dialog--picker"
+        role="dialog"
+        aria-label={FILESYSTEM_COPY.SAVE_WIDGET_TITLE}
+        onSubmit={submit}
+      >
+        <strong>{FILESYSTEM_COPY.SAVE_WIDGET_TITLE}</strong>
         <div className="filesystem-save-roots">
           <button
             type="button"
@@ -166,7 +105,11 @@ export function DirectoryPickerDialog({
           <>
             <div className="filesystem-picker__breadcrumbs">
               {page.breadcrumbs.map((item) => (
-                <button key={item.id} type="button" onClick={() => setDirectoryId(item.id)}>
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setDirectoryId(item.id)}
+                >
                   {item.name}
                 </button>
               ))}
@@ -174,14 +117,16 @@ export function DirectoryPickerDialog({
             <div className="filesystem-picker__folders">
               {page.items
                 .filter(
-                  (item) =>
-                    item.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY &&
-                    item.id !== excludedEntryId,
+                  (entry) => entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY,
                 )
-                .map((item) => (
-                  <button key={item.id} type="button" onDoubleClick={() => setDirectoryId(item.id)}>
+                .map((entry) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    onDoubleClick={() => setDirectoryId(entry.id)}
+                  >
                     <img src={DESKTOP_ASSET_PATHS.FOLDER_ICON} alt="" />
-                    {item.name}
+                    {entry.name}
                   </button>
                 ))}
             </div>
@@ -189,7 +134,7 @@ export function DirectoryPickerDialog({
               <button
                 type="button"
                 className="explorer-load-more"
-                disabled={isLoadingMore}
+                disabled={isLoadingMore || busy}
                 onClick={loadMore}
               >
                 {isLoadingMore
@@ -204,13 +149,58 @@ export function DirectoryPickerDialog({
         ) : (
           <p>{FILESYSTEM_COPY.BUSY}</p>
         )}
+        <label>
+          {FILESYSTEM_COPY.FILE_NAME}
+          <input
+            autoFocus
+            value={name}
+            onChange={(event) => setName(event.currentTarget.value)}
+          />
+        </label>
         <div className="filesystem-dialog__actions">
           <button
-            type="button"
-            disabled={busy || isLoadingMore || !page}
-            onClick={() => page && onSelect(page.directory.id)}
+            type="submit"
+            disabled={busy || isLoadingMore || !page || !name.trim()}
           >
-            {busy ? FILESYSTEM_COPY.BUSY : FILESYSTEM_COPY.MOVE_HERE}
+            {busy ? FILESYSTEM_COPY.BUSY : FILESYSTEM_COPY.SAVE_HERE}
+          </button>
+          <button type="button" disabled={busy} onClick={onCancel}>
+            {FILESYSTEM_COPY.CANCEL}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+interface UnsavedWidgetDialogProps {
+  readonly busy: boolean;
+  readonly onSave: () => void;
+  readonly onDiscard: () => void;
+  readonly onCancel: () => void;
+}
+
+export function UnsavedWidgetDialog({
+  busy,
+  onSave,
+  onDiscard,
+  onCancel,
+}: UnsavedWidgetDialogProps) {
+  return (
+    <div className="filesystem-dialog-backdrop">
+      <section
+        className="filesystem-dialog"
+        role="dialog"
+        aria-label={FILESYSTEM_COPY.UNSAVED_CLOSE_TITLE}
+      >
+        <strong>{FILESYSTEM_COPY.UNSAVED_CLOSE_TITLE}</strong>
+        <p>{FILESYSTEM_COPY.UNSAVED_CLOSE_MESSAGE}</p>
+        <div className="filesystem-dialog__actions">
+          <button type="button" disabled={busy} onClick={onSave}>
+            {FILESYSTEM_COPY.SAVE}
+          </button>
+          <button type="button" disabled={busy} onClick={onDiscard}>
+            {FILESYSTEM_COPY.DONT_SAVE}
           </button>
           <button type="button" disabled={busy} onClick={onCancel}>
             {FILESYSTEM_COPY.CANCEL}

@@ -37,6 +37,23 @@ export interface WidgetLayoutCollection {
   readonly items: readonly WidgetLayout[];
 }
 
+export interface WidgetFileReference {
+  readonly entryId: string;
+  readonly parentId: string;
+  readonly name: string;
+}
+
+export interface CreateWidgetInput {
+  readonly type: WidgetType;
+  readonly position: WindowPosition;
+  readonly size: WindowSize;
+}
+
+export interface StoredWidgetLayout extends WidgetLayout {
+  readonly isOpen: boolean;
+  readonly file: WidgetFileReference | null;
+}
+
 export interface MemoData {
   readonly markdown: string;
   readonly updatedAt: string | null;
@@ -56,11 +73,13 @@ export interface DailyChecklistData {
 
 export type MemoWidget = WidgetLayout & {
   readonly type: typeof WIDGET_TYPE.MEMO;
+  readonly file: WidgetFileReference | null;
   readonly data: MemoData;
 };
 
 export type DailyChecklistWidget = WidgetLayout & {
   readonly type: typeof WIDGET_TYPE.DAILY_CHECKLIST;
+  readonly file: WidgetFileReference | null;
   readonly data: DailyChecklistData;
 };
 
