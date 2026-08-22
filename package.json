@@ -7,15 +7,19 @@
     "dev": "vite",
     "preview": "vite preview",
     "typegen": "wrangler types",
-    "check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.node.json --noEmit",
+    "check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.node.json --noEmit && npm run check:migrations",
+    "check:migrations": "node scripts/check-migration-safety.mjs",
     "db:generate": "drizzle-kit generate",
+    "db:migration:accept": "node scripts/check-migration-safety.mjs --accept-new",
+    "db:bookmark:remote": "node scripts/record-d1-bookmark.mjs",
     "db:migrate:local": "wrangler d1 migrations apply computer-room-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply computer-room-db --remote",
     "test": "npm run test:worker && npm run test:client",
     "test:worker": "vitest run --config vitest.config.ts",
     "test:client": "vitest run --config vitest.client.config.ts",
     "build": "vite build",
-    "deploy": "vite build && wrangler deploy"
+    "deploy": "npm run check && npm test && npm run build && npm run db:bookmark:remote && npm run db:migrate:remote && wrangler deploy",
+    "deploy:worker": "vite build && wrangler deploy"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2",

@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "files": {
+    "0000_superb_hitman.sql": "43279438ed1370244d7f8bb694cae09f75645234f759a868208b706c077288e6",
+    "0001_nifty_vindicator.sql": "4201e635ebb3787ed00568fee6d20252e33d2482e64ab7f0b5f620008c8a2ec4",
+    "0002_thick_radioactive_man.sql": "c5e7b9f03e6cc2e08a165d8377ee649ca9ade68b4fd3839455d9f70ddf685cb8",
+    "0003_plain_kang.sql": "f3e345449e177362bac3b8d1e325805d0eb27aa558028c54a5fca69c0362c2cc",
+    "0004_melted_gamma_corps.sql": "36128782091f066b92d8f527d828cbc905c7b26db214be009f03ba8e8a03b71c",
+    "0005_young_shiva.sql": "35dfcd8adc7e43bebc79a94d6d7b184900b1cf688b962a12d02deb7bedb4d8be",
+    "0006_blushing_shard.sql": "c3b54a1ca0fedb8808471ae146e1b11aa0dca63fb7bd925a12dde34706eeaa0d"
+  }
+}

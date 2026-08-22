@@ -68,11 +68,22 @@ npm run dev
 
 1. `wrangler login`으로 사용할 Cloudflare 계정에 로그인합니다.
 2. `wrangler.jsonc`의 D1과 R2 바인딩이 생성한 저장소를 가리키는지 확인합니다.
-3. `npm run db:migrate:remote`로 D1 마이그레이션을 적용합니다. 기존 파일의 R2 객체 키는 유지되며 새 바탕 화면 루트·아이콘 순서·위젯 파일 참조는 D1에 추가됩니다.
-4. `npm run deploy`로 Worker와 React 정적 자산을 배포합니다.
-5. 배포 주소 전체를 Cloudflare Access로 보호하고 본인 계정만 허용합니다.
-6. Worker 환경 변수 `TEAM_DOMAIN`, `POLICY_AUD`, `OWNER_EMAIL`을 설정합니다.
-7. R2의 `r2.dev` 공개 접근은 활성화하지 않습니다.
+3. `npm run deploy`를 실행합니다. 타입·마이그레이션 안전성·테스트·프로덕션 빌드를 검증하고, D1 Time Travel 복구 지점을 기록한 다음 원격 마이그레이션과 Worker 배포를 순서대로 수행합니다.
+4. 배포 주소 전체를 Cloudflare Access로 보호하고 본인 계정만 허용합니다.
+5. Worker 환경 변수 `TEAM_DOMAIN`, `POLICY_AUD`, `OWNER_EMAIL`을 설정합니다.
+6. R2의 `r2.dev` 공개 접근은 활성화하지 않습니다.
+
+배포 직전의 D1 북마크는 Git에 포함되지 않는 `.wrangler/deploy-bookmarks`에 저장됩니다. 데이터 이상이 발생하면 해당 파일의 `bookmark` 값으로 `npx wrangler d1 time-travel restore computer-room-db --bookmark <bookmark>`를 실행할 수 있습니다. 복원은 원격 DB를 변경하므로 북마크의 시각과 영향을 확인한 뒤 수동으로 실행합니다. 자세한 동작은 [Cloudflare D1 Time Travel 문서](https://developers.cloudflare.com/d1/reference/time-travel/)를 참고하세요.
+
+DB 변경이 없고 코드만 의도적으로 다시 배포할 때만 `npm run deploy:worker`를 사용합니다.
+
+## 마이그레이션 안전 규칙
+
+- 원격에 적용된 마이그레이션은 수정하거나 삭제하지 않고 새 파일로 변경을 추가합니다.
+- D1 마이그레이션에서 `PRAGMA foreign_keys=OFF`에 의존하지 않습니다. 외래 키로 참조되는 테이블을 재생성할 때는 자식 행을 명시적으로 보존하고 회귀 테스트를 추가합니다.
+- 새 마이그레이션의 `DROP TABLE`은 데이터 보존을 검토한 뒤 SQL에 `-- migration-safety: allow-table-drop <table>` 주석을 명시해야 합니다.
+- 새 SQL을 검토한 뒤 `npm run db:migration:accept`로 해시를 등록합니다. 이후 해당 파일을 수정하거나 삭제하면 검사가 실패합니다.
+- `npm run check:migrations`는 등록된 SQL의 해시와 새 SQL의 위험 패턴을 검사하며 기본 `check`와 `deploy`에 포함됩니다.
 
 ## 검증
 

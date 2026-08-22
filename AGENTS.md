@@ -49,6 +49,9 @@ Treat API contracts, database schemas, storage conventions, and shared constants
 * Keep HTTP transport concerns separate from domain logic.
 * Keep D1 and R2 implementation details inside infrastructure code.
 * Use explicit migrations for database schema changes.
+* Treat applied migration files as immutable; add a new migration instead of editing or removing one.
+* Do not rely on `PRAGMA foreign_keys=OFF` to preserve D1 child rows during a referenced-table rebuild.
+* Explicitly preserve dependent rows and add migration regression coverage before rebuilding a referenced table.
 * Avoid breaking existing contracts unless the requested change requires it.
 
 ## Constants
@@ -84,6 +87,7 @@ Treat API contracts, database schemas, storage conventions, and shared constants
 * Keep domain tests independent of React, Cloudflare, D1, R2, and HTTP.
 * Do not remove or weaken existing tests merely to make a change pass.
 * Run relevant tests, type checks, and lint checks after changes.
+* Run `npm run check:migrations` for schema changes and use the guarded `npm run deploy` pipeline for releases.
 * Update documentation when behavior, configuration, schemas, or public contracts change.
 
 ## Completion Report
