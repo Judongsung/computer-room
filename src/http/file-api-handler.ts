@@ -3,7 +3,6 @@ import {
   API_PATH_SEGMENTS,
   API_QUERY_PARAMETERS,
 } from "../constants/api";
-import { FILE_ERRORS } from "../constants/errors/file";
 import { HTTP_ERRORS } from "../constants/errors/http";
 import {
   CONTENT_DISPOSITION_MODE,
@@ -32,6 +31,7 @@ import { parseIntegerParameter } from "./query-parameters";
 import { parseRangeHeader } from "./byte-range";
 import { readJsonBody } from "./request-body";
 import { emptyResponse, jsonResponse } from "./responses";
+import { readDeclaredFileSize } from "./file-upload-request";
 
 const FILE_DOWNLOAD_PATH = new RegExp(`^${API_PATHS.FILES}/([^/]+)/download$`);
 const FILE_CONTENT_PATH = new RegExp(
@@ -133,9 +133,7 @@ export class FileApiHandler implements FeatureApiHandler {
     }
     if (request.method === HTTP_METHOD.POST) {
       const name = url.searchParams.get(API_QUERY_PARAMETERS.FILE_NAME) ?? "";
-      const declaredSize = parseFileSize(
-        request.headers.get(HTTP_HEADERS.FILE_SIZE),
-      );
+      const declaredSize = readDeclaredFileSize(request);
       const file = await this.files.uploadFile({
         parentId: url.searchParams.get(API_QUERY_PARAMETERS.PARENT_ID),
         originalName: name,
@@ -291,17 +289,6 @@ function pageParameters(url: URL): { offset: number; limit: number } {
     throw new AppError(HTTP_ERRORS.INVALID_LIMIT);
   }
   return { offset, limit };
-}
-
-function parseFileSize(value: string | null): number {
-  if (!value || !/^\d+$/.test(value)) {
-    throw new AppError(FILE_ERRORS.INVALID_FILE_SIZE);
-  }
-  const parsed = Number(value);
-  if (!Number.isSafeInteger(parsed)) {
-    throw new AppError(FILE_ERRORS.INVALID_FILE_SIZE);
-  }
-  return parsed;
 }
 
 function assertMethod(request: Request, expected: string): void {

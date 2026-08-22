@@ -22,6 +22,21 @@ export const AUTH_ERRORS = {
     code: "INVALID_ACCESS_TOKEN",
     message: "로그인 정보를 확인할 수 없습니다.",
   },
+  SERVICE_AUTHENTICATION_REQUIRED: {
+    status: HTTP_STATUS.UNAUTHORIZED,
+    code: "SERVICE_AUTHENTICATION_REQUIRED",
+    message: "API 인증이 필요합니다.",
+  },
+  INVALID_SERVICE_ACCESS_TOKEN: {
+    status: HTTP_STATUS.UNAUTHORIZED,
+    code: "INVALID_SERVICE_ACCESS_TOKEN",
+    message: "API 인증 정보를 확인할 수 없습니다.",
+  },
+  SERVICE_AUTH_CONFIGURATION_ERROR: {
+    status: HTTP_STATUS.SERVICE_UNAVAILABLE,
+    code: "SERVICE_AUTH_CONFIGURATION_ERROR",
+    message: "API 인증 설정이 완료되지 않았습니다.",
+  },
   LOCAL_AUTH_ONLY: {
     status: HTTP_STATUS.FORBIDDEN,
     code: "LOCAL_AUTH_ONLY",

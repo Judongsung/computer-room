@@ -13,6 +13,7 @@ export default defineConfig(async () => {
             ENVIRONMENT: "test",
             DEV_AUTH_BYPASS: "true",
             OWNER_EMAIL: "owner@example.com",
+            NOVELAI_UPLOAD_POLICY_AUD: "novelai-upload-audience",
             TEST_MIGRATIONS: migrations,
           },
           d1Databases: ["DB"],

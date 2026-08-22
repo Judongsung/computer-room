@@ -13,6 +13,11 @@ export const FILESYSTEM_ERRORS = {
     code: "FILESYSTEM_DIRECTORY_NOT_FOUND",
     message: "폴더를 찾을 수 없습니다.",
   },
+  DIRECTORY_PATH_CONFLICT: {
+    status: HTTP_STATUS.CONFLICT,
+    code: "FILESYSTEM_DIRECTORY_PATH_CONFLICT",
+    message: "지정된 경로에 폴더가 아닌 항목이 있습니다.",
+  },
   INVALID_ENTRY_NAME: {
     status: HTTP_STATUS.BAD_REQUEST,
     code: "INVALID_FILESYSTEM_ENTRY_NAME",

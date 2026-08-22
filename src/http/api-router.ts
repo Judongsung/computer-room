@@ -1,10 +1,15 @@
-import { API_PATHS } from "../constants/api";
+import { API_PATHS, NOVELAI_IMAGE_UPLOAD_API_PATH } from "../constants/api";
 import { ACCESS_LOGOUT_PATH } from "../constants/auth";
 import { HTTP_ERRORS } from "../constants/errors/http";
 import { MAX_FILE_SIZE_BYTES } from "../constants/file";
 import { HTTP_HEADERS, HTTP_METHOD } from "../constants/http";
 import { AppError } from "../domain/errors";
-import type { Identity, IdentityVerifier, SessionInfo } from "../types/auth";
+import type {
+  Identity,
+  IdentityVerifier,
+  RequestVerifier,
+  SessionInfo,
+} from "../types/auth";
 import type { FeatureApiHandler } from "../types/http";
 import { errorResponse, jsonResponse } from "./responses";
 
@@ -12,13 +17,24 @@ export class ApiRouter {
   constructor(
     private readonly files: FeatureApiHandler,
     private readonly widgets: FeatureApiHandler,
+    private readonly novelAiImages: FeatureApiHandler,
     private readonly identities: IdentityVerifier,
+    private readonly serviceRequests: RequestVerifier,
   ) {}
 
   async handle(request: Request): Promise<Response> {
     try {
-      const identity = await this.identities.verify(request);
       const url = new URL(request.url);
+      if (url.pathname === NOVELAI_IMAGE_UPLOAD_API_PATH) {
+        await this.serviceRequests.verify(request);
+        const response = await this.novelAiImages.handle(request, url);
+        if (response !== null) {
+          return response;
+        }
+        throw new AppError(HTTP_ERRORS.ROUTE_NOT_FOUND);
+      }
+
+      const identity = await this.identities.verify(request);
       this.assertSameOrigin(request, url);
 
       if (url.pathname === API_PATHS.SESSION) {

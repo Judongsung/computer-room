@@ -24,6 +24,7 @@ Cloudflare Access로 보호되는 1인용 XP 스타일 데스크톱입니다. Re
 - 이미지 확대·축소·창 맞춤·회전·이전·다음 탐색과 영상 재생 제어
 - Worker를 통한 비공개 R2 미디어 스트리밍과 단일 HTTP Range 요청 지원
 - 기존 `/api/files` 목록·업로드·다운로드 경로 호환 유지
+- Access Service Auth로 보호되는 NovelAI 이미지 자동 저장 수신 API
 
 현재 UI는 1024×640 이상의 데스크톱 환경만 지원합니다. 로컬 파일과 폴더는 여러 개 업로드할 수 있지만 서버 항목의 선택·이동은 한 번에 하나만 지원합니다. 폴더 드롭은 브라우저의 디렉터리 드롭 API가 없으면 일반 파일 업로드로 제한됩니다. 문서 미리보기·파일 내용 편집, 검색, 다중 선택과 공유 링크는 지원하지 않습니다. 위젯 파일은 D1에만 저장되며 일반 파일의 바이트만 비공개 R2 버킷에 저장됩니다.
 
@@ -35,6 +36,30 @@ Cloudflare Access로 보호되는 1인용 XP 스타일 데스크톱입니다. Re
 | 영상 | `.mp4`, `.webm`, `.ogg`, `.ogv` | `video/mp4`, `video/webm`, `video/ogg` |
 
 뷰어 지원 여부는 파일명보다 업로드 시 저장된 MIME 타입으로 판단합니다. 같은 확장자라도 MIME 타입이 다르면 다운로드 안내가 표시될 수 있으며, 영상의 실제 재생 가능 여부는 브라우저가 해당 컨테이너와 코덱 조합을 지원하는지에 따라 달라집니다. SVG는 실행 가능한 내용을 포함할 수 있어 인라인 뷰어에서 지원하지 않습니다.
+
+## NovelAI 이미지 수신 API
+
+`POST /api/integrations/novelai/images`는 이미지 한 장의 원본 바이트를 받아 `바탕 화면/NovelAI/YYYY-MM-DD`에 저장합니다. 날짜와 `HH-mm-ss-SSS_<UUID>.<확장자>` 파일명은 서버 수신 시각의 한국 시간을 기준으로 생성됩니다. 같은 이미지를 여러 번 보내면 요청마다 새 파일로 저장됩니다.
+
+```sh
+curl --request POST "https://<computer-room-domain>/api/integrations/novelai/images" \
+  --header "CF-Access-Client-Id: <CLIENT_ID>" \
+  --header "CF-Access-Client-Secret: <CLIENT_SECRET>" \
+  --header "Content-Type: image/png" \
+  --header "X-File-Size: <BYTE_LENGTH>" \
+  --data-binary "@generated.png"
+```
+
+지원 MIME 타입은 위 미디어 뷰어 표의 이미지 형식과 같습니다. 파일당 최대 크기는 100MB이며 본문은 multipart나 Base64가 아닌 이미지 바이너리여야 합니다. 성공하면 `201`과 `{ "file": FilesystemFileEntry }`를 반환합니다. 일반 웹 CORS는 허용하지 않으며 향후 브라우저 확장 프로그램은 host permission을 가진 background service worker에서 호출합니다.
+
+Cloudflare Zero Trust에서 이 엔드포인트를 사용하려면 다음 설정이 필요합니다.
+
+1. 전용 [Access 서비스 토큰](https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/)을 생성합니다.
+2. computer-room 호스트의 정확한 `/api/integrations/novelai/images` 경로에 별도 Self-hosted Access 애플리케이션을 만듭니다. [Access 애플리케이션 경로 우선순위](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/app-paths/)도 함께 확인합니다.
+3. 해당 애플리케이션에는 지정 토큰만 포함하는 `Service Auth` 정책을 연결하고, 인증 실패 응답을 `401`로 설정합니다.
+4. 애플리케이션의 AUD 값을 `npx wrangler secret put NOVELAI_UPLOAD_POLICY_AUD`로 Worker에 설정합니다.
+
+더 구체적인 Access 경로가 호스트 전체의 사용자 로그인 정책보다 우선합니다. 서비스 토큰의 Client ID와 Secret은 이 저장소나 확장 프로그램 소스에 넣지 않습니다.
 
 ## 구조
 
@@ -62,7 +87,7 @@ npm run db:migrate:local
 npm run dev
 ```
 
-로컬에서만 `.dev.vars`의 인증 우회를 사용합니다. 필요한 키는 [.dev.vars.example](./.dev.vars.example)을 참고하세요. 배포 환경에서는 Cloudflare Access JWT와 소유자 이메일을 모두 검증합니다.
+로컬에서만 `.dev.vars`의 인증 우회를 사용합니다. 필요한 키는 [.dev.vars.example](./.dev.vars.example)을 참고하세요. 배포 환경에서는 일반 API에 Cloudflare Access JWT와 소유자 이메일을 모두 검증하고, NovelAI 수신 API에는 별도 Access 애플리케이션의 JWT와 AUD를 검증합니다.
 
 ## 배포
 

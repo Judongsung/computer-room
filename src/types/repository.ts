@@ -3,6 +3,7 @@ import type {
   FilesystemEntryRecord,
   FilesystemFileObject,
   NewFilesystemDirectory,
+  NewExactFilesystemDirectory,
   NewFilesystemFile,
   NewFilesystemWidget,
 } from "./filesystem";
@@ -24,6 +25,9 @@ export interface FilesystemRepository {
   isWithinRoot(entryId: string, rootId: string): Promise<boolean>;
   isDescendant(entryId: string, candidateId: string): Promise<boolean>;
   insertDirectory(directory: NewFilesystemDirectory): Promise<void>;
+  ensureDirectory(
+    directory: NewExactFilesystemDirectory,
+  ): Promise<FilesystemEntryRecord>;
   insertPendingFile(file: NewFilesystemFile): Promise<void>;
   insertWidget(widget: NewFilesystemWidget): Promise<void>;
   findWidgetEntry(widgetId: string): Promise<FilesystemEntryRecord | null>;

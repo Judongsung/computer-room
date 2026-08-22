@@ -102,6 +102,11 @@ export interface NewFilesystemDirectory {
   readonly desktopOrder?: number;
 }
 
+export type NewExactFilesystemDirectory = Omit<
+  NewFilesystemDirectory,
+  "desktopOrder"
+>;
+
 export interface NewFilesystemFile {
   readonly entry: NewFilesystemDirectory;
   readonly objectKey: string;

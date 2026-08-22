@@ -1,6 +1,8 @@
 import { ChecklistService } from "./application/checklist-service";
 import { FileService } from "./application/file-service";
+import { FilesystemPathService } from "./application/filesystem-path-service";
 import { FilesystemService } from "./application/filesystem-service";
+import { NovelAiImageService } from "./application/novelai-image-service";
 import { RecycleBinService } from "./application/recycle-bin-service";
 import { MemoService } from "./application/memo-service";
 import { WidgetLayoutService } from "./application/widget-layout-service";
@@ -11,10 +13,13 @@ import {
 } from "./constants/auth";
 import { ApiRouter } from "./http/api-router";
 import { FileApiHandler } from "./http/file-api-handler";
+import { NovelAiImageApiHandler } from "./http/novelai-image-api-handler";
 import { WidgetApiHandler } from "./http/widget-api-handler";
 import {
   CloudflareAccessIdentityVerifier,
+  CloudflareAccessApplicationVerifier,
   LocalIdentityVerifier,
+  LocalRequestVerifier,
 } from "./infrastructure/access-identity-verifier";
 import { D1FilesystemRepository } from "./infrastructure/d1-filesystem-repository";
 import { D1ChecklistRepository } from "./infrastructure/d1-checklist-repository";
@@ -22,7 +27,7 @@ import { D1MemoRepository } from "./infrastructure/d1-memo-repository";
 import { D1WidgetLayoutRepository } from "./infrastructure/d1-widget-layout-repository";
 import { R2FileObjectStorage } from "./infrastructure/r2-file-object-storage";
 import { CryptoIdGenerator, SystemClock } from "./infrastructure/runtime";
-import type { IdentityVerifier } from "./types/auth";
+import type { IdentityVerifier, RequestVerifier } from "./types/auth";
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -37,6 +42,17 @@ export default {
       clock,
     );
     const filesystemService = new FilesystemService(fileRepository, ids, clock);
+    const filesystemPathService = new FilesystemPathService(
+      fileRepository,
+      ids,
+      clock,
+    );
+    const novelAiImageService = new NovelAiImageService(
+      filesystemPathService,
+      fileService,
+      ids,
+      clock,
+    );
     const recycleBinService = new RecycleBinService(
       fileRepository,
       storage,
@@ -46,6 +62,9 @@ export default {
       fileService,
       filesystemService,
       recycleBinService,
+    );
+    const novelAiImageApiHandler = new NovelAiImageApiHandler(
+      novelAiImageService,
     );
     const layoutRepository = new D1WidgetLayoutRepository(env.DB);
     const memoRepository = new D1MemoRepository(env.DB);
@@ -73,7 +92,9 @@ export default {
     const router = new ApiRouter(
       fileApiHandler,
       widgetApiHandler,
+      novelAiImageApiHandler,
       createIdentityVerifier(env),
+      createServiceRequestVerifier(env),
     );
 
     return router.handle(request);
@@ -81,12 +102,7 @@ export default {
 } satisfies ExportedHandler<Env>;
 
 function createIdentityVerifier(env: Env): IdentityVerifier {
-  const isLocalBypass =
-    (env.ENVIRONMENT === RUNTIME_ENVIRONMENT.DEVELOPMENT ||
-      env.ENVIRONMENT === RUNTIME_ENVIRONMENT.TEST) &&
-    env.DEV_AUTH_BYPASS === ENABLED_ENV_VALUE;
-
-  if (isLocalBypass) {
+  if (isLocalAuthBypass(env)) {
     return new LocalIdentityVerifier(env.OWNER_EMAIL ?? LOCAL_AUTH_DEFAULT_EMAIL);
   }
 
@@ -95,4 +111,22 @@ function createIdentityVerifier(env: Env): IdentityVerifier {
     audience: env.POLICY_AUD,
     ownerEmail: env.OWNER_EMAIL,
   });
+}
+
+function createServiceRequestVerifier(env: Env): RequestVerifier {
+  if (isLocalAuthBypass(env)) {
+    return new LocalRequestVerifier();
+  }
+  return new CloudflareAccessApplicationVerifier({
+    teamDomain: env.TEAM_DOMAIN,
+    audience: env.NOVELAI_UPLOAD_POLICY_AUD,
+  });
+}
+
+function isLocalAuthBypass(env: Env): boolean {
+  return (
+    (env.ENVIRONMENT === RUNTIME_ENVIRONMENT.DEVELOPMENT ||
+      env.ENVIRONMENT === RUNTIME_ENVIRONMENT.TEST) &&
+    env.DEV_AUTH_BYPASS === ENABLED_ENV_VALUE
+  );
 }

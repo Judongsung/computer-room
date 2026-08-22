@@ -9,9 +9,12 @@ import { AppError } from "../domain/errors";
 import type {
   AccessTokenClaims,
   AccessTokenVerifier,
+  AccessApplicationVerifierConfig,
   AccessVerifierConfig,
   Identity,
   IdentityVerifier,
+  RequestVerifier,
+  ValidatedAccessApplicationConfig,
   ValidatedAccessConfig,
 } from "../types/auth";
 
@@ -64,28 +67,43 @@ export class CloudflareAccessIdentityVerifier implements IdentityVerifier {
   }
 
   private validatedConfig(): ValidatedAccessConfig {
-    const { teamDomain, audience, ownerEmail } = this.config;
+    const { ownerEmail } = this.config;
 
-    if (!teamDomain || !audience || !ownerEmail) {
-      throw configurationError();
-    }
-
-    let issuer: URL;
-    try {
-      issuer = new URL(teamDomain);
-    } catch {
-      throw configurationError();
-    }
-
-    if (issuer.protocol !== "https:" || issuer.pathname !== "/") {
+    if (!ownerEmail) {
       throw configurationError();
     }
 
     return {
-      issuer: issuer.origin,
-      audience,
+      ...validatedApplicationConfig(this.config, configurationError),
       ownerEmail: ownerEmail.trim().toLowerCase(),
     };
+  }
+}
+
+export class CloudflareAccessApplicationVerifier
+  implements RequestVerifier
+{
+  constructor(
+    private readonly config: AccessApplicationVerifierConfig,
+    private readonly tokens: AccessTokenVerifier = new JoseAccessTokenVerifier(),
+  ) {}
+
+  async verify(request: Request): Promise<void> {
+    const { issuer, audience } = validatedApplicationConfig(
+      this.config,
+      serviceConfigurationError,
+    );
+    const token = request.headers.get(ACCESS_JWT_HEADER);
+
+    if (!token) {
+      throw new AppError(AUTH_ERRORS.SERVICE_AUTHENTICATION_REQUIRED);
+    }
+
+    try {
+      await this.tokens.verify(token, issuer, audience);
+    } catch {
+      throw new AppError(AUTH_ERRORS.INVALID_SERVICE_ACCESS_TOKEN);
+    }
   }
 }
 
@@ -93,15 +111,14 @@ export class LocalIdentityVerifier implements IdentityVerifier {
   constructor(private readonly email: string) {}
 
   async verify(request: Request): Promise<Identity> {
-    const hostname = new URL(request.url).hostname;
-    if (
-      hostname !== LOCAL_AUTH_HOSTNAME.LOCALHOST &&
-      hostname !== LOCAL_AUTH_HOSTNAME.LOOPBACK
-    ) {
-      throw new AppError(AUTH_ERRORS.LOCAL_AUTH_ONLY);
-    }
-
+    assertLocalRequest(request);
     return { email: this.email.toLowerCase() };
+  }
+}
+
+export class LocalRequestVerifier implements RequestVerifier {
+  async verify(request: Request): Promise<void> {
+    assertLocalRequest(request);
   }
 }
 
@@ -118,4 +135,41 @@ function getJwks(issuer: string): ReturnType<typeof createRemoteJWKSet> {
 
 function configurationError(): AppError {
   return new AppError(AUTH_ERRORS.AUTH_CONFIGURATION_ERROR);
+}
+
+function serviceConfigurationError(): AppError {
+  return new AppError(AUTH_ERRORS.SERVICE_AUTH_CONFIGURATION_ERROR);
+}
+
+function validatedApplicationConfig(
+  config: AccessApplicationVerifierConfig,
+  errorFactory: () => AppError,
+): ValidatedAccessApplicationConfig {
+  const { teamDomain, audience } = config;
+  if (!teamDomain || !audience) {
+    throw errorFactory();
+  }
+
+  let issuer: URL;
+  try {
+    issuer = new URL(teamDomain);
+  } catch {
+    throw errorFactory();
+  }
+
+  if (issuer.protocol !== "https:" || issuer.pathname !== "/") {
+    throw errorFactory();
+  }
+
+  return { issuer: issuer.origin, audience };
+}
+
+function assertLocalRequest(request: Request): void {
+  const hostname = new URL(request.url).hostname;
+  if (
+    hostname !== LOCAL_AUTH_HOSTNAME.LOCALHOST &&
+    hostname !== LOCAL_AUTH_HOSTNAME.LOOPBACK
+  ) {
+    throw new AppError(AUTH_ERRORS.LOCAL_AUTH_ONLY);
+  }
 }

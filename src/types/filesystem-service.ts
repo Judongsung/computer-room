@@ -32,6 +32,13 @@ export interface FilesystemUseCases {
   trashEntry(id: string): Promise<FilesystemMutationResult>;
 }
 
+export interface FilesystemPathUseCases {
+  ensureDirectory(
+    parentId: string,
+    name: string,
+  ): Promise<FilesystemDirectoryEntry>;
+}
+
 export interface RecycleBinUseCases {
   listTrash(offset: number, limit: number): Promise<FilesystemTrashPage>;
   restoreEntry(

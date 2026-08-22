@@ -2,6 +2,7 @@ export const API_PATHS = {
   SESSION: "/api/session",
   FILES: "/api/files",
   FILESYSTEM: "/api/filesystem",
+  INTEGRATIONS: "/api/integrations",
   WIDGETS: "/api/widgets",
 } as const;
 
@@ -20,7 +21,12 @@ export const API_PATH_SEGMENTS = {
   FILE: "file",
   OPEN: "open",
   CLOSE: "close",
+  NOVELAI: "novelai",
+  IMAGES: "images",
 } as const;
+
+export const NOVELAI_IMAGE_UPLOAD_API_PATH =
+  `${API_PATHS.INTEGRATIONS}/${API_PATH_SEGMENTS.NOVELAI}/${API_PATH_SEGMENTS.IMAGES}`;
 
 export const API_QUERY_PARAMETERS = {
   OFFSET: "offset",

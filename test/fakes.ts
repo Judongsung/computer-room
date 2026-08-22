@@ -10,6 +10,7 @@ import type {
   FilesystemEntryRecord,
   FilesystemFileObject,
   NewFilesystemDirectory,
+  NewExactFilesystemDirectory,
   NewFilesystemFile,
   NewFilesystemWidget,
 } from "../src/types/filesystem";
@@ -163,6 +164,37 @@ export class MemoryFileRepository implements FilesystemRepository {
       widgetOpen: null,
       desktopOrder: directory.desktopOrder ?? null,
     });
+  }
+
+  async ensureDirectory(
+    directory: NewExactFilesystemDirectory,
+  ): Promise<FilesystemEntryRecord> {
+    const existing = [...this.records.values()].find(
+      (entry) =>
+        entry.parentId === directory.parentId &&
+        entry.nameKey === directory.nameKey &&
+        entry.trashedAt === null,
+    );
+    if (existing) {
+      return structuredClone(existing);
+    }
+    if (this.records.has(directory.id)) {
+      throw new Error("Duplicate entry ID");
+    }
+
+    const desktopOrder =
+      directory.parentId === FILESYSTEM_ROOT_ID.DESKTOP
+        ? [...this.records.values()].filter(
+            (entry) =>
+              entry.parentId === FILESYSTEM_ROOT_ID.DESKTOP &&
+              entry.trashedAt === null,
+          ).length
+        : undefined;
+    await this.insertDirectory({
+      ...directory,
+      ...(desktopOrder === undefined ? {} : { desktopOrder }),
+    });
+    return structuredClone(this.requireEntry(directory.id));
   }
 
   async insertPendingFile(file: NewFilesystemFile): Promise<void> {

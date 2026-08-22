@@ -13,15 +13,26 @@ export interface IdentityVerifier {
   verify(request: Request): Promise<Identity>;
 }
 
-export interface AccessVerifierConfig {
+export interface RequestVerifier {
+  verify(request: Request): Promise<void>;
+}
+
+export interface AccessApplicationVerifierConfig {
   teamDomain: string | undefined;
   audience: string | undefined;
+}
+
+export interface AccessVerifierConfig extends AccessApplicationVerifierConfig {
   ownerEmail: string | undefined;
 }
 
-export interface ValidatedAccessConfig {
+export interface ValidatedAccessApplicationConfig {
   issuer: string;
   audience: string;
+}
+
+export interface ValidatedAccessConfig
+  extends ValidatedAccessApplicationConfig {
   ownerEmail: string;
 }
 

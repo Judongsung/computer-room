@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
-    "typegen": "wrangler types",
+    "typegen": "wrangler types --env-file .dev.vars.example",
     "check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.node.json --noEmit && npm run check:migrations",
     "check:migrations": "node scripts/check-migration-safety.mjs",
     "db:generate": "drizzle-kit generate",

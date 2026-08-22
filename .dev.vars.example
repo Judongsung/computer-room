@@ -3,3 +3,4 @@ DEV_AUTH_BYPASS=true
 OWNER_EMAIL=local@example.com
 TEAM_DOMAIN=https://your-team.cloudflareaccess.com
 POLICY_AUD=your-access-application-aud
+NOVELAI_UPLOAD_POLICY_AUD=your-novelai-upload-application-aud

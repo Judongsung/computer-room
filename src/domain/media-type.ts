@@ -8,7 +8,7 @@ import type { MediaKind } from "../types/media";
 export function mediaKindFromContentType(
   contentType: string,
 ): MediaKind | null {
-  const baseType = baseContentType(contentType);
+  const baseType = mediaContentTypeBase(contentType);
   if ((MEDIA_CONTENT_TYPES[MEDIA_KIND.IMAGE] as readonly string[]).includes(baseType)) {
     return MEDIA_KIND.IMAGE;
   }
@@ -19,13 +19,13 @@ export function mediaKindFromContentType(
 }
 
 export function isPotentialMediaContentType(contentType: string): boolean {
-  const baseType = baseContentType(contentType);
+  const baseType = mediaContentTypeBase(contentType);
   return (
     baseType.startsWith(MEDIA_TYPE_PREFIX.IMAGE) ||
     baseType.startsWith(MEDIA_TYPE_PREFIX.VIDEO)
   );
 }
 
-function baseContentType(contentType: string): string {
+export function mediaContentTypeBase(contentType: string): string {
   return contentType.split(";", 1)[0]?.trim().toLowerCase() ?? "";
 }

@@ -5,3 +5,4 @@ dist/
 .xdg-config/
 .dev.vars
 *.log
+secrets/

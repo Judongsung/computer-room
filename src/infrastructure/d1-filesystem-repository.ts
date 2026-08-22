@@ -12,6 +12,7 @@ import type {
   FilesystemEntryRecord,
   FilesystemFileObject,
   NewFilesystemDirectory,
+  NewExactFilesystemDirectory,
   NewFilesystemFile,
   NewFilesystemWidget,
 } from "../types/filesystem";
@@ -183,6 +184,53 @@ export class D1FilesystemRepository implements FilesystemRepository {
       statements.push(this.desktopOrderInsert(directory.id, directory.desktopOrder));
     }
     await this.database.batch(statements);
+  }
+
+  async ensureDirectory(
+    directory: NewExactFilesystemDirectory,
+  ): Promise<FilesystemEntryRecord> {
+    const statements = [
+      this.database.prepare(
+        `INSERT OR IGNORE INTO filesystem_entries (
+           id, parent_id, kind, name, name_key, file_id, widget_id,
+           restore_parent_id, restore_path, trashed_at, created_at, updated_at
+         ) VALUES (?1, ?2, ?3, ?4, ?5, NULL, NULL, NULL, NULL, NULL, ?6, ?6)`,
+      ).bind(
+        directory.id,
+        directory.parentId,
+        FILESYSTEM_ENTRY_KIND.DIRECTORY,
+        directory.name,
+        directory.nameKey,
+        directory.createdAt,
+      ),
+    ];
+
+    if (directory.parentId === FILESYSTEM_ROOT_ID.DESKTOP) {
+      statements.push(
+        this.database.prepare(
+          `INSERT OR IGNORE INTO desktop_entry_order (entry_id, sort_order)
+           SELECT ?1, COALESCE((SELECT MAX(sort_order) + 1 FROM desktop_entry_order), 0)
+           WHERE EXISTS (
+             SELECT 1 FROM filesystem_entries
+             WHERE id = ?1 AND parent_id = ?2 AND name_key = ?3
+               AND trashed_at IS NULL
+           )`,
+        ).bind(directory.id, directory.parentId, directory.nameKey),
+      );
+    }
+
+    statements.push(
+      this.database.prepare(
+        `${ENTRY_SELECT}
+         WHERE e.parent_id = ?1 AND e.name_key = ?2 AND e.trashed_at IS NULL`,
+      ).bind(directory.parentId, directory.nameKey),
+    );
+    const results = await this.database.batch<FilesystemEntryRow>(statements);
+    const row = results.at(-1)?.results[0];
+    if (!row) {
+      throw new AppError(FILESYSTEM_ERRORS.INVALID_STORED_ENTRY);
+    }
+    return mapEntryRow(row);
   }
 
   async insertPendingFile(file: NewFilesystemFile): Promise<void> {
