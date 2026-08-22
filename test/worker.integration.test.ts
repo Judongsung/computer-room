@@ -12,6 +12,7 @@ import {
   FILE_OBJECT_KEY_PREFIX,
   MAX_FILE_SIZE_BYTES,
 } from "../src/constants/file";
+import { FILESYSTEM_ROOT_ID } from "../src/constants/filesystem";
 import {
   HTTP_HEADERS,
   HTTP_MEDIA_TYPE,
@@ -33,6 +34,10 @@ const MEMO_WINDOW_POLICY = WIDGET_WINDOW_POLICY[WIDGET_TYPE.MEMO];
 
 beforeEach(async () => {
   await env.DB.prepare("DELETE FROM files").run();
+  await env.DB
+    .prepare("DELETE FROM filesystem_entries WHERE id NOT IN (?1, ?2)")
+    .bind(FILESYSTEM_ROOT_ID.DOCUMENTS, FILESYSTEM_ROOT_ID.RECYCLE_BIN)
+    .run();
   await env.DB.prepare("DELETE FROM dashboard_widgets").run();
   const objects = await env.FILES.list();
   if (objects.objects.length > 0) {
@@ -54,7 +59,7 @@ describe("computer-room Worker", () => {
     });
   });
 
-  it("uploads, lists, downloads, and permanently deletes a file", async () => {
+  it("uploads, downloads, moves to trash, restores, and permanently deletes a file", async () => {
     const content = "hello computer-room";
     const upload = await uploadFile("한글 문서.txt", content);
     expect(upload.status).toBe(HTTP_STATUS.CREATED);
@@ -87,11 +92,33 @@ describe("computer-room Worker", () => {
       headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN },
     });
     expect(deletion.status).toBe(HTTP_STATUS.NO_CONTENT);
+    expect(await env.DB.prepare("SELECT COUNT(*) AS count FROM files").first("count")).toBe(1);
+    expect((await env.FILES.list()).objects).toHaveLength(1);
+
+    const trashPath = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.TRASH}`;
+    const trash = await SELF.fetch(`${ORIGIN}${trashPath}`);
+    const trashPage = (await trash.json()) as { items: Array<{ entry: { id: string } }> };
+    expect(trashPage.items[0]?.entry.id).toBe(created.file.id);
+
+    const restore = await SELF.fetch(
+      `${ORIGIN}${trashPath}/${created.file.id}/${API_PATH_SEGMENTS.RESTORE}`,
+      { method: HTTP_METHOD.POST, headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN } },
+    );
+    expect(restore.status).toBe(HTTP_STATUS.OK);
+    await SELF.fetch(`${ORIGIN}${API_PATHS.FILES}/${created.file.id}`, {
+      method: HTTP_METHOD.DELETE,
+      headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN },
+    });
+    const permanentDeletion = await SELF.fetch(
+      `${ORIGIN}${trashPath}/${created.file.id}`,
+      { method: HTTP_METHOD.DELETE, headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN } },
+    );
+    expect(permanentDeletion.status).toBe(HTTP_STATUS.NO_CONTENT);
     expect(await env.DB.prepare("SELECT COUNT(*) AS count FROM files").first("count")).toBe(0);
     expect((await env.FILES.list()).objects).toHaveLength(0);
   });
 
-  it("allows duplicate original names with different object keys", async () => {
+  it("numbers duplicate names while keeping different object keys", async () => {
     expect((await uploadFile("same.txt", "first")).status).toBe(
       HTTP_STATUS.CREATED,
     );
@@ -102,8 +129,46 @@ describe("computer-room Worker", () => {
     const list = await SELF.fetch(`${ORIGIN}${API_PATHS.FILES}`);
     const page = (await list.json()) as { items: Array<{ id: string; name: string }> };
     expect(page.items).toHaveLength(2);
-    expect(page.items.every((file) => file.name === "same.txt")).toBe(true);
+    expect(page.items.map((file) => file.name).sort()).toEqual([
+      "same (2).txt",
+      "same.txt",
+    ]);
     expect(new Set(page.items.map((file) => file.id)).size).toBe(2);
+  });
+
+  it("creates nested folders and moves entries without changing R2 keys", async () => {
+    const directoriesPath = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.DIRECTORIES}`;
+    const entriesPath = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.ENTRIES}`;
+    const photosResponse = await jsonRequest(
+      directoriesPath,
+      HTTP_METHOD.POST,
+      { name: "사진" },
+    );
+    const photos = (await photosResponse.json()) as { directory: { id: string } };
+    const archiveResponse = await jsonRequest(
+      directoriesPath,
+      HTTP_METHOD.POST,
+      { name: "보관함" },
+    );
+    const archive = (await archiveResponse.json()) as { directory: { id: string } };
+
+    const upload = await uploadFile("여행.jpg", "image", photos.directory.id);
+    const created = (await upload.json()) as { file: { id: string } };
+    const objectKey = (await env.FILES.list()).objects[0]?.key;
+    const move = await jsonRequest(
+      `${entriesPath}/${created.file.id}`,
+      HTTP_METHOD.PATCH,
+      { parentId: archive.directory.id, name: "여행-완료.jpg" },
+    );
+    expect(move.status).toBe(HTTP_STATUS.OK);
+    expect((await env.FILES.list()).objects[0]?.key).toBe(objectKey);
+
+    const query = new URLSearchParams({
+      [API_QUERY_PARAMETERS.PARENT_ID]: archive.directory.id,
+    });
+    const listing = await SELF.fetch(`${ORIGIN}${entriesPath}?${query}`);
+    const page = (await listing.json()) as { items: Array<{ name: string }> };
+    expect(page.items.map((item) => item.name)).toEqual(["여행-완료.jpg"]);
   });
 
   it("rejects oversized and cross-origin uploads before persistence", async () => {
@@ -428,9 +493,16 @@ describe("computer-room Worker", () => {
   });
 });
 
-function uploadFile(name: string, content: string): Promise<Response> {
+function uploadFile(
+  name: string,
+  content: string,
+  parentId?: string,
+): Promise<Response> {
   const bytes = new TextEncoder().encode(content);
   const query = new URLSearchParams({ [API_QUERY_PARAMETERS.FILE_NAME]: name });
+  if (parentId) {
+    query.set(API_QUERY_PARAMETERS.PARENT_ID, parentId);
+  }
   return SELF.fetch(`${ORIGIN}${API_PATHS.FILES}?${query}`, {
     method: HTTP_METHOD.POST,
     headers: {

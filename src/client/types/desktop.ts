@@ -2,6 +2,7 @@ import type { DashboardWidget, WindowPosition, WindowSize } from "../../types/wi
 import type { SessionInfo } from "../../types/auth";
 import type { ReactNode } from "react";
 import type { DashboardGateway } from "./api";
+import type { FilesystemGateway } from "./filesystem";
 import type { LayoutSaveStatus, StatusMessage } from "./dashboard";
 
 export interface DesktopDimensions {
@@ -47,6 +48,7 @@ export interface DesktopShellProps {
   readonly widgets: readonly DashboardWidget[];
   readonly activeWidgetId: string | null;
   readonly gateway: DashboardGateway;
+  readonly filesystemGateway: FilesystemGateway;
   readonly layoutSaveStatus: LayoutSaveStatus;
   readonly layoutSaveError: string | null;
   readonly message: StatusMessage | null;
@@ -71,6 +73,7 @@ export interface DesktopWindowProps {
   readonly widget: DashboardWidget;
   readonly desktop: DesktopDimensions;
   readonly isActive: boolean;
+  readonly zIndex: number;
   readonly gateway: DashboardGateway;
   readonly onFocus: () => void;
   readonly onMinimize: () => void;
@@ -89,12 +92,19 @@ export interface StartMenuProps {
 }
 
 export interface TaskbarProps {
-  readonly widgets: readonly DashboardWidget[];
-  readonly activeWidgetId: string | null;
+  readonly windows: readonly TaskbarWindowItem[];
   readonly isStartMenuOpen: boolean;
   readonly saveStatus: LayoutSaveStatus;
   readonly onToggleStartMenu: () => void;
   readonly onActivateWindow: (widgetId: string) => void;
+}
+
+export interface TaskbarWindowItem {
+  readonly id: string;
+  readonly title: string;
+  readonly iconPath: string;
+  readonly isActive: boolean;
+  readonly isMinimized: boolean;
 }
 
 export interface DesktopNotificationProps {

@@ -1,11 +1,13 @@
 import { sql } from "drizzle-orm";
 import {
+  type AnySQLiteColumn,
   check,
   index,
   integer,
   primaryKey,
   sqliteTable,
   text,
+  uniqueIndex,
 } from "drizzle-orm/sqlite-core";
 import {
   CHECKLIST_EVENT_ACTION_VALUES,
@@ -16,6 +18,10 @@ import {
   FILE_STATUS_VALUES,
   MAX_FILE_SIZE_BYTES,
 } from "../src/constants/file";
+import {
+  FILESYSTEM_ENTRY_KIND,
+  FILESYSTEM_ENTRY_KIND_VALUES,
+} from "../src/constants/filesystem";
 import { EMPTY_MEMO_MARKDOWN } from "../src/constants/memo";
 import {
   WIDGET_TYPE,
@@ -29,6 +35,9 @@ import {
 } from "../src/constants/widget";
 
 const FILE_STATUS_SQL = FILE_STATUS_VALUES.map((status) => `'${status}'`).join(", ");
+const FILESYSTEM_ENTRY_KIND_SQL = FILESYSTEM_ENTRY_KIND_VALUES.map(
+  (kind) => `'${kind}'`,
+).join(", ");
 const WIDGET_TYPE_SQL = WIDGET_TYPE_VALUES.map((type) => `'${type}'`).join(", ");
 const WINDOW_STATE_SQL = WINDOW_STATE_VALUES.map((state) => `'${state}'`).join(", ");
 const WINDOW_RESTORE_STATE_SQL = WINDOW_RESTORE_STATE_VALUES.map(
@@ -62,6 +71,53 @@ export const files = sqliteTable(
       sql`${table.status} IN (${sql.raw(FILE_STATUS_SQL)})`,
     ),
     index("idx_files_status_created_at").on(table.status, table.createdAt),
+  ],
+);
+
+export const filesystemEntries = sqliteTable(
+  "filesystem_entries",
+  {
+    id: text("id").primaryKey(),
+    parentId: text("parent_id").references(
+      (): AnySQLiteColumn => filesystemEntries.id,
+      { onDelete: "cascade" },
+    ),
+    kind: text("kind", { enum: FILESYSTEM_ENTRY_KIND_VALUES }).notNull(),
+    name: text("name").notNull(),
+    nameKey: text("name_key").notNull(),
+    fileId: text("file_id")
+      .unique()
+      .references(() => files.id, { onDelete: "cascade" }),
+    restoreParentId: text("restore_parent_id").references(
+      (): AnySQLiteColumn => filesystemEntries.id,
+      { onDelete: "set null" },
+    ),
+    restorePath: text("restore_path"),
+    trashedAt: integer("trashed_at"),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => [
+    check(
+      "filesystem_entries_kind_check",
+      sql`${table.kind} IN (${sql.raw(FILESYSTEM_ENTRY_KIND_SQL)})`,
+    ),
+    check(
+      "filesystem_entries_file_check",
+      sql`(${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.DIRECTORY}'`)} AND ${table.fileId} IS NULL) OR (${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.FILE}'`)} AND ${table.fileId} IS NOT NULL)`,
+    ),
+    uniqueIndex("uq_filesystem_entries_active_parent_name")
+      .on(table.parentId, table.nameKey)
+      .where(sql`${table.trashedAt} IS NULL`),
+    index("idx_filesystem_entries_parent_kind_name").on(
+      table.parentId,
+      table.kind,
+      table.nameKey,
+    ),
+    index("idx_filesystem_entries_trash").on(
+      table.parentId,
+      table.trashedAt,
+    ),
   ],
 );
 

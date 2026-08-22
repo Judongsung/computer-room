@@ -17,6 +17,11 @@ export const DESKTOP_LAYOUT = {
   WINDOW_TOOLBAR_HEIGHT_PX: 32,
   INITIAL_WINDOW_OFFSET_PX: 32,
   WINDOW_CASCADE_STEP_PX: 32,
+  SHORTCUT_LEFT_PX: 12,
+  SHORTCUT_TOP_PX: 12,
+  SHORTCUT_WIDTH_PX: 88,
+  SHORTCUT_ICON_SIZE_PX: 48,
+  SHORTCUT_GAP_PX: 12,
   BASE_WINDOW_Z_INDEX: 10,
   START_MENU_Z_INDEX: 10_000,
   TASKBAR_Z_INDEX: 10_001,
@@ -36,6 +41,11 @@ export const DESKTOP_ASSET_PATHS = {
   POWER_ICON: "/assets/shizuku-winxp/power.png",
   MEMO_ICON: "/assets/windows-xp/notepad.png",
   CHECKLIST_ICON: "/assets/windows-xp/file.png",
+  DOCUMENTS_ICON: "/assets/windows-xp/documents.png",
+  COMPUTER_ICON: "/assets/windows-xp/computer.png",
+  RECYCLE_BIN_ICON: "/assets/windows-xp/recycle.png",
+  FOLDER_ICON: "/assets/windows-xp/folder.png",
+  FILE_ICON: "/assets/windows-xp/file.png",
 } as const;
 
 export const WIDGET_ICON_PATH_BY_TYPE = {

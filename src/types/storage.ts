@@ -17,4 +17,5 @@ export interface FileObjectStorage {
   ): Promise<StoredObject>;
   get(key: string): Promise<StoredObjectBody | null>;
   delete(key: string): Promise<void>;
+  deleteMany(keys: readonly string[]): Promise<void>;
 }

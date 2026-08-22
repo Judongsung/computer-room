@@ -6,16 +6,21 @@ import { LOAD_STATUS, UI_MESSAGES } from "./constants/dashboard";
 import { DESKTOP_ASSET_PATHS } from "./constants/desktop";
 import { useDashboard } from "./hooks/use-dashboard";
 import { DashboardApiClient } from "./api/dashboard-api-client";
+import { FilesystemApiClient } from "./api/filesystem-api-client";
 import type { AppProps } from "./types/app";
 import type { DashboardGateway } from "./types/api";
+import type { FilesystemGateway } from "./types/filesystem";
 
 const DESKTOP_BACKGROUND_STYLE = {
   "--desktop-background-image": `url("${DESKTOP_ASSET_PATHS.BACKGROUND}")`,
 } as CSSProperties;
 
-export function App({ api }: AppProps) {
+export function App({ api, filesystemApi }: AppProps) {
   const [gateway] = useState<DashboardGateway>(
     () => api ?? new DashboardApiClient(),
+  );
+  const [filesystemGateway] = useState<FilesystemGateway>(
+    () => filesystemApi ?? new FilesystemApiClient(),
   );
   const dashboard = useDashboard(gateway);
   const { state } = dashboard;
@@ -61,6 +66,7 @@ export function App({ api }: AppProps) {
       widgets={state.widgets}
       activeWidgetId={dashboard.activeWidgetId}
       gateway={dashboard.gateway}
+      filesystemGateway={filesystemGateway}
       layoutSaveStatus={dashboard.layoutSave.status}
       layoutSaveError={dashboard.layoutSave.error}
       message={state.message}

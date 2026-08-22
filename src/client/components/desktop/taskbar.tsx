@@ -1,20 +1,14 @@
-import { WINDOW_STATE } from "../../../constants/widget";
 import {
   DASHBOARD_COPY,
   LAYOUT_SAVE_COPY_BY_STATUS,
-  WIDGET_TITLE_BY_TYPE,
 } from "../../constants/content";
-import {
-  DESKTOP_ASSET_PATHS,
-  WIDGET_ICON_PATH_BY_TYPE,
-} from "../../constants/desktop";
+import { DESKTOP_ASSET_PATHS } from "../../constants/desktop";
 import { LAYOUT_SAVE_STATUS } from "../../constants/layout-save";
 import { useKoreaClock } from "../../hooks/use-korea-clock";
 import type { TaskbarProps } from "../../types/desktop";
 
 export function Taskbar({
-  widgets,
-  activeWidgetId,
+  windows,
   isStartMenuOpen,
   saveStatus,
   onToggleStartMenu,
@@ -39,25 +33,23 @@ export function Taskbar({
         <span>{DASHBOARD_COPY.START}</span>
       </button>
       <div className="taskbar__windows">
-        {widgets.map((widget) => {
-          const isActive = widget.id === activeWidgetId;
-          const isMinimized = widget.windowState === WINDOW_STATE.MINIMIZED;
+        {windows.map((window) => {
           return (
             <button
-              key={widget.id}
+              key={window.id}
               type="button"
               className={[
                 "taskbar__window",
-                isActive ? "taskbar__window--active" : "",
-                isMinimized ? "taskbar__window--minimized" : "",
+                window.isActive ? "taskbar__window--active" : "",
+                window.isMinimized ? "taskbar__window--minimized" : "",
               ]
                 .filter(Boolean)
                 .join(" ")}
-              aria-pressed={isActive}
-              onClick={() => onActivateWindow(widget.id)}
+              aria-pressed={window.isActive}
+              onClick={() => onActivateWindow(window.id)}
             >
-              <img src={WIDGET_ICON_PATH_BY_TYPE[widget.type]} alt="" />
-              <span>{WIDGET_TITLE_BY_TYPE[widget.type]}</span>
+              <img src={window.iconPath} alt="" />
+              <span>{window.title}</span>
             </button>
           );
         })}

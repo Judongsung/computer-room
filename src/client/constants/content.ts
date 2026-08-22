@@ -25,6 +25,7 @@ export const DASHBOARD_COPY = {
   MINIMIZE: "최소화",
   MAXIMIZE: "최대화",
   RESTORE: "이전 크기로",
+  CLOSE: "닫기",
   EMPTY_DESKTOP: "시작 메뉴에서 위젯을 추가하세요.",
   DESKTOP: "computer-room 바탕 화면",
   TASKBAR: "작업 표시줄",

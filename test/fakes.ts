@@ -3,8 +3,20 @@ import type {
   StoredObject,
   StoredObjectBody,
 } from "../src/types/storage";
-import type { FileMetadata } from "../src/types/file";
-import type { FileMetadataRepository } from "../src/types/repository";
+import type { FilesystemRepository } from "../src/types/repository";
+import type {
+  FilesystemBreadcrumb,
+  FilesystemEntryRecord,
+  FilesystemFileObject,
+  NewFilesystemDirectory,
+  NewFilesystemFile,
+} from "../src/types/filesystem";
+import { FILE_STATUS } from "../src/constants/file";
+import {
+  FILESYSTEM_ENTRY_KIND,
+  FILESYSTEM_ROOT_ID,
+  FILESYSTEM_ROOT_NAME,
+} from "../src/constants/filesystem";
 import type { WidgetLayout } from "../src/types/widget";
 import type { WidgetLayoutRepository } from "../src/types/widget-repository";
 import type { MemoRepository } from "../src/types/memo-repository";
@@ -25,36 +37,253 @@ import type { Clock, IdGenerator } from "../src/types/runtime";
 import { cloneWidgetLayouts } from "../src/domain/widget-layout";
 import type { MemoryObject } from "./types/fakes";
 
-export class MemoryFileRepository implements FileMetadataRepository {
-  readonly records = new Map<string, FileMetadata>();
+export class MemoryFileRepository implements FilesystemRepository {
+  readonly records = new Map<string, FilesystemEntryRecord>();
 
-  async insertPending(file: FileMetadata): Promise<void> {
-    this.records.set(file.id, structuredClone(file));
+  constructor() {
+    this.seedRoot(FILESYSTEM_ROOT_ID.DOCUMENTS, FILESYSTEM_ROOT_NAME.DOCUMENTS);
+    this.seedRoot(FILESYSTEM_ROOT_ID.RECYCLE_BIN, FILESYSTEM_ROOT_NAME.RECYCLE_BIN);
   }
 
-  async markReady(id: string, size: number, etag: string): Promise<void> {
-    const file = this.records.get(id);
-    if (!file) {
-      throw new Error("File not found");
-    }
-    this.records.set(id, { ...file, size, etag, status: FILE_STATUS.READY });
+  async findEntry(id: string): Promise<FilesystemEntryRecord | null> {
+    return cloneEntry(this.records.get(id) ?? null);
   }
 
-  async findReadyById(id: string): Promise<FileMetadata | null> {
-    const file = this.records.get(id);
-    return file?.status === FILE_STATUS.READY ? structuredClone(file) : null;
-  }
-
-  async listReady(offset: number, limit: number): Promise<FileMetadata[]> {
+  async listChildren(parentId: string, offset: number, limit: number): Promise<FilesystemEntryRecord[]> {
     return [...this.records.values()]
-      .filter((file) => file.status === FILE_STATUS.READY)
-      .sort((left, right) => right.createdAt - left.createdAt || right.id.localeCompare(left.id))
+      .filter(
+        (entry) =>
+          entry.parentId === parentId &&
+          entry.trashedAt === null &&
+          (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY || entry.fileStatus === FILE_STATUS.READY),
+      )
+      .sort(
+        (left, right) =>
+          Number(left.kind === FILESYSTEM_ENTRY_KIND.FILE) -
+            Number(right.kind === FILESYSTEM_ENTRY_KIND.FILE) ||
+          left.nameKey.localeCompare(right.nameKey) ||
+          left.id.localeCompare(right.id),
+      )
       .slice(offset, offset + limit)
-      .map((file) => structuredClone(file));
+      .map((entry) => structuredClone(entry));
   }
 
-  async delete(id: string): Promise<void> {
+  async listActiveFiles(offset: number, limit: number): Promise<FilesystemEntryRecord[]> {
+    return [...this.records.values()]
+      .filter(
+        (entry) =>
+          entry.kind === FILESYSTEM_ENTRY_KIND.FILE &&
+          entry.fileStatus === FILE_STATUS.READY,
+      )
+      .filter((entry) => this.isInDocuments(entry.id))
+      .sort(
+        (left, right) =>
+          right.createdAt - left.createdAt || right.id.localeCompare(left.id),
+      )
+      .slice(offset, offset + limit)
+      .map((entry) => structuredClone(entry));
+  }
+
+  async listBreadcrumbs(directoryId: string): Promise<FilesystemBreadcrumb[]> {
+    const result: FilesystemBreadcrumb[] = [];
+    let current = this.records.get(directoryId);
+    while (current) {
+      if (current.id !== FILESYSTEM_ROOT_ID.RECYCLE_BIN) {
+        result.unshift({ id: current.id, name: current.name });
+      }
+      current = current.parentId ? this.records.get(current.parentId) : undefined;
+    }
+    return result;
+  }
+
+  async listNameKeys(parentId: string, excludeId?: string): Promise<string[]> {
+    return [...this.records.values()]
+      .filter(
+        (entry) =>
+          entry.parentId === parentId &&
+          entry.trashedAt === null &&
+          entry.id !== excludeId,
+      )
+      .map((entry) => entry.nameKey);
+  }
+
+  async isWithinRoot(entryId: string, rootId: string): Promise<boolean> {
+    let current = this.records.get(entryId);
+    while (current) {
+      if (current.id === rootId) return true;
+      current = current.parentId ? this.records.get(current.parentId) : undefined;
+    }
+    return false;
+  }
+
+  async isDescendant(entryId: string, candidateId: string): Promise<boolean> {
+    let current = this.records.get(candidateId);
+    while (current?.parentId) {
+      if (current.parentId === entryId) return true;
+      current = this.records.get(current.parentId);
+    }
+    return false;
+  }
+
+  async insertDirectory(directory: NewFilesystemDirectory): Promise<void> {
+    this.records.set(directory.id, {
+      id: directory.id,
+      parentId: directory.parentId,
+      kind: FILESYSTEM_ENTRY_KIND.DIRECTORY,
+      name: directory.name,
+      nameKey: directory.nameKey,
+      fileId: null,
+      restoreParentId: null,
+      restorePath: null,
+      trashedAt: null,
+      createdAt: directory.createdAt,
+      updatedAt: directory.createdAt,
+      objectKey: null,
+      contentType: null,
+      size: null,
+      etag: null,
+      fileStatus: null,
+    });
+  }
+
+  async insertPendingFile(file: NewFilesystemFile): Promise<void> {
+    this.records.set(file.entry.id, {
+      id: file.entry.id,
+      parentId: file.entry.parentId,
+      kind: FILESYSTEM_ENTRY_KIND.FILE,
+      name: file.entry.name,
+      nameKey: file.entry.nameKey,
+      fileId: file.entry.id,
+      restoreParentId: null,
+      restorePath: null,
+      trashedAt: null,
+      createdAt: file.entry.createdAt,
+      updatedAt: file.entry.createdAt,
+      objectKey: file.objectKey,
+      contentType: file.contentType,
+      size: file.size,
+      etag: null,
+      fileStatus: FILE_STATUS.PENDING,
+    });
+  }
+
+  async markFileReady(id: string, size: number, etag: string): Promise<void> {
+    const entry = this.requireEntry(id);
+    this.records.set(id, { ...entry, size, etag, fileStatus: FILE_STATUS.READY });
+  }
+
+  async deleteFileMetadata(id: string): Promise<void> {
     this.records.delete(id);
+  }
+
+  async updateEntry(id: string, parentId: string, name: string, nameKey: string, updatedAt: number): Promise<void> {
+    const entry = this.requireEntry(id);
+    this.records.set(id, { ...entry, parentId, name, nameKey, updatedAt });
+  }
+
+  async moveToTrash(id: string, previousParentId: string, restorePath: string, trashedAt: number): Promise<void> {
+    const entry = this.requireEntry(id);
+    this.records.set(id, {
+      ...entry,
+      parentId: FILESYSTEM_ROOT_ID.RECYCLE_BIN,
+      restoreParentId: previousParentId,
+      restorePath,
+      trashedAt,
+      updatedAt: trashedAt,
+    });
+  }
+
+  async restoreEntry(id: string, parentId: string, name: string, nameKey: string, updatedAt: number): Promise<void> {
+    const entry = this.requireEntry(id);
+    this.records.set(id, {
+      ...entry,
+      parentId,
+      name,
+      nameKey,
+      restoreParentId: null,
+      restorePath: null,
+      trashedAt: null,
+      updatedAt,
+    });
+  }
+
+  async listTrash(offset: number, limit: number): Promise<FilesystemEntryRecord[]> {
+    return [...this.records.values()]
+      .filter(
+        (entry) =>
+          entry.parentId === FILESYSTEM_ROOT_ID.RECYCLE_BIN &&
+          entry.trashedAt !== null,
+      )
+      .sort((left, right) => (right.trashedAt ?? 0) - (left.trashedAt ?? 0))
+      .slice(offset, offset + limit)
+      .map((entry) => structuredClone(entry));
+  }
+
+  async listTrashRootIds(): Promise<string[]> {
+    return (await this.listTrash(0, Number.MAX_SAFE_INTEGER)).map((entry) => entry.id);
+  }
+
+  async listSubtreeFileObjects(rootId: string): Promise<FilesystemFileObject[]> {
+    return this.subtree(rootId)
+      .filter((entry) => entry.fileId && entry.objectKey)
+      .map((entry) => ({ id: entry.fileId!, objectKey: entry.objectKey! }));
+  }
+
+  async purgeEntry(rootId: string): Promise<void> {
+    for (const entry of this.subtree(rootId)) {
+      this.records.delete(entry.id);
+    }
+  }
+
+  private seedRoot(id: string, name: string): void {
+    this.records.set(id, {
+      id,
+      parentId: null,
+      kind: FILESYSTEM_ENTRY_KIND.DIRECTORY,
+      name,
+      nameKey: name,
+      fileId: null,
+      restoreParentId: null,
+      restorePath: null,
+      trashedAt: null,
+      createdAt: 0,
+      updatedAt: 0,
+      objectKey: null,
+      contentType: null,
+      size: null,
+      etag: null,
+      fileStatus: null,
+    });
+  }
+
+  private requireEntry(id: string): FilesystemEntryRecord {
+    const entry = this.records.get(id);
+    if (!entry) throw new Error("Entry not found");
+    return entry;
+  }
+
+  private isInDocuments(id: string): boolean {
+    let current = this.records.get(id);
+    while (current) {
+      if (current.id === FILESYSTEM_ROOT_ID.DOCUMENTS) return true;
+      current = current.parentId ? this.records.get(current.parentId) : undefined;
+    }
+    return false;
+  }
+
+  private subtree(rootId: string): FilesystemEntryRecord[] {
+    const result: FilesystemEntryRecord[] = [];
+    const pending = [rootId];
+    while (pending.length > 0) {
+      const id = pending.pop()!;
+      const entry = this.records.get(id);
+      if (!entry) continue;
+      result.push(entry);
+      for (const child of this.records.values()) {
+        if (child.parentId === id) pending.push(child.id);
+      }
+    }
+    return result;
   }
 }
 
@@ -62,6 +291,7 @@ export class MemoryObjectStorage implements FileObjectStorage {
   readonly objects = new Map<string, MemoryObject>();
   reportedSizeOffset = 0;
   failOnPut = false;
+  failOnDelete = false;
 
   async put(
     key: string,
@@ -99,8 +329,18 @@ export class MemoryObjectStorage implements FileObjectStorage {
   }
 
   async delete(key: string): Promise<void> {
+    if (this.failOnDelete) throw new Error("Storage delete failure");
     this.objects.delete(key);
   }
+
+  async deleteMany(keys: readonly string[]): Promise<void> {
+    if (this.failOnDelete) throw new Error("Storage delete failure");
+    for (const key of keys) this.objects.delete(key);
+  }
+}
+
+function cloneEntry(entry: FilesystemEntryRecord | null): FilesystemEntryRecord | null {
+  return entry ? structuredClone(entry) : null;
 }
 
 export class MemoryWidgetLayoutRepository implements WidgetLayoutRepository {
@@ -321,4 +561,3 @@ function stateKey(itemId: string, businessDate: string): string {
 export function streamFromText(value: string): ReadableStream<Uint8Array> {
   return new Blob([value]).stream();
 }
-import { FILE_STATUS } from "../src/constants/file";

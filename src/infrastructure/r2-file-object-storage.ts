@@ -1,5 +1,6 @@
 import { FILE_ERRORS } from "../constants/errors/file";
 import { DEFAULT_CONTENT_TYPE } from "../constants/file";
+import { R2_DELETE_BATCH_SIZE } from "../constants/filesystem";
 import { AppError } from "../domain/errors";
 import type {
   FileObjectStorage,
@@ -47,5 +48,11 @@ export class R2FileObjectStorage implements FileObjectStorage {
 
   async delete(key: string): Promise<void> {
     await this.bucket.delete(key);
+  }
+
+  async deleteMany(keys: readonly string[]): Promise<void> {
+    for (let offset = 0; offset < keys.length; offset += R2_DELETE_BATCH_SIZE) {
+      await this.bucket.delete(keys.slice(offset, offset + R2_DELETE_BATCH_SIZE));
+    }
   }
 }

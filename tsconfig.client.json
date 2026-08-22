@@ -22,6 +22,7 @@
     "src/domain/widget-contract.ts",
     "src/types/auth.ts",
     "src/types/file.ts",
+    "src/types/filesystem.ts",
     "src/types/widget.ts",
     "test/client/**/*.ts",
     "test/client/**/*.tsx"

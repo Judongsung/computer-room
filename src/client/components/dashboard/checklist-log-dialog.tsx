@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { CHECKLIST_EVENT_ACTION } from "../../../constants/checklist";
-import { KOREA_TIME_ZONE } from "../../../constants/date";
+import { KOREA_LOCALE, KOREA_TIME_ZONE } from "../../../constants/date";
 import { WIDGET_TYPE } from "../../../constants/widget";
 import type { ChecklistLogEvent } from "../../../types/widget";
 import { CHECKLIST_WIDGET_COPY } from "../../constants/content";
@@ -10,7 +10,7 @@ import type { DashboardGateway } from "../../types/api";
 import { XpWindowFrame } from "../desktop/xp-window-frame";
 import { XpWindowControlButton } from "../ui/xp-window-control-button";
 
-const LOG_TIME_FORMATTER = new Intl.DateTimeFormat("ko-KR", {
+const LOG_TIME_FORMATTER = new Intl.DateTimeFormat(KOREA_LOCALE, {
   timeZone: KOREA_TIME_ZONE,
   hour: "2-digit",
   minute: "2-digit",

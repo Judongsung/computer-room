@@ -1,12 +1,20 @@
-export interface FileRow {
+export interface FilesystemEntryRow {
   id: string;
-  object_key: string;
-  original_name: string;
-  content_type: string;
-  size: number;
-  etag: string | null;
-  status: string;
+  parent_id: string | null;
+  kind: string;
+  name: string;
+  name_key: string;
+  file_id: string | null;
+  restore_parent_id: string | null;
+  restore_path: string | null;
+  trashed_at: number | null;
   created_at: number;
+  updated_at: number;
+  object_key: string | null;
+  content_type: string | null;
+  size: number | null;
+  etag: string | null;
+  file_status: string | null;
 }
 
 export interface WidgetRow {

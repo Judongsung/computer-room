@@ -1,6 +1,6 @@
 # computer-room
 
-Cloudflare Access로 보호되는 1인용 위젯 홈페이지입니다. React 화면과 API는 Cloudflare Workers에서 실행되며, 위젯 배치는 D1에 저장됩니다. R2와 기존 파일 API는 이후 파일 관련 위젯에서 사용할 수 있도록 독립된 기능으로 유지합니다.
+Cloudflare Access로 보호되는 1인용 XP 스타일 데스크톱입니다. React 화면과 API는 Cloudflare Workers에서 실행됩니다. D1은 위젯 배치와 가상 파일 계층·메타데이터를 저장하고, 비공개 R2 버킷은 파일 바이트를 저장합니다.
 
 ## 현재 구현 범위
 
@@ -13,15 +13,19 @@ Cloudflare Access로 보호되는 1인용 위젯 홈페이지입니다. React �
 - 250ms 병합 자동 저장, 저장 오류 알림과 재시도
 - 시작 메뉴 전원 버튼을 통한 Cloudflare Access 로그아웃
 - D1 기반 창 위치·크기·상태·쌓임 순서, 메모, 체크 상태와 이벤트 로그 저장
-- 비공개 R2 파일 업로드·목록·다운로드·삭제 API
+- 바탕 화면의 내 문서·내 컴퓨터·휴지통 바로가기와 세션 단위 시스템 창 상태
+- 폴더 탐색·생성, 파일 업로드·다운로드, 이름 변경·이동과 휴지통 이동
+- 휴지통 복원·영구 삭제·전체 비우기와 XP형 확인 대화상자
+- 내 컴퓨터에서 메모·일일 체크리스트 위젯 실행
+- 기존 `/api/files` 목록·업로드·다운로드 경로 호환 유지
 
-현재 UI는 1024×640 이상의 데스크톱 환경만 지원합니다. 모바일 대응과 파일 관리 위젯, 위젯 닫기·삭제 기능은 다음 범위로 미뤘습니다. 창의 닫기 버튼은 이 제약을 드러내기 위해 비활성 상태로 표시합니다.
+현재 UI는 1024×640 이상의 데스크톱 환경만 지원합니다. 한 번에 한 항목과 한 파일만 선택할 수 있으며 파일 미리보기·편집, 검색, 드래그 앤 드롭, 다중 선택과 공유 링크는 지원하지 않습니다. 위젯 닫기·삭제 기능도 다음 범위로 미뤘으며 위젯의 닫기 버튼은 비활성 상태로 표시합니다. 시스템 앱의 닫기 버튼은 정상 동작합니다.
 
 ## 구조
 
 - `src/client`: React 화면, UI 상태, 브라우저 API 어댑터
 - `src/domain`: 위젯 배치와 파일 규칙처럼 플랫폼에 의존하지 않는 핵심 로직
-- `src/application`: 위젯 배치와 파일 관리 유스케이스
+- `src/application`: 위젯 배치, 파일 시스템, 파일 전송과 휴지통 유스케이스
 - `src/constants`: 조정 가능한 정책값과 API·인증·HTTP 계약, 책임별 오류 카탈로그
 - `src/types`: 도메인 모델과 포트 인터페이스
 - `src/infrastructure`: D1, R2, Cloudflare Access 구현체
@@ -49,7 +53,7 @@ npm run dev
 
 1. `wrangler login`으로 사용할 Cloudflare 계정에 로그인합니다.
 2. `wrangler.jsonc`의 D1과 R2 바인딩이 생성한 저장소를 가리키는지 확인합니다.
-3. `npm run db:migrate:remote`로 D1 마이그레이션을 적용합니다. 기존 격자 배치는 픽셀 좌표와 창 크기·쌓임 순서로 변환됩니다.
+3. `npm run db:migrate:remote`로 D1 마이그레이션을 적용합니다. 기존 파일의 R2 객체 키는 유지되며 파일 메타데이터만 내 문서 루트로 이전됩니다.
 4. `npm run deploy`로 Worker와 React 정적 자산을 배포합니다.
 5. 배포 주소 전체를 Cloudflare Access로 보호하고 본인 계정만 허용합니다.
 6. Worker 환경 변수 `TEAM_DOMAIN`, `POLICY_AUD`, `OWNER_EMAIL`을 설정합니다.
@@ -61,4 +65,5 @@ npm run dev
 npm run check
 npm test
 npm run build
+git diff --check
 ```

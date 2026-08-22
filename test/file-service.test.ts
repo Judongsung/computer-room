@@ -7,7 +7,10 @@ import {
   FILE_STATUS,
   MAX_FILE_SIZE_BYTES,
 } from "../src/constants/file";
-import type { FileMetadata } from "../src/types/file";
+import {
+  FILESYSTEM_ENTRY_KIND,
+  FILESYSTEM_ROOT_ID,
+} from "../src/constants/filesystem";
 import { MemoryFileRepository, MemoryObjectStorage, streamFromText } from "./fakes";
 
 const TEST_FILE = {
@@ -17,23 +20,23 @@ const TEST_FILE = {
   BODY: "hello",
   SIZE: 5,
 } as const;
-
 const TEST_NOW_MS = 1_700_000_000_000;
 
-function createService() {
+function createService(ids: readonly string[] = [TEST_FILE.ID]) {
   const repository = new MemoryFileRepository();
   const storage = new MemoryObjectStorage();
+  let index = 0;
   const service = new FileService(
     repository,
     storage,
-    { generate: () => TEST_FILE.ID },
-    { now: () => TEST_NOW_MS },
+    { generate: () => ids[index++] ?? "missing-id" },
+    { now: () => TEST_NOW_MS + index },
   );
   return { repository, storage, service };
 }
 
 describe("FileService", () => {
-  it("stores bytes separately and returns ready metadata", async () => {
+  it("stores R2 bytes separately and returns a ready filesystem entry", async () => {
     const { repository, storage, service } = createService();
     const file = await service.uploadFile({
       originalName: TEST_FILE.NAME,
@@ -42,17 +45,16 @@ describe("FileService", () => {
       body: streamFromText(TEST_FILE.BODY),
     });
 
-    expect(file).toEqual({
+    expect(file).toMatchObject({
       id: TEST_FILE.ID,
+      parentId: FILESYSTEM_ROOT_ID.DOCUMENTS,
+      kind: FILESYSTEM_ENTRY_KIND.FILE,
       name: TEST_FILE.NAME,
       contentType: TEST_FILE.CONTENT_TYPE,
       size: TEST_FILE.SIZE,
-      createdAt: new Date(TEST_NOW_MS).toISOString(),
     });
-    expect(repository.records.get(TEST_FILE.ID)?.status).toBe(FILE_STATUS.READY);
-    expect(
-      storage.objects.has(`${FILE_OBJECT_KEY_PREFIX}/${TEST_FILE.ID}`),
-    ).toBe(true);
+    expect(repository.records.get(TEST_FILE.ID)?.fileStatus).toBe(FILE_STATUS.READY);
+    expect(storage.objects.has(`${FILE_OBJECT_KEY_PREFIX}/${TEST_FILE.ID}`)).toBe(true);
   });
 
   it("removes pending metadata and object when stored size differs", async () => {
@@ -67,13 +69,12 @@ describe("FileService", () => {
         body: streamFromText(TEST_FILE.BODY),
       }),
     ).rejects.toMatchObject({ code: FILE_ERRORS.FILE_SIZE_MISMATCH.code });
-    expect(repository.records.size).toBe(0);
+    expect(repository.records.has(TEST_FILE.ID)).toBe(false);
     expect(storage.objects.size).toBe(0);
   });
 
   it("rejects oversized files before persistence", async () => {
     const { repository, storage, service } = createService();
-
     await expect(
       service.uploadFile({
         originalName: "large.bin",
@@ -81,59 +82,52 @@ describe("FileService", () => {
         declaredSize: MAX_FILE_SIZE_BYTES + 1,
         body: null,
       }),
-    ).rejects.toEqual(
-      expect.objectContaining({
-        status: FILE_ERRORS.FILE_TOO_LARGE.status,
-        code: FILE_ERRORS.FILE_TOO_LARGE.code,
-      }),
-    );
-    expect(repository.records.size).toBe(0);
+    ).rejects.toMatchObject({
+      status: FILE_ERRORS.FILE_TOO_LARGE.status,
+      code: FILE_ERRORS.FILE_TOO_LARGE.code,
+    });
+    expect(repository.records.size).toBe(2);
     expect(storage.objects.size).toBe(0);
   });
 
-  it("paginates only ready files", async () => {
-    const { repository, service } = createService();
-    for (let index = 0; index < 3; index += 1) {
-      const file: FileMetadata = {
-        id: `id-${index}`,
-        objectKey: `${FILE_OBJECT_KEY_PREFIX}/id-${index}`,
-        originalName: `${index}.txt`,
-        contentType: TEST_FILE.CONTENT_TYPE,
-        size: 1,
-        etag: "etag",
-        status: FILE_STATUS.READY,
-        createdAt: index,
-      };
-      repository.records.set(file.id, file);
-    }
-    repository.records.set("pending", {
-      ...repository.records.get("id-0")!,
-      id: "pending",
-      objectKey: `${FILE_OBJECT_KEY_PREFIX}/pending`,
-      status: FILE_STATUS.PENDING,
+  it("adds a number before the extension when a sibling name already exists", async () => {
+    const { service } = createService(["file-1", "file-2"]);
+    const first = await service.uploadFile({
+      originalName: "photo.png",
+      contentType: "image/png",
+      declaredSize: 1,
+      body: streamFromText("a"),
     });
-
-    const firstPage = await service.listFiles(0, 2);
-    const secondPage = await service.listFiles(firstPage.nextOffset!, 2);
-
-    expect(firstPage.items.map((file) => file.id)).toEqual(["id-2", "id-1"]);
-    expect(firstPage.nextOffset).toBe(2);
-    expect(secondPage.items.map((file) => file.id)).toEqual(["id-0"]);
-    expect(secondPage.nextOffset).toBeNull();
+    const second = await service.uploadFile({
+      originalName: "PHOTO.PNG",
+      contentType: "image/png",
+      declaredSize: 1,
+      body: streamFromText("b"),
+    });
+    expect(first.name).toBe("photo.png");
+    expect(second.name).toBe("PHOTO (2).PNG");
   });
 
-  it("deletes the object before its metadata", async () => {
-    const { repository, storage, service } = createService();
+  it("keeps the legacy list endpoint compatible with files in nested folders", async () => {
+    const { repository, service } = createService();
+    await repository.insertDirectory({
+      id: "archive-directory",
+      parentId: FILESYSTEM_ROOT_ID.DOCUMENTS,
+      name: "보관함",
+      nameKey: "보관함",
+      createdAt: TEST_NOW_MS - 1,
+    });
     await service.uploadFile({
-      originalName: "file.txt",
+      parentId: "archive-directory",
+      originalName: TEST_FILE.NAME,
       contentType: TEST_FILE.CONTENT_TYPE,
       declaredSize: TEST_FILE.SIZE,
       body: streamFromText(TEST_FILE.BODY),
     });
 
-    await service.deleteFile(TEST_FILE.ID);
-
-    expect(storage.objects.size).toBe(0);
-    expect(repository.records.size).toBe(0);
+    await expect(service.listFiles(0, 20)).resolves.toMatchObject({
+      items: [{ id: TEST_FILE.ID, name: TEST_FILE.NAME }],
+      nextOffset: null,
+    });
   });
 });

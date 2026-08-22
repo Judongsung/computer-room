@@ -15,9 +15,15 @@ import {
   MEMO_WIDGET_COPY,
 } from "../../src/client/constants/content";
 import type { DashboardGateway } from "../../src/client/types/api";
+import type { FilesystemGateway } from "../../src/client/types/filesystem";
+import { FILESYSTEM_COPY } from "../../src/client/constants/filesystem";
 import { ACCESS_LOGOUT_PATH } from "../../src/constants/auth";
 import { CHECKLIST_EVENT_ACTION } from "../../src/constants/checklist";
 import { MAX_FILE_SIZE_BYTES } from "../../src/constants/file";
+import {
+  FILESYSTEM_ENTRY_KIND,
+  FILESYSTEM_ROOT_ID,
+} from "../../src/constants/filesystem";
 import {
   WIDGET_TYPE,
   WIDGET_WINDOW_POLICY,
@@ -35,6 +41,14 @@ import type {
   MemoData,
   WidgetLayout,
 } from "../../src/types/widget";
+import type {
+  FilesystemDirectoryEntry,
+  FilesystemDirectoryPage,
+  FilesystemEntry,
+  FilesystemFileEntry,
+  FilesystemTrashPage,
+  UpdateFilesystemEntryInput,
+} from "../../src/types/filesystem";
 
 vi.mock("react-rnd", () => ({
   Rnd: ({ children }: { readonly children: ReactNode }) => (
@@ -201,6 +215,228 @@ describe("App", () => {
     fireEvent.click(editButton);
     expect(
       screen.getByRole("textbox", { name: MEMO_WIDGET_COPY.EDITOR_LABEL }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens each desktop system app as a single taskbar window", async () => {
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    const documentsShortcut = await screen.findByRole("button", { name: "내 문서" });
+    await user.click(documentsShortcut);
+    expect(documentsShortcut).toHaveAttribute("aria-pressed", "true");
+    await user.dblClick(documentsShortcut);
+    expect(await screen.findByText(FILESYSTEM_COPY.EMPTY_DIRECTORY)).toBeInTheDocument();
+    expect(desktopWindowTitles().filter((title) => title === "내 문서")).toHaveLength(1);
+
+    await user.dblClick(documentsShortcut);
+    expect(desktopWindowTitles().filter((title) => title === "내 문서")).toHaveLength(1);
+    const taskbar = screen.getByRole("contentinfo", { name: DASHBOARD_COPY.TASKBAR });
+    expect(within(taskbar).getAllByRole("button", { name: "내 문서" })).toHaveLength(1);
+  });
+
+  it("minimizes, restores, maximizes, and closes a system app", async () => {
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
+    let documentsWindow = desktopWindowByTitle("내 문서");
+    await user.click(
+      within(documentsWindow).getByRole("button", {
+        name: DASHBOARD_COPY.MINIMIZE,
+      }),
+    );
+    expect(desktopWindowTitles()).not.toContain("내 문서");
+
+    const taskbar = screen.getByRole("contentinfo", {
+      name: DASHBOARD_COPY.TASKBAR,
+    });
+    await user.click(within(taskbar).getByRole("button", { name: "내 문서" }));
+    documentsWindow = desktopWindowByTitle("내 문서");
+    await user.click(
+      within(documentsWindow).getByRole("button", {
+        name: DASHBOARD_COPY.MAXIMIZE,
+      }),
+    );
+    expect(
+      within(documentsWindow).getByRole("button", {
+        name: DASHBOARD_COPY.RESTORE,
+      }),
+    ).toBeInTheDocument();
+    await user.click(
+      within(documentsWindow).getByRole("button", {
+        name: DASHBOARD_COPY.CLOSE,
+      }),
+    );
+
+    expect(desktopWindowTitles()).not.toContain("내 문서");
+    expect(
+      within(taskbar).queryByRole("button", { name: "내 문서" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("creates a widget from My Computer", async () => {
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    await user.dblClick(await screen.findByRole("button", { name: "내 컴퓨터" }));
+    const computerWindow = desktopWindowByTitle("내 컴퓨터");
+    await user.dblClick(within(computerWindow).getByRole("button", { name: MEMO_WIDGET_COPY.TITLE }));
+    expect(await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT)).toBeInTheDocument();
+    await waitFor(() => expect(api.savedWidgets).toHaveLength(1));
+  });
+
+  it("creates a folder from My Documents", async () => {
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
+    const documentsWindow = desktopWindowByTitle("내 문서");
+    await user.click(within(documentsWindow).getByRole("button", { name: FILESYSTEM_COPY.NEW_FOLDER }));
+    const dialog = screen.getByRole("dialog", { name: FILESYSTEM_COPY.CREATE_FOLDER_TITLE });
+    await user.type(within(dialog).getByRole("textbox"), "사진");
+    await user.click(within(dialog).getByRole("button", { name: FILESYSTEM_COPY.CONFIRM }));
+    expect(await within(documentsWindow).findByText("사진")).toBeInTheDocument();
+  });
+
+  it("opens shortcuts with Enter and synchronizes My Documents with Recycle Bin", async () => {
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    const documentsShortcut = await screen.findByRole("button", {
+      name: "내 문서",
+    });
+    documentsShortcut.focus();
+    await user.keyboard("{Enter}");
+    const documentsWindow = desktopWindowByTitle("내 문서");
+
+    const recycleBinShortcut = screen.getByRole("button", { name: "휴지통" });
+    recycleBinShortcut.focus();
+    await user.keyboard("{Enter}");
+    const recycleBinWindow = desktopWindowByTitle("휴지통");
+
+    await user.click(
+      within(documentsWindow).getByRole("button", {
+        name: FILESYSTEM_COPY.NEW_FOLDER,
+      }),
+    );
+    const dialog = screen.getByRole("dialog", {
+      name: FILESYSTEM_COPY.CREATE_FOLDER_TITLE,
+    });
+    await user.type(within(dialog).getByRole("textbox"), "사진");
+    await user.click(
+      within(dialog).getByRole("button", { name: FILESYSTEM_COPY.CONFIRM }),
+    );
+    await user.click(
+      await within(documentsWindow).findByRole("button", { name: "사진" }),
+    );
+    await user.click(
+      within(documentsWindow).getByRole("button", {
+        name: FILESYSTEM_COPY.DELETE,
+      }),
+    );
+
+    await user.click(
+      await within(recycleBinWindow).findByRole("button", { name: /사진/ }),
+    );
+    await user.click(
+      within(recycleBinWindow).getByRole("button", {
+        name: FILESYSTEM_COPY.RESTORE,
+      }),
+    );
+    expect(
+      await within(documentsWindow).findByRole("button", { name: "사진" }),
+    ).toBeInTheDocument();
+    expect(
+      within(recycleBinWindow).getByText(FILESYSTEM_COPY.EMPTY_TRASH),
+    ).toBeInTheDocument();
+  });
+
+  it("confirms permanent deletion and emptying the Recycle Bin", async () => {
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
+    const documentsWindow = desktopWindowByTitle("내 문서");
+    await user.click(
+      within(documentsWindow).getByRole("button", {
+        name: FILESYSTEM_COPY.NEW_FOLDER,
+      }),
+    );
+    const nameDialog = screen.getByRole("dialog", {
+      name: FILESYSTEM_COPY.CREATE_FOLDER_TITLE,
+    });
+    await user.type(within(nameDialog).getByRole("textbox"), "삭제할 폴더");
+    await user.click(
+      within(nameDialog).getByRole("button", {
+        name: FILESYSTEM_COPY.CONFIRM,
+      }),
+    );
+    await user.click(
+      await within(documentsWindow).findByRole("button", {
+        name: "삭제할 폴더",
+      }),
+    );
+    await user.click(
+      within(documentsWindow).getByRole("button", {
+        name: FILESYSTEM_COPY.DELETE,
+      }),
+    );
+
+    await user.dblClick(screen.getByRole("button", { name: "휴지통" }));
+    const recycleBinWindow = desktopWindowByTitle("휴지통");
+    await user.click(
+      await within(recycleBinWindow).findByRole("button", {
+        name: /삭제할 폴더/,
+      }),
+    );
+    await user.click(
+      within(recycleBinWindow).getByRole("button", {
+        name: FILESYSTEM_COPY.PERMANENT_DELETE,
+      }),
+    );
+    const deleteDialog = screen.getByRole("dialog", {
+      name: FILESYSTEM_COPY.PERMANENT_DELETE,
+    });
+    expect(deleteDialog).toHaveTextContent(
+      FILESYSTEM_COPY.PERMANENT_DELETE_CONFIRM,
+    );
+    await user.click(
+      within(deleteDialog).getByRole("button", {
+        name: FILESYSTEM_COPY.CANCEL,
+      }),
+    );
+
+    await user.click(
+      within(recycleBinWindow).getByRole("button", {
+        name: FILESYSTEM_COPY.EMPTY_RECYCLE_BIN,
+      }),
+    );
+    const emptyDialog = screen.getByRole("dialog", {
+      name: FILESYSTEM_COPY.EMPTY_RECYCLE_BIN,
+    });
+    expect(emptyDialog).toHaveTextContent(
+      FILESYSTEM_COPY.EMPTY_RECYCLE_BIN_CONFIRM,
+    );
+    await user.click(
+      within(emptyDialog).getByRole("button", {
+        name: FILESYSTEM_COPY.CONFIRM,
+      }),
+    );
+    expect(
+      await within(recycleBinWindow).findByText(FILESYSTEM_COPY.EMPTY_TRASH),
     ).toBeInTheDocument();
   });
 
@@ -537,6 +773,122 @@ class FakeDashboardGateway implements DashboardGateway {
   }
 }
 
+class FakeFilesystemGateway implements FilesystemGateway {
+  private readonly entries: FilesystemEntry[] = [];
+  private readonly trash: Array<FilesystemTrashPage["items"][number]> = [];
+  private nextId = 1;
+  private readonly root: FilesystemDirectoryEntry = {
+    id: FILESYSTEM_ROOT_ID.DOCUMENTS,
+    parentId: null,
+    kind: FILESYSTEM_ENTRY_KIND.DIRECTORY,
+    name: "내 문서",
+    createdAt: "2026-08-20T00:00:00.000Z",
+    updatedAt: "2026-08-20T00:00:00.000Z",
+  };
+
+  async listDirectory(parentId = this.root.id): Promise<FilesystemDirectoryPage> {
+    const directory =
+      parentId === this.root.id
+        ? this.root
+        : (this.entries.find(
+            (entry): entry is FilesystemDirectoryEntry =>
+              entry.id === parentId &&
+              entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY,
+          ) ?? this.root);
+    return {
+      directory,
+      breadcrumbs:
+        directory.id === this.root.id
+          ? [{ id: this.root.id, name: this.root.name }]
+          : [
+              { id: this.root.id, name: this.root.name },
+              { id: directory.id, name: directory.name },
+            ],
+      items: this.entries.filter((entry) => entry.parentId === directory.id),
+      nextOffset: null,
+    };
+  }
+
+  async createDirectory(parentId: string, name: string): Promise<FilesystemDirectoryEntry> {
+    const directory: FilesystemDirectoryEntry = {
+      id: `folder-${this.nextId++}`,
+      parentId,
+      kind: FILESYSTEM_ENTRY_KIND.DIRECTORY,
+      name,
+      createdAt: "2026-08-20T00:00:00.000Z",
+      updatedAt: "2026-08-20T00:00:00.000Z",
+    };
+    this.entries.push(directory);
+    return directory;
+  }
+
+  async uploadFile(parentId: string, file: File): Promise<FilesystemFileEntry> {
+    const entry: FilesystemFileEntry = {
+      id: `file-${this.nextId++}`,
+      parentId,
+      kind: FILESYSTEM_ENTRY_KIND.FILE,
+      name: file.name,
+      contentType: file.type,
+      size: file.size,
+      createdAt: "2026-08-20T00:00:00.000Z",
+      updatedAt: "2026-08-20T00:00:00.000Z",
+    };
+    this.entries.push(entry);
+    return entry;
+  }
+
+  async updateEntry(id: string, input: UpdateFilesystemEntryInput): Promise<FilesystemEntry> {
+    const index = this.entries.findIndex((entry) => entry.id === id);
+    const entry = this.entries[index];
+    if (!entry) throw new Error("Entry not found");
+    const updated = {
+      ...entry,
+      ...(input.name === undefined ? {} : { name: input.name }),
+      ...(input.parentId === undefined ? {} : { parentId: input.parentId }),
+    } as FilesystemEntry;
+    this.entries[index] = updated;
+    return updated;
+  }
+
+  async trashEntry(id: string): Promise<void> {
+    const index = this.entries.findIndex((entry) => entry.id === id);
+    const entry = this.entries[index];
+    if (!entry) return;
+    this.entries.splice(index, 1);
+    this.trash.push({
+      entry,
+      deletedAt: "2026-08-20T00:00:00.000Z",
+      originalLocation: "내 문서",
+    });
+  }
+
+  downloadUrl(id: string): string {
+    return `/api/files/${id}/download`;
+  }
+
+  async listTrash(): Promise<FilesystemTrashPage> {
+    return { items: [...this.trash], nextOffset: null };
+  }
+
+  async restoreEntry(id: string): Promise<FilesystemEntry> {
+    const index = this.trash.findIndex((item) => item.entry.id === id);
+    const item = this.trash[index];
+    if (!item) throw new Error("Entry not found");
+    this.trash.splice(index, 1);
+    this.entries.push(item.entry);
+    return item.entry;
+  }
+
+  async permanentlyDeleteEntry(id: string): Promise<void> {
+    const index = this.trash.findIndex((item) => item.entry.id === id);
+    if (index >= 0) this.trash.splice(index, 1);
+  }
+
+  async emptyTrash(): Promise<void> {
+    this.trash.splice(0);
+  }
+}
+
 async function openStartMenu(
   user: ReturnType<typeof userEvent.setup>,
 ): Promise<void> {
@@ -593,7 +945,7 @@ function checklistWidget(id: string, stackOrder: number): DashboardWidget {
 
 function desktopWindowTitles(): Array<string | undefined> {
   return screen
-    .getAllByTestId("desktop-window")
+    .queryAllByTestId("desktop-window")
     .map(
       (window) =>
         window.querySelector(".xp-window-frame__title")?.textContent ??

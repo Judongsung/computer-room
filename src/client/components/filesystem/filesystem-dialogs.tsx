@@ -1,0 +1,206 @@
+import { useEffect, useState, type FormEvent } from "react";
+import { FILESYSTEM_ENTRY_KIND } from "../../../constants/filesystem";
+import { DESKTOP_ASSET_PATHS } from "../../constants/desktop";
+import { FILESYSTEM_COPY } from "../../constants/filesystem";
+import type { FilesystemGateway } from "../../types/filesystem";
+
+interface NameDialogProps {
+  readonly title: string;
+  readonly label: string;
+  readonly initialValue?: string;
+  readonly busy: boolean;
+  readonly onSubmit: (name: string) => void;
+  readonly onCancel: () => void;
+}
+
+export function NameDialog({
+  title,
+  label,
+  initialValue = "",
+  busy,
+  onSubmit,
+  onCancel,
+}: NameDialogProps) {
+  const [name, setName] = useState(initialValue);
+  const submit = (event: FormEvent): void => {
+    event.preventDefault();
+    if (name.trim()) {
+      onSubmit(name);
+    }
+  };
+  return (
+    <div className="filesystem-dialog-backdrop">
+      <form className="filesystem-dialog" role="dialog" aria-label={title} onSubmit={submit}>
+        <strong>{title}</strong>
+        <label>
+          {label}
+          <input autoFocus value={name} onChange={(event) => setName(event.target.value)} />
+        </label>
+        <div className="filesystem-dialog__actions">
+          <button type="submit" disabled={busy || !name.trim()}>
+            {busy ? FILESYSTEM_COPY.BUSY : FILESYSTEM_COPY.CONFIRM}
+          </button>
+          <button type="button" disabled={busy} onClick={onCancel}>
+            {FILESYSTEM_COPY.CANCEL}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+interface ConfirmDialogProps {
+  readonly title: string;
+  readonly message: string;
+  readonly busy: boolean;
+  readonly onConfirm: () => void;
+  readonly onCancel: () => void;
+}
+
+export function ConfirmDialog({
+  title,
+  message,
+  busy,
+  onConfirm,
+  onCancel,
+}: ConfirmDialogProps) {
+  return (
+    <div className="filesystem-dialog-backdrop">
+      <section className="filesystem-dialog" role="dialog" aria-label={title}>
+        <strong>{title}</strong>
+        <p>{message}</p>
+        <div className="filesystem-dialog__actions">
+          <button type="button" disabled={busy} onClick={onConfirm}>
+            {busy ? FILESYSTEM_COPY.BUSY : FILESYSTEM_COPY.CONFIRM}
+          </button>
+          <button type="button" disabled={busy} onClick={onCancel}>
+            {FILESYSTEM_COPY.CANCEL}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+interface DirectoryPickerDialogProps {
+  readonly gateway: FilesystemGateway;
+  readonly excludedEntryId: string;
+  readonly busy: boolean;
+  readonly onSelect: (directoryId: string) => void;
+  readonly onCancel: () => void;
+}
+
+export function DirectoryPickerDialog({
+  gateway,
+  excludedEntryId,
+  busy,
+  onSelect,
+  onCancel,
+}: DirectoryPickerDialogProps) {
+  const [directoryId, setDirectoryId] = useState<string | undefined>();
+  const [page, setPage] = useState<Awaited<ReturnType<FilesystemGateway["listDirectory"]>> | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setPage(null);
+    setError(null);
+    void gateway
+      .listDirectory(directoryId)
+      .then((value) => {
+        if (active) setPage(value);
+      })
+      .catch((reason: unknown) => {
+        if (active) setError(errorMessage(reason));
+      });
+    return () => {
+      active = false;
+    };
+  }, [directoryId, gateway]);
+
+  const loadMore = (): void => {
+    if (!page || page.nextOffset === null || isLoadingMore) return;
+    setIsLoadingMore(true);
+    setError(null);
+    void gateway
+      .listDirectory(page.directory.id, page.nextOffset)
+      .then((next) => {
+        setPage((current) =>
+          current?.directory.id === next.directory.id
+            ? { ...next, items: [...current.items, ...next.items] }
+            : current,
+        );
+      })
+      .catch((reason: unknown) => setError(errorMessage(reason)))
+      .finally(() => setIsLoadingMore(false));
+  };
+
+  return (
+    <div className="filesystem-dialog-backdrop">
+      <section className="filesystem-dialog filesystem-dialog--picker" role="dialog" aria-label={FILESYSTEM_COPY.MOVE_TITLE}>
+        <strong>{FILESYSTEM_COPY.MOVE_TITLE}</strong>
+        {page ? (
+          <>
+            <div className="filesystem-picker__breadcrumbs">
+              {page.breadcrumbs.map((item) => (
+                <button key={item.id} type="button" onClick={() => setDirectoryId(item.id)}>
+                  {item.name}
+                </button>
+              ))}
+            </div>
+            <div className="filesystem-picker__folders">
+              {page.items
+                .filter(
+                  (item) =>
+                    item.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY &&
+                    item.id !== excludedEntryId,
+                )
+                .map((item) => (
+                  <button key={item.id} type="button" onDoubleClick={() => setDirectoryId(item.id)}>
+                    <img src={DESKTOP_ASSET_PATHS.FOLDER_ICON} alt="" />
+                    {item.name}
+                  </button>
+                ))}
+            </div>
+            {page.nextOffset !== null ? (
+              <button
+                type="button"
+                className="explorer-load-more"
+                disabled={isLoadingMore}
+                onClick={loadMore}
+              >
+                {isLoadingMore
+                  ? FILESYSTEM_COPY.BUSY
+                  : FILESYSTEM_COPY.LOAD_MORE}
+              </button>
+            ) : null}
+            {error ? <p role="alert">{error}</p> : null}
+          </>
+        ) : error ? (
+          <p role="alert">{error}</p>
+        ) : (
+          <p>{FILESYSTEM_COPY.BUSY}</p>
+        )}
+        <div className="filesystem-dialog__actions">
+          <button
+            type="button"
+            disabled={busy || isLoadingMore || !page}
+            onClick={() => page && onSelect(page.directory.id)}
+          >
+            {busy ? FILESYSTEM_COPY.BUSY : FILESYSTEM_COPY.MOVE_HERE}
+          </button>
+          <button type="button" disabled={busy} onClick={onCancel}>
+            {FILESYSTEM_COPY.CANCEL}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error && error.message
+    ? error.message
+    : FILESYSTEM_COPY.LOAD_FAILED;
+}
