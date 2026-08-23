@@ -1,17 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { KOREA_LOCALE } from "../../../constants/date";
 import {
-  FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "../../../constants/filesystem";
 import type {
   FilesystemTrashPage,
   TrashedFilesystemEntry,
 } from "../../../types/filesystem";
-import {
-  DESKTOP_ASSET_PATHS,
-  WIDGET_ICON_PATH_BY_TYPE,
-} from "../../constants/desktop";
 import {
   FILESYSTEM_COPY,
   FILESYSTEM_DRAG_SOURCE,
@@ -25,6 +20,7 @@ import type { SystemWindowChromeProps } from "../../types/system-app";
 import { SystemAppWindow } from "../desktop/system-app-window";
 import { ConfirmDialog } from "./filesystem-dialogs";
 import { writeFilesystemDragPayload } from "../../domain/filesystem-drag";
+import { FilesystemEntryIcon } from "./filesystem-entry-icon";
 
 type RecycleDialog = "delete" | "empty" | null;
 
@@ -166,6 +162,7 @@ export function RecycleBinWindow({
               key={item.entry.id}
               item={item}
               selected={item.entry.id === selectedId}
+              thumbnailUrl={(id) => gateway.thumbnailUrl(id)}
               onSelect={() => setSelectedId(item.entry.id)}
             />
           ))}
@@ -207,10 +204,12 @@ export function RecycleBinWindow({
 function RecycleRow({
   item,
   selected,
+  thumbnailUrl,
   onSelect,
 }: {
   readonly item: TrashedFilesystemEntry;
   readonly selected: boolean;
+  readonly thumbnailUrl: (id: string) => string;
   readonly onSelect: () => void;
 }) {
   return (
@@ -227,15 +226,9 @@ function RecycleRow({
       }
     >
       <span>
-        <img
-          src={
-            item.entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY
-              ? DESKTOP_ASSET_PATHS.FOLDER_ICON
-              : item.entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET
-                ? WIDGET_ICON_PATH_BY_TYPE[item.entry.widgetType]
-              : DESKTOP_ASSET_PATHS.FILE_ICON
-          }
-          alt=""
+        <FilesystemEntryIcon
+          entry={item.entry}
+          thumbnailUrl={thumbnailUrl}
         />
         {item.entry.name}
       </span>

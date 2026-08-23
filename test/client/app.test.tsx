@@ -298,6 +298,49 @@ describe("App", () => {
     ).toHaveLength(2);
   });
 
+  it("shows image thumbnails on the desktop, in folders, and in the recycle bin", async () => {
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    const desktopImage = filesystem.addFile(
+      "desktop.png",
+      "image/png",
+      FILESYSTEM_ROOT_ID.DESKTOP,
+    );
+    const documentImage = filesystem.addFile("document.png", "image/png");
+    const recycledImage = filesystem.addFile("deleted.png", "image/png");
+    await filesystem.trashEntry(recycledImage.id);
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    const desktopShortcut = await screen.findByRole("button", {
+      name: desktopImage.name,
+    });
+    expect(desktopShortcut.querySelector("img")).toHaveAttribute(
+      "src",
+      filesystem.thumbnailUrl(desktopImage.id),
+    );
+
+    await user.dblClick(screen.getByRole("button", { name: "내 문서" }));
+    const documentsWindow = desktopWindowByTitle("내 문서");
+    const documentItem = await within(documentsWindow).findByRole("button", {
+      name: new RegExp(documentImage.name),
+    });
+    expect(documentItem.querySelector("img")).toHaveAttribute(
+      "src",
+      filesystem.thumbnailUrl(documentImage.id),
+    );
+
+    await user.dblClick(screen.getByRole("button", { name: "휴지통" }));
+    const recycleWindow = desktopWindowByTitle("휴지통");
+    const recycleItem = await within(recycleWindow).findByRole("button", {
+      name: new RegExp(recycledImage.name),
+    });
+    expect(recycleItem.querySelector("img")).toHaveAttribute(
+      "src",
+      filesystem.thumbnailUrl(recycledImage.id),
+    );
+  });
+
   it("navigates from the picture viewer to Windows Media Player and pauses on minimize", async () => {
     const pause = vi
       .spyOn(HTMLMediaElement.prototype, "pause")
@@ -1081,17 +1124,26 @@ class FakeFilesystemGateway implements FilesystemGateway {
     desktopOrder: null,
   };
 
-  addFile(name: string, contentType: string): FilesystemFileEntry {
+  addFile(
+    name: string,
+    contentType: string,
+    parentId = this.root.id,
+  ): FilesystemFileEntry {
     const entry: FilesystemFileEntry = {
       id: `file-${this.nextId++}`,
-      parentId: this.root.id,
+      parentId,
       kind: FILESYSTEM_ENTRY_KIND.FILE,
       name,
       contentType,
       size: 10,
       createdAt: "2026-08-20T00:00:00.000Z",
       updatedAt: "2026-08-20T00:00:00.000Z",
-      desktopOrder: null,
+      desktopOrder:
+        parentId === this.desktopRoot.id
+          ? this.entries.filter(
+              (candidate) => candidate.parentId === this.desktopRoot.id,
+            ).length
+          : null,
     };
     this.entries.push(entry);
     return entry;
@@ -1209,6 +1261,10 @@ class FakeFilesystemGateway implements FilesystemGateway {
 
   contentUrl(id: string): string {
     return `/api/files/${id}/content`;
+  }
+
+  thumbnailUrl(id: string): string {
+    return `/api/files/${id}/thumbnail`;
   }
 
   async listTrash(): Promise<FilesystemTrashPage> {

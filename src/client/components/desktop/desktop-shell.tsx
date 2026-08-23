@@ -609,6 +609,7 @@ export function DesktopShell({
         <DesktopShortcuts
           entries={visibleDesktopEntries}
           selectedId={selectedShortcutId}
+          thumbnailUrl={(id) => filesystemGateway.thumbnailUrl(id)}
           onSelect={setSelectedShortcutId}
           onOpenSystem={(id) => {
             if (id === SYSTEM_APP_ID.DOCUMENTS) {

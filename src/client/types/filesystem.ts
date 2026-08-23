@@ -40,6 +40,7 @@ export interface FilesystemGateway {
   trashEntry(id: string): Promise<FilesystemMutationResult>;
   downloadUrl(id: string): string;
   contentUrl(id: string): string;
+  thumbnailUrl(id: string): string;
   listTrash(offset?: number): Promise<FilesystemTrashPage>;
   restoreEntry(
     id: string,

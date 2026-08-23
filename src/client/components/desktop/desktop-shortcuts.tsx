@@ -1,7 +1,10 @@
-import { useState, type DragEvent, type KeyboardEvent } from "react";
-import { FILESYSTEM_ENTRY_KIND } from "../../../constants/filesystem";
+import {
+  useState,
+  type DragEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
 import type { FilesystemEntry } from "../../../types/filesystem";
-import { DESKTOP_ASSET_PATHS, WIDGET_ICON_PATH_BY_TYPE } from "../../constants/desktop";
 import { FILESYSTEM_COPY } from "../../constants/filesystem";
 import { KEYBOARD_KEY } from "../../constants/keyboard";
 import {
@@ -10,10 +13,12 @@ import {
   SYSTEM_APP_ID_VALUES,
 } from "../../constants/system-app";
 import type { SystemAppId } from "../../types/system-app";
+import { FilesystemEntryIcon } from "../filesystem/filesystem-entry-icon";
 
 interface DesktopShortcutsProps {
   readonly entries: readonly FilesystemEntry[];
   readonly selectedId: string | null;
+  readonly thumbnailUrl: (id: string) => string;
   readonly onSelect: (id: string) => void;
   readonly onOpenSystem: (id: SystemAppId) => void;
   readonly onOpenEntry: (entry: FilesystemEntry) => void;
@@ -35,6 +40,7 @@ interface DesktopShortcutsProps {
 export function DesktopShortcuts({
   entries,
   selectedId,
+  thumbnailUrl,
   onSelect,
   onOpenSystem,
   onOpenEntry,
@@ -53,7 +59,7 @@ export function DesktopShortcuts({
             key={id}
             id={id}
             title={app.title}
-            iconPath={app.iconPath}
+            icon={<img src={app.iconPath} alt="" draggable={false} />}
             selected={selectedId === id}
             dropTarget={dropTargetId === id}
             canHighlightDrop={id !== SYSTEM_APP_ID.MY_COMPUTER}
@@ -71,7 +77,12 @@ export function DesktopShortcuts({
           key={entry.id}
           id={entry.id}
           title={entry.name}
-          iconPath={entryIconPath(entry)}
+          icon={
+            <FilesystemEntryIcon
+              entry={entry}
+              thumbnailUrl={thumbnailUrl}
+            />
+          }
           selected={selectedId === entry.id}
           dropTarget={dropTargetId === entry.id}
           draggable
@@ -91,7 +102,7 @@ export function DesktopShortcuts({
 function ShortcutButton({
   id,
   title,
-  iconPath,
+  icon,
   selected,
   dropTarget,
   canHighlightDrop = true,
@@ -104,7 +115,7 @@ function ShortcutButton({
 }: {
   readonly id: string;
   readonly title: string;
-  readonly iconPath: string;
+  readonly icon: ReactNode;
   readonly selected: boolean;
   readonly dropTarget: boolean;
   readonly canHighlightDrop?: boolean;
@@ -149,18 +160,8 @@ function ShortcutButton({
         }
       }}
     >
-      <img src={iconPath} alt="" draggable={false} />
+      {icon}
       <span>{title}</span>
     </button>
   );
-}
-
-function entryIconPath(entry: FilesystemEntry): string {
-  if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
-    return DESKTOP_ASSET_PATHS.FOLDER_ICON;
-  }
-  if (entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET) {
-    return WIDGET_ICON_PATH_BY_TYPE[entry.widgetType];
-  }
-  return DESKTOP_ASSET_PATHS.FILE_ICON;
 }

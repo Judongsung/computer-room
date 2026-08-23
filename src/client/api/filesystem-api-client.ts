@@ -143,6 +143,10 @@ export class FilesystemApiClient implements FilesystemGateway {
     return `${API_PATHS.FILES}/${encodeURIComponent(id)}/${API_PATH_SEGMENTS.CONTENT}`;
   }
 
+  thumbnailUrl(id: string): string {
+    return `${API_PATHS.FILES}/${encodeURIComponent(id)}/${API_PATH_SEGMENTS.THUMBNAIL}`;
+  }
+
   async listTrash(offset = 0): Promise<FilesystemTrashPage> {
     const query = new URLSearchParams({
       [API_QUERY_PARAMETERS.OFFSET]: String(offset),

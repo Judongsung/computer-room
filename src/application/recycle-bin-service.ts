@@ -10,6 +10,7 @@ import {
   availableFilesystemName,
   filesystemNameKey,
 } from "../domain/filesystem-name";
+import { thumbnailObjectKeys } from "../domain/thumbnail";
 import type {
   FilesystemEntry,
   FilesystemEntryRecord,
@@ -87,7 +88,12 @@ export class RecycleBinService implements RecycleBinUseCases {
   async permanentlyDeleteEntry(id: string): Promise<void> {
     await this.requireTrashRoot(id);
     const objects = await this.repository.listSubtreeFileObjects(id);
-    await this.storage.deleteMany(objects.map((object) => object.objectKey));
+    await this.storage.deleteMany(
+      objects.flatMap((object) => [
+        object.objectKey,
+        ...thumbnailObjectKeys(object.id),
+      ]),
+    );
     await this.repository.purgeEntry(id);
   }
 

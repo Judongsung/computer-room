@@ -22,6 +22,7 @@ Cloudflare Access로 보호되는 1인용 XP 스타일 데스크톱입니다. Re
 - D1 기반 위젯 파일 저장, 닫기·다시 열기와 휴지통 수명주기
 - 내 문서의 이미지·영상 파일을 독립된 XP 스타일 창으로 열기
 - 이미지 확대·축소·창 맞춤·회전·이전·다음 탐색과 영상 재생 제어
+- 탐색기·바탕화면·휴지통 이미지 썸네일의 지연 생성과 비공개 R2 캐시
 - Worker를 통한 비공개 R2 미디어 스트리밍과 단일 HTTP Range 요청 지원
 - 기존 `/api/files` 목록·업로드·다운로드 경로 호환 유지
 - Access Service Auth로 보호되는 NovelAI 이미지 자동 저장 수신 API
@@ -36,6 +37,8 @@ Cloudflare Access로 보호되는 1인용 XP 스타일 데스크톱입니다. Re
 | 영상 | `.mp4`, `.webm`, `.ogg`, `.ogv` | `video/mp4`, `video/webm`, `video/ogg` |
 
 뷰어 지원 여부는 파일명보다 업로드 시 저장된 MIME 타입으로 판단합니다. 같은 확장자라도 MIME 타입이 다르면 다운로드 안내가 표시될 수 있으며, 영상의 실제 재생 가능 여부는 브라우저가 해당 컨테이너와 코덱 조합을 지원하는지에 따라 달라집니다. SVG는 실행 가능한 내용을 포함할 수 있어 인라인 뷰어에서 지원하지 않습니다.
+
+JPEG, PNG, GIF, WebP 이미지는 목록에 처음 표시될 때 Cloudflare Images로 최대 96×96px 정적 WebP 썸네일을 생성하고 비공개 R2에 캐시합니다. GIF와 애니메이션 WebP는 첫 프레임만 사용합니다. Cloudflare Images 바인딩 입력 제한을 넘는 20MB 초과 이미지와 BMP, 기본 계정에서 입력 변환이 보장되지 않는 AVIF는 일반 파일 아이콘으로 표시되며 원본 뷰어 동작은 유지됩니다.
 
 ## NovelAI 이미지 수신 API
 
@@ -92,7 +95,7 @@ npm run dev
 ## 배포
 
 1. `wrangler login`으로 사용할 Cloudflare 계정에 로그인합니다.
-2. `wrangler.jsonc`의 D1과 R2 바인딩이 생성한 저장소를 가리키는지 확인합니다.
+2. `wrangler.jsonc`의 D1·R2 바인딩이 생성한 저장소를 가리키고 `IMAGES` 바인딩을 사용할 수 있는 계정인지 확인합니다.
 3. `npm run deploy`를 실행합니다. 타입·마이그레이션 안전성·테스트·프로덕션 빌드를 검증하고, D1 Time Travel 복구 지점을 기록한 다음 원격 마이그레이션과 Worker 배포를 순서대로 수행합니다.
 4. 배포 주소 전체를 Cloudflare Access로 보호하고 본인 계정만 허용합니다.
 5. Worker 환경 변수 `TEAM_DOMAIN`, `POLICY_AUD`, `OWNER_EMAIL`을 설정합니다.

@@ -17,7 +17,7 @@ export interface StoredObjectRange {
 export interface FileObjectStorage {
   put(
     key: string,
-    body: ReadableStream<Uint8Array> | null,
+    body: ReadableStream<Uint8Array> | ArrayBuffer | null,
     contentType: string,
   ): Promise<StoredObject>;
   get(

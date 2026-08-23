@@ -31,7 +31,9 @@ import {
   WINDOW_STATE,
 } from "../src/constants/widget";
 import { NOVELAI_STORAGE_PATH } from "../src/constants/novelai";
+import { THUMBNAIL_SPEC } from "../src/constants/thumbnail";
 import { filesystemNameKey } from "../src/domain/filesystem-name";
+import { thumbnailObjectKey } from "../src/domain/thumbnail";
 import type { DashboardWidget, WidgetLayout, WidgetType } from "../src/types/widget";
 
 const ORIGIN = "http://localhost";
@@ -41,6 +43,8 @@ const TEST_MEDIA_TYPE = {
   VIDEO: "video/mp4",
 } as const;
 const MEMO_WINDOW_POLICY = WIDGET_WINDOW_POLICY[WIDGET_TYPE.MEMO];
+const ONE_PIXEL_PNG_BASE64 =
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
 beforeEach(async () => {
   await env.DB.prepare("DELETE FROM desktop_entry_order").run();
@@ -325,6 +329,61 @@ describe("computer-room Worker", () => {
       `${ORIGIN}${API_PATHS.FILES}/${created.file.id}/${API_PATH_SEGMENTS.CONTENT}`,
     );
     expect(response.status).toBe(HTTP_STATUS.UNSUPPORTED_MEDIA_TYPE);
+  });
+
+  it("generates, caches, serves, and permanently deletes image thumbnails", async () => {
+    const imageBytes = Uint8Array.from(
+      atob(ONE_PIXEL_PNG_BASE64),
+      (character) => character.charCodeAt(0),
+    );
+    const query = new URLSearchParams({
+      [API_QUERY_PARAMETERS.FILE_NAME]: "pixel.png",
+    });
+    const upload = await SELF.fetch(`${ORIGIN}${API_PATHS.FILES}?${query}`, {
+      method: HTTP_METHOD.POST,
+      headers: {
+        [HTTP_HEADERS.CONTENT_TYPE]: TEST_MEDIA_TYPE.IMAGE,
+        [HTTP_HEADERS.FILE_SIZE]: String(imageBytes.byteLength),
+        [HTTP_HEADERS.ORIGIN]: ORIGIN,
+      },
+      body: imageBytes,
+    });
+    expect(upload.status).toBe(HTTP_STATUS.CREATED);
+    const created = (await upload.json()) as { file: { id: string } };
+    const thumbnailPath = `${ORIGIN}${API_PATHS.FILES}/${created.file.id}/${API_PATH_SEGMENTS.THUMBNAIL}`;
+    const thumbnailKey = thumbnailObjectKey(created.file.id);
+
+    const first = await SELF.fetch(thumbnailPath);
+    expect(first.status).toBe(HTTP_STATUS.OK);
+    expect(first.headers.get(HTTP_HEADERS.CONTENT_TYPE)).toBe(
+      THUMBNAIL_SPEC.OUTPUT_CONTENT_TYPE,
+    );
+    expect(first.headers.get(HTTP_HEADERS.CACHE_CONTROL)).toContain("immutable");
+    expect((await first.arrayBuffer()).byteLength).toBeGreaterThan(0);
+    expect((await env.FILES.list()).objects.map((object) => object.key)).toContain(
+      thumbnailKey,
+    );
+
+    const second = await SELF.fetch(thumbnailPath);
+    expect(second.status).toBe(HTTP_STATUS.OK);
+    expect((await env.FILES.list()).objects).toHaveLength(2);
+
+    await SELF.fetch(`${ORIGIN}${API_PATHS.FILES}/${created.file.id}`, {
+      method: HTTP_METHOD.DELETE,
+      headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN },
+    });
+    expect((await SELF.fetch(thumbnailPath)).status).toBe(HTTP_STATUS.OK);
+
+    const trashPath = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.TRASH}`;
+    const deletion = await SELF.fetch(
+      `${ORIGIN}${trashPath}/${created.file.id}`,
+      {
+        method: HTTP_METHOD.DELETE,
+        headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN },
+      },
+    );
+    expect(deletion.status).toBe(HTTP_STATUS.NO_CONTENT);
+    expect((await env.FILES.list()).objects).toHaveLength(0);
   });
 
   it("creates nested folders and moves entries without changing R2 keys", async () => {

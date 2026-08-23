@@ -5,6 +5,7 @@ import { FilesystemService } from "./application/filesystem-service";
 import { NovelAiImageService } from "./application/novelai-image-service";
 import { RecycleBinService } from "./application/recycle-bin-service";
 import { MemoService } from "./application/memo-service";
+import { ThumbnailService } from "./application/thumbnail-service";
 import { WidgetLayoutService } from "./application/widget-layout-service";
 import {
   ENABLED_ENV_VALUE,
@@ -26,6 +27,7 @@ import { D1ChecklistRepository } from "./infrastructure/d1-checklist-repository"
 import { D1MemoRepository } from "./infrastructure/d1-memo-repository";
 import { D1WidgetLayoutRepository } from "./infrastructure/d1-widget-layout-repository";
 import { R2FileObjectStorage } from "./infrastructure/r2-file-object-storage";
+import { CloudflareImageThumbnailGenerator } from "./infrastructure/cloudflare-image-thumbnail-generator";
 import { CryptoIdGenerator, SystemClock } from "./infrastructure/runtime";
 import type { IdentityVerifier, RequestVerifier } from "./types/auth";
 
@@ -58,8 +60,14 @@ export default {
       storage,
       clock,
     );
+    const thumbnailService = new ThumbnailService(
+      fileRepository,
+      storage,
+      new CloudflareImageThumbnailGenerator(env.IMAGES),
+    );
     const fileApiHandler = new FileApiHandler(
       fileService,
+      thumbnailService,
       filesystemService,
       recycleBinService,
     );

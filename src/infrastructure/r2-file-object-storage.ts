@@ -14,7 +14,7 @@ export class R2FileObjectStorage implements FileObjectStorage {
 
   async put(
     key: string,
-    body: ReadableStream<Uint8Array> | null,
+    body: ReadableStream<Uint8Array> | ArrayBuffer | null,
     contentType: string,
   ): Promise<StoredObject> {
     const object = await this.bucket.put(key, body, {

@@ -432,7 +432,7 @@ export class MemoryObjectStorage implements FileObjectStorage {
 
   async put(
     key: string,
-    body: ReadableStream<Uint8Array> | null,
+    body: ReadableStream<Uint8Array> | ArrayBuffer | null,
     contentType: string,
   ): Promise<StoredObject> {
     if (this.failOnPut) {

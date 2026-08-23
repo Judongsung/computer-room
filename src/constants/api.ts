@@ -17,6 +17,7 @@ export const API_PATH_SEGMENTS = {
   TRASH: "trash",
   RESTORE: "restore",
   CONTENT: "content",
+  THUMBNAIL: "thumbnail",
   MOVE: "move",
   FILE: "file",
   OPEN: "open",

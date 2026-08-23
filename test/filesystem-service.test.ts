@@ -5,6 +5,7 @@ import { RecycleBinService } from "../src/application/recycle-bin-service";
 import { FILESYSTEM_ERRORS } from "../src/constants/errors/filesystem";
 import { FILE_OBJECT_KEY_PREFIX } from "../src/constants/file";
 import { FILESYSTEM_ROOT_ID } from "../src/constants/filesystem";
+import { thumbnailObjectKey } from "../src/domain/thumbnail";
 import {
   MemoryFileRepository,
   MemoryObjectStorage,
@@ -132,6 +133,8 @@ describe("filesystem use cases", () => {
       body: streamFromText("test"),
     });
     const objectKey = `${FILE_OBJECT_KEY_PREFIX}/${file.id}`;
+    const thumbnailKey = thumbnailObjectKey(file.id);
+    await storage.put(thumbnailKey, streamFromText("thumb"), "image/webp");
 
     const moved = await filesystem.updateEntry(file.id, {
       parentId: target.id,
@@ -143,6 +146,7 @@ describe("filesystem use cases", () => {
     });
     expect(repository.records.get(file.id)?.objectKey).toBe(objectKey);
     expect(storage.objects.has(objectKey)).toBe(true);
+    expect(storage.objects.has(thumbnailKey)).toBe(true);
   });
 
   it("moves a subtree to trash, restores with a numbered name, and purges its R2 files", async () => {
@@ -157,9 +161,12 @@ describe("filesystem use cases", () => {
       body: streamFromText("test"),
     });
     const objectKey = `${FILE_OBJECT_KEY_PREFIX}/${file.id}`;
+    const thumbnailKey = thumbnailObjectKey(file.id);
+    await storage.put(thumbnailKey, streamFromText("thumb"), "image/webp");
 
     await filesystem.trashEntry(folder.id);
     expect(storage.objects.has(objectKey)).toBe(true);
+    expect(storage.objects.has(thumbnailKey)).toBe(true);
     clock.timestamp += 1;
     await filesystem.createDirectory(FILESYSTEM_ROOT_ID.DOCUMENTS, "보관함");
     const restored = await recycleBin.restoreEntry(folder.id);
@@ -168,6 +175,7 @@ describe("filesystem use cases", () => {
     await filesystem.trashEntry(folder.id);
     await recycleBin.permanentlyDeleteEntry(folder.id);
     expect(storage.objects.has(objectKey)).toBe(false);
+    expect(storage.objects.has(thumbnailKey)).toBe(false);
     expect(repository.records.has(folder.id)).toBe(false);
     expect(repository.records.has(file.id)).toBe(false);
   });

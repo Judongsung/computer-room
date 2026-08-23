@@ -16,10 +16,6 @@ import {
   mediaKindFromContentType,
 } from "../../../domain/media-type";
 import {
-  DESKTOP_ASSET_PATHS,
-  WIDGET_ICON_PATH_BY_TYPE,
-} from "../../constants/desktop";
-import {
   FILE_PICKER_ABORT_ERROR_NAME,
   FILESYSTEM_DRAG_SOURCE,
   FILE_SIZE_DISPLAY,
@@ -59,6 +55,7 @@ import {
   ConfirmDialog,
   NameDialog,
 } from "./filesystem-dialogs";
+import { FilesystemEntryIcon } from "./filesystem-entry-icon";
 
 type DocumentsDialog = "create" | "rename" | "move" | null;
 
@@ -481,15 +478,9 @@ export function DocumentsWindow({
                 if (event.key === KEYBOARD_KEY.ENTER) openEntry(entry);
               }}
             >
-              <img
-                src={
-                  entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY
-                    ? DESKTOP_ASSET_PATHS.FOLDER_ICON
-                    : entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET
-                      ? WIDGET_ICON_PATH_BY_TYPE[entry.widgetType]
-                      : DESKTOP_ASSET_PATHS.FILE_ICON
-                }
-                alt=""
+              <FilesystemEntryIcon
+                entry={entry}
+                thumbnailUrl={(id) => gateway.thumbnailUrl(id)}
               />
               <span>{entry.name}</span>
               {entry.kind === FILESYSTEM_ENTRY_KIND.FILE ? <small>{formatBytes(entry.size)}</small> : null}

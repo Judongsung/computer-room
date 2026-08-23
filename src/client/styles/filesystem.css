@@ -88,6 +88,13 @@
   object-fit: contain;
 }
 
+.filesystem-entry-icon--thumbnail-loading {
+  background-image: var(--filesystem-entry-fallback-icon);
+  background-position: center;
+  background-size: contain;
+  background-repeat: no-repeat;
+}
+
 .desktop-shortcut span {
   max-width: 100%;
   padding: 1px 3px;

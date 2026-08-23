@@ -12,6 +12,7 @@ import {
   HTTP_METHOD,
   HTTP_RANGE_UNIT,
   HTTP_STATUS,
+  THUMBNAIL_RESPONSE_HEADERS,
 } from "../constants/http";
 import {
   DEFAULT_PAGE_LIMIT,
@@ -27,6 +28,7 @@ import type {
 } from "../types/filesystem-service";
 import type { DesktopPlacement } from "../types/filesystem";
 import type { FeatureApiHandler } from "../types/http";
+import type { ThumbnailUseCases } from "../types/thumbnail";
 import { parseIntegerParameter } from "./query-parameters";
 import { parseRangeHeader } from "./byte-range";
 import { readJsonBody } from "./request-body";
@@ -36,6 +38,9 @@ import { readDeclaredFileSize } from "./file-upload-request";
 const FILE_DOWNLOAD_PATH = new RegExp(`^${API_PATHS.FILES}/([^/]+)/download$`);
 const FILE_CONTENT_PATH = new RegExp(
   `^${API_PATHS.FILES}/([^/]+)/${API_PATH_SEGMENTS.CONTENT}$`,
+);
+const FILE_THUMBNAIL_PATH = new RegExp(
+  `^${API_PATHS.FILES}/([^/]+)/${API_PATH_SEGMENTS.THUMBNAIL}$`,
 );
 const FILE_PATH = new RegExp(`^${API_PATHS.FILES}/([^/]+)$`);
 const FILESYSTEM_ENTRIES_PATH = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.ENTRIES}`;
@@ -53,6 +58,7 @@ const FILESYSTEM_RESTORE_PATH = new RegExp(
 export class FileApiHandler implements FeatureApiHandler {
   constructor(
     private readonly files: FileUseCases,
+    private readonly thumbnails: ThumbnailUseCases,
     private readonly filesystem: FilesystemUseCases,
     private readonly recycleBin: RecycleBinUseCases,
   ) {}
@@ -97,6 +103,10 @@ export class FileApiHandler implements FeatureApiHandler {
     const contentMatch = FILE_CONTENT_PATH.exec(url.pathname);
     if (contentMatch) {
       return this.handleContent(request, readId(contentMatch));
+    }
+    const thumbnailMatch = FILE_THUMBNAIL_PATH.exec(url.pathname);
+    if (thumbnailMatch) {
+      return this.handleThumbnail(request, readId(thumbnailMatch));
     }
     const legacyFileMatch = FILE_PATH.exec(url.pathname);
     if (legacyFileMatch) {
@@ -273,6 +283,19 @@ export class FileApiHandler implements FeatureApiHandler {
       }
       throw error;
     }
+  }
+
+  private async handleThumbnail(
+    request: Request,
+    id: string,
+  ): Promise<Response> {
+    assertMethod(request, HTTP_METHOD.GET);
+    const object = await this.thumbnails.getThumbnail(id);
+    const headers = new Headers(THUMBNAIL_RESPONSE_HEADERS);
+    headers.set(HTTP_HEADERS.CONTENT_LENGTH, String(object.size));
+    headers.set(HTTP_HEADERS.CONTENT_TYPE, object.contentType);
+    headers.set(HTTP_HEADERS.ETAG, object.httpEtag);
+    return new Response(object.body, { headers });
   }
 }
 
