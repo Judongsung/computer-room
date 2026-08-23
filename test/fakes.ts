@@ -53,6 +53,18 @@ export class MemoryFileRepository implements FilesystemRepository {
     return cloneEntry(this.records.get(id) ?? null);
   }
 
+  async findEntryWithinRoots(
+    id: string,
+    rootIds: readonly string[],
+  ): Promise<FilesystemEntryRecord | null> {
+    for (const rootId of rootIds) {
+      if (await this.isWithinRoot(id, rootId)) {
+        return cloneEntry(this.records.get(id) ?? null);
+      }
+    }
+    return null;
+  }
+
   async listChildren(parentId: string, offset: number, limit: number): Promise<FilesystemEntryRecord[]> {
     return [...this.records.values()]
       .filter(
@@ -426,6 +438,8 @@ export class MemoryFileRepository implements FilesystemRepository {
 
 export class MemoryObjectStorage implements FileObjectStorage {
   readonly objects = new Map<string, MemoryObject>();
+  readonly getKeys: string[] = [];
+  readonly putKeys: string[] = [];
   reportedSizeOffset = 0;
   failOnPut = false;
   failOnDelete = false;
@@ -435,6 +449,7 @@ export class MemoryObjectStorage implements FileObjectStorage {
     body: ReadableStream<Uint8Array> | ArrayBuffer | null,
     contentType: string,
   ): Promise<StoredObject> {
+    this.putKeys.push(key);
     if (this.failOnPut) {
       throw new Error("Storage failure");
     }
@@ -447,6 +462,7 @@ export class MemoryObjectStorage implements FileObjectStorage {
     return {
       size: bytes.byteLength + this.reportedSizeOffset,
       etag: object.etag,
+      httpEtag: `"${object.etag}"`,
     };
   }
 
@@ -454,6 +470,7 @@ export class MemoryObjectStorage implements FileObjectStorage {
     key: string,
     range?: StoredObjectRange,
   ): Promise<StoredObjectBody | null> {
+    this.getKeys.push(key);
     const object = this.objects.get(key);
     if (!object) {
       return null;

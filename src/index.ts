@@ -6,6 +6,7 @@ import { NovelAiImageService } from "./application/novelai-image-service";
 import { RecycleBinService } from "./application/recycle-bin-service";
 import { MemoService } from "./application/memo-service";
 import { ThumbnailService } from "./application/thumbnail-service";
+import { ThumbnailPreparingFileService } from "./application/thumbnail-preparing-file-service";
 import { WidgetLayoutService } from "./application/widget-layout-service";
 import {
   ENABLED_ENV_VALUE,
@@ -28,20 +29,35 @@ import { D1MemoRepository } from "./infrastructure/d1-memo-repository";
 import { D1WidgetLayoutRepository } from "./infrastructure/d1-widget-layout-repository";
 import { R2FileObjectStorage } from "./infrastructure/r2-file-object-storage";
 import { CloudflareImageThumbnailGenerator } from "./infrastructure/cloudflare-image-thumbnail-generator";
+import { CloudflareBackgroundTaskScheduler } from "./infrastructure/cloudflare-background-task-scheduler";
 import { CryptoIdGenerator, SystemClock } from "./infrastructure/runtime";
 import type { IdentityVerifier, RequestVerifier } from "./types/auth";
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(
+    request: Request,
+    env: Env,
+    context: ExecutionContext,
+  ): Promise<Response> {
     const fileRepository = new D1FilesystemRepository(env.DB);
     const storage = new R2FileObjectStorage(env.FILES);
     const ids = new CryptoIdGenerator();
     const clock = new SystemClock();
-    const fileService = new FileService(
+    const thumbnailService = new ThumbnailService(
+      fileRepository,
+      storage,
+      new CloudflareImageThumbnailGenerator(env.IMAGES),
+    );
+    const storedFileService = new FileService(
       fileRepository,
       storage,
       ids,
       clock,
+    );
+    const fileService = new ThumbnailPreparingFileService(
+      storedFileService,
+      thumbnailService,
+      new CloudflareBackgroundTaskScheduler(context),
     );
     const filesystemService = new FilesystemService(fileRepository, ids, clock);
     const filesystemPathService = new FilesystemPathService(
@@ -59,11 +75,6 @@ export default {
       fileRepository,
       storage,
       clock,
-    );
-    const thumbnailService = new ThumbnailService(
-      fileRepository,
-      storage,
-      new CloudflareImageThumbnailGenerator(env.IMAGES),
     );
     const fileApiHandler = new FileApiHandler(
       fileService,

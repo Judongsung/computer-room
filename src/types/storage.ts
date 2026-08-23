@@ -1,6 +1,7 @@
 export interface StoredObject {
   size: number;
   etag: string;
+  httpEtag: string;
 }
 
 export interface StoredObjectBody extends StoredObject {

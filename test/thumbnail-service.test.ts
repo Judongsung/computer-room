@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { FileService } from "../src/application/file-service";
 import { FilesystemService } from "../src/application/filesystem-service";
 import { ThumbnailService } from "../src/application/thumbnail-service";
 import { THUMBNAIL_ERRORS } from "../src/constants/errors/thumbnail";
+import { FILE_ERRORS } from "../src/constants/errors/file";
 import { FILE_OBJECT_KEY_PREFIX } from "../src/constants/file";
 import { FILESYSTEM_ROOT_ID } from "../src/constants/filesystem";
 import { THUMBNAIL_SPEC } from "../src/constants/thumbnail";
@@ -73,16 +74,43 @@ describe("ThumbnailService", () => {
   it("generates a WebP once and reuses the deterministic R2 object", async () => {
     const services = createServices();
     const file = await uploadImage(services);
+    services.storage.getKeys.length = 0;
+    services.storage.putKeys.length = 0;
+    const findEntry = vi.spyOn(services.repository, "findEntry");
+    const findEntryWithinRoots = vi.spyOn(
+      services.repository,
+      "findEntryWithinRoots",
+    );
 
     const first = await services.thumbnails.getThumbnail(file.id);
     await expect(new Response(first.body).text()).resolves.toBe("thumbnail");
     expect(first.contentType).toBe(THUMBNAIL_SPEC.OUTPUT_CONTENT_TYPE);
     expect(services.generator.calls).toBe(1);
     expect(services.storage.objects.has(thumbnailObjectKey(file.id))).toBe(true);
+    expect(services.storage.getKeys).toEqual([
+      thumbnailObjectKey(file.id),
+      `${FILE_OBJECT_KEY_PREFIX}/${file.id}`,
+    ]);
+    expect(services.storage.putKeys).toEqual([thumbnailObjectKey(file.id)]);
+    expect(findEntryWithinRoots).toHaveBeenCalledOnce();
+    expect(findEntry).not.toHaveBeenCalled();
 
     const second = await services.thumbnails.getThumbnail(file.id);
     await expect(new Response(second.body).text()).resolves.toBe("thumbnail");
     expect(services.generator.calls).toBe(1);
+  });
+
+  it("rejects a ready image that is outside every readable system root", async () => {
+    const services = createServices();
+    const file = await uploadImage(services);
+    const stored = services.repository.records.get(file.id);
+    if (!stored) throw new Error("Expected uploaded file");
+    services.repository.records.set(file.id, { ...stored, parentId: null });
+
+    await expect(
+      services.thumbnails.getThumbnail(file.id),
+    ).rejects.toMatchObject({ code: FILE_ERRORS.FILE_NOT_FOUND.code });
+    expect(services.generator.calls).toBe(0);
   });
 
   it("keeps thumbnails readable while a file is in the recycle bin", async () => {
@@ -92,6 +120,18 @@ describe("ThumbnailService", () => {
 
     const thumbnail = await services.thumbnails.getThumbnail(file.id);
 
+    await expect(new Response(thumbnail.body).text()).resolves.toBe("thumbnail");
+    expect(services.generator.calls).toBe(1);
+  });
+
+  it("prepares a reusable thumbnail without requiring a foreground request", async () => {
+    const services = createServices();
+    const file = await uploadImage(services);
+
+    await services.thumbnails.prepareThumbnail(file.id);
+    expect(services.storage.objects.has(thumbnailObjectKey(file.id))).toBe(true);
+
+    const thumbnail = await services.thumbnails.getThumbnail(file.id);
     await expect(new Response(thumbnail.body).text()).resolves.toBe("thumbnail");
     expect(services.generator.calls).toBe(1);
   });

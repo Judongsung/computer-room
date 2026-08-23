@@ -48,6 +48,33 @@ export class D1FilesystemRepository implements FilesystemRepository {
     return row ? mapEntryRow(row) : null;
   }
 
+  async findEntryWithinRoots(
+    id: string,
+    rootIds: readonly string[],
+  ): Promise<FilesystemEntryRecord | null> {
+    if (rootIds.length === 0) return null;
+    const rootPlaceholders = rootIds
+      .map((_, index) => `?${index + 2}`)
+      .join(", ");
+    const row = await this.database
+      .prepare(
+        `WITH RECURSIVE ancestors(id, parent_id) AS (
+           SELECT id, parent_id FROM filesystem_entries WHERE id = ?1
+           UNION ALL
+           SELECT parent.id, parent.parent_id FROM filesystem_entries parent
+           JOIN ancestors ON parent.id = ancestors.parent_id
+         )
+         ${ENTRY_SELECT}
+         WHERE e.id = ?1
+           AND EXISTS (
+             SELECT 1 FROM ancestors WHERE id IN (${rootPlaceholders})
+           )`,
+      )
+      .bind(id, ...rootIds)
+      .first<FilesystemEntryRow>();
+    return row ? mapEntryRow(row) : null;
+  }
+
   async findWidgetEntry(widgetId: string): Promise<FilesystemEntryRecord | null> {
     const row = await this.database
       .prepare(`${ENTRY_SELECT} WHERE e.widget_id = ?1`)

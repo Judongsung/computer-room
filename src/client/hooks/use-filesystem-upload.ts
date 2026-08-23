@@ -154,7 +154,11 @@ export function useFilesystemUpload(
         ),
       );
       if (changed) onChanged();
-      setState((current) => ({ ...current, isRunning: false }));
+      setState((current) =>
+        failures.length === 0 && notice === null
+          ? INITIAL_TRANSFER_STATE
+          : { ...current, isRunning: false },
+      );
     },
     [gateway, onChanged],
   );

@@ -10,6 +10,10 @@ import type {
 
 export interface FilesystemRepository {
   findEntry(id: string): Promise<FilesystemEntryRecord | null>;
+  findEntryWithinRoots(
+    id: string,
+    rootIds: readonly string[],
+  ): Promise<FilesystemEntryRecord | null>;
   listChildren(
     parentId: string,
     offset: number,

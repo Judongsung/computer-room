@@ -1,0 +1,5 @@
+export const BACKGROUND_TASK_FAILURE_CODE = {
+  THUMBNAIL_PREPARATION: "THUMBNAIL_PREPARATION_FAILED",
+} as const;
+
+export const BACKGROUND_TASK_LOG_EVENT = "background_task_failed";

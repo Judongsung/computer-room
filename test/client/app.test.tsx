@@ -315,9 +315,11 @@ describe("App", () => {
     const desktopShortcut = await screen.findByRole("button", {
       name: desktopImage.name,
     });
-    expect(desktopShortcut.querySelector("img")).toHaveAttribute(
-      "src",
-      filesystem.thumbnailUrl(desktopImage.id),
+    await waitFor(() =>
+      expect(desktopShortcut.querySelector("img")).toHaveAttribute(
+        "src",
+        filesystem.thumbnailUrl(desktopImage.id),
+      ),
     );
 
     await user.dblClick(screen.getByRole("button", { name: "내 문서" }));
@@ -325,9 +327,11 @@ describe("App", () => {
     const documentItem = await within(documentsWindow).findByRole("button", {
       name: new RegExp(documentImage.name),
     });
-    expect(documentItem.querySelector("img")).toHaveAttribute(
-      "src",
-      filesystem.thumbnailUrl(documentImage.id),
+    await waitFor(() =>
+      expect(documentItem.querySelector("img")).toHaveAttribute(
+        "src",
+        filesystem.thumbnailUrl(documentImage.id),
+      ),
     );
 
     await user.dblClick(screen.getByRole("button", { name: "휴지통" }));
@@ -335,9 +339,11 @@ describe("App", () => {
     const recycleItem = await within(recycleWindow).findByRole("button", {
       name: new RegExp(recycledImage.name),
     });
-    expect(recycleItem.querySelector("img")).toHaveAttribute(
-      "src",
-      filesystem.thumbnailUrl(recycledImage.id),
+    await waitFor(() =>
+      expect(recycleItem.querySelector("img")).toHaveAttribute(
+        "src",
+        filesystem.thumbnailUrl(recycledImage.id),
+      ),
     );
   });
 

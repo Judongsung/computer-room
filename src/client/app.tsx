@@ -10,12 +10,21 @@ import { FilesystemApiClient } from "./api/filesystem-api-client";
 import type { AppProps } from "./types/app";
 import type { DashboardGateway } from "./types/api";
 import type { FilesystemGateway } from "./types/filesystem";
+import { ThumbnailLoadProvider } from "./state/thumbnail-load-context";
 
 const DESKTOP_BACKGROUND_STYLE = {
   "--desktop-background-image": `url("${DESKTOP_ASSET_PATHS.BACKGROUND}")`,
 } as CSSProperties;
 
-export function App({ api, filesystemApi }: AppProps) {
+export function App(props: AppProps) {
+  return (
+    <ThumbnailLoadProvider>
+      <AppContent {...props} />
+    </ThumbnailLoadProvider>
+  );
+}
+
+function AppContent({ api, filesystemApi }: AppProps) {
   const [gateway] = useState<DashboardGateway>(
     () => api ?? new DashboardApiClient(),
   );

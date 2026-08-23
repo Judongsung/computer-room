@@ -28,6 +28,7 @@ export class R2FileObjectStorage implements FileObjectStorage {
     return {
       size: object.size,
       etag: object.etag,
+      httpEtag: object.httpEtag,
     };
   }
 

@@ -1,0 +1,4 @@
+export const THUMBNAIL_LOAD_POLICY = {
+  MAX_CONCURRENT_REQUESTS: 4,
+  INTERSECTION_ROOT_MARGIN: "0px",
+} as const;

@@ -21,7 +21,10 @@ describe("useFilesystemUpload", () => {
 
     expect(tracker.maximum()).toBe(3);
     expect(onChanged).toHaveBeenCalledOnce();
-    expect(result.current.state.completed).toBe(7);
+    expect(result.current.state).toMatchObject({
+      isOpen: false,
+      isRunning: false,
+    });
   });
 
   it("serializes desktop uploads so D1 order allocation cannot race", async () => {
@@ -47,6 +50,34 @@ describe("useFilesystemUpload", () => {
       placement,
       placement,
     ]);
+  });
+
+  it("keeps failed transfers open so their details remain available", async () => {
+    const uploadFile = vi
+      .fn<FilesystemGateway["uploadFile"]>()
+      .mockRejectedValue(new Error("업로드 실패"));
+    const gateway = uploadGateway(uploadFile);
+    const { result } = renderHook(() =>
+      useFilesystemUpload(gateway, vi.fn()),
+    );
+
+    await act(() =>
+      result.current.upload(fileNodes(1), FILESYSTEM_ROOT_ID.DOCUMENTS),
+    );
+
+    expect(result.current.state).toMatchObject({
+      isOpen: true,
+      isRunning: false,
+      total: 1,
+      completed: 1,
+      failures: [
+        {
+          path: "file-0.txt",
+          message: "업로드 실패",
+          skipped: false,
+        },
+      ],
+    });
   });
 });
 

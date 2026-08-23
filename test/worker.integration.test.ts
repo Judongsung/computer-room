@@ -12,6 +12,7 @@ import { FILESYSTEM_ERRORS } from "../src/constants/errors/filesystem";
 import {
   DEFAULT_CONTENT_TYPE,
   FILE_OBJECT_KEY_PREFIX,
+  FILE_STATUS,
   MAX_FILE_SIZE_BYTES,
 } from "../src/constants/file";
 import {
@@ -384,6 +385,52 @@ describe("computer-room Worker", () => {
     );
     expect(deletion.status).toBe(HTTP_STATUS.NO_CONTENT);
     expect((await env.FILES.list()).objects).toHaveLength(0);
+  });
+
+  it("does not serve thumbnails for files outside every system root", async () => {
+    const entryId = "orphaned-image";
+    const objectKey = `${FILE_OBJECT_KEY_PREFIX}/${entryId}`;
+    const imageBytes = Uint8Array.from(
+      atob(ONE_PIXEL_PNG_BASE64),
+      (character) => character.charCodeAt(0),
+    );
+    await env.FILES.put(objectKey, imageBytes, {
+      httpMetadata: { contentType: TEST_MEDIA_TYPE.IMAGE },
+    });
+    await env.DB.batch([
+      env.DB.prepare(
+        `INSERT INTO files (
+           id, object_key, original_name, content_type, size, etag, status, created_at
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)`,
+      ).bind(
+        entryId,
+        objectKey,
+        "orphaned.png",
+        TEST_MEDIA_TYPE.IMAGE,
+        imageBytes.byteLength,
+        "orphaned-etag",
+        FILE_STATUS.READY,
+        0,
+      ),
+      env.DB.prepare(
+        `INSERT INTO filesystem_entries (
+           id, parent_id, kind, name, name_key, file_id, widget_id,
+           restore_parent_id, restore_path, trashed_at, created_at, updated_at
+         ) VALUES (?1, NULL, ?2, ?3, ?4, ?1, NULL, NULL, NULL, NULL, 0, 0)`,
+      ).bind(
+        entryId,
+        FILESYSTEM_ENTRY_KIND.FILE,
+        "orphaned.png",
+        filesystemNameKey("orphaned.png"),
+      ),
+    ]);
+
+    const response = await SELF.fetch(
+      `${ORIGIN}${API_PATHS.FILES}/${entryId}/${API_PATH_SEGMENTS.THUMBNAIL}`,
+    );
+
+    expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
+    expect((await env.FILES.list()).objects).toHaveLength(1);
   });
 
   it("creates nested folders and moves entries without changing R2 keys", async () => {

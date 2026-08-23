@@ -14,3 +14,7 @@ export interface ImageThumbnailGenerator {
 export interface ThumbnailUseCases {
   getThumbnail(entryId: string): Promise<StoredObjectBody>;
 }
+
+export interface ThumbnailPreparer {
+  prepareThumbnail(entryId: string): Promise<void>;
+}
