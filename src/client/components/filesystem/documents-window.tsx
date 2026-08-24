@@ -12,11 +12,6 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "@/constants/filesystem/filesystem";
-import { FILESYSTEM_SORT_DIRECTION_VALUES } from "@/constants/filesystem/sort";
-import {
-  isFilesystemSortDirection,
-  isFilesystemSortField,
-} from "@/domain/filesystem/filesystem-sort";
 import {
   isPotentialMediaContentType,
   mediaKindFromContentType,
@@ -74,12 +69,8 @@ import { DownloadTransferDialog } from "@client/components/filesystem/download-t
 import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
 import { contextMenuCommand, contextMenuSeparator } from "@client/domain/context-menu/context-menu";
 import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
-import {
-  FILESYSTEM_SORT_CLASS_NAME,
-  FILESYSTEM_SORT_COPY,
-  FILESYSTEM_SORT_DIRECTION_LABELS,
-  FILESYSTEM_SORT_FIELD_OPTIONS,
-} from "@client/constants/filesystem/sort";
+import { DirectorySortControls } from "./directory-sort-controls";
+import { DocumentsToolbar } from "./documents-toolbar";
 
 type DocumentsDialog = "create" | "rename" | "move" | null;
 const EMPTY_ENTRY_IDS: readonly string[] = [];
@@ -466,130 +457,6 @@ export function DocumentsWindow({
     ]);
   };
 
-  const sortControls = (
-    <div
-      className={FILESYSTEM_SORT_CLASS_NAME.BAR}
-      role="group"
-      aria-label={FILESYSTEM_SORT_COPY.GROUP_LABEL}
-    >
-      <label className={FILESYSTEM_SORT_CLASS_NAME.CONTROL}>
-        <span className={FILESYSTEM_SORT_CLASS_NAME.LABEL}>
-          {FILESYSTEM_SORT_COPY.FIELD_LABEL}
-        </span>
-        <select
-          aria-label={FILESYSTEM_SORT_COPY.FIELD_LABEL}
-          disabled={!page || busy}
-          value={page?.sort.field ?? ""}
-          onChange={(event) => {
-            if (!page || !isFilesystemSortField(event.target.value)) return;
-            changeSort({
-              field: event.target.value,
-              direction: page.sort.direction,
-            });
-          }}
-        >
-          {FILESYSTEM_SORT_FIELD_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className={FILESYSTEM_SORT_CLASS_NAME.CONTROL}>
-        <span className={FILESYSTEM_SORT_CLASS_NAME.LABEL}>
-          {FILESYSTEM_SORT_COPY.DIRECTION_LABEL}
-        </span>
-        <select
-          aria-label={FILESYSTEM_SORT_COPY.DIRECTION_LABEL}
-          disabled={!page || busy}
-          value={page?.sort.direction ?? ""}
-          onChange={(event) => {
-            if (!page || !isFilesystemSortDirection(event.target.value)) {
-              return;
-            }
-            changeSort({
-              field: page.sort.field,
-              direction: event.target.value,
-            });
-          }}
-        >
-          {FILESYSTEM_SORT_DIRECTION_VALUES.map((direction) => (
-            <option key={direction} value={direction}>
-              {page
-                ? FILESYSTEM_SORT_DIRECTION_LABELS[page.sort.field][direction]
-                : direction}
-            </option>
-          ))}
-        </select>
-      </label>
-    </div>
-  );
-
-  const toolbar = (
-    <div className="explorer-toolbar" aria-label={FILESYSTEM_COPY.FILE_TOOLBAR}>
-      <button type="button" disabled={history.length === 0 || busy} onClick={navigateBack}>
-        {FILESYSTEM_COPY.BACK}
-      </button>
-      <button
-        type="button"
-        disabled={!page || page.breadcrumbs.length <= 1 || busy}
-        onClick={navigateUp}
-      >
-        {FILESYSTEM_COPY.UP}
-      </button>
-      <span className="explorer-toolbar__separator" />
-      <button type="button" disabled={!currentDirectoryId || busy} onClick={() => setDialog("create")}>
-        {FILESYSTEM_COPY.NEW_FOLDER}
-      </button>
-      <button type="button" disabled={!currentDirectoryId || busy} onClick={() => fileInputRef.current?.click()}>
-        {FILESYSTEM_COPY.UPLOAD_FILES}
-      </button>
-      <button type="button" disabled={!currentDirectoryId || busy} onClick={selectFolder}>
-        {FILESYSTEM_COPY.UPLOAD_FOLDER}
-      </button>
-      <input ref={fileInputRef} className="visually-hidden" type="file" multiple onChange={upload} />
-      <input
-        ref={folderInputRef}
-        className="visually-hidden"
-        type="file"
-        multiple
-        {...{ webkitdirectory: "" }}
-        onChange={upload}
-      />
-      <span className="explorer-toolbar__separator" />
-      <button
-        type="button"
-        disabled={
-          selectedEntries.length === 0 ||
-          selectedEntries.every(
-            (entry) => entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET,
-          ) ||
-          busy
-        }
-        onClick={() => void download.start(selectedEntries)}
-      >
-        {FILESYSTEM_COPY.DOWNLOAD}
-      </button>
-      <button type="button" disabled={!selected || busy} onClick={() => setDialog("rename")}>
-        {FILESYSTEM_COPY.RENAME}
-      </button>
-      <button type="button" disabled={selectedEntries.length === 0 || busy} onClick={() => setDialog("move")}>
-        {FILESYSTEM_COPY.MOVE}
-      </button>
-      <button
-        type="button"
-        disabled={selectedEntries.length === 0 || busy}
-        onClick={() =>
-          void runBatchChange(() =>
-            gateway.trashEntries(selection.selectedInOrder),
-          )
-        }
-      >
-        {FILESYSTEM_COPY.DELETE}
-      </button>
-    </div>
-  );
-
   return (
     <DesktopAppWindow
       {...chrome}
@@ -597,7 +464,35 @@ export function DocumentsWindow({
       iconPath={iconPath}
       minWidth={SYSTEM_APP_CONFIG[SYSTEM_APP_ID.DOCUMENTS].minWidth}
       minHeight={SYSTEM_APP_CONFIG[SYSTEM_APP_ID.DOCUMENTS].minHeight}
-      toolbar={toolbar}
+      toolbar={
+        <DocumentsToolbar
+          busy={busy}
+          canGoBack={history.length > 0}
+          canGoUp={Boolean(page && page.breadcrumbs.length > 1)}
+          canMutate={Boolean(currentDirectoryId)}
+          canDownload={selectedEntries.some(
+            (entry) => entry.kind !== FILESYSTEM_ENTRY_KIND.WIDGET,
+          )}
+          canRename={Boolean(selected)}
+          hasSelection={selectedEntries.length > 0}
+          fileInputRef={fileInputRef}
+          folderInputRef={folderInputRef}
+          onBack={navigateBack}
+          onUp={navigateUp}
+          onCreate={() => setDialog("create")}
+          onSelectFiles={() => fileInputRef.current?.click()}
+          onSelectFolder={selectFolder}
+          onUpload={upload}
+          onDownload={() => void download.start(selectedEntries)}
+          onRename={() => setDialog("rename")}
+          onMove={() => setDialog("move")}
+          onDelete={() =>
+            void runBatchChange(() =>
+              gateway.trashEntries(selection.selectedInOrder),
+            )
+          }
+        />
+      }
       bodyClassName="explorer-window__body"
       footer={
         <footer className="explorer-statusbar">
@@ -631,7 +526,7 @@ export function DocumentsWindow({
           ))}
         </div>
       </div>
-      {sortControls}
+      <DirectorySortControls page={page} busy={busy} onChange={changeSort} />
       {error ? <p className="explorer-message" role="alert">{error}</p> : null}
       {!page && !error ? <p className="explorer-message">{FILESYSTEM_COPY.BUSY}</p> : null}
       {page ? (

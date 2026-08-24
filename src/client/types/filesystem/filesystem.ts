@@ -80,6 +80,12 @@ export interface FilesystemWindowSyncProps {
   readonly onFilesystemChanged: () => void;
 }
 
+export type DesktopFilesystemDialog =
+  | { readonly kind: "create" }
+  | { readonly kind: "rename"; readonly entries: readonly FilesystemEntry[] }
+  | { readonly kind: "move"; readonly entries: readonly FilesystemEntry[] }
+  | null;
+
 export interface DragFilesystemEntryPayload {
   readonly ids: readonly string[];
   readonly primaryId: string;

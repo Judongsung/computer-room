@@ -6,7 +6,6 @@ import {
   useMemo,
   useRef,
   useState,
-  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
 import {
@@ -14,7 +13,6 @@ import {
   XP_CONTEXT_MENU_COMMAND_ID,
   XP_CONTEXT_MENU_COPY,
   XP_CONTEXT_MENU_EDITABLE_SELECTOR,
-  XP_CONTEXT_MENU_ITEM_KIND,
   XP_CONTEXT_MENU_LAYOUT,
 } from "@client/constants/context-menu/context-menu";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
@@ -27,6 +25,10 @@ import {
   contextMenuCommand,
   contextMenuSeparator,
 } from "@client/domain/context-menu/context-menu";
+import {
+  focusXpContextMenuItem,
+  XpContextMenu,
+} from "@client/components/shared/xp-context-menu";
 
 const XpContextMenuContext = createContext<XpContextMenuController | null>(
   null,
@@ -143,7 +145,7 @@ export function XpContextMenuProvider({ children }: { readonly children: ReactNo
       x: clampMenuCoordinate(request.x, rect.width, window.innerWidth, margin),
       y: clampMenuCoordinate(request.y, rect.height, window.innerHeight, margin),
     });
-    focusMenuItem(menuRef.current, 0);
+    focusXpContextMenuItem(menuRef.current, 0);
   }, [request]);
 
   useEffect(() => {
@@ -159,41 +161,13 @@ export function XpContextMenuProvider({ children }: { readonly children: ReactNo
     <XpContextMenuContext.Provider value={controller}>
       {children}
       {request ? (
-        <div
-          ref={menuRef}
-          className={XP_CONTEXT_MENU_CLASS_NAME.ROOT}
-          role="menu"
-          aria-label={request.label ?? XP_CONTEXT_MENU_COPY.LABEL}
-          style={{
-            left: position.x,
-            top: position.y,
-            width: XP_CONTEXT_MENU_LAYOUT.WIDTH_PX,
-          }}
-          onContextMenu={(event) => event.preventDefault()}
-          onKeyDown={handleMenuKeyDown}
-        >
-          {request.items.map((item) =>
-            item.kind === XP_CONTEXT_MENU_ITEM_KIND.SEPARATOR ? (
-              <div
-                key={item.id}
-                className={XP_CONTEXT_MENU_CLASS_NAME.SEPARATOR}
-                role="separator"
-              />
-            ) : (
-              <button
-                key={item.id}
-                type="button"
-                className={XP_CONTEXT_MENU_CLASS_NAME.ITEM}
-                role="menuitem"
-                tabIndex={-1}
-                disabled={item.disabled}
-                onClick={() => void executeCommand(item, close, reportError)}
-              >
-                {item.label}
-              </button>
-            ),
-          )}
-        </div>
+        <XpContextMenu
+          request={request}
+          position={position}
+          menuRef={menuRef}
+          onClose={close}
+          onError={reportError}
+        />
       ) : null}
       {error ? (
         <div className={XP_CONTEXT_MENU_CLASS_NAME.ERROR} role="alert">
@@ -409,51 +383,6 @@ async function writeClipboard(text: string, reportError: (message: string) => vo
     reportError(XP_CONTEXT_MENU_COPY.CLIPBOARD_FAILED);
     return false;
   }
-}
-
-async function executeCommand(
-  item: Extract<XpContextMenuItem, { readonly kind: "command" }>,
-  close: () => void,
-  reportError: (message: string) => void,
-): Promise<void> {
-  if (item.disabled) return;
-  close();
-  try {
-    await item.onSelect();
-  } catch (error) {
-    reportError(error instanceof Error && error.message ? error.message : XP_CONTEXT_MENU_COPY.COMMAND_FAILED);
-  }
-}
-
-function handleMenuKeyDown(event: ReactKeyboardEvent<HTMLDivElement>): void {
-  const menu = event.currentTarget;
-  const items = enabledMenuItems(menu);
-  if (items.length === 0) return;
-  const current = document.activeElement instanceof HTMLButtonElement
-    ? items.indexOf(document.activeElement)
-    : -1;
-  let next: number | null = null;
-  if (event.key === KEYBOARD_KEY.ARROW_DOWN) next = (current + 1) % items.length;
-  else if (event.key === KEYBOARD_KEY.ARROW_UP) next = (current - 1 + items.length) % items.length;
-  else if (event.key === KEYBOARD_KEY.HOME) next = 0;
-  else if (event.key === KEYBOARD_KEY.END) next = items.length - 1;
-  else if (event.key === KEYBOARD_KEY.ENTER || event.key === KEYBOARD_KEY.SPACE) {
-    event.preventDefault();
-    items[Math.max(0, current)]?.click();
-    return;
-  }
-  if (next !== null) {
-    event.preventDefault();
-    items[next]?.focus();
-  }
-}
-
-function focusMenuItem(menu: HTMLDivElement, index: number): void {
-  enabledMenuItems(menu)[index]?.focus();
-}
-
-function enabledMenuItems(menu: HTMLDivElement): HTMLButtonElement[] {
-  return Array.from(menu.querySelectorAll<HTMLButtonElement>("[role='menuitem']:not(:disabled)"));
 }
 
 function clampMenuCoordinate(origin: number, size: number, viewport: number, margin: number): number {

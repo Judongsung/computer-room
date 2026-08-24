@@ -1,10 +1,6 @@
 import {
   useCallback,
-  useEffect,
   useMemo,
-  useReducer,
-  useRef,
-  useState,
 } from "react";
 import {
   MAX_OPEN_WIDGET_COUNT,
@@ -36,22 +32,14 @@ import {
   restoreWindow as restoreWindowState,
   toggleMaximizeWindow as toggleMaximizeWindowState,
 } from "@client/domain/desktop/window-layout";
-import {
-  dashboardReducer,
-  INITIAL_DASHBOARD_STATE,
-} from "@client/state/widgets/dashboard-reducer";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/desktop";
 import { useUnsavedChangesWarning } from "@client/hooks/desktop/use-unsaved-changes-warning";
 import { useWidgetLayoutAutoSave } from "@client/hooks/widgets/use-widget-layout-auto-save";
+import { useDashboardState } from "@client/hooks/widgets/use-dashboard-state";
 
 export function useDashboard(api: DashboardGateway) {
-  const [state, dispatch] = useReducer(
-    dashboardReducer,
-    INITIAL_DASHBOARD_STATE,
-  );
-  const [loadAttempt, setLoadAttempt] = useState(0);
-  const widgetsRef = useRef<readonly DashboardWidget[]>(state.widgets);
+  const { state, dispatch, widgetsRef, retryLoad } = useDashboardState(api);
   const mergeSavedWidgetMetadata = useCallback(
     (savedWidgets: readonly DashboardWidget[]): void => {
       const savedById = new Map(
@@ -88,39 +76,6 @@ export function useDashboard(api: DashboardGateway) {
   );
   const layoutSave = useWidgetLayoutAutoSave(api, layoutSaveOptions);
   const scheduleLayoutSave = layoutSave.schedule;
-
-  useEffect(() => {
-    widgetsRef.current = state.widgets;
-  }, [state.widgets]);
-
-  useEffect(() => {
-    let active = true;
-    dispatch({ type: DASHBOARD_ACTION_TYPE.LOAD_STARTED });
-
-    void Promise.all([api.getSession(), api.listWidgets()])
-      .then(([session, widgets]) => {
-        if (active) {
-          widgetsRef.current = cloneDashboardWidgets(widgets);
-          dispatch({
-            type: DASHBOARD_ACTION_TYPE.LOAD_SUCCEEDED,
-            session,
-            widgets,
-          });
-        }
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          dispatch({
-            type: DASHBOARD_ACTION_TYPE.LOAD_FAILED,
-            message: errorMessage(error, UI_MESSAGES.LOAD_FAILED),
-          });
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [api, loadAttempt]);
 
   useUnsavedChangesWarning(layoutSave.hasUnsavedChanges);
 
@@ -370,9 +325,7 @@ export function useDashboard(api: DashboardGateway) {
     [replaceAndSave],
   );
 
-  const retry = useCallback(() => {
-    setLoadAttempt((attempt) => attempt + 1);
-  }, []);
+  const retry = retryLoad;
 
   const dismissMessage = useCallback(() => {
     dispatch({ type: DASHBOARD_ACTION_TYPE.MESSAGE_SET, message: null });
