@@ -1,12 +1,32 @@
 export const WIDGET_TYPE = {
   MEMO: "memo",
   DAILY_CHECKLIST: "daily-checklist",
+  STORAGE_STATUS: "storage-status",
 } as const;
 
 export const WIDGET_TYPE_VALUES = [
   WIDGET_TYPE.MEMO,
   WIDGET_TYPE.DAILY_CHECKLIST,
+  WIDGET_TYPE.STORAGE_STATUS,
 ] as const;
+
+export const WIDGET_BEHAVIOR = {
+  [WIDGET_TYPE.MEMO]: {
+    singleton: false,
+    supportsFileStorage: true,
+    persistsWithoutFile: false,
+  },
+  [WIDGET_TYPE.DAILY_CHECKLIST]: {
+    singleton: false,
+    supportsFileStorage: true,
+    persistsWithoutFile: false,
+  },
+  [WIDGET_TYPE.STORAGE_STATUS]: {
+    singleton: true,
+    supportsFileStorage: false,
+    persistsWithoutFile: true,
+  },
+} as const;
 
 export const MAX_WIDGET_COUNT = 50;
 export const MAX_OPEN_WIDGET_COUNT = MAX_WIDGET_COUNT;
@@ -58,6 +78,13 @@ export const WIDGET_WINDOW_POLICY = {
     DEFAULT_HEIGHT: 420,
     MIN_WIDTH: 360,
     MIN_HEIGHT: 280,
+    ...WINDOW_SIZE_LIMITS,
+  },
+  [WIDGET_TYPE.STORAGE_STATUS]: {
+    DEFAULT_WIDTH: 560,
+    DEFAULT_HEIGHT: 500,
+    MIN_WIDTH: 480,
+    MIN_HEIGHT: 400,
     ...WINDOW_SIZE_LIMITS,
   },
 } as const;

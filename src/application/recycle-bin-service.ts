@@ -17,12 +17,14 @@ import type {
   FilesystemTrashPage,
   RestoreFilesystemEntryInput,
 } from "../types/filesystem";
+import type { FilesystemBatchResult } from "../types/filesystem-batch";
 import type { RecycleBinUseCases } from "../types/filesystem-service";
 import type { FilesystemRepository } from "../types/repository";
 import type { Clock } from "../types/runtime";
 import type { FileObjectStorage } from "../types/storage";
 import { toPublicEntry } from "./filesystem-service";
 import { nextDesktopOrder } from "./desktop-placement";
+import { settleFilesystemOperations } from "./filesystem-batch";
 
 export class RecycleBinService implements RecycleBinUseCases {
   constructor(
@@ -85,6 +87,31 @@ export class RecycleBinService implements RecycleBinUseCases {
     });
   }
 
+  async restoreEntries(
+    ids: readonly string[],
+    input: RestoreFilesystemEntryInput = {},
+  ): Promise<FilesystemBatchResult> {
+    const settled = await settleFilesystemOperations(ids, async (id) => {
+      const entry = await this.requireTrashRoot(id);
+      const targetsDesktop =
+        input.parentId === FILESYSTEM_ROOT_ID.DESKTOP ||
+        (input.parentId === undefined &&
+          entry.restoreParentId === FILESYSTEM_ROOT_ID.DESKTOP);
+      return this.restoreEntry(id, {
+        ...(input.parentId === undefined ? {} : { parentId: input.parentId }),
+        ...(targetsDesktop && input.desktopPlacement
+          ? { desktopPlacement: input.desktopPlacement }
+          : {}),
+      });
+    });
+    return {
+      succeededIds: settled.succeeded.map(({ id }) => id),
+      entries: settled.succeeded.map(({ value }) => value),
+      failures: settled.failures,
+      closedWidgetIds: [],
+    };
+  }
+
   async permanentlyDeleteEntry(id: string): Promise<void> {
     await this.requireTrashRoot(id);
     const objects = await this.repository.listSubtreeFileObjects(id);
@@ -95,6 +122,20 @@ export class RecycleBinService implements RecycleBinUseCases {
       ]),
     );
     await this.repository.purgeEntry(id);
+  }
+
+  async permanentlyDeleteEntries(
+    ids: readonly string[],
+  ): Promise<FilesystemBatchResult> {
+    const settled = await settleFilesystemOperations(ids, (id) =>
+      this.permanentlyDeleteEntry(id),
+    );
+    return {
+      succeededIds: settled.succeeded.map(({ id }) => id),
+      entries: [],
+      failures: settled.failures,
+      closedWidgetIds: [],
+    };
   }
 
   async emptyTrash(): Promise<void> {

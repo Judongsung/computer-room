@@ -8,9 +8,8 @@ import { HTTP_METHOD, HTTP_STATUS } from "../constants/http";
 import { WIDGET_TYPE_VALUES } from "../constants/widget";
 import type { WidgetType } from "../types/widget";
 import {
-  DEFAULT_PAGE_LIMIT,
+  CHECKLIST_LOG_PAGE_LIMIT,
   DEFAULT_PAGE_OFFSET,
-  MAX_PAGE_LIMIT,
 } from "../constants/pagination";
 import { AppError } from "../domain/errors";
 import {
@@ -171,15 +170,14 @@ export class WidgetApiHandler implements FeatureApiHandler {
       ) {
         throw new AppError(HTTP_ERRORS.INVALID_JSON);
       }
+      const result = await this.widgets.createWidget({
+        type: body.type,
+        position: body.position,
+        size: body.size,
+      });
       return jsonResponse(
-        {
-          widget: await this.widgets.createWidget({
-            type: body.type,
-            position: body.position,
-            size: body.size,
-          }),
-        },
-        HTTP_STATUS.CREATED,
+        { widget: result.widget },
+        result.created ? HTTP_STATUS.CREATED : HTTP_STATUS.OK,
       );
     }
     throw methodNotAllowed();
@@ -266,9 +264,9 @@ export class WidgetApiHandler implements FeatureApiHandler {
     );
     const limit = parseIntegerParameter(
       url.searchParams.get(API_QUERY_PARAMETERS.LIMIT),
-      DEFAULT_PAGE_LIMIT,
+      CHECKLIST_LOG_PAGE_LIMIT,
     );
-    if (limit < 1 || limit > MAX_PAGE_LIMIT) {
+    if (limit < 1 || limit > CHECKLIST_LOG_PAGE_LIMIT) {
       throw new AppError(HTTP_ERRORS.INVALID_LIMIT);
     }
     return jsonResponse(

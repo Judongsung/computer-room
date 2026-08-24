@@ -1,3 +1,4 @@
 export const DEFAULT_PAGE_OFFSET = 0;
-export const DEFAULT_PAGE_LIMIT = 50;
-export const MAX_PAGE_LIMIT = 50;
+export const FILESYSTEM_PAGE_LIMIT = 100;
+export const LEGACY_FILE_PAGE_LIMIT = 50;
+export const CHECKLIST_LOG_PAGE_LIMIT = 50;

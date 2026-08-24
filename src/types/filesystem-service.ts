@@ -2,6 +2,7 @@ import type {
   DesktopPlacement,
   FilesystemDirectoryEntry,
   FilesystemDirectoryPage,
+  FilesystemDirectorySort,
   FilesystemEntry,
   FilesystemMutationResult,
   FilesystemTrashPage,
@@ -9,6 +10,8 @@ import type {
   RestoreFilesystemEntryInput,
   UpdateFilesystemEntryInput,
 } from "./filesystem";
+import type { FilesystemBatchResult } from "./filesystem-batch";
+import type { FilesystemArchiveSourceManifest } from "./filesystem-download";
 
 export interface FilesystemUseCases {
   listDirectory(
@@ -16,6 +19,10 @@ export interface FilesystemUseCases {
     offset: number,
     limit: number,
   ): Promise<FilesystemDirectoryPage>;
+  updateDirectorySort(
+    directoryId: string,
+    sort: FilesystemDirectorySort,
+  ): Promise<FilesystemDirectorySort>;
   createDirectory(
     parentId: string | null,
     name: string,
@@ -29,7 +36,16 @@ export interface FilesystemUseCases {
     id: string,
     input: MoveFilesystemEntryInput,
   ): Promise<FilesystemEntry>;
+  moveEntries(
+    ids: readonly string[],
+    input: MoveFilesystemEntryInput,
+  ): Promise<FilesystemBatchResult>;
   trashEntry(id: string): Promise<FilesystemMutationResult>;
+  trashEntries(ids: readonly string[]): Promise<FilesystemBatchResult>;
+}
+
+export interface FilesystemDownloadManifestUseCases {
+  createManifest(ids: readonly string[]): Promise<FilesystemArchiveSourceManifest>;
 }
 
 export interface FilesystemPathUseCases {
@@ -45,6 +61,11 @@ export interface RecycleBinUseCases {
     id: string,
     input?: RestoreFilesystemEntryInput,
   ): Promise<FilesystemEntry>;
+  restoreEntries(
+    ids: readonly string[],
+    input?: RestoreFilesystemEntryInput,
+  ): Promise<FilesystemBatchResult>;
   permanentlyDeleteEntry(id: string): Promise<void>;
+  permanentlyDeleteEntries(ids: readonly string[]): Promise<FilesystemBatchResult>;
   emptyTrash(): Promise<void>;
 }

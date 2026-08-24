@@ -1,4 +1,8 @@
 import type { FILESYSTEM_ENTRY_KIND } from "../constants/filesystem";
+import type {
+  FILESYSTEM_SORT_DIRECTION,
+  FILESYSTEM_SORT_FIELD,
+} from "../constants/filesystem-sort";
 import type { FileStatus } from "./file";
 import type { StoredObjectBody } from "./storage";
 import type { ByteRange } from "./media";
@@ -6,6 +10,17 @@ import type { WidgetType } from "./widget";
 
 export type FilesystemEntryKind =
   (typeof FILESYSTEM_ENTRY_KIND)[keyof typeof FILESYSTEM_ENTRY_KIND];
+
+export type FilesystemSortField =
+  (typeof FILESYSTEM_SORT_FIELD)[keyof typeof FILESYSTEM_SORT_FIELD];
+
+export type FilesystemSortDirection =
+  (typeof FILESYSTEM_SORT_DIRECTION)[keyof typeof FILESYSTEM_SORT_DIRECTION];
+
+export interface FilesystemDirectorySort {
+  readonly field: FilesystemSortField;
+  readonly direction: FilesystemSortDirection;
+}
 
 export interface FilesystemDirectoryEntry {
   readonly id: string;
@@ -56,6 +71,7 @@ export interface FilesystemDirectoryPage {
   readonly breadcrumbs: readonly FilesystemBreadcrumb[];
   readonly items: readonly FilesystemEntry[];
   readonly nextOffset: number | null;
+  readonly sort: FilesystemDirectorySort;
 }
 
 export interface TrashedFilesystemEntry {
@@ -177,4 +193,9 @@ export interface FilesystemContent extends FilesystemDownload {
 export interface FilesystemFileObject {
   readonly id: string;
   readonly objectKey: string;
+}
+
+export interface RootedFilesystemEntryRecord {
+  readonly rootId: string;
+  readonly entry: FilesystemEntryRecord;
 }

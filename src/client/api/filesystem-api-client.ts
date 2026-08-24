@@ -2,9 +2,11 @@ import {
   API_PATHS,
   API_PATH_SEGMENTS,
   API_QUERY_PARAMETERS,
+  FILESYSTEM_API_PATHS,
 } from "../../constants/api";
 import { DEFAULT_CONTENT_TYPE } from "../../constants/file";
 import { FILESYSTEM_ENTRY_KIND } from "../../constants/filesystem";
+import { isFilesystemDirectorySort } from "../../domain/filesystem-sort";
 import { WIDGET_TYPE_VALUES } from "../../constants/widget";
 import {
   HTTP_HEADERS,
@@ -14,6 +16,7 @@ import {
 import type {
   FilesystemDirectoryEntry,
   FilesystemDirectoryPage,
+  FilesystemDirectorySort,
   FilesystemEntry,
   FilesystemFileEntry,
   FilesystemMutationResult,
@@ -24,14 +27,23 @@ import type {
   DesktopPlacement,
   UpdateFilesystemEntryInput,
 } from "../../types/filesystem";
+import type { FilesystemBatchResult } from "../../types/filesystem-batch";
+import type { FilesystemDownloadManifest } from "../../types/filesystem-download";
 import { API_REQUEST_OPTIONS } from "../constants/api";
 import { CLIENT_ERRORS } from "../constants/errors";
 import { ClientError } from "../errors/client-error";
 import type { FilesystemGateway } from "../types/filesystem";
 
-const FILESYSTEM_ENTRIES_PATH = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.ENTRIES}`;
-const FILESYSTEM_DIRECTORIES_PATH = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.DIRECTORIES}`;
-const FILESYSTEM_TRASH_PATH = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.TRASH}`;
+const {
+  ENTRIES: FILESYSTEM_ENTRIES_PATH,
+  DIRECTORIES: FILESYSTEM_DIRECTORIES_PATH,
+  TRASH: FILESYSTEM_TRASH_PATH,
+  BATCH_MOVE: FILESYSTEM_BATCH_MOVE_PATH,
+  BATCH_TRASH: FILESYSTEM_BATCH_TRASH_PATH,
+  BATCH_RESTORE: FILESYSTEM_BATCH_RESTORE_PATH,
+  BATCH_DELETE: FILESYSTEM_BATCH_DELETE_PATH,
+  DOWNLOAD_MANIFEST: FILESYSTEM_DOWNLOAD_MANIFEST_PATH,
+} = FILESYSTEM_API_PATHS;
 
 export class FilesystemApiClient implements FilesystemGateway {
   async listDirectory(
@@ -68,6 +80,20 @@ export class FilesystemApiClient implements FilesystemGateway {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
     }
     return value.directory;
+  }
+
+  async updateDirectorySort(
+    directoryId: string,
+    sort: FilesystemDirectorySort,
+  ): Promise<FilesystemDirectorySort> {
+    const value = await this.requestJson(
+      `${FILESYSTEM_DIRECTORIES_PATH}/${encodeURIComponent(directoryId)}/${API_PATH_SEGMENTS.SORT}`,
+      jsonRequest(HTTP_METHOD.PUT, sort),
+    );
+    if (!isRecord(value) || !isFilesystemDirectorySort(value.sort)) {
+      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    }
+    return value.sort;
   }
 
   async uploadFile(
@@ -125,11 +151,46 @@ export class FilesystemApiClient implements FilesystemGateway {
     return value.entry;
   }
 
+  async moveEntries(
+    ids: readonly string[],
+    input: MoveFilesystemEntryInput,
+  ): Promise<FilesystemBatchResult> {
+    const value = await this.requestJson(
+      FILESYSTEM_BATCH_MOVE_PATH,
+      jsonRequest(HTTP_METHOD.POST, {
+        entryIds: ids,
+        parentId: input.parentId,
+        ...placementBody(input.desktopPlacement),
+      }),
+    );
+    if (!isBatchResult(value)) {
+      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    }
+    return value;
+  }
+
   async trashEntry(id: string): Promise<FilesystemMutationResult> {
     const value = await this.requestJson(`${FILESYSTEM_ENTRIES_PATH}/${encodeURIComponent(id)}`, {
       method: HTTP_METHOD.DELETE,
     });
     if (!isMutationResult(value)) {
+      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    }
+    return value;
+  }
+
+  async trashEntries(ids: readonly string[]): Promise<FilesystemBatchResult> {
+    return this.requestBatch(FILESYSTEM_BATCH_TRASH_PATH, ids);
+  }
+
+  async createDownloadManifest(
+    ids: readonly string[],
+  ): Promise<FilesystemDownloadManifest> {
+    const value = await this.requestJson(
+      FILESYSTEM_DOWNLOAD_MANIFEST_PATH,
+      jsonRequest(HTTP_METHOD.POST, { entryIds: ids }),
+    );
+    if (!isDownloadManifest(value)) {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
     }
     return value;
@@ -175,10 +236,34 @@ export class FilesystemApiClient implements FilesystemGateway {
     return value.entry;
   }
 
+  async restoreEntries(
+    ids: readonly string[],
+    input: RestoreFilesystemEntryInput = {},
+  ): Promise<FilesystemBatchResult> {
+    const value = await this.requestJson(
+      FILESYSTEM_BATCH_RESTORE_PATH,
+      jsonRequest(HTTP_METHOD.POST, {
+        entryIds: ids,
+        ...(input.parentId === undefined ? {} : { parentId: input.parentId }),
+        ...placementBody(input.desktopPlacement),
+      }),
+    );
+    if (!isBatchResult(value)) {
+      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    }
+    return value;
+  }
+
   async permanentlyDeleteEntry(id: string): Promise<void> {
     await this.requestJson(`${FILESYSTEM_TRASH_PATH}/${encodeURIComponent(id)}`, {
       method: HTTP_METHOD.DELETE,
     });
+  }
+
+  async permanentlyDeleteEntries(
+    ids: readonly string[],
+  ): Promise<FilesystemBatchResult> {
+    return this.requestBatch(FILESYSTEM_BATCH_DELETE_PATH, ids);
   }
 
   async emptyTrash(): Promise<void> {
@@ -208,6 +293,20 @@ export class FilesystemApiClient implements FilesystemGateway {
     }
     return payload;
   }
+
+  private async requestBatch(
+    path: string,
+    ids: readonly string[],
+  ): Promise<FilesystemBatchResult> {
+    const value = await this.requestJson(
+      path,
+      jsonRequest(HTTP_METHOD.POST, { entryIds: ids }),
+    );
+    if (!isBatchResult(value)) {
+      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    }
+    return value;
+  }
 }
 
 function jsonRequest(method: string, body: unknown): RequestInit {
@@ -233,7 +332,8 @@ function isDirectoryPage(value: unknown): value is FilesystemDirectoryPage {
     value.breadcrumbs.every(isBreadcrumb) &&
     Array.isArray(value.items) &&
     value.items.every(isFilesystemEntry) &&
-    (value.nextOffset === null || typeof value.nextOffset === "number")
+    (value.nextOffset === null || typeof value.nextOffset === "number") &&
+    isFilesystemDirectorySort(value.sort)
   );
 }
 
@@ -309,6 +409,59 @@ function isMutationResult(value: unknown): value is FilesystemMutationResult {
     (value.entry === null || isFilesystemEntry(value.entry)) &&
     Array.isArray(value.closedWidgetIds) &&
     value.closedWidgetIds.every((id) => typeof id === "string")
+  );
+}
+
+function isBatchResult(value: unknown): value is FilesystemBatchResult {
+  return (
+    isRecord(value) &&
+    Array.isArray(value.succeededIds) &&
+    value.succeededIds.every((id) => typeof id === "string") &&
+    Array.isArray(value.entries) &&
+    value.entries.every(isFilesystemEntry) &&
+    Array.isArray(value.failures) &&
+    value.failures.every(
+      (failure) =>
+        isRecord(failure) &&
+        typeof failure.id === "string" &&
+        typeof failure.code === "string" &&
+        typeof failure.message === "string",
+    ) &&
+    Array.isArray(value.closedWidgetIds) &&
+    value.closedWidgetIds.every((id) => typeof id === "string")
+  );
+}
+
+function isDownloadManifest(value: unknown): value is FilesystemDownloadManifest {
+  return (
+    isRecord(value) &&
+    typeof value.archiveName === "string" &&
+    Array.isArray(value.entries) &&
+    value.entries.every((entry) => {
+      if (!isRecord(entry) || typeof entry.path !== "string" ||
+          typeof entry.updatedAt !== "string") {
+        return false;
+      }
+      if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) return true;
+      return (
+        entry.kind === FILESYSTEM_ENTRY_KIND.FILE &&
+        typeof entry.id === "string" &&
+        typeof entry.size === "number" &&
+        Number.isSafeInteger(entry.size) &&
+        entry.size >= 0 &&
+        typeof entry.downloadUrl === "string" &&
+        entry.downloadUrl ===
+          `${API_PATHS.FILES}/${encodeURIComponent(entry.id)}/download`
+      );
+    }) &&
+    typeof value.totalFileCount === "number" &&
+    Number.isSafeInteger(value.totalFileCount) &&
+    value.totalFileCount >= 0 &&
+    typeof value.totalBytes === "number" &&
+    Number.isSafeInteger(value.totalBytes) &&
+    value.totalBytes >= 0 &&
+    Array.isArray(value.skippedWidgetIds) &&
+    value.skippedWidgetIds.every((id) => typeof id === "string")
   );
 }
 

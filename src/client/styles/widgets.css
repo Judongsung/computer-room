@@ -283,3 +283,131 @@
 .checklist-log-group small {
   color: #666;
 }
+
+.storage-status-widget {
+  display: grid;
+  gap: 9px;
+}
+
+.storage-status-widget__summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.storage-status-widget__panel {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #919b9c;
+  background: #fff;
+  box-shadow: inset 1px 1px #fff, inset -1px -1px #d2d2d2;
+}
+
+.storage-status-widget__panel h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+
+.storage-status-widget__meter {
+  margin-top: 7px;
+}
+
+.storage-status-widget__meter-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.storage-status-widget__meter-track {
+  height: 14px;
+  margin-top: 3px;
+  overflow: hidden;
+  border: 1px solid #7f9db9;
+  background: #fff;
+}
+
+.storage-status-widget__meter-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(#7fbcff, #2864c5);
+}
+
+.storage-status-widget__meter--warning .storage-status-widget__meter-fill {
+  background: linear-gradient(#ffe181, #d69b18);
+}
+
+.storage-status-widget__meter--exceeded .storage-status-widget__meter-fill {
+  background: linear-gradient(#ff9a85, #c4311d);
+}
+
+.storage-status-widget__meter--warning small,
+.storage-status-widget__meter--exceeded small {
+  color: var(--luna-error);
+}
+
+.storage-status-widget__note {
+  display: block;
+  margin-top: 5px;
+  color: #555;
+}
+
+.storage-status-widget__graph {
+  display: flex;
+  height: 18px;
+  overflow: hidden;
+  border: 1px solid #7f9db9;
+  background: #fff;
+}
+
+.storage-status-widget__graph-segment {
+  min-width: 1px;
+  background: var(--storage-segment-color);
+}
+
+.storage-status-widget__legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 8px 0 0;
+  padding: 0;
+  gap: 4px 12px;
+  list-style: none;
+}
+
+.storage-status-widget__legend li {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 5px;
+}
+
+.storage-status-widget__legend i {
+  width: 9px;
+  height: 9px;
+  border: 1px solid rgb(0 0 0 / 30%);
+}
+
+.storage-status-widget__legend small {
+  min-width: 42px;
+  color: #555;
+  text-align: right;
+}
+
+.storage-status-widget__counts {
+  margin: 0;
+}
+
+.storage-status-widget__counts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.storage-status-widget__counts dt,
+.storage-status-widget__counts dd {
+  margin: 0;
+}
+
+.storage-status-widget__timestamp {
+  color: #555;
+  text-align: right;
+}

@@ -2,6 +2,7 @@ import {
   API_PATHS,
   API_PATH_SEGMENTS,
   API_QUERY_PARAMETERS,
+  FILESYSTEM_API_PATHS,
 } from "../constants/api";
 import { HTTP_ERRORS } from "../constants/errors/http";
 import {
@@ -15,18 +16,22 @@ import {
   THUMBNAIL_RESPONSE_HEADERS,
 } from "../constants/http";
 import {
-  DEFAULT_PAGE_LIMIT,
   DEFAULT_PAGE_OFFSET,
-  MAX_PAGE_LIMIT,
+  FILESYSTEM_PAGE_LIMIT,
+  LEGACY_FILE_PAGE_LIMIT,
 } from "../constants/pagination";
+import { FILESYSTEM_ENTRY_KIND } from "../constants/filesystem";
 import { AppError } from "../domain/errors";
+import { requireFilesystemDirectorySort } from "../domain/filesystem-sort";
 import { FileRangeNotSatisfiableError } from "../domain/file-content-error";
 import type { FileUseCases } from "../types/file-service";
 import type {
   FilesystemUseCases,
+  FilesystemDownloadManifestUseCases,
   RecycleBinUseCases,
 } from "../types/filesystem-service";
 import type { DesktopPlacement } from "../types/filesystem";
+import type { AppErrorDefinition } from "../types/error";
 import type { FeatureApiHandler } from "../types/http";
 import type { ThumbnailUseCases } from "../types/thumbnail";
 import { parseIntegerParameter } from "./query-parameters";
@@ -43,9 +48,16 @@ const FILE_THUMBNAIL_PATH = new RegExp(
   `^${API_PATHS.FILES}/([^/]+)/${API_PATH_SEGMENTS.THUMBNAIL}$`,
 );
 const FILE_PATH = new RegExp(`^${API_PATHS.FILES}/([^/]+)$`);
-const FILESYSTEM_ENTRIES_PATH = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.ENTRIES}`;
-const FILESYSTEM_DIRECTORIES_PATH = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.DIRECTORIES}`;
-const FILESYSTEM_TRASH_PATH = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.TRASH}`;
+const {
+  ENTRIES: FILESYSTEM_ENTRIES_PATH,
+  DIRECTORIES: FILESYSTEM_DIRECTORIES_PATH,
+  TRASH: FILESYSTEM_TRASH_PATH,
+  BATCH_MOVE: FILESYSTEM_BATCH_MOVE_PATH,
+  BATCH_TRASH: FILESYSTEM_BATCH_TRASH_PATH,
+  BATCH_RESTORE: FILESYSTEM_BATCH_RESTORE_PATH,
+  BATCH_DELETE: FILESYSTEM_BATCH_DELETE_PATH,
+  DOWNLOAD_MANIFEST: FILESYSTEM_DOWNLOAD_MANIFEST_PATH,
+} = FILESYSTEM_API_PATHS;
 const FILESYSTEM_ENTRY_PATH = new RegExp(`^${FILESYSTEM_ENTRIES_PATH}/([^/]+)$`);
 const FILESYSTEM_MOVE_PATH = new RegExp(
   `^${FILESYSTEM_ENTRIES_PATH}/([^/]+)/${API_PATH_SEGMENTS.MOVE}$`,
@@ -54,6 +66,9 @@ const FILESYSTEM_TRASH_ENTRY_PATH = new RegExp(`^${FILESYSTEM_TRASH_PATH}/([^/]+
 const FILESYSTEM_RESTORE_PATH = new RegExp(
   `^${FILESYSTEM_TRASH_PATH}/([^/]+)/${API_PATH_SEGMENTS.RESTORE}$`,
 );
+const FILESYSTEM_DIRECTORY_SORT_PATH = new RegExp(
+  `^${FILESYSTEM_DIRECTORIES_PATH}/([^/]+)/${API_PATH_SEGMENTS.SORT}$`,
+);
 
 export class FileApiHandler implements FeatureApiHandler {
   constructor(
@@ -61,6 +76,7 @@ export class FileApiHandler implements FeatureApiHandler {
     private readonly thumbnails: ThumbnailUseCases,
     private readonly filesystem: FilesystemUseCases,
     private readonly recycleBin: RecycleBinUseCases,
+    private readonly downloadManifests: FilesystemDownloadManifestUseCases,
   ) {}
 
   async handle(request: Request, url: URL): Promise<Response | null> {
@@ -75,6 +91,80 @@ export class FileApiHandler implements FeatureApiHandler {
     }
     if (url.pathname === FILESYSTEM_TRASH_PATH) {
       return this.handleTrash(request, url);
+    }
+    if (url.pathname === FILESYSTEM_BATCH_MOVE_PATH) {
+      assertMethod(request, HTTP_METHOD.POST);
+      const body = await readRequiredJsonObject(request);
+      if (typeof body.parentId !== "string") {
+        throw new AppError(HTTP_ERRORS.INVALID_JSON);
+      }
+      const desktopPlacement = readDesktopPlacement(body);
+      return jsonResponse(
+        await this.filesystem.moveEntries(readIdArray(body.entryIds), {
+          parentId: body.parentId,
+          ...(desktopPlacement === undefined ? {} : { desktopPlacement }),
+        }),
+      );
+    }
+    if (url.pathname === FILESYSTEM_BATCH_TRASH_PATH) {
+      assertMethod(request, HTTP_METHOD.POST);
+      const body = await readRequiredJsonObject(request);
+      return jsonResponse(
+        await this.filesystem.trashEntries(readIdArray(body.entryIds)),
+      );
+    }
+    if (url.pathname === FILESYSTEM_BATCH_RESTORE_PATH) {
+      assertMethod(request, HTTP_METHOD.POST);
+      const body = await readRequiredJsonObject(request);
+      const parentId = readOptionalString(body.parentId);
+      const desktopPlacement = readDesktopPlacement(body);
+      return jsonResponse(
+        await this.recycleBin.restoreEntries(readIdArray(body.entryIds), {
+          ...(parentId === undefined ? {} : { parentId }),
+          ...(desktopPlacement === undefined ? {} : { desktopPlacement }),
+        }),
+      );
+    }
+    if (url.pathname === FILESYSTEM_BATCH_DELETE_PATH) {
+      assertMethod(request, HTTP_METHOD.POST);
+      const body = await readRequiredJsonObject(request);
+      return jsonResponse(
+        await this.recycleBin.permanentlyDeleteEntries(
+          readIdArray(body.entryIds),
+        ),
+      );
+    }
+    if (url.pathname === FILESYSTEM_DOWNLOAD_MANIFEST_PATH) {
+      assertMethod(request, HTTP_METHOD.POST);
+      const body = await readRequiredJsonObject(request);
+      const manifest = await this.downloadManifests.createManifest(
+        readIdArray(body.entryIds),
+      );
+      return jsonResponse({
+        ...manifest,
+        entries: manifest.entries.map((entry) =>
+          entry.kind === FILESYSTEM_ENTRY_KIND.FILE
+            ? {
+                ...entry,
+                downloadUrl: `${API_PATHS.FILES}/${encodeURIComponent(entry.id)}/download`,
+              }
+            : entry,
+        ),
+      });
+    }
+
+    const directorySortMatch = FILESYSTEM_DIRECTORY_SORT_PATH.exec(
+      url.pathname,
+    );
+    if (directorySortMatch) {
+      assertMethod(request, HTTP_METHOD.PUT);
+      const body = await readRequiredJsonObject(request);
+      return jsonResponse({
+        sort: await this.filesystem.updateDirectorySort(
+          readId(directorySortMatch),
+          requireFilesystemDirectorySort(body),
+        ),
+      });
     }
 
     const restoreMatch = FILESYSTEM_RESTORE_PATH.exec(url.pathname);
@@ -138,7 +228,11 @@ export class FileApiHandler implements FeatureApiHandler {
 
   private async handleFiles(request: Request, url: URL): Promise<Response> {
     if (request.method === HTTP_METHOD.GET) {
-      const { offset, limit } = pageParameters(url);
+      const { offset, limit } = pageParameters(
+        url,
+        LEGACY_FILE_PAGE_LIMIT,
+        HTTP_ERRORS.INVALID_LIMIT,
+      );
       return jsonResponse(await this.files.listFiles(offset, limit));
     }
     if (request.method === HTTP_METHOD.POST) {
@@ -159,7 +253,11 @@ export class FileApiHandler implements FeatureApiHandler {
 
   private async handleEntries(request: Request, url: URL): Promise<Response> {
     assertMethod(request, HTTP_METHOD.GET);
-    const { offset, limit } = pageParameters(url);
+    const { offset, limit } = pageParameters(
+      url,
+      FILESYSTEM_PAGE_LIMIT,
+      HTTP_ERRORS.INVALID_FILESYSTEM_LIMIT,
+    );
     return jsonResponse(
       await this.filesystem.listDirectory(
         url.searchParams.get(API_QUERY_PARAMETERS.PARENT_ID),
@@ -211,7 +309,11 @@ export class FileApiHandler implements FeatureApiHandler {
 
   private async handleTrash(request: Request, url: URL): Promise<Response> {
     if (request.method === HTTP_METHOD.GET) {
-      const { offset, limit } = pageParameters(url);
+      const { offset, limit } = pageParameters(
+        url,
+        FILESYSTEM_PAGE_LIMIT,
+        HTTP_ERRORS.INVALID_FILESYSTEM_LIMIT,
+      );
       return jsonResponse(await this.recycleBin.listTrash(offset, limit));
     }
     if (request.method === HTTP_METHOD.DELETE) {
@@ -299,19 +401,37 @@ export class FileApiHandler implements FeatureApiHandler {
   }
 }
 
-function pageParameters(url: URL): { offset: number; limit: number } {
+function pageParameters(
+  url: URL,
+  maximumLimit: number,
+  invalidLimit: AppErrorDefinition,
+): { offset: number; limit: number } {
   const offset = parseIntegerParameter(
     url.searchParams.get(API_QUERY_PARAMETERS.OFFSET),
     DEFAULT_PAGE_OFFSET,
   );
   const limit = parseIntegerParameter(
     url.searchParams.get(API_QUERY_PARAMETERS.LIMIT),
-    DEFAULT_PAGE_LIMIT,
+    maximumLimit,
   );
-  if (limit < 1 || limit > MAX_PAGE_LIMIT) {
-    throw new AppError(HTTP_ERRORS.INVALID_LIMIT);
+  if (limit < 1 || limit > maximumLimit) {
+    throw new AppError(invalidLimit);
   }
   return { offset, limit };
+}
+
+function readIdArray(value: unknown): string[] {
+  if (
+    !Array.isArray(value) ||
+    value.length === 0 ||
+    !value.every(
+      (id) =>
+        typeof id === "string" && id.length > 0 && id.trim() === id,
+    )
+  ) {
+    throw new AppError(HTTP_ERRORS.INVALID_JSON);
+  }
+  return [...new Set(value)];
 }
 
 function assertMethod(request: Request, expected: string): void {

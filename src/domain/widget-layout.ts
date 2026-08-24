@@ -69,6 +69,14 @@ export function cloneDashboardWidgets(
         data: { ...widget.data },
       };
     }
+    if (widget.type === WIDGET_TYPE.STORAGE_STATUS) {
+      return {
+        ...layout,
+        type: WIDGET_TYPE.STORAGE_STATUS,
+        file: null,
+        data: null,
+      };
+    }
     return {
       ...layout,
       type: WIDGET_TYPE.DAILY_CHECKLIST,
@@ -106,6 +114,12 @@ export function replaceDashboardWidgetData(
           items: replacement.data.items.map((item) => ({ ...item })),
         },
       };
+    }
+    if (
+      widget.type === WIDGET_TYPE.STORAGE_STATUS &&
+      replacement.type === WIDGET_TYPE.STORAGE_STATUS
+    ) {
+      return replacement;
     }
     return widget;
   });

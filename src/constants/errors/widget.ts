@@ -63,4 +63,14 @@ export const WIDGET_ERRORS = {
     code: "UNSAVED_WIDGET_CLOSE_NOT_ALLOWED",
     message: "저장하지 않은 위젯은 저장하거나 폐기해야 합니다.",
   },
+  WIDGET_FILE_NOT_SUPPORTED: {
+    status: HTTP_STATUS.CONFLICT,
+    code: "WIDGET_FILE_NOT_SUPPORTED",
+    message: "이 위젯은 파일로 저장할 수 없습니다.",
+  },
+  BUILT_IN_WIDGET_DISCARD_NOT_ALLOWED: {
+    status: HTTP_STATUS.CONFLICT,
+    code: "BUILT_IN_WIDGET_DISCARD_NOT_ALLOWED",
+    message: "내장 위젯은 폐기할 수 없습니다.",
+  },
 } as const satisfies Record<string, AppErrorDefinition>;

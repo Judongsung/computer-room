@@ -1,6 +1,7 @@
 import type {
   FilesystemDirectoryEntry,
   FilesystemDirectoryPage,
+  FilesystemDirectorySort,
   FilesystemEntry,
   FilesystemTrashPage,
   FilesystemFileEntry,
@@ -10,6 +11,8 @@ import type {
   DesktopPlacement,
   UpdateFilesystemEntryInput,
 } from "../../types/filesystem";
+import type { FilesystemBatchResult } from "../../types/filesystem-batch";
+import type { FilesystemDownloadManifest } from "../../types/filesystem-download";
 import type { FILESYSTEM_DRAG_SOURCE } from "../constants/filesystem";
 import type {
   DesktopDimensions,
@@ -19,6 +22,10 @@ import type {
 
 export interface FilesystemGateway {
   listDirectory(parentId?: string, offset?: number): Promise<FilesystemDirectoryPage>;
+  updateDirectorySort(
+    directoryId: string,
+    sort: FilesystemDirectorySort,
+  ): Promise<FilesystemDirectorySort>;
   createDirectory(
     parentId: string,
     name: string,
@@ -37,7 +44,15 @@ export interface FilesystemGateway {
     id: string,
     input: MoveFilesystemEntryInput,
   ): Promise<FilesystemEntry>;
+  moveEntries(
+    ids: readonly string[],
+    input: MoveFilesystemEntryInput,
+  ): Promise<FilesystemBatchResult>;
   trashEntry(id: string): Promise<FilesystemMutationResult>;
+  trashEntries(ids: readonly string[]): Promise<FilesystemBatchResult>;
+  createDownloadManifest(
+    ids: readonly string[],
+  ): Promise<FilesystemDownloadManifest>;
   downloadUrl(id: string): string;
   contentUrl(id: string): string;
   thumbnailUrl(id: string): string;
@@ -46,9 +61,19 @@ export interface FilesystemGateway {
     id: string,
     input?: RestoreFilesystemEntryInput,
   ): Promise<FilesystemEntry>;
+  restoreEntries(
+    ids: readonly string[],
+    input?: RestoreFilesystemEntryInput,
+  ): Promise<FilesystemBatchResult>;
   permanentlyDeleteEntry(id: string): Promise<void>;
+  permanentlyDeleteEntries(ids: readonly string[]): Promise<FilesystemBatchResult>;
   emptyTrash(): Promise<void>;
 }
+
+export type FilesystemDownloadGateway = Pick<
+  FilesystemGateway,
+  "createDownloadManifest" | "downloadUrl"
+>;
 
 export interface FilesystemWindowSyncProps {
   readonly filesystemRevision: number;
@@ -56,7 +81,8 @@ export interface FilesystemWindowSyncProps {
 }
 
 export interface DragFilesystemEntryPayload {
-  readonly id: string;
+  readonly ids: readonly string[];
+  readonly primaryId: string;
   readonly source:
     (typeof FILESYSTEM_DRAG_SOURCE)[keyof typeof FILESYSTEM_DRAG_SOURCE];
 }

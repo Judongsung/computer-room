@@ -4,6 +4,7 @@ import {
   API_PATHS,
   API_PATH_SEGMENTS,
   API_QUERY_PARAMETERS,
+  FILESYSTEM_API_PATHS,
   NOVELAI_IMAGE_UPLOAD_API_PATH,
 } from "../src/constants/api";
 import { ACCESS_LOGOUT_PATH } from "../src/constants/auth";
@@ -19,6 +20,11 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "../src/constants/filesystem";
+import {
+  DEFAULT_FILESYSTEM_DIRECTORY_SORT,
+  FILESYSTEM_SORT_DIRECTION,
+  FILESYSTEM_SORT_FIELD,
+} from "../src/constants/filesystem-sort";
 import {
   HTTP_HEADERS,
   HTTP_MEDIA_TYPE,
@@ -36,6 +42,7 @@ import { THUMBNAIL_SPEC } from "../src/constants/thumbnail";
 import { filesystemNameKey } from "../src/domain/filesystem-name";
 import { thumbnailObjectKey } from "../src/domain/thumbnail";
 import type { DashboardWidget, WidgetLayout, WidgetType } from "../src/types/widget";
+import type { StorageStatusSnapshot } from "../src/types/storage-status";
 
 const ORIGIN = "http://localhost";
 const TEST_MEDIA_TYPE = {
@@ -48,6 +55,7 @@ const ONE_PIXEL_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
 beforeEach(async () => {
+  await env.DB.prepare("DELETE FROM filesystem_directory_preferences").run();
   await env.DB.prepare("DELETE FROM desktop_entry_order").run();
   await env.DB.prepare("DELETE FROM files").run();
   await env.DB
@@ -77,6 +85,104 @@ describe("computer-room Worker", () => {
         maxUploadSizeBytes: MAX_FILE_SIZE_BYTES,
       },
     });
+  });
+
+  it("reports exact private R2 and D1 storage status without exposing object keys", async () => {
+    await Promise.all([
+      env.FILES.put("files/original-image", "abc", {
+        httpMetadata: { contentType: "image/png; charset=binary" },
+      }),
+      env.FILES.put("thumbnails/original-image.webp", "de", {
+        httpMetadata: { contentType: "image/webp" },
+      }),
+      env.FILES.put("managed/clip", "fghi", {
+        httpMetadata: { contentType: "video/mp4" },
+      }),
+    ]);
+    await env.DB.batch([
+      env.DB.prepare(`INSERT INTO files(
+        id, object_key, original_name, content_type, size, etag, status, created_at
+      ) VALUES ('status-file', 'files/status-file', 'status.txt', 'text/plain', 4, 'etag', 'ready', 1)`),
+      env.DB.prepare(`INSERT INTO filesystem_entries(
+        id, parent_id, kind, name, name_key, file_id, widget_id,
+        restore_parent_id, restore_path, trashed_at, created_at, updated_at
+      ) VALUES
+        ('status-directory', ?1, 'directory', 'status folder', 'status folder', NULL, NULL, NULL, NULL, NULL, 1, 1),
+        ('status-file', 'status-directory', 'file', 'status.txt', 'status.txt', 'status-file', NULL, NULL, NULL, NULL, 1, 1),
+        ('status-trash', ?2, 'directory', 'trash folder', 'trash folder', NULL, NULL, ?1, '바탕 화면', 1, 1, 1)`)
+        .bind(FILESYSTEM_ROOT_ID.DESKTOP, FILESYSTEM_ROOT_ID.RECYCLE_BIN),
+      env.DB.prepare(`INSERT INTO dashboard_widgets(
+        id, type, position_x, position_y, width, height,
+        window_state, restore_state, stack_order, is_open
+      ) VALUES ('status-widget', 'storage-status', 32, 32, 560, 500, 'normal', 'normal', 0, 1)`),
+    ]);
+
+    const response = await SELF.fetch(`${ORIGIN}${API_PATHS.STORAGE_STATUS}`);
+    const body = (await response.json()) as { status: StorageStatusSnapshot };
+
+    expect(response.status).toBe(HTTP_STATUS.OK);
+    expect(response.headers.get(HTTP_HEADERS.CACHE_CONTROL)).toBe("private, no-store");
+    expect(body.status.r2.total).toEqual({ bytes: 9, objectCount: 3 });
+    expect(body.status.r2.standard).toEqual({ bytes: 9, objectCount: 3 });
+    expect(body.status.r2.byPurpose).toEqual({
+      original: { bytes: 3, objectCount: 1 },
+      thumbnail: { bytes: 2, objectCount: 1 },
+      other: { bytes: 4, objectCount: 1 },
+    });
+    expect(body.status.r2.byMimeCategory.image).toEqual({ bytes: 5, objectCount: 2 });
+    expect(body.status.r2.byMimeCategory.video).toEqual({ bytes: 4, objectCount: 1 });
+    expect(body.status.d1).toEqual({
+      databaseBytes: expect.any(Number),
+      registeredFileCount: 1,
+      directoryCount: 2,
+      widgetCount: 1,
+      trashItemCount: 1,
+    });
+    expect(body.status.d1.databaseBytes).toBeGreaterThan(0);
+    expect(JSON.stringify(body)).not.toContain("original-image");
+
+    const wrongMethod = await jsonRequest(
+      API_PATHS.STORAGE_STATUS,
+      HTTP_METHOD.POST,
+      {},
+    );
+    expect(wrongMethod.status).toBe(HTTP_STATUS.METHOD_NOT_ALLOWED);
+  });
+
+  it("creates the storage status widget once and reopens the same widget", async () => {
+    const policy = WIDGET_WINDOW_POLICY[WIDGET_TYPE.STORAGE_STATUS];
+    const input = {
+      type: WIDGET_TYPE.STORAGE_STATUS,
+      position: { x: 32, y: 32 },
+      size: {
+        width: policy.DEFAULT_WIDTH,
+        height: policy.DEFAULT_HEIGHT,
+      },
+    };
+    const firstResponse = await jsonRequest(
+      API_PATHS.WIDGETS,
+      HTTP_METHOD.POST,
+      input,
+    );
+    const first = (await firstResponse.json()) as { widget: DashboardWidget };
+    expect(firstResponse.status).toBe(HTTP_STATUS.CREATED);
+
+    const closeResponse = await jsonRequest(
+      `${widgetPath(first.widget.id)}/${API_PATH_SEGMENTS.CLOSE}`,
+      HTTP_METHOD.POST,
+      {},
+    );
+    expect(closeResponse.status).toBe(HTTP_STATUS.NO_CONTENT);
+
+    const secondResponse = await jsonRequest(
+      API_PATHS.WIDGETS,
+      HTTP_METHOD.POST,
+      { ...input, position: { x: 96, y: 96 } },
+    );
+    const second = (await secondResponse.json()) as { widget: DashboardWidget };
+    expect(secondResponse.status).toBe(HTTP_STATUS.OK);
+    expect(second.widget.id).toBe(first.widget.id);
+    expect(await env.DB.prepare("SELECT COUNT(*) AS count FROM dashboard_widgets WHERE type = 'storage-status'").first("count")).toBe(1);
   });
 
   it("uploads, downloads, moves to trash, restores, and permanently deletes a file", async () => {
@@ -468,6 +574,137 @@ describe("computer-room Worker", () => {
     expect(page.items.map((item) => item.name)).toEqual(["여행-완료.jpg"]);
   });
 
+  it("remembers independent sort settings for each active directory", async () => {
+    const directoriesPath = FILESYSTEM_API_PATHS.DIRECTORIES;
+    const entriesPath = FILESYSTEM_API_PATHS.ENTRIES;
+    const createFolder = async (name: string) => {
+      const response = await jsonRequest(directoriesPath, HTTP_METHOD.POST, {
+        name,
+      });
+      return (await response.json()) as { directory: { id: string } };
+    };
+    const folderA = await createFolder("A 폴더");
+    const folderB = await createFolder("B 폴더");
+    const video = await uploadFile(
+      "a-video.mp4",
+      "12345678901234567890",
+      undefined,
+      TEST_MEDIA_TYPE.VIDEO,
+    );
+    const image = await uploadFile(
+      "b-image.png",
+      "1234567890",
+      undefined,
+      TEST_MEDIA_TYPE.IMAGE,
+    );
+    const videoBody = (await video.json()) as { file: { id: string } };
+    const imageBody = (await image.json()) as { file: { id: string } };
+    await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE filesystem_entries SET created_at = 100, updated_at = 300 WHERE id = ?1",
+      ).bind(folderA.directory.id),
+      env.DB.prepare(
+        "UPDATE filesystem_entries SET created_at = 200, updated_at = 100 WHERE id = ?1",
+      ).bind(folderB.directory.id),
+      env.DB.prepare(
+        "UPDATE filesystem_entries SET created_at = 300, updated_at = 200 WHERE id = ?1",
+      ).bind(videoBody.file.id),
+      env.DB.prepare(
+        "UPDATE filesystem_entries SET created_at = 400, updated_at = 400 WHERE id = ?1",
+      ).bind(imageBody.file.id),
+    ]);
+
+    const listDocuments = async () => {
+      const query = new URLSearchParams({
+        [API_QUERY_PARAMETERS.PARENT_ID]: FILESYSTEM_ROOT_ID.DOCUMENTS,
+      });
+      const response = await SELF.fetch(`${ORIGIN}${entriesPath}?${query}`);
+      return (await response.json()) as {
+        sort: { field: string; direction: string };
+        items: Array<{ name: string }>;
+      };
+    };
+
+    await expect(listDocuments()).resolves.toMatchObject({
+      sort: DEFAULT_FILESYSTEM_DIRECTORY_SORT,
+      items: [
+        { name: "A 폴더" },
+        { name: "B 폴더" },
+        { name: "a-video.mp4" },
+        { name: "b-image.png" },
+      ],
+    });
+
+    const cases = [
+      {
+        field: FILESYSTEM_SORT_FIELD.NAME,
+        direction: FILESYSTEM_SORT_DIRECTION.DESCENDING,
+        names: ["B 폴더", "A 폴더", "b-image.png", "a-video.mp4"],
+      },
+      {
+        field: FILESYSTEM_SORT_FIELD.CREATED_AT,
+        direction: FILESYSTEM_SORT_DIRECTION.DESCENDING,
+        names: ["B 폴더", "A 폴더", "b-image.png", "a-video.mp4"],
+      },
+      {
+        field: FILESYSTEM_SORT_FIELD.UPDATED_AT,
+        direction: FILESYSTEM_SORT_DIRECTION.ASCENDING,
+        names: ["B 폴더", "A 폴더", "a-video.mp4", "b-image.png"],
+      },
+      {
+        field: FILESYSTEM_SORT_FIELD.TYPE,
+        direction: FILESYSTEM_SORT_DIRECTION.ASCENDING,
+        names: ["A 폴더", "B 폴더", "b-image.png", "a-video.mp4"],
+      },
+      {
+        field: FILESYSTEM_SORT_FIELD.SIZE,
+        direction: FILESYSTEM_SORT_DIRECTION.DESCENDING,
+        names: ["A 폴더", "B 폴더", "a-video.mp4", "b-image.png"],
+      },
+    ] as const;
+
+    for (const sort of cases) {
+      const response = await jsonRequest(
+        `${directoriesPath}/${FILESYSTEM_ROOT_ID.DOCUMENTS}/${API_PATH_SEGMENTS.SORT}`,
+        HTTP_METHOD.PUT,
+        { field: sort.field, direction: sort.direction },
+      );
+      expect(response.status).toBe(HTTP_STATUS.OK);
+      await expect(response.json()).resolves.toEqual({
+        sort: { field: sort.field, direction: sort.direction },
+      });
+      expect((await listDocuments()).items.map((item) => item.name)).toEqual(
+        sort.names,
+      );
+    }
+
+    const childQuery = new URLSearchParams({
+      [API_QUERY_PARAMETERS.PARENT_ID]: folderA.directory.id,
+    });
+    const childResponse = await SELF.fetch(`${ORIGIN}${entriesPath}?${childQuery}`);
+    await expect(childResponse.json()).resolves.toMatchObject({
+      sort: DEFAULT_FILESYSTEM_DIRECTORY_SORT,
+    });
+    await expect(
+      env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM filesystem_directory_preferences",
+      ).first("count"),
+    ).resolves.toBe(1);
+
+    const invalid = await jsonRequest(
+      `${directoriesPath}/${FILESYSTEM_ROOT_ID.DOCUMENTS}/${API_PATH_SEGMENTS.SORT}`,
+      HTTP_METHOD.PUT,
+      { field: "unknown", direction: FILESYSTEM_SORT_DIRECTION.ASCENDING },
+    );
+    expect(invalid.status).toBe(HTTP_STATUS.BAD_REQUEST);
+    await expect(invalid.json()).resolves.toEqual({
+      error: {
+        code: FILESYSTEM_ERRORS.INVALID_DIRECTORY_SORT.code,
+        message: FILESYSTEM_ERRORS.INVALID_DIRECTORY_SORT.message,
+      },
+    });
+  });
+
   it("rejects oversized and cross-origin uploads before persistence", async () => {
     const oversized = await SELF.fetch(`${ORIGIN}${API_PATHS.FILES}?name=large.bin`, {
       method: HTTP_METHOD.POST,
@@ -680,6 +917,140 @@ describe("computer-room Worker", () => {
       desktopCapacity: 2,
     });
     expect(full.status).toBe(HTTP_STATUS.CONFLICT);
+  });
+
+  it("supports partial batch mutations and protected recursive download manifests", async () => {
+    const firstResponse = await jsonRequest(
+      FILESYSTEM_API_PATHS.DIRECTORIES,
+      HTTP_METHOD.POST,
+      {
+        parentId: FILESYSTEM_ROOT_ID.DOCUMENTS,
+        name: "첫 폴더",
+      },
+    );
+    const secondResponse = await jsonRequest(
+      FILESYSTEM_API_PATHS.DIRECTORIES,
+      HTTP_METHOD.POST,
+      {
+        parentId: FILESYSTEM_ROOT_ID.DOCUMENTS,
+        name: "둘째 폴더",
+      },
+    );
+    const first = (await firstResponse.json()) as { directory: { id: string } };
+    const second = (await secondResponse.json()) as { directory: { id: string } };
+
+    const moved = await jsonRequest(
+      FILESYSTEM_API_PATHS.BATCH_MOVE,
+      HTTP_METHOD.POST,
+      {
+        entryIds: [first.directory.id, second.directory.id],
+        parentId: FILESYSTEM_ROOT_ID.DESKTOP,
+        desktopTargetIndex: 0,
+        desktopCapacity: 2,
+      },
+    );
+    expect(moved.status).toBe(HTTP_STATUS.OK);
+    await expect(moved.json()).resolves.toMatchObject({
+      succeededIds: [first.directory.id, second.directory.id],
+      failures: [],
+    });
+
+    const trashed = await jsonRequest(
+      FILESYSTEM_API_PATHS.BATCH_TRASH,
+      HTTP_METHOD.POST,
+      { entryIds: [first.directory.id, "missing-entry"] },
+    );
+    expect(trashed.status).toBe(HTTP_STATUS.OK);
+    await expect(trashed.json()).resolves.toMatchObject({
+      succeededIds: [first.directory.id],
+      failures: [
+        {
+          id: "missing-entry",
+          code: FILESYSTEM_ERRORS.ENTRY_NOT_FOUND.code,
+        },
+      ],
+    });
+
+    const restored = await jsonRequest(
+      FILESYSTEM_API_PATHS.BATCH_RESTORE,
+      HTTP_METHOD.POST,
+      {
+        entryIds: [first.directory.id],
+        parentId: FILESYSTEM_ROOT_ID.DOCUMENTS,
+      },
+    );
+    expect(restored.status).toBe(HTTP_STATUS.OK);
+
+    const upload = await uploadFile(
+      "한글.txt",
+      "archive-content",
+      first.directory.id,
+    );
+    const file = (await upload.json()) as { file: { id: string } };
+    const manifestResponse = await jsonRequest(
+      FILESYSTEM_API_PATHS.DOWNLOAD_MANIFEST,
+      HTTP_METHOD.POST,
+      { entryIds: [first.directory.id, first.directory.id] },
+    );
+    expect(manifestResponse.status).toBe(HTTP_STATUS.OK);
+    const manifest = (await manifestResponse.json()) as {
+      archiveName: string;
+      totalFileCount: number;
+      entries: Array<Record<string, unknown>>;
+    };
+    expect(manifest.archiveName).toBe("첫 폴더.zip");
+    expect(manifest.totalFileCount).toBe(1);
+    const manifestFile = manifest.entries.find(
+      (entry) => entry.id === file.file.id,
+    );
+    expect(manifestFile).toMatchObject({
+      path: "첫 폴더/한글.txt",
+      downloadUrl: `${API_PATHS.FILES}/${file.file.id}/download`,
+    });
+    expect(manifestFile).not.toHaveProperty("objectKey");
+    const download = await SELF.fetch(
+      `${ORIGIN}${String(manifestFile?.downloadUrl)}`,
+    );
+    expect(await download.text()).toBe("archive-content");
+  });
+
+  it("uses a shared 100-item limit only for directories and trash", async () => {
+    const filesystemQuery = new URLSearchParams({
+      [API_QUERY_PARAMETERS.PARENT_ID]: FILESYSTEM_ROOT_ID.DOCUMENTS,
+      [API_QUERY_PARAMETERS.LIMIT]: "100",
+    });
+    expect(
+      (await SELF.fetch(
+        `${ORIGIN}${FILESYSTEM_API_PATHS.ENTRIES}?${filesystemQuery}`,
+      )).status,
+    ).toBe(HTTP_STATUS.OK);
+    expect(
+      (await SELF.fetch(
+        `${ORIGIN}${FILESYSTEM_API_PATHS.TRASH}?${API_QUERY_PARAMETERS.LIMIT}=100`,
+      )).status,
+    ).toBe(HTTP_STATUS.OK);
+
+    filesystemQuery.set(API_QUERY_PARAMETERS.LIMIT, "101");
+    expect(
+      (await SELF.fetch(
+        `${ORIGIN}${FILESYSTEM_API_PATHS.ENTRIES}?${filesystemQuery}`,
+      )).status,
+    ).toBe(HTTP_STATUS.BAD_REQUEST);
+    expect(
+      (await SELF.fetch(
+        `${ORIGIN}${FILESYSTEM_API_PATHS.TRASH}?${API_QUERY_PARAMETERS.LIMIT}=101`,
+      )).status,
+    ).toBe(HTTP_STATUS.BAD_REQUEST);
+    expect(
+      (await SELF.fetch(
+        `${ORIGIN}${API_PATHS.FILES}?${API_QUERY_PARAMETERS.LIMIT}=50`,
+      )).status,
+    ).toBe(HTTP_STATUS.OK);
+    expect(
+      (await SELF.fetch(
+        `${ORIGIN}${API_PATHS.FILES}?${API_QUERY_PARAMETERS.LIMIT}=51`,
+      )).status,
+    ).toBe(HTTP_STATUS.BAD_REQUEST);
   });
 
   it("rejects invalid or cross-origin widget replacements without data loss", async () => {

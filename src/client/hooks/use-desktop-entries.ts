@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import { FILESYSTEM_ROOT_ID } from "../../constants/filesystem";
 import type { FilesystemEntry } from "../../types/filesystem";
-import { FILESYSTEM_COPY } from "../constants/filesystem";
+import {
+  DESKTOP_ENTRY_UNORDERED_INDEX,
+  FILESYSTEM_COPY,
+} from "../constants/filesystem";
 import type { FilesystemGateway } from "../types/filesystem";
 
 export function useDesktopEntries(
@@ -43,7 +46,18 @@ async function listAllDesktopEntries(
   while (true) {
     const page = await gateway.listDirectory(FILESYSTEM_ROOT_ID.DESKTOP, offset);
     items.push(...page.items);
-    if (page.nextOffset === null) return items;
+    if (page.nextOffset === null) return items.sort(compareDesktopEntries);
     offset = page.nextOffset;
   }
+}
+
+function compareDesktopEntries(
+  left: FilesystemEntry,
+  right: FilesystemEntry,
+): number {
+  return (
+    (left.desktopOrder ?? DESKTOP_ENTRY_UNORDERED_INDEX) -
+      (right.desktopOrder ?? DESKTOP_ENTRY_UNORDERED_INDEX) ||
+    left.id.localeCompare(right.id)
+  );
 }

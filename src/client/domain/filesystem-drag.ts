@@ -20,13 +20,25 @@ export function readFilesystemDragPayload(
     if (
       typeof value === "object" &&
       value !== null &&
-      "id" in value &&
-      typeof value.id === "string" &&
+      "ids" in value &&
+      Array.isArray(value.ids) &&
+      value.ids.length > 0 &&
+      value.ids.every(
+        (id) =>
+          typeof id === "string" && id.length > 0 && id.trim() === id,
+      ) &&
+      "primaryId" in value &&
+      typeof value.primaryId === "string" &&
+      value.ids.includes(value.primaryId) &&
       "source" in value &&
       (value.source === FILESYSTEM_DRAG_SOURCE.ACTIVE ||
         value.source === FILESYSTEM_DRAG_SOURCE.TRASH)
     ) {
-      return { id: value.id, source: value.source };
+      return {
+        ids: [...new Set(value.ids)],
+        primaryId: value.primaryId,
+        source: value.source,
+      };
     }
   } catch {
     return null;

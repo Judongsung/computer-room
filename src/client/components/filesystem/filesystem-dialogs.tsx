@@ -92,7 +92,7 @@ export function ConfirmDialog({
 
 interface DirectoryPickerDialogProps {
   readonly gateway: FilesystemGateway;
-  readonly excludedEntryId: string;
+  readonly excludedEntryIds?: readonly string[];
   readonly busy: boolean;
   readonly onSelect: (directoryId: string) => void;
   readonly onCancel: () => void;
@@ -100,7 +100,7 @@ interface DirectoryPickerDialogProps {
 
 export function DirectoryPickerDialog({
   gateway,
-  excludedEntryId,
+  excludedEntryIds = [],
   busy,
   onSelect,
   onCancel,
@@ -176,7 +176,7 @@ export function DirectoryPickerDialog({
                 .filter(
                   (item) =>
                     item.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY &&
-                    item.id !== excludedEntryId,
+                    !excludedEntryIds.includes(item.id),
                 )
                 .map((item) => (
                   <button key={item.id} type="button" onDoubleClick={() => setDirectoryId(item.id)}>

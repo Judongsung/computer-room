@@ -33,6 +33,7 @@ export function MovableDesktopWindow({
   zIndex,
   onFocus,
   onCommitBounds,
+  onContextMenu,
   children,
 }: MovableDesktopWindowProps) {
   const normalBounds = clampWindowBounds(position, size, desktop);
@@ -73,6 +74,7 @@ export function MovableDesktopWindow({
       dragHandleClassName={XP_WINDOW_INTERACTION_CLASS_NAME.TITLE_BAR}
       cancel={XP_WINDOW_INTERACTION_SELECTOR.CONTROLS}
       onMouseDown={onFocus}
+      onContextMenu={onContextMenu}
       onDragStart={onFocus}
       onDrag={(_, nextPosition) => {
         setDraftBounds((current) => ({

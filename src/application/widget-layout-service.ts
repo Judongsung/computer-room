@@ -7,6 +7,7 @@ import { FILESYSTEM_ERRORS } from "../constants/errors/filesystem";
 import { WIDGET_ERRORS } from "../constants/errors/widget";
 import {
   MAX_OPEN_WIDGET_COUNT,
+  WIDGET_BEHAVIOR,
   WIDGET_TYPE,
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
@@ -32,6 +33,8 @@ import type {
   DashboardWidget,
   StoredWidgetLayout,
   WidgetLayout,
+  WidgetCreationResult,
+  WidgetType,
 } from "../types/widget";
 import type { WidgetLayoutRepository } from "../types/widget-repository";
 import type { WidgetLayoutUseCases } from "../types/widget-service";
@@ -78,7 +81,21 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     return this.listWidgets();
   }
 
-  async createWidget(input: CreateWidgetInput): Promise<DashboardWidget> {
+  async createWidget(input: CreateWidgetInput): Promise<WidgetCreationResult> {
+    const behavior = WIDGET_BEHAVIOR[input.type];
+    if (behavior.singleton) {
+      const existing = await this.layouts.findByType(input.type);
+      if (existing) {
+        if (!existing.isOpen) {
+          await this.assertOpenCapacity();
+          await this.layouts.setOpen(existing.id, true);
+        }
+        return {
+          widget: await this.hydrateOne({ ...existing, isOpen: true }),
+          created: false,
+        };
+      }
+    }
     await this.assertOpenCapacity();
     const openWidgets = await this.layouts.list();
     const layout = validateWidgetLayout([
@@ -96,8 +113,28 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     if (!layout) {
       throw new AppError(WIDGET_ERRORS.INVALID_LAYOUT);
     }
-    await this.layouts.insert(layout);
-    return this.hydrateOne({ ...layout, isOpen: true, file: null });
+    if (behavior.singleton) {
+      const created = await this.layouts.insertSingleton(layout);
+      if (!created) {
+        const existing = await this.layouts.findByType(input.type);
+        if (!existing) {
+          throw new AppError(WIDGET_ERRORS.INVALID_STORED_WIDGET);
+        }
+        if (!existing.isOpen) {
+          await this.layouts.setOpen(existing.id, true);
+        }
+        return {
+          widget: await this.hydrateOne({ ...existing, isOpen: true }),
+          created: false,
+        };
+      }
+    } else {
+      await this.layouts.insert(layout);
+    }
+    return {
+      widget: await this.hydrateOne({ ...layout, isOpen: true, file: null }),
+      created: true,
+    };
   }
 
   async saveWidgetFile(
@@ -105,6 +142,9 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     input: SaveWidgetFileInput,
   ): Promise<{ widget: DashboardWidget; entry: FilesystemWidgetEntry }> {
     const widget = await this.requireWidget(widgetId);
+    if (!WIDGET_BEHAVIOR[widget.type].supportsFileStorage) {
+      throw new AppError(WIDGET_ERRORS.WIDGET_FILE_NOT_SUPPORTED);
+    }
     if (widget.file) {
       throw new AppError(WIDGET_ERRORS.WIDGET_ALREADY_SAVED);
     }
@@ -150,7 +190,7 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     if (widget.isOpen) {
       return this.hydrateOne(widget);
     }
-    if (!widget.file) {
+    if (!widget.file && !WIDGET_BEHAVIOR[widget.type].persistsWithoutFile) {
       throw new AppError(WIDGET_ERRORS.WIDGET_NOT_FOUND);
     }
     await this.assertOpenCapacity();
@@ -163,7 +203,7 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     if (!widget.isOpen) {
       throw new AppError(WIDGET_ERRORS.WIDGET_NOT_OPEN);
     }
-    if (!widget.file) {
+    if (!widget.file && !WIDGET_BEHAVIOR[widget.type].persistsWithoutFile) {
       throw new AppError(WIDGET_ERRORS.UNSAVED_WIDGET_CLOSE_NOT_ALLOWED);
     }
     await this.layouts.setOpen(widgetId, false);
@@ -171,6 +211,9 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
 
   async discardWidget(widgetId: string): Promise<void> {
     const widget = await this.requireWidget(widgetId);
+    if (WIDGET_BEHAVIOR[widget.type].persistsWithoutFile) {
+      throw new AppError(WIDGET_ERRORS.BUILT_IN_WIDGET_DISCARD_NOT_ALLOWED);
+    }
     if (widget.file) {
       throw new AppError(WIDGET_ERRORS.SAVED_WIDGET_DELETE_NOT_ALLOWED);
     }
@@ -183,9 +226,12 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     layouts: readonly StoredWidgetLayout[],
   ): Promise<DashboardWidget[]> {
     const { businessDate, nextResetAt } = getKoreaDateContext(this.clock.now());
+    const widgetTypes = new Set(layouts.map((layout) => layout.type));
     const [memos, checklistItems] = await Promise.all([
-      this.memos.listAll(),
-      this.checklists.listAllActiveItems(businessDate),
+      widgetTypes.has(WIDGET_TYPE.MEMO) ? this.memos.listAll() : [],
+      widgetTypes.has(WIDGET_TYPE.DAILY_CHECKLIST)
+        ? this.checklists.listAllActiveItems(businessDate)
+        : [],
     ]);
     const memoByWidgetId = new Map(
       memos.map((memo) => [memo.widgetId, memo] as const),
@@ -200,8 +246,8 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
       checklistItemsByWidgetId.set(item.widgetId, items);
     }
 
-    return layouts.map((layout): DashboardWidget => {
-      if (layout.type === WIDGET_TYPE.MEMO) {
+    const hydrators = {
+      [WIDGET_TYPE.MEMO]: (layout: StoredWidgetLayout): DashboardWidget => {
         const memo = memoByWidgetId.get(layout.id);
         return {
           ...toPublicLayout(layout),
@@ -215,8 +261,10 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
                 : new Date(memo.updatedAt).toISOString(),
           },
         };
-      }
-      return {
+      },
+      [WIDGET_TYPE.DAILY_CHECKLIST]: (
+        layout: StoredWidgetLayout,
+      ): DashboardWidget => ({
         ...toPublicLayout(layout),
         type: WIDGET_TYPE.DAILY_CHECKLIST,
         file: layout.file,
@@ -227,8 +275,21 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
             toChecklistItem,
           ),
         },
-      };
-    });
+      }),
+      [WIDGET_TYPE.STORAGE_STATUS]: (
+        layout: StoredWidgetLayout,
+      ): DashboardWidget => ({
+        ...toPublicLayout(layout),
+        type: WIDGET_TYPE.STORAGE_STATUS,
+        file: null,
+        data: null,
+      }),
+    } satisfies Record<
+      WidgetType,
+      (layout: StoredWidgetLayout) => DashboardWidget
+    >;
+
+    return layouts.map((layout) => hydrators[layout.type](layout));
   }
 
   private async hydrateOne(

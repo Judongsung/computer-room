@@ -37,6 +37,17 @@ const ICON_BY_ACTION = {
       <path d="M5 2h6v4H5V2Zm0 8h6v4H5v-4Z" fill="#fff" stroke="#12345b" />
     </>
   ),
+  [XP_WIDGET_TOOLBAR_ACTION.REFRESH]: (
+    <>
+      <path
+        d="M13 7A5 5 0 1 0 11.5 11"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      />
+      <path d="M10 3h3v3" fill="none" stroke="currentColor" strokeWidth="1.6" />
+    </>
+  ),
 } as const satisfies Record<XpWidgetToolbarAction, ReactNode>;
 
 export function XpWidgetToolbarButton({

@@ -7,6 +7,7 @@ import type {
   WindowBounds,
 } from "./desktop";
 import type { FilesystemGateway } from "./filesystem";
+import type { MouseEvent } from "react";
 
 export type ImageViewerZoomMode =
   (typeof IMAGE_VIEWER_ZOOM_MODE)[keyof typeof IMAGE_VIEWER_ZOOM_MODE];
@@ -47,6 +48,7 @@ export interface MediaRendererProps {
   readonly onPrevious: () => void;
   readonly onNext: () => void;
   readonly onDownload: () => void;
+  readonly onContextMenu: (event: MouseEvent<HTMLDivElement>) => void;
 }
 
 export interface MediaViewerToolbarButtonProps {

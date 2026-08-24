@@ -7,7 +7,9 @@ import {
   FILESYSTEM_SYSTEM_ROOT_IDS,
 } from "../constants/filesystem";
 import { FILESYSTEM_ERRORS } from "../constants/errors/filesystem";
+import { DEFAULT_FILESYSTEM_DIRECTORY_SORT } from "../constants/filesystem-sort";
 import { AppError } from "../domain/errors";
+import { requireFilesystemDirectorySort } from "../domain/filesystem-sort";
 import {
   availableFilesystemName,
   filesystemNameKey,
@@ -16,6 +18,7 @@ import {
 import type {
   FilesystemDirectoryEntry,
   FilesystemDirectoryPage,
+  FilesystemDirectorySort,
   DesktopPlacement,
   FilesystemEntry,
   FilesystemEntryRecord,
@@ -24,28 +27,54 @@ import type {
   RestoreFilesystemEntryInput,
   UpdateFilesystemEntryInput,
 } from "../types/filesystem";
+import type { FilesystemBatchResult } from "../types/filesystem-batch";
 import type { FilesystemUseCases } from "../types/filesystem-service";
+import type { DirectorySortRepository } from "../types/directory-sort-repository";
 import type { FilesystemRepository } from "../types/repository";
 import type { Clock, IdGenerator } from "../types/runtime";
 import { assertDesktopPlacement, nextDesktopOrder } from "./desktop-placement";
+import {
+  settleFilesystemOperations,
+  uniqueFilesystemIds,
+} from "./filesystem-batch";
 
 export class FilesystemService implements FilesystemUseCases {
   constructor(
     private readonly repository: FilesystemRepository,
+    private readonly directorySorts: DirectorySortRepository,
     private readonly idGenerator: IdGenerator,
     private readonly clock: Clock,
   ) {}
 
   async listDirectory(parentId: string | null, offset: number, limit: number): Promise<FilesystemDirectoryPage> {
     const directory = await this.requireActiveDirectory(parentId ?? FILESYSTEM_ROOT_ID.DOCUMENTS);
-    const entries = await this.repository.listChildren(directory.id, offset, limit + 1);
+    const sort =
+      (await this.directorySorts.find(directory.id)) ??
+      DEFAULT_FILESYSTEM_DIRECTORY_SORT;
+    const entries = await this.repository.listChildren(
+      directory.id,
+      offset,
+      limit + 1,
+      sort,
+    );
     const hasMore = entries.length > limit;
     return {
       directory: toPublicDirectory(directory),
       breadcrumbs: await this.repository.listBreadcrumbs(directory.id),
       items: entries.slice(0, limit).map(toPublicEntry),
       nextOffset: hasMore ? offset + limit : null,
+      sort,
     };
+  }
+
+  async updateDirectorySort(
+    directoryId: string,
+    sort: FilesystemDirectorySort,
+  ): Promise<FilesystemDirectorySort> {
+    const validatedSort = requireFilesystemDirectorySort(sort);
+    await this.requireActiveDirectory(directoryId);
+    await this.directorySorts.save(directoryId, validatedSort);
+    return validatedSort;
   }
 
   async createDirectory(
@@ -124,6 +153,53 @@ export class FilesystemService implements FilesystemUseCases {
     });
   }
 
+  async moveEntries(
+    ids: readonly string[],
+    input: MoveFilesystemEntryInput,
+  ): Promise<FilesystemBatchResult> {
+    await this.requireActiveDirectory(input.parentId);
+    const uniqueIds = uniqueFilesystemIds(ids);
+    const desktopReorderIds: string[] = [];
+    const settled = await settleFilesystemOperations(
+      uniqueIds,
+      async (id): Promise<FilesystemEntry> => {
+        const entry = await this.requireActiveEntry(id);
+        if (
+          entry.parentId === FILESYSTEM_ROOT_ID.DESKTOP &&
+          input.parentId === FILESYSTEM_ROOT_ID.DESKTOP
+        ) {
+          desktopReorderIds.push(id);
+          return toPublicEntry(entry);
+        }
+        return this.moveEntry(id, input);
+      },
+    );
+
+    let entries = settled.succeeded.map(({ value }) => value);
+    if (desktopReorderIds.length > 0 && input.desktopPlacement) {
+      assertDesktopPlacement(input.desktopPlacement);
+      const currentOrder = await this.repository.listDesktopEntryIds();
+      const nextOrder = moveDesktopGroup(
+        currentOrder,
+        desktopReorderIds,
+        input.desktopPlacement.targetIndex,
+      );
+      await this.repository.replaceDesktopEntryOrder(nextOrder);
+      entries = entries.map((entry) =>
+        entry.parentId === FILESYSTEM_ROOT_ID.DESKTOP
+          ? { ...entry, desktopOrder: nextOrder.indexOf(entry.id) }
+          : entry,
+      );
+    }
+
+    return {
+      succeededIds: settled.succeeded.map(({ id }) => id),
+      entries,
+      failures: settled.failures,
+      closedWidgetIds: [],
+    };
+  }
+
   async trashEntry(id: string): Promise<FilesystemMutationResult> {
     this.assertMutableEntry(id);
     const entry = await this.requireActiveEntry(id);
@@ -137,6 +213,22 @@ export class FilesystemService implements FilesystemUseCases {
       entry.id, entry.parentId, restorePath, this.clock.now(), desktopIds,
     );
     return { entry: null, closedWidgetIds };
+  }
+
+  async trashEntries(ids: readonly string[]): Promise<FilesystemBatchResult> {
+    const settled = await settleFilesystemOperations(ids, (id) =>
+      this.trashEntry(id),
+    );
+    return {
+      succeededIds: settled.succeeded.map(({ id }) => id),
+      entries: [],
+      failures: settled.failures,
+      closedWidgetIds: [
+        ...new Set(
+          settled.succeeded.flatMap(({ value }) => value.closedWidgetIds),
+        ),
+      ],
+    };
   }
 
   private async desktopOrderAfterMove(
@@ -250,4 +342,20 @@ function emptyRecord(): Omit<FilesystemEntryRecord, "id" | "parentId" | "kind" |
 
 function toIsoString(timestamp: number): string {
   return new Date(timestamp).toISOString();
+}
+
+function moveDesktopGroup(
+  currentOrder: readonly string[],
+  selectedIds: readonly string[],
+  targetIndex: number,
+): string[] {
+  const selected = new Set(selectedIds);
+  const orderedSelection = currentOrder.filter((id) => selected.has(id));
+  const remaining = currentOrder.filter((id) => !selected.has(id));
+  const insertionIndex = Math.min(targetIndex, remaining.length);
+  return [
+    ...remaining.slice(0, insertionIndex),
+    ...orderedSelection,
+    ...remaining.slice(insertionIndex),
+  ];
 }

@@ -104,9 +104,16 @@ export function isDashboardWidget(value: unknown): value is DashboardWidget {
   if (value.type === WIDGET_TYPE.MEMO) {
     return isMemoData(value.data);
   }
-  return (
+  if (
     value.type === WIDGET_TYPE.DAILY_CHECKLIST &&
     isDailyChecklistData(value.data)
+  ) {
+    return true;
+  }
+  return (
+    value.type === WIDGET_TYPE.STORAGE_STATUS &&
+    value.file === null &&
+    value.data === null
   );
 }
 

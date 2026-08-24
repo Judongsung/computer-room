@@ -5,14 +5,17 @@ import type {
   StoredObjectRange,
 } from "../src/types/storage";
 import type { FilesystemRepository } from "../src/types/repository";
+import type { DirectorySortRepository } from "../src/types/directory-sort-repository";
 import type {
   FilesystemBreadcrumb,
+  FilesystemDirectorySort,
   FilesystemEntryRecord,
   FilesystemFileObject,
   NewFilesystemDirectory,
   NewExactFilesystemDirectory,
   NewFilesystemFile,
   NewFilesystemWidget,
+  RootedFilesystemEntryRecord,
 } from "../src/types/filesystem";
 import { FILE_STATUS } from "../src/constants/file";
 import {
@@ -22,6 +25,7 @@ import {
 } from "../src/constants/filesystem";
 import { WIDGET_TYPE } from "../src/constants/widget";
 import type { StoredWidgetLayout, WidgetLayout } from "../src/types/widget";
+import type { WidgetType } from "../src/types/widget";
 import type { WidgetLayoutRepository } from "../src/types/widget-repository";
 import type { MemoRepository } from "../src/types/memo-repository";
 import type { MemoRecord } from "../src/types/memo";
@@ -39,6 +43,23 @@ import {
 } from "../src/constants/checklist";
 import type { Clock, IdGenerator } from "../src/types/runtime";
 import type { MemoryObject } from "./types/fakes";
+import { compareFilesystemEntries } from "../src/domain/filesystem-sort";
+
+export class MemoryDirectorySortRepository implements DirectorySortRepository {
+  readonly sorts = new Map<string, FilesystemDirectorySort>();
+
+  async find(directoryId: string): Promise<FilesystemDirectorySort | null> {
+    const sort = this.sorts.get(directoryId);
+    return sort ? { ...sort } : null;
+  }
+
+  async save(
+    directoryId: string,
+    sort: FilesystemDirectorySort,
+  ): Promise<void> {
+    this.sorts.set(directoryId, { ...sort });
+  }
+}
 
 export class MemoryFileRepository implements FilesystemRepository {
   readonly records = new Map<string, FilesystemEntryRecord>();
@@ -65,7 +86,24 @@ export class MemoryFileRepository implements FilesystemRepository {
     return null;
   }
 
-  async listChildren(parentId: string, offset: number, limit: number): Promise<FilesystemEntryRecord[]> {
+  async listActiveSubtrees(
+    rootIds: readonly string[],
+  ): Promise<RootedFilesystemEntryRecord[]> {
+    return [...new Set(rootIds)].flatMap((rootId) => {
+      if (!this.isInActiveRoot(rootId)) return [];
+      return this.subtree(rootId).map((entry) => ({
+        rootId,
+        entry: structuredClone(entry),
+      }));
+    });
+  }
+
+  async listChildren(
+    parentId: string,
+    offset: number,
+    limit: number,
+    sort: FilesystemDirectorySort,
+  ): Promise<FilesystemEntryRecord[]> {
     return [...this.records.values()]
       .filter(
         (entry) =>
@@ -74,13 +112,7 @@ export class MemoryFileRepository implements FilesystemRepository {
           (entry.kind !== FILESYSTEM_ENTRY_KIND.FILE ||
             entry.fileStatus === FILE_STATUS.READY),
       )
-      .sort(
-        (left, right) =>
-          Number(left.kind === FILESYSTEM_ENTRY_KIND.FILE) -
-            Number(right.kind === FILESYSTEM_ENTRY_KIND.FILE) ||
-          left.nameKey.localeCompare(right.nameKey) ||
-          left.id.localeCompare(right.id),
-      )
+      .sort((left, right) => compareFilesystemEntries(left, right, sort))
       .slice(offset, offset + limit)
       .map((entry) => structuredClone(entry));
   }
@@ -133,6 +165,10 @@ export class MemoryFileRepository implements FilesystemRepository {
           (right.desktopOrder ?? Number.MAX_SAFE_INTEGER),
       )
       .map((entry) => entry.id);
+  }
+
+  async replaceDesktopEntryOrder(entryIds: readonly string[]): Promise<void> {
+    this.applyDesktopOrder(entryIds);
   }
 
   async isWithinRoot(entryId: string, rootId: string): Promise<boolean> {
@@ -523,6 +559,11 @@ export class MemoryWidgetLayoutRepository implements WidgetLayoutRepository {
     return widget ? structuredClone(widget) : null;
   }
 
+  async findByType(type: WidgetType): Promise<StoredWidgetLayout | null> {
+    const widget = this.records.find((record) => record.type === type);
+    return widget ? structuredClone(widget) : null;
+  }
+
   async synchronize(widgets: readonly WidgetLayout[]): Promise<void> {
     const updates = new Map(widgets.map((widget) => [widget.id, widget] as const));
     this.records = this.records.map((widget) => {
@@ -533,6 +574,14 @@ export class MemoryWidgetLayoutRepository implements WidgetLayoutRepository {
 
   async insert(widget: WidgetLayout): Promise<void> {
     this.records.push({ ...structuredClone(widget), isOpen: true, file: null });
+  }
+
+  async insertSingleton(widget: WidgetLayout): Promise<boolean> {
+    if (this.records.some((record) => record.type === widget.type)) {
+      return false;
+    }
+    await this.insert(widget);
+    return true;
   }
 
   async countOpen(): Promise<number> {

@@ -6,6 +6,9 @@ import { DESKTOP_ASSET_PATHS } from "../../constants/desktop";
 import { LAYOUT_SAVE_STATUS } from "../../constants/layout-save";
 import { useKoreaClock } from "../../hooks/use-korea-clock";
 import type { TaskbarProps } from "../../types/desktop";
+import { useXpContextMenu } from "../../state/context-menu-context";
+import { contextMenuCommand } from "../../domain/context-menu";
+import { XP_CONTEXT_MENU_COMMAND_ID } from "../../constants/context-menu";
 
 export function Taskbar({
   windows,
@@ -13,7 +16,12 @@ export function Taskbar({
   saveStatus,
   onToggleStartMenu,
   onActivateWindow,
+  onRestoreWindow,
+  onMinimizeWindow,
+  onToggleMaximizeWindow,
+  onCloseWindow,
 }: TaskbarProps) {
+  const contextMenu = useXpContextMenu();
   const clock = useKoreaClock();
 
   return (
@@ -28,6 +36,15 @@ export function Taskbar({
         data-start-button
         aria-expanded={isStartMenuOpen}
         onClick={onToggleStartMenu}
+        onContextMenu={(event) =>
+          contextMenu.openFromEvent(event, [
+            contextMenuCommand(
+              XP_CONTEXT_MENU_COMMAND_ID.OPEN,
+              DASHBOARD_COPY.START_MENU,
+              onToggleStartMenu,
+            ),
+          ])
+        }
       >
         <img src={DESKTOP_ASSET_PATHS.START_LOGO} alt="" />
         <span>{DASHBOARD_COPY.START}</span>
@@ -47,6 +64,33 @@ export function Taskbar({
                 .join(" ")}
               aria-pressed={window.isActive}
               onClick={() => onActivateWindow(window.id)}
+              onContextMenu={(event) =>
+                contextMenu.openFromEvent(event, [
+                  contextMenuCommand(
+                    XP_CONTEXT_MENU_COMMAND_ID.RESTORE,
+                    DASHBOARD_COPY.RESTORE,
+                    () => onRestoreWindow(window.id),
+                    !window.isMinimized && !window.isMaximized,
+                  ),
+                  contextMenuCommand(
+                    XP_CONTEXT_MENU_COMMAND_ID.MINIMIZE,
+                    DASHBOARD_COPY.MINIMIZE,
+                    () => onMinimizeWindow(window.id),
+                    window.isMinimized,
+                  ),
+                  contextMenuCommand(
+                    XP_CONTEXT_MENU_COMMAND_ID.MAXIMIZE,
+                    DASHBOARD_COPY.MAXIMIZE,
+                    () => onToggleMaximizeWindow(window.id),
+                    window.isMaximized,
+                  ),
+                  contextMenuCommand(
+                    XP_CONTEXT_MENU_COMMAND_ID.CLOSE,
+                    DASHBOARD_COPY.CLOSE,
+                    () => onCloseWindow(window.id),
+                  ),
+                ])
+              }
             >
               <img src={window.iconPath} alt="" />
               <span>{window.title}</span>

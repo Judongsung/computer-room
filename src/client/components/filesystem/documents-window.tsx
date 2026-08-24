@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ChangeEvent,
@@ -11,6 +12,11 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "../../../constants/filesystem";
+import { FILESYSTEM_SORT_DIRECTION_VALUES } from "../../../constants/filesystem-sort";
+import {
+  isFilesystemSortDirection,
+  isFilesystemSortField,
+} from "../../../domain/filesystem-sort";
 import {
   isPotentialMediaContentType,
   mediaKindFromContentType,
@@ -18,8 +24,8 @@ import {
 import {
   FILE_PICKER_ABORT_ERROR_NAME,
   FILESYSTEM_DRAG_SOURCE,
-  FILE_SIZE_DISPLAY,
   FILESYSTEM_COPY,
+  FILESYSTEM_SELECTION_DATA_ATTRIBUTE,
 } from "../../constants/filesystem";
 import {
   SYSTEM_APP_CONFIG,
@@ -28,9 +34,11 @@ import {
 import { MEDIA_VIEWER_COPY } from "../../constants/media";
 import { KEYBOARD_KEY } from "../../constants/keyboard";
 import type {
+  FilesystemDirectorySort,
   FilesystemDirectoryPage,
   FilesystemEntry,
 } from "../../../types/filesystem";
+import type { FilesystemBatchResult } from "../../../types/filesystem-batch";
 import type { LocalUploadNode } from "../../types/upload";
 import type {
   FilesystemGateway,
@@ -39,6 +47,10 @@ import type {
 import type { DesktopAppWindowProps } from "../../types/desktop";
 import type { MediaViewerOpenRequest } from "../../types/media";
 import { downloadFile } from "../../utils/download-file";
+import { formatFileSize } from "../../utils/format-file-size";
+import { useFilesystemSelection } from "../../hooks/use-filesystem-selection";
+import { useFilesystemMarqueeSelection } from "../../hooks/use-filesystem-marquee-selection";
+import { useFilesystemDownload } from "../../hooks/use-filesystem-download";
 import {
   collectDroppedUploadNodes,
   collectSelectedUploadNodes,
@@ -56,8 +68,21 @@ import {
   NameDialog,
 } from "./filesystem-dialogs";
 import { FilesystemEntryIcon } from "./filesystem-entry-icon";
+import { FilesystemSelectionMarquee } from "./filesystem-selection-marquee";
+import { FilesystemBatchResultDialog } from "./filesystem-batch-result-dialog";
+import { DownloadTransferDialog } from "./download-transfer-dialog";
+import { useXpContextMenu } from "../../state/context-menu-context";
+import { contextMenuCommand, contextMenuSeparator } from "../../domain/context-menu";
+import { XP_CONTEXT_MENU_COMMAND_ID } from "../../constants/context-menu";
+import {
+  FILESYSTEM_SORT_CLASS_NAME,
+  FILESYSTEM_SORT_COPY,
+  FILESYSTEM_SORT_DIRECTION_LABELS,
+  FILESYSTEM_SORT_FIELD_OPTIONS,
+} from "../../constants/filesystem-sort";
 
 type DocumentsDialog = "create" | "rename" | "move" | null;
+const EMPTY_ENTRY_IDS: readonly string[] = [];
 
 interface DocumentsWindowProps
   extends Omit<
@@ -111,10 +136,10 @@ export function DocumentsWindow({
   onFilesystemChanged,
   ...chrome
 }: DocumentsWindowProps) {
+  const contextMenu = useXpContextMenu();
   const [directoryId, setDirectoryId] = useState(initialDirectoryId);
   const [history, setHistory] = useState<readonly string[]>([]);
   const [page, setPage] = useState<FilesystemDirectoryPage | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [dialog, setDialog] = useState<DocumentsDialog>(null);
@@ -122,13 +147,28 @@ export function DocumentsWindow({
     null,
   );
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  const [batchResult, setBatchResult] = useState<FilesystemBatchResult | null>(
+    null,
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const itemIds = useMemo(
+    () => page?.items.map((item) => item.id) ?? EMPTY_ENTRY_IDS,
+    [page?.items],
+  );
+  const selection = useFilesystemSelection(itemIds);
+  const marquee = useFilesystemMarqueeSelection(
+    contentRef,
+    selection.selectedIds,
+    selection.replace,
+  );
+  const download = useFilesystemDownload(gateway);
 
   useEffect(() => {
     let active = true;
     setPage(null);
-    setSelectedId(null);
+    selection.clear();
     setError(null);
     void gateway
       .listDirectory(directoryId)
@@ -153,10 +193,17 @@ export function DocumentsWindow({
     filesystemRevision,
     gateway,
     onDirectoryChanged,
+    selection.clear,
     windowId,
   ]);
 
-  const selected = page?.items.find((item) => item.id === selectedId) ?? null;
+  const selectedEntries = useMemo(
+    () =>
+      page?.items.filter((item) => selection.selectedIds.has(item.id)) ?? [],
+    [page?.items, selection.selectedIds],
+  );
+  const selected =
+    selectedEntries.length === 1 ? selectedEntries[0] ?? null : null;
   const currentDirectoryId = page?.directory.id;
   const runChange = useCallback(
     async (operation: () => Promise<unknown>): Promise<void> => {
@@ -165,7 +212,7 @@ export function DocumentsWindow({
       try {
         await operation();
         setDialog(null);
-        setSelectedId(null);
+        selection.clear();
         onFilesystemChanged();
       } catch (reason) {
         setError(errorMessage(reason, FILESYSTEM_COPY.CHANGE_FAILED));
@@ -173,7 +220,33 @@ export function DocumentsWindow({
         setBusy(false);
       }
     },
-    [onFilesystemChanged],
+    [onFilesystemChanged, selection.clear],
+  );
+
+  const runBatchChange = useCallback(
+    async (operation: () => Promise<FilesystemBatchResult>): Promise<void> => {
+      setBusy(true);
+      setError(null);
+      try {
+        const result = await operation();
+        result.entries.forEach(onEntryChanged);
+        onWidgetsClosed(result.closedWidgetIds);
+        setDialog(null);
+        setBatchResult(result.failures.length > 0 ? result : null);
+        selection.replace(result.failures.map((failure) => failure.id));
+        onFilesystemChanged();
+      } catch (reason) {
+        setError(errorMessage(reason, FILESYSTEM_COPY.CHANGE_FAILED));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [
+      onEntryChanged,
+      onFilesystemChanged,
+      onWidgetsClosed,
+      selection.replace,
+    ],
   );
 
   const navigate = (nextId: string): void => {
@@ -191,6 +264,13 @@ export function DocumentsWindow({
   const navigateUp = (): void => {
     const parent = page?.breadcrumbs.at(-2);
     if (parent) navigate(parent.id);
+  };
+  const changeSort = (sort: FilesystemDirectorySort): void => {
+    if (!currentDirectoryId || busy) return;
+    void runChange(async () => {
+      await gateway.updateDirectorySort(currentDirectoryId, sort);
+      if (contentRef.current) contentRef.current.scrollTop = 0;
+    });
   };
   const openEntry = (entry: FilesystemEntry): void => {
     if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
@@ -252,9 +332,9 @@ export function DocumentsWindow({
     setDropTargetId(null);
     const payload = readFilesystemDragPayload(event.dataTransfer);
     if (payload) {
-      void runChange(async () => {
+      void runBatchChange(async () => {
         if (payload.source === FILESYSTEM_DRAG_SOURCE.TRASH) {
-          const entry = await gateway.restoreEntry(payload.id, {
+          return gateway.restoreEntries(payload.ids, {
             parentId,
             ...(parentId === FILESYSTEM_ROOT_ID.DESKTOP
               ? {
@@ -265,21 +345,18 @@ export function DocumentsWindow({
                 }
               : {}),
           });
-          onEntryChanged(entry);
-        } else {
-          const entry = await gateway.moveEntry(payload.id, {
-            parentId,
-            ...(parentId === FILESYSTEM_ROOT_ID.DESKTOP
-              ? {
-                  desktopPlacement: {
-                    targetIndex: 0,
-                    capacity: desktopCapacity,
-                  },
-                }
-              : {}),
-          });
-          onEntryChanged(entry);
         }
+        return gateway.moveEntries(payload.ids, {
+          parentId,
+          ...(parentId === FILESYSTEM_ROOT_ID.DESKTOP
+            ? {
+                desktopPlacement: {
+                  targetIndex: 0,
+                  capacity: desktopCapacity,
+                },
+              }
+            : {}),
+        });
       });
       return;
     }
@@ -317,6 +394,137 @@ export function DocumentsWindow({
       .finally(() => setBusy(false));
   };
 
+  const openEntryContextMenu = (
+    entry: FilesystemEntry,
+    event: { preventDefault: () => void; stopPropagation: () => void; clientX: number; clientY: number },
+  ): void => {
+    const entries = selection.selectedIds.has(entry.id)
+      ? selectedEntries
+      : [entry];
+    if (!selection.selectedIds.has(entry.id)) selection.replace([entry.id]);
+    contextMenu.openFromEvent(event, [
+      contextMenuCommand(
+        XP_CONTEXT_MENU_COMMAND_ID.OPEN,
+        FILESYSTEM_COPY.OPEN,
+        () => openEntry(entries[0] ?? entry),
+        entries.length !== 1,
+      ),
+      contextMenuCommand(
+        XP_CONTEXT_MENU_COMMAND_ID.DOWNLOAD,
+        FILESYSTEM_COPY.DOWNLOAD,
+        () => download.start(entries),
+        entries.every((candidate) => candidate.kind === FILESYSTEM_ENTRY_KIND.WIDGET),
+      ),
+      contextMenuSeparator("explorer-entry-separator-1"),
+      contextMenuCommand(
+        XP_CONTEXT_MENU_COMMAND_ID.RENAME,
+        FILESYSTEM_COPY.RENAME,
+        () => setDialog("rename"),
+        entries.length !== 1,
+      ),
+      contextMenuCommand(
+        XP_CONTEXT_MENU_COMMAND_ID.MOVE,
+        FILESYSTEM_COPY.MOVE,
+        () => setDialog("move"),
+      ),
+      contextMenuCommand(
+        XP_CONTEXT_MENU_COMMAND_ID.TRASH,
+        FILESYSTEM_COPY.DELETE,
+        () => runBatchChange(() => gateway.trashEntries(entries.map((candidate) => candidate.id))),
+      ),
+    ]);
+  };
+
+  const openDirectoryContextMenu = (
+    event: { preventDefault: () => void; stopPropagation: () => void; clientX: number; clientY: number },
+  ): void => {
+    contextMenu.openFromEvent(event, [
+      contextMenuCommand(
+        XP_CONTEXT_MENU_COMMAND_ID.NEW_FOLDER,
+        FILESYSTEM_COPY.NEW_FOLDER,
+        () => setDialog("create"),
+        !currentDirectoryId || busy,
+      ),
+      contextMenuCommand(
+        XP_CONTEXT_MENU_COMMAND_ID.UPLOAD_FILES,
+        FILESYSTEM_COPY.UPLOAD_FILES,
+        () => fileInputRef.current?.click(),
+        !currentDirectoryId || busy,
+      ),
+      contextMenuCommand(
+        XP_CONTEXT_MENU_COMMAND_ID.UPLOAD_FOLDER,
+        FILESYSTEM_COPY.UPLOAD_FOLDER,
+        selectFolder,
+        !currentDirectoryId || busy,
+      ),
+      contextMenuSeparator("explorer-directory-separator-1"),
+      contextMenuCommand(
+        XP_CONTEXT_MENU_COMMAND_ID.REFRESH,
+        FILESYSTEM_COPY.REFRESH,
+        onFilesystemChanged,
+      ),
+    ]);
+  };
+
+  const sortControls = (
+    <div
+      className={FILESYSTEM_SORT_CLASS_NAME.BAR}
+      role="group"
+      aria-label={FILESYSTEM_SORT_COPY.GROUP_LABEL}
+    >
+      <label className={FILESYSTEM_SORT_CLASS_NAME.CONTROL}>
+        <span className={FILESYSTEM_SORT_CLASS_NAME.LABEL}>
+          {FILESYSTEM_SORT_COPY.FIELD_LABEL}
+        </span>
+        <select
+          aria-label={FILESYSTEM_SORT_COPY.FIELD_LABEL}
+          disabled={!page || busy}
+          value={page?.sort.field ?? ""}
+          onChange={(event) => {
+            if (!page || !isFilesystemSortField(event.target.value)) return;
+            changeSort({
+              field: event.target.value,
+              direction: page.sort.direction,
+            });
+          }}
+        >
+          {FILESYSTEM_SORT_FIELD_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className={FILESYSTEM_SORT_CLASS_NAME.CONTROL}>
+        <span className={FILESYSTEM_SORT_CLASS_NAME.LABEL}>
+          {FILESYSTEM_SORT_COPY.DIRECTION_LABEL}
+        </span>
+        <select
+          aria-label={FILESYSTEM_SORT_COPY.DIRECTION_LABEL}
+          disabled={!page || busy}
+          value={page?.sort.direction ?? ""}
+          onChange={(event) => {
+            if (!page || !isFilesystemSortDirection(event.target.value)) {
+              return;
+            }
+            changeSort({
+              field: page.sort.field,
+              direction: event.target.value,
+            });
+          }}
+        >
+          {FILESYSTEM_SORT_DIRECTION_VALUES.map((direction) => (
+            <option key={direction} value={direction}>
+              {page
+                ? FILESYSTEM_SORT_DIRECTION_LABELS[page.sort.field][direction]
+                : direction}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+
   const toolbar = (
     <div className="explorer-toolbar" aria-label={FILESYSTEM_COPY.FILE_TOOLBAR}>
       <button type="button" disabled={history.length === 0 || busy} onClick={navigateBack}>
@@ -351,26 +559,31 @@ export function DocumentsWindow({
       <span className="explorer-toolbar__separator" />
       <button
         type="button"
-        disabled={!selected || selected.kind !== FILESYSTEM_ENTRY_KIND.FILE || busy}
-        onClick={() =>
-          selected && downloadFile(gateway.downloadUrl(selected.id))
+        disabled={
+          selectedEntries.length === 0 ||
+          selectedEntries.every(
+            (entry) => entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET,
+          ) ||
+          busy
         }
+        onClick={() => void download.start(selectedEntries)}
       >
         {FILESYSTEM_COPY.DOWNLOAD}
       </button>
       <button type="button" disabled={!selected || busy} onClick={() => setDialog("rename")}>
         {FILESYSTEM_COPY.RENAME}
       </button>
-      <button type="button" disabled={!selected || busy} onClick={() => setDialog("move")}>
+      <button type="button" disabled={selectedEntries.length === 0 || busy} onClick={() => setDialog("move")}>
         {FILESYSTEM_COPY.MOVE}
       </button>
       <button
         type="button"
-        disabled={!selected || busy}
-        onClick={() => selected && void runChange(async () => {
-          const result = await gateway.trashEntry(selected.id);
-          onWidgetsClosed(result.closedWidgetIds);
-        })}
+        disabled={selectedEntries.length === 0 || busy}
+        onClick={() =>
+          void runBatchChange(() =>
+            gateway.trashEntries(selection.selectedInOrder),
+          )
+        }
       >
         {FILESYSTEM_COPY.DELETE}
       </button>
@@ -388,7 +601,9 @@ export function DocumentsWindow({
       bodyClassName="explorer-window__body"
       footer={
         <footer className="explorer-statusbar">
-          {selected ? FILESYSTEM_COPY.SELECTED : `${page?.items.length ?? 0}${FILESYSTEM_COPY.ITEM_COUNT_SUFFIX}`}
+          {selectedEntries.length > 0
+            ? FILESYSTEM_COPY.SELECTED_COUNT(selectedEntries.length)
+            : `${page?.items.length ?? 0}${FILESYSTEM_COPY.ITEM_COUNT_SUFFIX}`}
         </footer>
       }
     >
@@ -416,14 +631,28 @@ export function DocumentsWindow({
           ))}
         </div>
       </div>
+      {sortControls}
       {error ? <p className="explorer-message" role="alert">{error}</p> : null}
       {!page && !error ? <p className="explorer-message">{FILESYSTEM_COPY.BUSY}</p> : null}
       {page ? (
         <div
+          ref={contentRef}
           className="explorer-content"
           data-drop-target={dropTargetId === currentDirectoryId}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setSelectedId(null);
+          onPointerDown={marquee.onPointerDown}
+          onPointerMove={marquee.onPointerMove}
+          onPointerUp={marquee.onPointerUp}
+          onPointerCancel={marquee.onPointerCancel}
+          onKeyDown={(event) => {
+            if (
+              (event.ctrlKey || event.metaKey) &&
+              event.key.toLocaleLowerCase() === KEYBOARD_KEY.A
+            ) {
+              event.preventDefault();
+              selection.selectAll();
+            } else if (event.key === KEYBOARD_KEY.ESCAPE) {
+              selection.clear();
+            }
           }}
           onDragEnter={(event) => {
             if (event.target === event.currentTarget && currentDirectoryId) {
@@ -437,22 +666,28 @@ export function DocumentsWindow({
           onDrop={(event) =>
             currentDirectoryId && dropIntoDirectory(event, currentDirectoryId)
           }
+          onContextMenu={openDirectoryContextMenu}
         >
           {page.items.map((entry) => (
             <button
               key={entry.id}
               type="button"
-              className={entry.id === selectedId ? "explorer-item explorer-item--selected" : "explorer-item"}
+              className={selection.selectedIds.has(entry.id) ? "explorer-item explorer-item--selected" : "explorer-item"}
+              {...{ [FILESYSTEM_SELECTION_DATA_ATTRIBUTE]: entry.id }}
               data-drop-target={dropTargetId === entry.id}
               draggable
-              onClick={() => setSelectedId(entry.id)}
+              onClick={(event) => selection.select(entry.id, event)}
               onDoubleClick={() => openEntry(entry)}
-              onDragStart={(event) =>
+              onContextMenu={(event) => openEntryContextMenu(entry, event)}
+              onDragStart={(event) => {
+                const ids = selection.dragIds(entry.id);
+                selection.replace(ids);
                 writeFilesystemDragPayload(event.dataTransfer, {
-                  id: entry.id,
+                  ids,
+                  primaryId: entry.id,
                   source: FILESYSTEM_DRAG_SOURCE.ACTIVE,
-                })
-              }
+                });
+              }}
               onDragOver={(event) => {
                 if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
                   event.preventDefault();
@@ -483,9 +718,10 @@ export function DocumentsWindow({
                 thumbnailUrl={(id) => gateway.thumbnailUrl(id)}
               />
               <span>{entry.name}</span>
-              {entry.kind === FILESYSTEM_ENTRY_KIND.FILE ? <small>{formatBytes(entry.size)}</small> : null}
+              {entry.kind === FILESYSTEM_ENTRY_KIND.FILE ? <small>{formatFileSize(entry.size)}</small> : null}
             </button>
           ))}
+          <FilesystemSelectionMarquee bounds={marquee.bounds} />
           {page.items.length === 0 ? <p className="explorer-empty">{FILESYSTEM_COPY.EMPTY_DIRECTORY}</p> : null}
           {page.nextOffset !== null ? (
             <button
@@ -524,27 +760,27 @@ export function DocumentsWindow({
           onCancel={() => setDialog(null)}
         />
       ) : null}
-      {dialog === "move" && selected ? (
+      {dialog === "move" && selectedEntries.length > 0 ? (
         <DirectoryPickerDialog
           gateway={gateway}
-          excludedEntryId={selected.id}
+          excludedEntryIds={selectedEntries
+            .filter((entry) => entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY)
+            .map((entry) => entry.id)}
           busy={busy}
           onSelect={(parentId) =>
-            void runChange(async () => {
-              onEntryChanged(
-                await gateway.moveEntry(selected.id, {
-                  parentId,
-                  ...(parentId === FILESYSTEM_ROOT_ID.DESKTOP
-                    ? {
-                        desktopPlacement: {
-                          targetIndex: 0,
-                          capacity: desktopCapacity,
-                        },
-                      }
-                    : {}),
-                }),
-              );
-            })
+            void runBatchChange(() =>
+              gateway.moveEntries(selection.selectedInOrder, {
+                parentId,
+                ...(parentId === FILESYSTEM_ROOT_ID.DESKTOP
+                  ? {
+                      desktopPlacement: {
+                        targetIndex: 0,
+                        capacity: desktopCapacity,
+                      },
+                    }
+                  : {}),
+              }),
+            )
           }
           onCancel={() => setDialog(null)}
         />
@@ -563,22 +799,17 @@ export function DocumentsWindow({
           onCancel={() => setUnsupportedMedia(null)}
         />
       ) : null}
+      <FilesystemBatchResultDialog
+        result={batchResult}
+        onClose={() => setBatchResult(null)}
+      />
+      <DownloadTransferDialog
+        state={download.state}
+        onCancel={download.cancel}
+        onClose={download.close}
+      />
     </DesktopAppWindow>
   );
-}
-
-function formatBytes(size: number): string {
-  if (size < FILE_SIZE_DISPLAY.KILOBYTE_BYTES) {
-    return `${size} ${FILESYSTEM_COPY.BYTE_UNIT}`;
-  }
-  if (size < FILE_SIZE_DISPLAY.MEGABYTE_BYTES) {
-    return `${(size / FILE_SIZE_DISPLAY.KILOBYTE_BYTES).toFixed(
-      FILE_SIZE_DISPLAY.FRACTION_DIGITS,
-    )} ${FILESYSTEM_COPY.KILOBYTE_UNIT}`;
-  }
-  return `${(size / FILE_SIZE_DISPLAY.MEGABYTE_BYTES).toFixed(
-    FILE_SIZE_DISPLAY.FRACTION_DIGITS,
-  )} ${FILESYSTEM_COPY.MEGABYTE_UNIT}`;
 }
 
 function errorMessage(error: unknown, fallback: string): string {

@@ -2,12 +2,14 @@ import { ChecklistService } from "./application/checklist-service";
 import { FileService } from "./application/file-service";
 import { FilesystemPathService } from "./application/filesystem-path-service";
 import { FilesystemService } from "./application/filesystem-service";
+import { FilesystemDownloadManifestService } from "./application/filesystem-download-manifest-service";
 import { NovelAiImageService } from "./application/novelai-image-service";
 import { RecycleBinService } from "./application/recycle-bin-service";
 import { MemoService } from "./application/memo-service";
 import { ThumbnailService } from "./application/thumbnail-service";
 import { ThumbnailPreparingFileService } from "./application/thumbnail-preparing-file-service";
 import { WidgetLayoutService } from "./application/widget-layout-service";
+import { StorageStatusService } from "./application/storage-status-service";
 import {
   ENABLED_ENV_VALUE,
   LOCAL_AUTH_DEFAULT_EMAIL,
@@ -17,6 +19,7 @@ import { ApiRouter } from "./http/api-router";
 import { FileApiHandler } from "./http/file-api-handler";
 import { NovelAiImageApiHandler } from "./http/novelai-image-api-handler";
 import { WidgetApiHandler } from "./http/widget-api-handler";
+import { StorageStatusApiHandler } from "./http/storage-status-api-handler";
 import {
   CloudflareAccessIdentityVerifier,
   CloudflareAccessApplicationVerifier,
@@ -24,10 +27,13 @@ import {
   LocalRequestVerifier,
 } from "./infrastructure/access-identity-verifier";
 import { D1FilesystemRepository } from "./infrastructure/d1-filesystem-repository";
+import { D1DirectorySortRepository } from "./infrastructure/d1-directory-sort-repository";
 import { D1ChecklistRepository } from "./infrastructure/d1-checklist-repository";
 import { D1MemoRepository } from "./infrastructure/d1-memo-repository";
 import { D1WidgetLayoutRepository } from "./infrastructure/d1-widget-layout-repository";
+import { D1StorageUsageReader } from "./infrastructure/d1-storage-usage-reader";
 import { R2FileObjectStorage } from "./infrastructure/r2-file-object-storage";
+import { R2ObjectStorageUsageReader } from "./infrastructure/r2-object-storage-usage-reader";
 import { CloudflareImageThumbnailGenerator } from "./infrastructure/cloudflare-image-thumbnail-generator";
 import { CloudflareBackgroundTaskScheduler } from "./infrastructure/cloudflare-background-task-scheduler";
 import { CryptoIdGenerator, SystemClock } from "./infrastructure/runtime";
@@ -59,7 +65,12 @@ export default {
       thumbnailService,
       new CloudflareBackgroundTaskScheduler(context),
     );
-    const filesystemService = new FilesystemService(fileRepository, ids, clock);
+    const filesystemService = new FilesystemService(
+      fileRepository,
+      new D1DirectorySortRepository(env.DB),
+      ids,
+      clock,
+    );
     const filesystemPathService = new FilesystemPathService(
       fileRepository,
       ids,
@@ -76,11 +87,15 @@ export default {
       storage,
       clock,
     );
+    const downloadManifestService = new FilesystemDownloadManifestService(
+      fileRepository,
+    );
     const fileApiHandler = new FileApiHandler(
       fileService,
       thumbnailService,
       filesystemService,
       recycleBinService,
+      downloadManifestService,
     );
     const novelAiImageApiHandler = new NovelAiImageApiHandler(
       novelAiImageService,
@@ -108,9 +123,17 @@ export default {
       memoService,
       checklistService,
     );
+    const storageStatusApiHandler = new StorageStatusApiHandler(
+      new StorageStatusService(
+        new R2ObjectStorageUsageReader(env.FILES),
+        new D1StorageUsageReader(env.DB),
+        clock,
+      ),
+    );
     const router = new ApiRouter(
       fileApiHandler,
       widgetApiHandler,
+      storageStatusApiHandler,
       novelAiImageApiHandler,
       createIdentityVerifier(env),
       createServiceRequestVerifier(env),

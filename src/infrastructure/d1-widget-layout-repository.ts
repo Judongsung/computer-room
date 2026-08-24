@@ -6,7 +6,11 @@ import {
 } from "../constants/widget";
 import { AppError } from "../domain/errors";
 import type { CountRow, WidgetRow } from "../types/database";
-import type { StoredWidgetLayout, WidgetLayout } from "../types/widget";
+import type {
+  StoredWidgetLayout,
+  WidgetLayout,
+  WidgetType,
+} from "../types/widget";
 import type { WidgetLayoutRepository } from "../types/widget-repository";
 
 const WIDGET_SELECT = `
@@ -35,6 +39,14 @@ export class D1WidgetLayoutRepository implements WidgetLayoutRepository {
     const row = await this.database
       .prepare(`${WIDGET_SELECT} WHERE w.id = ?1`)
       .bind(id)
+      .first<WidgetRow>();
+    return row ? mapWidgetRow(row) : null;
+  }
+
+  async findByType(type: WidgetType): Promise<StoredWidgetLayout | null> {
+    const row = await this.database
+      .prepare(`${WIDGET_SELECT} WHERE w.type = ?1 ORDER BY w.id ASC LIMIT 1`)
+      .bind(type)
       .first<WidgetRow>();
     return row ? mapWidgetRow(row) : null;
   }
@@ -87,6 +99,29 @@ export class D1WidgetLayoutRepository implements WidgetLayoutRepository {
       .run();
   }
 
+  async insertSingleton(widget: WidgetLayout): Promise<boolean> {
+    const result = await this.database
+      .prepare(
+        `INSERT OR IGNORE INTO dashboard_widgets (
+           id, type, position_x, position_y, width, height,
+           window_state, restore_state, stack_order, is_open
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, 1)`,
+      )
+      .bind(
+        widget.id,
+        widget.type,
+        widget.position.x,
+        widget.position.y,
+        widget.size.width,
+        widget.size.height,
+        widget.windowState,
+        widget.restoreState,
+        widget.stackOrder,
+      )
+      .run();
+    return result.meta.changes > 0;
+  }
+
   async countOpen(): Promise<number> {
     const row = await this.database
       .prepare("SELECT COUNT(*) AS count FROM dashboard_widgets WHERE is_open = 1")
@@ -128,15 +163,12 @@ function mapWidgetRow(row: WidgetRow): StoredWidgetLayout {
     row.entry_id !== null ||
     row.entry_parent_id !== null ||
     row.entry_name !== null;
-  if (
-    !type ||
-    !windowState ||
-    !restoreState ||
-    (hasFileReference &&
-      (!row.entry_id || !row.entry_parent_id || !row.entry_name))
-  ) {
+  if (!type || !windowState || !restoreState) {
     throw new AppError(WIDGET_ERRORS.INVALID_STORED_WIDGET);
   }
+  const file = hasFileReference
+    ? completeFileReference(row.entry_id, row.entry_parent_id, row.entry_name)
+    : null;
 
   return {
     id: row.id,
@@ -147,12 +179,17 @@ function mapWidgetRow(row: WidgetRow): StoredWidgetLayout {
     restoreState,
     stackOrder: row.stack_order,
     isOpen: row.is_open === 1,
-    file: hasFileReference
-      ? {
-          entryId: row.entry_id as string,
-          parentId: row.entry_parent_id as string,
-          name: row.entry_name as string,
-        }
-      : null,
+    file,
   };
+}
+
+function completeFileReference(
+  entryId: string | null,
+  parentId: string | null,
+  name: string | null,
+) {
+  if (!entryId || !parentId || !name) {
+    throw new AppError(WIDGET_ERRORS.INVALID_STORED_WIDGET);
+  }
+  return { entryId, parentId, name };
 }

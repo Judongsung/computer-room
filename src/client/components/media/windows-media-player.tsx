@@ -20,6 +20,7 @@ export function WindowsMediaPlayer({
   onPrevious,
   onNext,
   onDownload,
+  onContextMenu,
 }: MediaRendererProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -73,7 +74,7 @@ export function WindowsMediaPlayer({
   };
 
   return (
-    <div className="windows-media-player">
+    <div className="windows-media-player" onContextMenu={onContextMenu}>
       <div className="windows-media-player__brandbar">
         <strong>{MEDIA_VIEWER_COPY.PLAYER_BRAND}</strong>
         <span>{file.name}</span>

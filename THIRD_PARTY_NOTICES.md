@@ -28,3 +28,10 @@ license is available at `licenses/ShizukuIchi-winXP-MIT.txt`.
 The Windows XP name, artwork, and trademarks belong to their respective
 owners. This project is a private, personal homepage and is not affiliated
 with or endorsed by Microsoft.
+
+## client-zip
+
+Multi-file and folder downloads use
+[client-zip](https://github.com/Touffy/client-zip) version `2.5.0` to create a
+streaming ZIP archive in the browser. The package is distributed under the MIT
+License. A copy of that license is available at `licenses/client-zip-MIT.txt`.

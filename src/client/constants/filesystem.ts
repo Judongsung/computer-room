@@ -4,6 +4,7 @@ export const FILESYSTEM_COPY = {
   RECYCLE_BIN_TOOLBAR: "휴지통 작업",
   WIDGET_TOOLBAR: "위젯 작업",
   OPEN: "열기",
+  REFRESH: "새로 고침",
   BACK: "뒤로",
   UP: "위로",
   NEW_FOLDER: "새 폴더",
@@ -26,6 +27,7 @@ export const FILESYSTEM_COPY = {
   CHANGE_FAILED: "파일 작업을 완료하지 못했습니다.",
   LOAD_MORE: "더 보기",
   SELECTED: "1개 항목 선택됨",
+  SELECTED_COUNT: (count: number) => `${count}개 항목 선택됨`,
   ITEM_COUNT_SUFFIX: "개 항목",
   FOLDER: "파일 폴더",
   FILE: "파일",
@@ -59,6 +61,26 @@ export const FILESYSTEM_COPY = {
     `현재 화면에 표시하지 못한 바탕 화면 항목이 ${count}개 있습니다.`,
   OPEN_DESKTOP: "바탕 화면 열기",
   CLOSE: "닫기",
+  BATCH_RESULT_TITLE: "파일 작업 결과",
+  BATCH_PARTIAL: "일부 항목을 처리하지 못했습니다.",
+  BATCH_SUCCESS_COUNT: (count: number) => `${count}개 항목 처리 완료`,
+  DOWNLOAD_TITLE: "파일 다운로드",
+  DOWNLOAD_PREPARING: "다운로드할 항목을 확인하는 중입니다.",
+  DOWNLOAD_PROGRESS: (completed: number, total: number) =>
+    `${total}개 중 ${completed}개 파일을 저장하는 중입니다.`,
+  DOWNLOAD_BYTE_PROGRESS: (transferred: string, total: string) =>
+    `${transferred} / ${total}`,
+  DOWNLOAD_UNSUPPORTED:
+    "이 브라우저는 디스크 스트리밍 다운로드를 지원하지 않습니다. 최신 Edge 또는 Chrome을 사용해 주세요.",
+  DOWNLOAD_EMPTY: "다운로드할 일반 파일이나 폴더가 없습니다.",
+  DOWNLOAD_FAILED:
+    "ZIP 파일을 저장하지 못했습니다. 다운로드를 다시 시도해 주세요.",
+  DOWNLOAD_FILE_FAILED: (path: string) =>
+    `${path} 파일을 가져오지 못했습니다. 다운로드를 다시 시도해 주세요.`,
+  DOWNLOAD_CANCEL: "다운로드 취소",
+  DOWNLOAD_SKIPPED_WIDGETS: (count: number) =>
+    `위젯 파일 ${count}개는 ZIP에서 제외했습니다.`,
+  CONTEXT_MENU: "바탕 화면 항목 메뉴",
   WIDGET: "위젯 파일",
   SAVE_WIDGET_TITLE: "위젯 파일로 저장",
   SAVE_LOCATION: "저장 위치",
@@ -71,6 +93,8 @@ export const FILESYSTEM_COPY = {
   BYTE_UNIT: "B",
   KILOBYTE_UNIT: "KB",
   MEGABYTE_UNIT: "MB",
+  GIGABYTE_UNIT: "GB",
+  TERABYTE_UNIT: "TB",
 } as const;
 
 export const FILESYSTEM_UPLOAD_POLICY = {
@@ -84,10 +108,24 @@ export const FILESYSTEM_DRAG_SOURCE = {
 
 export const FILE_PICKER_ABORT_ERROR_NAME = "AbortError";
 
+export const FILESYSTEM_SELECTION_DATA_ATTRIBUTE =
+  "data-filesystem-selection-id";
+export const FILESYSTEM_SELECTION_SELECTOR =
+  `[${FILESYSTEM_SELECTION_DATA_ATTRIBUTE}]`;
+
+export const FILESYSTEM_SELECTION_POLICY = {
+  AUTO_SCROLL_EDGE_PX: 28,
+  AUTO_SCROLL_STEP_PX: 18,
+} as const;
+
 export const EXPLORER_WINDOW_ID_PREFIX = "explorer-window-";
+
+export const DESKTOP_ENTRY_UNORDERED_INDEX = Number.MAX_SAFE_INTEGER;
 
 export const FILE_SIZE_DISPLAY = {
   KILOBYTE_BYTES: 1_000,
   MEGABYTE_BYTES: 1_000_000,
+  GIGABYTE_BYTES: 1_000_000_000,
+  TERABYTE_BYTES: 1_000_000_000_000,
   FRACTION_DIGITS: 1,
 } as const;

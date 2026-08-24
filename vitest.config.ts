@@ -16,7 +16,7 @@ export default defineConfig(async () => {
             NOVELAI_UPLOAD_POLICY_AUD: "novelai-upload-audience",
             TEST_MIGRATIONS: migrations,
           },
-          d1Databases: ["DB"],
+          d1Databases: ["DB", "MIGRATION_REGRESSION_DB"],
           r2Buckets: ["FILES"],
         },
       }),

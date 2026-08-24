@@ -22,6 +22,7 @@
     "deploy:worker": "vite build && wrangler deploy"
   },
   "dependencies": {
+    "client-zip": "2.5.0",
     "drizzle-orm": "^0.45.2",
     "jose": "^6.2.9",
     "react": "^19.2.8",

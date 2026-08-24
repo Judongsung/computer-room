@@ -1,11 +1,13 @@
 import type {
   FilesystemBreadcrumb,
+  FilesystemDirectorySort,
   FilesystemEntryRecord,
   FilesystemFileObject,
   NewFilesystemDirectory,
   NewExactFilesystemDirectory,
   NewFilesystemFile,
   NewFilesystemWidget,
+  RootedFilesystemEntryRecord,
 } from "./filesystem";
 
 export interface FilesystemRepository {
@@ -14,10 +16,14 @@ export interface FilesystemRepository {
     id: string,
     rootIds: readonly string[],
   ): Promise<FilesystemEntryRecord | null>;
+  listActiveSubtrees(
+    rootIds: readonly string[],
+  ): Promise<RootedFilesystemEntryRecord[]>;
   listChildren(
     parentId: string,
     offset: number,
     limit: number,
+    sort: FilesystemDirectorySort,
   ): Promise<FilesystemEntryRecord[]>;
   listActiveFiles(
     offset: number,
@@ -26,6 +32,7 @@ export interface FilesystemRepository {
   listBreadcrumbs(directoryId: string): Promise<FilesystemBreadcrumb[]>;
   listNameKeys(parentId: string, excludeId?: string): Promise<string[]>;
   listDesktopEntryIds(): Promise<string[]>;
+  replaceDesktopEntryOrder(entryIds: readonly string[]): Promise<void>;
   isWithinRoot(entryId: string, rootId: string): Promise<boolean>;
   isDescendant(entryId: string, candidateId: string): Promise<boolean>;
   insertDirectory(directory: NewFilesystemDirectory): Promise<void>;

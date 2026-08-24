@@ -13,6 +13,7 @@ import type {
   ImageThumbnailGenerator,
 } from "../src/types/thumbnail";
 import {
+  MemoryDirectorySortRepository,
   MemoryFileRepository,
   MemoryObjectStorage,
   SequenceIdGenerator,
@@ -53,7 +54,12 @@ function createServices() {
     storage,
     generator,
     files: new FileService(repository, storage, ids, clock),
-    filesystem: new FilesystemService(repository, ids, clock),
+    filesystem: new FilesystemService(
+      repository,
+      new MemoryDirectorySortRepository(),
+      ids,
+      clock,
+    ),
     thumbnails: new ThumbnailService(repository, storage, generator),
   };
 }

@@ -1,4 +1,8 @@
-import { MAX_PAGE_LIMIT } from "../pagination";
+import {
+  CHECKLIST_LOG_PAGE_LIMIT,
+  FILESYSTEM_PAGE_LIMIT,
+  LEGACY_FILE_PAGE_LIMIT,
+} from "../pagination";
 import { HTTP_HEADERS, HTTP_MEDIA_TYPE, HTTP_STATUS } from "../http";
 import type { AppErrorDefinition } from "../../types/error";
 
@@ -11,7 +15,15 @@ export const HTTP_ERRORS = {
   INVALID_LIMIT: {
     status: HTTP_STATUS.BAD_REQUEST,
     code: "INVALID_LIMIT",
-    message: `limit은 1부터 ${MAX_PAGE_LIMIT}까지 가능합니다.`,
+    message: `limit은 1부터 ${Math.max(
+      CHECKLIST_LOG_PAGE_LIMIT,
+      LEGACY_FILE_PAGE_LIMIT,
+    )}까지 가능합니다.`,
+  },
+  INVALID_FILESYSTEM_LIMIT: {
+    status: HTTP_STATUS.BAD_REQUEST,
+    code: "INVALID_FILESYSTEM_LIMIT",
+    message: `파일 시스템 limit은 1부터 ${FILESYSTEM_PAGE_LIMIT}까지 가능합니다.`,
   },
   CROSS_ORIGIN_REQUEST: {
     status: HTTP_STATUS.FORBIDDEN,

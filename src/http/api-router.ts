@@ -17,6 +17,7 @@ export class ApiRouter {
   constructor(
     private readonly files: FeatureApiHandler,
     private readonly widgets: FeatureApiHandler,
+    private readonly storageStatus: FeatureApiHandler,
     private readonly novelAiImages: FeatureApiHandler,
     private readonly identities: IdentityVerifier,
     private readonly serviceRequests: RequestVerifier,
@@ -47,6 +48,10 @@ export class ApiRouter {
       const widgetResponse = await this.widgets.handle(request, url);
       if (widgetResponse !== null) {
         return widgetResponse;
+      }
+      const storageStatusResponse = await this.storageStatus.handle(request, url);
+      if (storageStatusResponse !== null) {
+        return storageStatusResponse;
       }
       throw new AppError(HTTP_ERRORS.ROUTE_NOT_FOUND);
     } catch (error) {

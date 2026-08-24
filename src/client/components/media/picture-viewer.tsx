@@ -34,6 +34,7 @@ export function PictureViewer({
   onPrevious,
   onNext,
   onDownload,
+  onContextMenu,
 }: MediaRendererProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const canvasSize = useElementSize(canvasRef);
@@ -139,7 +140,12 @@ export function PictureViewer({
   };
 
   return (
-    <div className="picture-viewer" tabIndex={0} onKeyDown={handleKeyboard}>
+    <div
+      className="picture-viewer"
+      tabIndex={0}
+      onKeyDown={handleKeyboard}
+      onContextMenu={onContextMenu}
+    >
       <div className="picture-viewer__canvas" ref={canvasRef}>
         {!loadFailed ? (
           <div className="picture-viewer__stage" style={stageStyle}>

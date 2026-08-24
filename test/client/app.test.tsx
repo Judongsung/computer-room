@@ -14,9 +14,11 @@ import {
   DASHBOARD_COPY,
   MEMO_WIDGET_COPY,
 } from "../../src/client/constants/content";
+import { STORAGE_STATUS_COPY } from "../../src/client/constants/storage-status";
 import type { DashboardGateway } from "../../src/client/types/api";
 import type { FilesystemGateway } from "../../src/client/types/filesystem";
 import { FILESYSTEM_COPY } from "../../src/client/constants/filesystem";
+import { FILESYSTEM_SORT_COPY } from "../../src/client/constants/filesystem-sort";
 import { MEDIA_VIEWER_COPY } from "../../src/client/constants/media";
 import { ACCESS_LOGOUT_PATH } from "../../src/constants/auth";
 import { CHECKLIST_EVENT_ACTION } from "../../src/constants/checklist";
@@ -25,6 +27,7 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "../../src/constants/filesystem";
+import { DEFAULT_FILESYSTEM_DIRECTORY_SORT } from "../../src/constants/filesystem-sort";
 import {
   WIDGET_TYPE,
   WIDGET_WINDOW_POLICY,
@@ -46,6 +49,7 @@ import type {
 import type {
   FilesystemDirectoryEntry,
   FilesystemDirectoryPage,
+  FilesystemDirectorySort,
   FilesystemEntry,
   FilesystemFileEntry,
   FilesystemTrashPage,
@@ -54,6 +58,9 @@ import type {
   SaveWidgetFileInput,
   UpdateFilesystemEntryInput,
 } from "../../src/types/filesystem";
+import type { FilesystemBatchResult } from "../../src/types/filesystem-batch";
+import type { FilesystemDownloadManifest } from "../../src/types/filesystem-download";
+import type { StorageStatusSnapshot } from "../../src/types/storage-status";
 
 vi.mock("react-rnd", () => ({
   Rnd: ({ children }: { readonly children: ReactNode }) => (
@@ -240,6 +247,57 @@ describe("App", () => {
     expect(desktopWindowTitles().filter((title) => title === "내 문서")).toHaveLength(1);
     const taskbar = screen.getByRole("contentinfo", { name: DASHBOARD_COPY.TASKBAR });
     expect(within(taskbar).getAllByRole("button", { name: "내 문서" })).toHaveLength(1);
+  });
+
+  it("remembers sort settings independently for each explorer folder", async () => {
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    await filesystem.createDirectory(FILESYSTEM_ROOT_ID.DOCUMENTS, "사진");
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
+    let documentsWindow = desktopWindowByTitle("내 문서");
+    const field = within(documentsWindow).getByRole("combobox", {
+      name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
+    });
+    await user.selectOptions(field, "createdAt");
+    await waitFor(() => expect(field).toHaveValue("createdAt"));
+    const direction = within(documentsWindow).getByRole("combobox", {
+      name: FILESYSTEM_SORT_COPY.DIRECTION_LABEL,
+    });
+    expect(
+      within(direction).getByRole("option", { name: "최신 항목부터" }),
+    ).toBeInTheDocument();
+    await user.selectOptions(direction, "descending");
+    await waitFor(() => expect(direction).toHaveValue("descending"));
+
+    await user.dblClick(
+      within(documentsWindow).getByRole("button", { name: "사진" }),
+    );
+    documentsWindow = desktopWindowByTitle("사진");
+    expect(
+      within(documentsWindow).getByRole("combobox", {
+        name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
+      }),
+    ).toHaveValue("name");
+
+    await user.click(
+      within(documentsWindow).getByRole("button", { name: FILESYSTEM_COPY.BACK }),
+    );
+    documentsWindow = desktopWindowByTitle("내 문서");
+    await waitFor(() =>
+      expect(
+        within(documentsWindow).getByRole("combobox", {
+          name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
+        }),
+      ).toHaveValue("createdAt"),
+    );
+    expect(
+      within(documentsWindow).getByRole("combobox", {
+        name: FILESYSTEM_SORT_COPY.DIRECTION_LABEL,
+      }),
+    ).toHaveValue("descending");
   });
 
   it("keeps a desktop folder selected and opens other folders in independent windows", async () => {
@@ -563,6 +621,160 @@ describe("App", () => {
     await user.type(within(dialog).getByRole("textbox"), "사진");
     await user.click(within(dialog).getByRole("button", { name: FILESYSTEM_COPY.CONFIRM }));
     expect(await within(documentsWindow).findByText("사진")).toBeInTheDocument();
+  });
+
+  it("opens an XP menu on blank desktop space and launches the storage widget", async () => {
+    const api = new FakeDashboardGateway();
+    const storageStatus = emptyStorageStatusSnapshot();
+    const user = userEvent.setup();
+    render(
+      <App
+        api={api}
+        filesystemApi={new FakeFilesystemGateway()}
+        storageStatusApi={{ getStatus: vi.fn().mockResolvedValue(storageStatus) }}
+      />,
+    );
+    const desktop = await screen.findByRole("main", {
+      name: DASHBOARD_COPY.DESKTOP,
+    });
+
+    fireEvent.contextMenu(desktop, { clientX: 200, clientY: 180 });
+    expect(
+      screen.getByRole("menuitem", { name: FILESYSTEM_COPY.NEW_FOLDER }),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("menuitem", {
+        name: DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET,
+      }),
+    );
+
+    expect(await screen.findByText(STORAGE_STATUS_COPY.R2_TITLE)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: DASHBOARD_COPY.SAVE_AS_FILE }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("preserves a multi-selection when an Explorer item opens its XP menu", async () => {
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    filesystem.addFile("첫째.txt", "text/plain");
+    filesystem.addFile("둘째.txt", "text/plain");
+    filesystem.addFile("셋째.txt", "text/plain");
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
+    const documentsWindow = desktopWindowByTitle("내 문서");
+    const first = await within(documentsWindow).findByRole("button", {
+      name: /첫째\.txt/,
+    });
+    const third = within(documentsWindow).getByRole("button", {
+      name: /셋째\.txt/,
+    });
+    await user.click(first);
+    fireEvent.click(third, { ctrlKey: true });
+
+    fireEvent.contextMenu(first);
+    expect(
+      within(documentsWindow).getByText(FILESYSTEM_COPY.SELECTED_COUNT(2)),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("menuitem", { name: FILESYSTEM_COPY.DELETE }),
+    );
+
+    await waitFor(() => {
+      expect(within(documentsWindow).queryByRole("button", { name: /첫째\.txt/ })).not.toBeInTheDocument();
+      expect(within(documentsWindow).queryByRole("button", { name: /셋째\.txt/ })).not.toBeInTheDocument();
+    });
+  });
+
+  it("shows window controls from a taskbar item's XP menu", async () => {
+    const api = new FakeDashboardGateway();
+    api.savedWidgets = [memoWidget("00000000-0000-4000-8000-000000000399")];
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
+    await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT);
+    const taskbar = screen.getByRole("contentinfo", {
+      name: DASHBOARD_COPY.TASKBAR,
+    });
+
+    fireEvent.contextMenu(
+      within(taskbar).getByRole("button", { name: MEMO_WIDGET_COPY.TITLE }),
+    );
+    expect(
+      screen.getByRole("menuitem", { name: DASHBOARD_COPY.MINIMIZE }),
+    ).toBeInTheDocument();
+    await user.click(
+      screen.getByRole("menuitem", { name: DASHBOARD_COPY.MAXIMIZE }),
+    );
+    expect(
+      within(desktopWindowByTitle(MEMO_WIDGET_COPY.TITLE)).getByRole("button", {
+        name: DASHBOARD_COPY.RESTORE,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("selects filesystem ranges and batches a multi-item delete", async () => {
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    filesystem.addFile("첫째.txt", "text/plain");
+    filesystem.addFile("둘째.txt", "text/plain");
+    filesystem.addFile("셋째.txt", "text/plain");
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
+    const documentsWindow = desktopWindowByTitle("내 문서");
+    const first = await within(documentsWindow).findByRole("button", {
+      name: /첫째\.txt/,
+    });
+    const second = within(documentsWindow).getByRole("button", {
+      name: /둘째\.txt/,
+    });
+    const third = within(documentsWindow).getByRole("button", {
+      name: /셋째\.txt/,
+    });
+
+    await user.click(first);
+    fireEvent.click(third, { shiftKey: true });
+    expect(
+      within(documentsWindow).getByText(FILESYSTEM_COPY.SELECTED_COUNT(3)),
+    ).toBeInTheDocument();
+
+    fireEvent.keyDown(third, { key: "Escape" });
+    expect(
+      within(documentsWindow).queryByText(FILESYSTEM_COPY.SELECTED_COUNT(3)),
+    ).not.toBeInTheDocument();
+
+    await user.click(second);
+    fireEvent.keyDown(second, { key: "a", ctrlKey: true });
+    expect(
+      within(documentsWindow).getByText(FILESYSTEM_COPY.SELECTED_COUNT(3)),
+    ).toBeInTheDocument();
+    fireEvent.keyDown(second, { key: "Escape" });
+
+    await user.click(first);
+    fireEvent.click(third, { ctrlKey: true });
+    expect(
+      within(documentsWindow).getByText(FILESYSTEM_COPY.SELECTED_COUNT(2)),
+    ).toBeInTheDocument();
+    await user.click(
+      within(documentsWindow).getByRole("button", {
+        name: FILESYSTEM_COPY.DELETE,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        within(documentsWindow).queryByRole("button", { name: /첫째\.txt/ }),
+      ).not.toBeInTheDocument();
+      expect(
+        within(documentsWindow).queryByRole("button", { name: /셋째\.txt/ }),
+      ).not.toBeInTheDocument();
+    });
+    expect(
+      within(documentsWindow).getByRole("button", { name: /둘째\.txt/ }),
+    ).toBeInTheDocument();
   });
 
   it("opens shortcuts with Enter and synchronizes My Documents with Recycle Bin", async () => {
@@ -912,25 +1124,9 @@ class FakeDashboardGateway implements DashboardGateway {
     this.savedWidgets = widgets.map((layout): DashboardWidget => {
       const existing = existingById.get(layout.id);
       if (existing?.type === layout.type) {
-        return { ...layout, data: existing.data } as DashboardWidget;
+        return mergeFakeWidgetLayout(existing, layout);
       }
-      return layout.type === WIDGET_TYPE.MEMO
-        ? {
-            ...layout,
-            type: WIDGET_TYPE.MEMO,
-            file: null,
-            data: { markdown: "", updatedAt: null },
-          }
-        : {
-            ...layout,
-            type: WIDGET_TYPE.DAILY_CHECKLIST,
-            file: null,
-            data: {
-              businessDate: "2026-08-20",
-              nextResetAt: "2026-08-20T15:00:00.000Z",
-              items: [],
-            },
-          };
+      return fakeWidgetFromLayout(layout);
     });
     return cloneDashboardWidgets(this.savedWidgets);
   }
@@ -947,24 +1143,7 @@ class FakeDashboardGateway implements DashboardGateway {
       restoreState: WINDOW_RESTORE_STATE.NORMAL,
       stackOrder: this.savedWidgets.length,
     };
-    const widget: DashboardWidget =
-      input.type === WIDGET_TYPE.MEMO
-        ? {
-            ...layout,
-            type: WIDGET_TYPE.MEMO,
-            file: null,
-            data: { markdown: "", updatedAt: null },
-          }
-        : {
-            ...layout,
-            type: WIDGET_TYPE.DAILY_CHECKLIST,
-            file: null,
-            data: {
-              businessDate: "2026-08-20",
-              nextResetAt: "2026-08-20T15:00:00.000Z",
-              items: [],
-            },
-          };
+    const widget = fakeWidgetFromLayout(layout);
     this.savedWidgets.push(widget);
     return structuredClone(widget);
   }
@@ -975,6 +1154,9 @@ class FakeDashboardGateway implements DashboardGateway {
   ): Promise<{ widget: DashboardWidget; entry: FilesystemWidgetEntry }> {
     const widget = this.savedWidgets.find((candidate) => candidate.id === widgetId);
     if (!widget) throw new Error("Widget not found");
+    if (widget.type === WIDGET_TYPE.STORAGE_STATUS) {
+      throw new Error("Widget file storage is not supported");
+    }
     const entry: FilesystemWidgetEntry = {
       id: `widget-file-${widgetId}`,
       parentId: input.parentId,
@@ -1110,6 +1292,10 @@ class FakeDashboardGateway implements DashboardGateway {
 class FakeFilesystemGateway implements FilesystemGateway {
   private readonly entries: FilesystemEntry[] = [];
   private readonly trash: Array<FilesystemTrashPage["items"][number]> = [];
+  private readonly directorySorts = new Map<
+    string,
+    FilesystemDirectorySort
+  >();
   private nextId = 1;
   private readonly root: FilesystemDirectoryEntry = {
     id: FILESYSTEM_ROOT_ID.DOCUMENTS,
@@ -1194,7 +1380,18 @@ class FakeFilesystemGateway implements FilesystemGateway {
             ],
       items: this.entries.filter((entry) => entry.parentId === directory.id),
       nextOffset: null,
+      sort:
+        this.directorySorts.get(directory.id) ??
+        DEFAULT_FILESYSTEM_DIRECTORY_SORT,
     };
+  }
+
+  async updateDirectorySort(
+    directoryId: string,
+    sort: FilesystemDirectorySort,
+  ): Promise<FilesystemDirectorySort> {
+    this.directorySorts.set(directoryId, { ...sort });
+    return { ...sort };
   }
 
   async createDirectory(parentId: string, name: string): Promise<FilesystemDirectoryEntry> {
@@ -1247,6 +1444,16 @@ class FakeFilesystemGateway implements FilesystemGateway {
     return this.updateEntry(id, { parentId: input.parentId });
   }
 
+  async moveEntries(
+    ids: readonly string[],
+    input: MoveFilesystemEntryInput,
+  ): Promise<FilesystemBatchResult> {
+    const entries = await Promise.all(
+      ids.map((id) => this.moveEntry(id, input)),
+    );
+    return batchResult(ids, entries);
+  }
+
   async trashEntry(id: string) {
     const index = this.entries.findIndex((entry) => entry.id === id);
     const entry = this.entries[index];
@@ -1259,6 +1466,41 @@ class FakeFilesystemGateway implements FilesystemGateway {
       originalLocation: "내 문서",
     });
     return { entry: null, closedWidgetIds: [] };
+  }
+
+  async trashEntries(ids: readonly string[]): Promise<FilesystemBatchResult> {
+    const closedWidgetIds: string[] = [];
+    for (const id of ids) {
+      const result = await this.trashEntry(id);
+      closedWidgetIds.push(...result.closedWidgetIds);
+    }
+    return { ...batchResult(ids), closedWidgetIds };
+  }
+
+  async createDownloadManifest(
+    ids: readonly string[],
+  ): Promise<FilesystemDownloadManifest> {
+    const selected = this.entries.filter((entry) => ids.includes(entry.id));
+    const files = selected.filter(
+      (entry): entry is FilesystemFileEntry =>
+        entry.kind === FILESYSTEM_ENTRY_KIND.FILE,
+    );
+    return {
+      archiveName: "computer-room-files.zip",
+      entries: files.map((entry) => ({
+        kind: FILESYSTEM_ENTRY_KIND.FILE,
+        id: entry.id,
+        path: entry.name,
+        size: entry.size,
+        updatedAt: entry.updatedAt,
+        downloadUrl: this.downloadUrl(entry.id),
+      })),
+      totalFileCount: files.length,
+      totalBytes: files.reduce((total, entry) => total + entry.size, 0),
+      skippedWidgetIds: selected
+        .filter((entry) => entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET)
+        .map((entry) => entry.id),
+    };
   }
 
   downloadUrl(id: string): string {
@@ -1286,14 +1528,38 @@ class FakeFilesystemGateway implements FilesystemGateway {
     return item.entry;
   }
 
+  async restoreEntries(ids: readonly string[]): Promise<FilesystemBatchResult> {
+    const entries = await Promise.all(ids.map((id) => this.restoreEntry(id)));
+    return batchResult(ids, entries);
+  }
+
   async permanentlyDeleteEntry(id: string): Promise<void> {
     const index = this.trash.findIndex((item) => item.entry.id === id);
     if (index >= 0) this.trash.splice(index, 1);
   }
 
+  async permanentlyDeleteEntries(
+    ids: readonly string[],
+  ): Promise<FilesystemBatchResult> {
+    await Promise.all(ids.map((id) => this.permanentlyDeleteEntry(id)));
+    return batchResult(ids);
+  }
+
   async emptyTrash(): Promise<void> {
     this.trash.splice(0);
   }
+}
+
+function batchResult(
+  ids: readonly string[],
+  entries: readonly FilesystemEntry[] = [],
+): FilesystemBatchResult {
+  return {
+    succeededIds: [...ids],
+    entries,
+    failures: [],
+    closedWidgetIds: [],
+  };
 }
 
 async function openStartMenu(
@@ -1310,6 +1576,85 @@ async function addWidget(
 ): Promise<void> {
   await openStartMenu(user);
   await user.click(screen.getByRole("button", { name: label }));
+}
+
+function fakeWidgetFromLayout(layout: WidgetLayout): DashboardWidget {
+  if (layout.type === WIDGET_TYPE.MEMO) {
+    return {
+      ...layout,
+      type: WIDGET_TYPE.MEMO,
+      file: null,
+      data: { markdown: "", updatedAt: null },
+    };
+  }
+  if (layout.type === WIDGET_TYPE.STORAGE_STATUS) {
+    return {
+      ...layout,
+      type: WIDGET_TYPE.STORAGE_STATUS,
+      file: null,
+      data: null,
+    };
+  }
+  return {
+    ...layout,
+    type: WIDGET_TYPE.DAILY_CHECKLIST,
+    file: null,
+    data: {
+      businessDate: "2026-08-20",
+      nextResetAt: "2026-08-20T15:00:00.000Z",
+      items: [],
+    },
+  };
+}
+
+function mergeFakeWidgetLayout(
+  existing: DashboardWidget,
+  layout: WidgetLayout,
+): DashboardWidget {
+  if (existing.type === WIDGET_TYPE.MEMO) {
+    return { ...existing, ...layout, type: WIDGET_TYPE.MEMO };
+  }
+  if (existing.type === WIDGET_TYPE.STORAGE_STATUS) {
+    return {
+      ...existing,
+      ...layout,
+      type: WIDGET_TYPE.STORAGE_STATUS,
+      file: null,
+      data: null,
+    };
+  }
+  return { ...existing, ...layout, type: WIDGET_TYPE.DAILY_CHECKLIST };
+}
+
+function emptyStorageStatusSnapshot(): StorageStatusSnapshot {
+  const empty = () => ({ bytes: 0, objectCount: 0 });
+  return {
+    measuredAt: "2026-08-23T12:34:56.789Z",
+    r2: {
+      total: empty(),
+      standard: empty(),
+      byPurpose: {
+        original: empty(),
+        thumbnail: empty(),
+        other: empty(),
+      },
+      byMimeCategory: {
+        image: empty(),
+        video: empty(),
+        audio: empty(),
+        document: empty(),
+        archive: empty(),
+        other: empty(),
+      },
+    },
+    d1: {
+      databaseBytes: 0,
+      registeredFileCount: 0,
+      directoryCount: 0,
+      widgetCount: 1,
+      trashItemCount: 0,
+    },
+  };
 }
 
 function memoWidget(id: string): DashboardWidget {

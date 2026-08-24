@@ -7,6 +7,7 @@ import { FILE_OBJECT_KEY_PREFIX } from "../src/constants/file";
 import { FILESYSTEM_ROOT_ID } from "../src/constants/filesystem";
 import { thumbnailObjectKey } from "../src/domain/thumbnail";
 import {
+  MemoryDirectorySortRepository,
   MemoryFileRepository,
   MemoryObjectStorage,
   SequenceIdGenerator,
@@ -35,7 +36,12 @@ function createServices() {
     repository,
     storage,
     clock,
-    filesystem: new FilesystemService(repository, ids, clock),
+    filesystem: new FilesystemService(
+      repository,
+      new MemoryDirectorySortRepository(),
+      ids,
+      clock,
+    ),
     files: new FileService(repository, storage, ids, clock),
     recycleBin: new RecycleBinService(repository, storage, clock),
   };
@@ -45,7 +51,14 @@ function createService() {
   const repository = new MemoryFileRepository();
   const service = new FilesystemService(
     repository,
-    new SequenceIdGenerator(["desktop-a", "desktop-b", "desktop-c"]),
+    new MemoryDirectorySortRepository(),
+    new SequenceIdGenerator([
+      "desktop-a",
+      "desktop-b",
+      "desktop-c",
+      "desktop-d",
+      "desktop-e",
+    ]),
     new StaticClock(NOW),
   );
   return { repository, service };
@@ -259,6 +272,72 @@ describe("filesystem use cases", () => {
     ]);
     expect(repository.records.get(second.id)?.desktopOrder).toBe(0);
     expect(repository.records.get(first.id)?.desktopOrder).toBe(1);
+  });
+
+  it("reorders a selected desktop group without changing its relative order", async () => {
+    const { repository, service } = createService();
+    const first = await service.createDirectory(
+      FILESYSTEM_ROOT_ID.DESKTOP,
+      "첫 번째",
+      { targetIndex: 0, capacity: 4 },
+    );
+    const second = await service.createDirectory(
+      FILESYSTEM_ROOT_ID.DESKTOP,
+      "두 번째",
+      { targetIndex: 1, capacity: 4 },
+    );
+    const third = await service.createDirectory(
+      FILESYSTEM_ROOT_ID.DESKTOP,
+      "세 번째",
+      { targetIndex: 2, capacity: 4 },
+    );
+    const fourth = await service.createDirectory(
+      FILESYSTEM_ROOT_ID.DESKTOP,
+      "네 번째",
+      { targetIndex: 3, capacity: 4 },
+    );
+
+    const result = await service.moveEntries([third.id, second.id], {
+      parentId: FILESYSTEM_ROOT_ID.DESKTOP,
+      desktopPlacement: { targetIndex: 0, capacity: 4 },
+    });
+
+    expect(result.failures).toEqual([]);
+    expect(result.succeededIds).toEqual([third.id, second.id]);
+    await expect(repository.listDesktopEntryIds()).resolves.toEqual([
+      second.id,
+      third.id,
+      first.id,
+      fourth.id,
+    ]);
+  });
+
+  it("returns per-entry failures while preserving successful batch changes", async () => {
+    const { filesystem, recycleBin, repository } = createServices();
+    const folder = await filesystem.createDirectory(
+      FILESYSTEM_ROOT_ID.DOCUMENTS,
+      "묶음 작업",
+    );
+
+    const trashed = await filesystem.trashEntries([folder.id, "missing"]);
+    expect(trashed.succeededIds).toEqual([folder.id]);
+    expect(trashed.failures).toEqual([
+      expect.objectContaining({
+        id: "missing",
+        code: FILESYSTEM_ERRORS.ENTRY_NOT_FOUND.code,
+      }),
+    ]);
+    expect(repository.records.get(folder.id)?.trashedAt).not.toBeNull();
+
+    const restored = await recycleBin.restoreEntries([folder.id, "missing"]);
+    expect(restored.succeededIds).toEqual([folder.id]);
+    expect(restored.failures).toEqual([
+      expect.objectContaining({
+        id: "missing",
+        code: FILESYSTEM_ERRORS.ENTRY_NOT_TRASHED.code,
+      }),
+    ]);
+    expect(repository.records.get(folder.id)?.trashedAt).toBeNull();
   });
 
   it("rejects an incoming desktop entry when every dynamic slot is occupied", async () => {

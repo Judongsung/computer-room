@@ -22,6 +22,10 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ENTRY_KIND_VALUES,
 } from "../src/constants/filesystem";
+import {
+  FILESYSTEM_SORT_DIRECTION_VALUES,
+  FILESYSTEM_SORT_FIELD_VALUES,
+} from "../src/constants/filesystem-sort";
 import { EMPTY_MEMO_MARKDOWN } from "../src/constants/memo";
 import {
   WIDGET_TYPE,
@@ -37,6 +41,12 @@ import {
 const FILE_STATUS_SQL = FILE_STATUS_VALUES.map((status) => `'${status}'`).join(", ");
 const FILESYSTEM_ENTRY_KIND_SQL = FILESYSTEM_ENTRY_KIND_VALUES.map(
   (kind) => `'${kind}'`,
+).join(", ");
+const FILESYSTEM_SORT_FIELD_SQL = FILESYSTEM_SORT_FIELD_VALUES.map(
+  (field) => `'${field}'`,
+).join(", ");
+const FILESYSTEM_SORT_DIRECTION_SQL = FILESYSTEM_SORT_DIRECTION_VALUES.map(
+  (direction) => `'${direction}'`,
 ).join(", ");
 const WIDGET_TYPE_SQL = WIDGET_TYPE_VALUES.map((type) => `'${type}'`).join(", ");
 const WINDOW_STATE_SQL = WINDOW_STATE_VALUES.map((state) => `'${state}'`).join(", ");
@@ -126,6 +136,30 @@ export const filesystemEntries = sqliteTable(
   ],
 );
 
+export const filesystemDirectoryPreferences = sqliteTable(
+  "filesystem_directory_preferences",
+  {
+    directoryId: text("directory_id")
+      .primaryKey()
+      .references(() => filesystemEntries.id, { onDelete: "cascade" }),
+    sortField: text("sort_field", { enum: FILESYSTEM_SORT_FIELD_VALUES })
+      .notNull(),
+    sortDirection: text("sort_direction", {
+      enum: FILESYSTEM_SORT_DIRECTION_VALUES,
+    }).notNull(),
+  },
+  (table) => [
+    check(
+      "filesystem_directory_preferences_field_check",
+      sql`${table.sortField} IN (${sql.raw(FILESYSTEM_SORT_FIELD_SQL)})`,
+    ),
+    check(
+      "filesystem_directory_preferences_direction_check",
+      sql`${table.sortDirection} IN (${sql.raw(FILESYSTEM_SORT_DIRECTION_SQL)})`,
+    ),
+  ],
+);
+
 export const dashboardWidgets = sqliteTable(
   "dashboard_widgets",
   {
@@ -180,6 +214,9 @@ export const dashboardWidgets = sqliteTable(
     check("dashboard_widgets_stack_order_check", sql`${table.stackOrder} >= 0`),
     check("dashboard_widgets_is_open_check", sql`${table.isOpen} IN (0, 1)`),
     index("idx_dashboard_widgets_stack_order").on(table.stackOrder),
+    uniqueIndex("uq_dashboard_widgets_storage_status")
+      .on(table.type)
+      .where(sql`${table.type} = ${sql.raw(`'${WIDGET_TYPE.STORAGE_STATUS}'`)}`),
   ],
 );
 

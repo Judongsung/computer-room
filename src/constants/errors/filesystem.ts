@@ -63,6 +63,16 @@ export const FILESYSTEM_ERRORS = {
     code: "INVALID_DESKTOP_PLACEMENT",
     message: "바탕 화면 아이콘 배치 정보가 올바르지 않습니다.",
   },
+  INVALID_DIRECTORY_SORT: {
+    status: HTTP_STATUS.BAD_REQUEST,
+    code: "INVALID_FILESYSTEM_DIRECTORY_SORT",
+    message: "폴더 정렬 설정이 올바르지 않습니다.",
+  },
+  INVALID_STORED_DIRECTORY_SORT: {
+    status: HTTP_STATUS.INTERNAL_SERVER_ERROR,
+    code: "INVALID_STORED_FILESYSTEM_DIRECTORY_SORT",
+    message: "저장된 폴더 정렬 설정이 올바르지 않습니다.",
+  },
   DESKTOP_FULL: {
     status: HTTP_STATUS.CONFLICT,
     code: "DESKTOP_FULL",

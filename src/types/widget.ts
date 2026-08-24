@@ -49,6 +49,11 @@ export interface CreateWidgetInput {
   readonly size: WindowSize;
 }
 
+export interface WidgetCreationResult {
+  readonly widget: DashboardWidget;
+  readonly created: boolean;
+}
+
 export interface StoredWidgetLayout extends WidgetLayout {
   readonly isOpen: boolean;
   readonly file: WidgetFileReference | null;
@@ -83,7 +88,16 @@ export type DailyChecklistWidget = WidgetLayout & {
   readonly data: DailyChecklistData;
 };
 
-export type DashboardWidget = MemoWidget | DailyChecklistWidget;
+export type StorageStatusWidget = WidgetLayout & {
+  readonly type: typeof WIDGET_TYPE.STORAGE_STATUS;
+  readonly file: null;
+  readonly data: null;
+};
+
+export type DashboardWidget =
+  | MemoWidget
+  | DailyChecklistWidget
+  | StorageStatusWidget;
 
 export interface DashboardWidgetCollection {
   readonly items: readonly DashboardWidget[];

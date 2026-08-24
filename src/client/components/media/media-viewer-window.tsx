@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { mediaKindFromContentType } from "../../../domain/media-type";
 import { MEDIA_KIND } from "../../../constants/media";
+import { WINDOW_STATE } from "../../../constants/widget";
 import {
   MEDIA_VIEWER_COPY,
   MEDIA_WINDOW_CONFIG,
@@ -11,6 +12,10 @@ import { downloadFile } from "../../utils/download-file";
 import { DesktopAppWindow } from "../desktop/desktop-app-window";
 import { PictureViewer } from "./picture-viewer";
 import { WindowsMediaPlayer } from "./windows-media-player";
+import { useXpContextMenu } from "../../state/context-menu-context";
+import { contextMenuCommand, contextMenuSeparator } from "../../domain/context-menu";
+import { XP_CONTEXT_MENU_COMMAND_ID } from "../../constants/context-menu";
+import { windowContextMenuItems } from "../../domain/window-context-menu";
 
 export function MediaViewerWindow({
   window,
@@ -26,6 +31,7 @@ export function MediaViewerWindow({
   onCommitBounds,
   onChangeFile,
 }: MediaViewerWindowProps) {
+  const contextMenu = useXpContextMenu();
   const kind = mediaKindFromContentType(window.currentFile.contentType);
   const directory = useMediaDirectory(
     gateway,
@@ -71,6 +77,21 @@ export function MediaViewerWindow({
     onPrevious: () => navigate(-1),
     onNext: () => navigate(1),
     onDownload: () => downloadFile(gateway.downloadUrl(window.currentFile.id)),
+    onContextMenu: (event: Parameters<typeof contextMenu.openFromEvent>[0]) =>
+      contextMenu.openFromEvent(event, [
+        contextMenuCommand(
+          XP_CONTEXT_MENU_COMMAND_ID.DOWNLOAD,
+          MEDIA_VIEWER_COPY.DOWNLOAD_FILE,
+          () => downloadFile(gateway.downloadUrl(window.currentFile.id)),
+        ),
+        contextMenuSeparator("media-viewer-separator-1"),
+        ...windowContextMenuItems({
+          isMaximized: window.windowState === WINDOW_STATE.MAXIMIZED,
+          onMinimize,
+          onToggleMaximize,
+          onClose,
+        }),
+      ]),
   } as const;
 
   return (

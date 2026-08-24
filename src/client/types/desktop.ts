@@ -6,11 +6,12 @@ import type {
   WindowState,
 } from "../../types/widget";
 import type { SessionInfo } from "../../types/auth";
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import type { DashboardGateway } from "./api";
 import type { FilesystemGateway } from "./filesystem";
 import type { SaveWidgetFileInput } from "../../types/filesystem";
 import type { LayoutSaveStatus, StatusMessage } from "./dashboard";
+import type { StorageStatusGateway } from "./storage-status";
 
 export interface DesktopDimensions {
   readonly width: number;
@@ -60,6 +61,7 @@ export interface MovableDesktopWindowProps extends WindowBounds {
   readonly zIndex: number;
   readonly onFocus: () => void;
   readonly onCommitBounds: (bounds: WindowBounds) => void;
+  readonly onContextMenu?: (event: MouseEvent<HTMLElement>) => void;
   readonly children: ReactNode;
 }
 
@@ -78,6 +80,7 @@ export interface WidgetComponentProps {
   readonly widget: DashboardWidget;
   readonly windowControls: WidgetWindowControls;
   readonly gateway: DashboardGateway;
+  readonly storageStatusGateway: StorageStatusGateway;
   readonly onWidgetChange: (widget: DashboardWidget) => void;
 }
 
@@ -100,6 +103,7 @@ export interface DesktopShellProps {
   readonly activeWidgetId: string | null;
   readonly gateway: DashboardGateway;
   readonly filesystemGateway: FilesystemGateway;
+  readonly storageStatusGateway: StorageStatusGateway;
   readonly layoutSaveStatus: LayoutSaveStatus;
   readonly layoutSaveError: string | null;
   readonly message: StatusMessage | null;
@@ -134,6 +138,7 @@ export interface DesktopWindowProps {
   readonly isActive: boolean;
   readonly zIndex: number;
   readonly gateway: DashboardGateway;
+  readonly storageStatusGateway: StorageStatusGateway;
   readonly onFocus: () => void;
   readonly onMinimize: () => void;
   readonly onToggleMaximize: () => void;
@@ -150,6 +155,7 @@ export interface StartMenuProps {
   readonly onClose: () => void;
   readonly onAddMemo: () => void;
   readonly onAddChecklist: () => void;
+  readonly onAddStorageStatus: () => void;
 }
 
 export interface TaskbarProps {
@@ -158,6 +164,10 @@ export interface TaskbarProps {
   readonly saveStatus: LayoutSaveStatus;
   readonly onToggleStartMenu: () => void;
   readonly onActivateWindow: (widgetId: string) => void;
+  readonly onRestoreWindow: (windowId: string) => void;
+  readonly onMinimizeWindow: (windowId: string) => void;
+  readonly onToggleMaximizeWindow: (windowId: string) => void;
+  readonly onCloseWindow: (windowId: string) => void;
 }
 
 export interface TaskbarWindowItem {
@@ -166,6 +176,7 @@ export interface TaskbarWindowItem {
   readonly iconPath: string;
   readonly isActive: boolean;
   readonly isMinimized: boolean;
+  readonly isMaximized: boolean;
 }
 
 export interface DesktopNotificationProps {

@@ -2,6 +2,7 @@ import type {
   CreateWidgetInput,
   DashboardWidget,
   WidgetLayout,
+  WidgetCreationResult,
 } from "./widget";
 import type {
   FilesystemWidgetEntry,
@@ -13,7 +14,7 @@ export interface WidgetLayoutUseCases {
   replaceWidgets(
     widgets: readonly WidgetLayout[],
   ): Promise<DashboardWidget[]>;
-  createWidget(input: CreateWidgetInput): Promise<DashboardWidget>;
+  createWidget(input: CreateWidgetInput): Promise<WidgetCreationResult>;
   saveWidgetFile(
     widgetId: string,
     input: SaveWidgetFileInput,

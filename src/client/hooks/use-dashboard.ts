@@ -8,6 +8,7 @@ import {
 } from "react";
 import {
   MAX_OPEN_WIDGET_COUNT,
+  WIDGET_BEHAVIOR,
   WIDGET_TYPE,
   WIDGET_WINDOW_POLICY,
   WINDOW_STATE,
@@ -157,6 +158,15 @@ export function useDashboard(api: DashboardGateway) {
 
   const addWidget = useCallback(
     async (type: WidgetType, desktop: DesktopDimensions): Promise<void> => {
+      const existingSingleton = WIDGET_BEHAVIOR[type].singleton
+        ? widgetsRef.current.find((widget) => widget.type === type)
+        : undefined;
+      if (existingSingleton) {
+        replaceAndSave((widgets) =>
+          bringWidgetToFront(widgets, existingSingleton.id),
+        );
+        return;
+      }
       if (widgetsRef.current.length >= MAX_OPEN_WIDGET_COUNT) {
         dispatch({
           type: DASHBOARD_ACTION_TYPE.MESSAGE_SET,
@@ -177,9 +187,19 @@ export function useDashboard(api: DashboardGateway) {
           position: cascadeWindowPosition(widgets.length, size, desktop),
           size,
         });
-        const next = cloneDashboardWidgets([...widgetsRef.current, widget]);
+        const current = widgetsRef.current;
+        const exists = current.some((candidate) => candidate.id === widget.id);
+        const merged = exists
+          ? current.map((candidate) =>
+              candidate.id === widget.id ? widget : candidate,
+            )
+          : [...current, widget];
+        const next = cloneDashboardWidgets(
+          bringWidgetToFront(merged, widget.id),
+        );
         widgetsRef.current = next;
         dispatch({ type: DASHBOARD_ACTION_TYPE.WIDGETS_REPLACED, widgets: next });
+        scheduleLayoutSave(next);
       } catch (error) {
         dispatch({
           type: DASHBOARD_ACTION_TYPE.MESSAGE_SET,
@@ -190,7 +210,7 @@ export function useDashboard(api: DashboardGateway) {
         });
       }
     },
-    [api, showError],
+    [api, replaceAndSave, scheduleLayoutSave],
   );
 
   const saveWidgetFile = useCallback(

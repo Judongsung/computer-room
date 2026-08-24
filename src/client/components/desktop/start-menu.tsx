@@ -7,6 +7,9 @@ import {
 import { KEYBOARD_KEY } from "../../constants/keyboard";
 import { WIDGET_TYPE } from "../../../constants/widget";
 import type { StartMenuProps } from "../../types/desktop";
+import { useXpContextMenu } from "../../state/context-menu-context";
+import { contextMenuCommand } from "../../domain/context-menu";
+import { XP_CONTEXT_MENU_COMMAND_ID } from "../../constants/context-menu";
 
 export function StartMenu({
   isOpen,
@@ -15,7 +18,9 @@ export function StartMenu({
   onClose,
   onAddMemo,
   onAddChecklist,
+  onAddStorageStatus,
 }: StartMenuProps) {
+  const contextMenu = useXpContextMenu();
   const menuRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -71,6 +76,15 @@ export function StartMenu({
             type="button"
             className="start-menu__item"
             onClick={onAddMemo}
+            onContextMenu={(event) =>
+              contextMenu.openFromEvent(event, [
+                contextMenuCommand(
+                  XP_CONTEXT_MENU_COMMAND_ID.ADD_MEMO,
+                  DASHBOARD_COPY.ADD_MEMO_WIDGET,
+                  onAddMemo,
+                ),
+              ])
+            }
           >
             <img src={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.MEMO]} alt="" />
             <span>{DASHBOARD_COPY.ADD_MEMO_WIDGET}</span>
@@ -79,12 +93,41 @@ export function StartMenu({
             type="button"
             className="start-menu__item"
             onClick={onAddChecklist}
+            onContextMenu={(event) =>
+              contextMenu.openFromEvent(event, [
+                contextMenuCommand(
+                  XP_CONTEXT_MENU_COMMAND_ID.ADD_CHECKLIST,
+                  DASHBOARD_COPY.ADD_CHECKLIST_WIDGET,
+                  onAddChecklist,
+                ),
+              ])
+            }
           >
             <img
               src={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.DAILY_CHECKLIST]}
               alt=""
             />
             <span>{DASHBOARD_COPY.ADD_CHECKLIST_WIDGET}</span>
+          </button>
+          <button
+            type="button"
+            className="start-menu__item"
+            onClick={onAddStorageStatus}
+            onContextMenu={(event) =>
+              contextMenu.openFromEvent(event, [
+                contextMenuCommand(
+                  XP_CONTEXT_MENU_COMMAND_ID.ADD_STORAGE_STATUS,
+                  DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET,
+                  onAddStorageStatus,
+                ),
+              ])
+            }
+          >
+            <img
+              src={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.STORAGE_STATUS]}
+              alt=""
+            />
+            <span>{DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET}</span>
           </button>
         </section>
         <section

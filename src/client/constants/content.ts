@@ -1,5 +1,6 @@
 import { WIDGET_TYPE } from "../../constants/widget";
 import { LAYOUT_SAVE_STATUS } from "./layout-save";
+import { STORAGE_STATUS_COPY } from "./storage-status";
 
 export const SITE_COPY = {
   TITLE: "computer-room",
@@ -12,6 +13,7 @@ export const DASHBOARD_COPY = {
   START_MENU: "시작 메뉴",
   ADD_MEMO_WIDGET: "새 메모",
   ADD_CHECKLIST_WIDGET: "새 일일 체크리스트",
+  ADD_STORAGE_STATUS_WIDGET: "저장소 상태",
   PROGRAMS: "위젯",
   PERSONAL_SPACE: "개인 공간",
   ACCESS_PROTECTED: "Cloudflare Access로 보호됨",
@@ -78,11 +80,13 @@ export const CHECKLIST_WIDGET_COPY = {
 export const WIDGET_TITLE_BY_TYPE = {
   [WIDGET_TYPE.MEMO]: MEMO_WIDGET_COPY.TITLE,
   [WIDGET_TYPE.DAILY_CHECKLIST]: CHECKLIST_WIDGET_COPY.TITLE,
+  [WIDGET_TYPE.STORAGE_STATUS]: STORAGE_STATUS_COPY.TITLE,
 } as const;
 
 export const UNSAVED_WIDGET_TITLE_BY_TYPE = {
   [WIDGET_TYPE.MEMO]: MEMO_WIDGET_COPY.UNSAVED_TITLE,
   [WIDGET_TYPE.DAILY_CHECKLIST]: CHECKLIST_WIDGET_COPY.UNSAVED_TITLE,
+  [WIDGET_TYPE.STORAGE_STATUS]: STORAGE_STATUS_COPY.TITLE,
 } as const;
 
 export const LAYOUT_SAVE_COPY_BY_STATUS = {

@@ -5,16 +5,24 @@ import {
 } from "../constants/filesystem";
 import { FILESYSTEM_ERRORS } from "../constants/errors/filesystem";
 import { WIDGET_TYPE_VALUES } from "../constants/widget";
+import {
+  FILESYSTEM_SORT_DIRECTION,
+  FILESYSTEM_SORT_FIELD,
+} from "../constants/filesystem-sort";
 import { AppError } from "../domain/errors";
 import type { FilesystemEntryRow } from "../types/database";
 import type {
   FilesystemBreadcrumb,
   FilesystemEntryRecord,
+  FilesystemDirectorySort,
+  FilesystemSortDirection,
+  FilesystemSortField,
   FilesystemFileObject,
   NewFilesystemDirectory,
   NewExactFilesystemDirectory,
   NewFilesystemFile,
   NewFilesystemWidget,
+  RootedFilesystemEntryRecord,
 } from "../types/filesystem";
 import type { FilesystemRepository } from "../types/repository";
 
@@ -30,12 +38,46 @@ const ENTRY_SELECT = `
   LEFT JOIN dashboard_widgets w ON w.id = e.widget_id
   LEFT JOIN desktop_entry_order desktop ON desktop.entry_id = e.id`;
 
+const ROOTED_ENTRY_SELECT = `
+  SELECT subtree.root_id,
+         e.id, e.parent_id, e.kind, e.name, e.name_key, e.file_id,
+         e.widget_id, e.restore_parent_id, e.restore_path, e.trashed_at,
+         e.created_at, e.updated_at,
+         f.object_key, f.content_type, f.size, f.etag, f.status AS file_status,
+         w.type AS widget_type, w.is_open AS widget_open,
+         desktop.sort_order AS desktop_order
+  FROM subtree
+  JOIN filesystem_entries e ON e.id = subtree.id
+  LEFT JOIN files f ON f.id = e.file_id
+  LEFT JOIN dashboard_widgets w ON w.id = e.widget_id
+  LEFT JOIN desktop_entry_order desktop ON desktop.entry_id = e.id`;
+
 interface BreadcrumbRow { id: string; name: string; depth: number }
 interface NameKeyRow { name_key: string }
 interface IdRow { id: string }
 interface WidgetIdRow { widget_id: string }
 interface ExistsRow { found: number }
 interface FileObjectRow { id: string; object_key: string }
+interface RootedFilesystemEntryRow extends FilesystemEntryRow { root_id: string }
+
+const SORT_DIRECTION_SQL = {
+  [FILESYSTEM_SORT_DIRECTION.ASCENDING]: "ASC",
+  [FILESYSTEM_SORT_DIRECTION.DESCENDING]: "DESC",
+} as const satisfies Record<FilesystemSortDirection, string>;
+
+const SORT_EXPRESSION_SQL = {
+  [FILESYSTEM_SORT_FIELD.NAME]: "e.name_key",
+  [FILESYSTEM_SORT_FIELD.CREATED_AT]: "e.created_at",
+  [FILESYSTEM_SORT_FIELD.UPDATED_AT]: "e.updated_at",
+  [FILESYSTEM_SORT_FIELD.TYPE]:
+    `CASE WHEN e.kind = '${FILESYSTEM_ENTRY_KIND.WIDGET}' ` +
+    "THEN 'widget:' || COALESCE(w.type, '') " +
+    "ELSE LOWER(TRIM(CASE " +
+    "WHEN INSTR(f.content_type, ';') > 0 " +
+    "THEN SUBSTR(f.content_type, 1, INSTR(f.content_type, ';') - 1) " +
+    "ELSE COALESCE(f.content_type, '') END)) END",
+  [FILESYSTEM_SORT_FIELD.SIZE]: "f.size",
+} as const satisfies Record<FilesystemSortField, string>;
 
 export class D1FilesystemRepository implements FilesystemRepository {
   constructor(private readonly database: D1Database) {}
@@ -75,6 +117,54 @@ export class D1FilesystemRepository implements FilesystemRepository {
     return row ? mapEntryRow(row) : null;
   }
 
+  async listActiveSubtrees(
+    rootIds: readonly string[],
+  ): Promise<RootedFilesystemEntryRecord[]> {
+    if (rootIds.length === 0) return [];
+    const result = await this.database
+      .prepare(
+        `WITH RECURSIVE requested(root_id) AS (
+           SELECT CAST(value AS TEXT) FROM json_each(?1)
+         ), ancestors(root_id, id, parent_id) AS (
+           SELECT requested.root_id, entry.id, entry.parent_id
+           FROM requested
+           JOIN filesystem_entries entry ON entry.id = requested.root_id
+           UNION ALL
+           SELECT ancestors.root_id, parent.id, parent.parent_id
+           FROM filesystem_entries parent
+           JOIN ancestors ON parent.id = ancestors.parent_id
+         ), valid_roots(root_id) AS (
+           SELECT DISTINCT root_id FROM ancestors WHERE id IN (?2, ?3)
+         ), subtree(root_id, id) AS (
+           SELECT root_id, root_id FROM valid_roots
+           UNION ALL
+           SELECT subtree.root_id, child.id
+           FROM filesystem_entries child
+           JOIN subtree ON child.parent_id = subtree.id
+           WHERE child.trashed_at IS NULL
+         )
+         ${ROOTED_ENTRY_SELECT}
+         WHERE e.kind = ?4
+            OR (e.kind = ?5 AND f.status = ?6)
+            OR (e.kind = ?7 AND w.id IS NOT NULL)
+         ORDER BY subtree.root_id, e.id`,
+      )
+      .bind(
+        JSON.stringify([...new Set(rootIds)]),
+        FILESYSTEM_ROOT_ID.DESKTOP,
+        FILESYSTEM_ROOT_ID.DOCUMENTS,
+        FILESYSTEM_ENTRY_KIND.DIRECTORY,
+        FILESYSTEM_ENTRY_KIND.FILE,
+        FILE_STATUS.READY,
+        FILESYSTEM_ENTRY_KIND.WIDGET,
+      )
+      .all<RootedFilesystemEntryRow>();
+    return result.results.map((row) => ({
+      rootId: row.root_id,
+      entry: mapEntryRow(row),
+    }));
+  }
+
   async findWidgetEntry(widgetId: string): Promise<FilesystemEntryRecord | null> {
     const row = await this.database
       .prepare(`${ENTRY_SELECT} WHERE e.widget_id = ?1`)
@@ -83,11 +173,13 @@ export class D1FilesystemRepository implements FilesystemRepository {
     return row ? mapEntryRow(row) : null;
   }
 
-  async listChildren(parentId: string, offset: number, limit: number): Promise<FilesystemEntryRecord[]> {
-    const orderClause = parentId === FILESYSTEM_ROOT_ID.DESKTOP
-      ? "desktop.sort_order ASC, e.id ASC"
-      : `CASE e.kind WHEN '${FILESYSTEM_ENTRY_KIND.DIRECTORY}' THEN 0 ELSE 1 END,
-         e.name_key ASC, e.id ASC`;
+  async listChildren(
+    parentId: string,
+    offset: number,
+    limit: number,
+    sort: FilesystemDirectorySort,
+  ): Promise<FilesystemEntryRecord[]> {
+    const orderClause = directoryOrderClause(sort);
     const result = await this.database
       .prepare(
         `${ENTRY_SELECT}
@@ -167,6 +259,10 @@ export class D1FilesystemRepository implements FilesystemRepository {
       .bind(FILESYSTEM_ROOT_ID.DESKTOP)
       .all<IdRow>();
     return result.results.map((row) => row.id);
+  }
+
+  async replaceDesktopEntryOrder(entryIds: readonly string[]): Promise<void> {
+    await this.database.batch(this.desktopOrderReplacement(entryIds));
   }
 
   async isWithinRoot(entryId: string, rootId: string): Promise<boolean> {
@@ -430,6 +526,18 @@ export class D1FilesystemRepository implements FilesystemRepository {
     return [this.database.prepare("DELETE FROM desktop_entry_order"),
       ...entryIds.map((entryId, sortOrder) => this.desktopOrderInsert(entryId, sortOrder))];
   }
+}
+
+function directoryOrderClause(sort: FilesystemDirectorySort): string {
+  const direction = SORT_DIRECTION_SQL[sort.direction];
+  const expression = SORT_EXPRESSION_SQL[sort.field];
+  const sizePresenceOrder =
+    sort.field === FILESYSTEM_SORT_FIELD.SIZE
+      ? `CASE WHEN e.kind = '${FILESYSTEM_ENTRY_KIND.FILE}' THEN 0 ELSE 1 END ASC,`
+      : "";
+  return `CASE e.kind WHEN '${FILESYSTEM_ENTRY_KIND.DIRECTORY}' THEN 0 ELSE 1 END ASC,
+          ${sizePresenceOrder}
+          ${expression} ${direction}, e.name_key ASC, e.id ASC`;
 }
 
 function mapEntryRow(row: FilesystemEntryRow): FilesystemEntryRecord {

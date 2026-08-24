@@ -12,9 +12,14 @@ import {
   FILESYSTEM_ROOT_ID,
   FILESYSTEM_ROOT_NAME,
 } from "../../../constants/filesystem";
-import { WIDGET_TYPE, WINDOW_STATE } from "../../../constants/widget";
+import {
+  WIDGET_BEHAVIOR,
+  WIDGET_TYPE,
+  WINDOW_STATE,
+} from "../../../constants/widget";
 import { mediaKindFromContentType } from "../../../domain/media-type";
 import type { FilesystemEntry } from "../../../types/filesystem";
+import type { FilesystemBatchResult } from "../../../types/filesystem-batch";
 import type { WidgetType } from "../../../types/widget";
 import {
   DASHBOARD_COPY,
@@ -33,12 +38,16 @@ import {
   SYSTEM_APP_ID_VALUES,
 } from "../../constants/system-app";
 import { MEDIA_WINDOW_CONFIG } from "../../constants/media";
+import { KEYBOARD_KEY } from "../../constants/keyboard";
 import { useDesktopDimensions } from "../../hooks/use-desktop-dimensions";
 import { useSystemWindows } from "../../hooks/use-system-windows";
 import { useMediaWindows } from "../../hooks/use-media-windows";
 import { useExplorerWindows } from "../../hooks/use-explorer-windows";
 import { useDesktopEntries } from "../../hooks/use-desktop-entries";
 import { useFilesystemUpload } from "../../hooks/use-filesystem-upload";
+import { useFilesystemSelection } from "../../hooks/use-filesystem-selection";
+import { useFilesystemMarqueeSelection } from "../../hooks/use-filesystem-marquee-selection";
+import { useFilesystemDownload } from "../../hooks/use-filesystem-download";
 import { desktopIconLayout } from "../../domain/desktop-icon-layout";
 import { collectDroppedUploadNodes } from "../../domain/local-file-tree";
 import {
@@ -56,10 +65,17 @@ import { DocumentsWindow } from "../filesystem/documents-window";
 import { MyComputerWindow } from "../filesystem/my-computer-window";
 import { RecycleBinWindow } from "../filesystem/recycle-bin-window";
 import { UploadTransferDialog } from "../filesystem/upload-transfer-dialog";
+import { DownloadTransferDialog } from "../filesystem/download-transfer-dialog";
+import { FilesystemBatchResultDialog } from "../filesystem/filesystem-batch-result-dialog";
+import { FilesystemSelectionMarquee } from "../filesystem/filesystem-selection-marquee";
 import {
   UnsavedWidgetDialog,
   WidgetSaveDialog,
 } from "../filesystem/widget-file-dialogs";
+import {
+  DirectoryPickerDialog,
+  NameDialog,
+} from "../filesystem/filesystem-dialogs";
 import { MediaViewerWindow } from "../media/media-viewer-window";
 import { DesktopNotification } from "./desktop-notification";
 import { DesktopShortcuts } from "./desktop-shortcuts";
@@ -71,6 +87,21 @@ import {
   FILESYSTEM_COPY,
   FILESYSTEM_DRAG_SOURCE,
 } from "../../constants/filesystem";
+import { useXpContextMenu } from "../../state/context-menu-context";
+import {
+  contextMenuCommand,
+  contextMenuSeparator,
+} from "../../domain/context-menu";
+import {
+  XP_CONTEXT_MENU_COMMAND_ID,
+  XP_CONTEXT_MENU_COPY,
+} from "../../constants/context-menu";
+
+type DesktopFilesystemDialog =
+  | { readonly kind: "create" }
+  | { readonly kind: "rename"; readonly entries: readonly FilesystemEntry[] }
+  | { readonly kind: "move"; readonly entries: readonly FilesystemEntry[] }
+  | null;
 
 const DESKTOP_BACKGROUND_STYLE = {
   "--desktop-background-image": `url("${DESKTOP_ASSET_PATHS.BACKGROUND}")`,
@@ -92,6 +123,7 @@ export function DesktopShell({
   activeWidgetId,
   gateway,
   filesystemGateway,
+  storageStatusGateway,
   layoutSaveStatus,
   layoutSaveError,
   message,
@@ -111,12 +143,14 @@ export function DesktopShell({
   onDismissMessage,
 }: DesktopShellProps) {
   const workAreaRef = useRef<HTMLElement>(null);
+  const contextMenu = useXpContextMenu();
   const desktop = useDesktopDimensions(workAreaRef);
   const system = useSystemWindows();
   const media = useMediaWindows();
   const explorer = useExplorerWindows();
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
-  const [selectedShortcutId, setSelectedShortcutId] = useState<string | null>(null);
+  const [selectedSystemShortcutId, setSelectedSystemShortcutId] =
+    useState<SystemAppId | null>(null);
   const [activeWindowId, setActiveWindowId] = useState<string | null>(activeWidgetId);
   const [zOrders, setZOrders] = useState<Readonly<Record<string, number>>>({});
   const [filesystemRevision, setFilesystemRevision] = useState(0);
@@ -126,6 +160,12 @@ export function DesktopShell({
   const [widgetDialogBusy, setWidgetDialogBusy] = useState(false);
   const [desktopError, setDesktopError] = useState<string | null>(null);
   const [isDesktopDropTarget, setIsDesktopDropTarget] = useState(false);
+  const [batchResult, setBatchResult] = useState<FilesystemBatchResult | null>(
+    null,
+  );
+  const [desktopDialog, setDesktopDialog] =
+    useState<DesktopFilesystemDialog>(null);
+  const [desktopDialogBusy, setDesktopDialogBusy] = useState(false);
   const [dismissedOverflowCount, setDismissedOverflowCount] = useState<
     number | null
   >(null);
@@ -139,6 +179,25 @@ export function DesktopShell({
     () => desktopEntries.entries.slice(0, iconLayout.dynamicCapacity),
     [desktopEntries.entries, iconLayout.dynamicCapacity],
   );
+  const desktopEntryIds = useMemo(
+    () => visibleDesktopEntries.map((entry) => entry.id),
+    [visibleDesktopEntries],
+  );
+  const desktopSelection = useFilesystemSelection(desktopEntryIds);
+  const desktopMarquee = useFilesystemMarqueeSelection(
+    workAreaRef,
+    desktopSelection.selectedIds,
+    desktopSelection.replace,
+  );
+  const download = useFilesystemDownload(filesystemGateway);
+  const selectedDesktopEntries = useMemo(
+    () =>
+      visibleDesktopEntries.filter((entry) =>
+        desktopSelection.selectedIds.has(entry.id),
+      ),
+    [desktopSelection.selectedIds, visibleDesktopEntries],
+  );
+
   const desktopOverflowCount = Math.max(
     0,
     desktopEntries.entries.length - visibleDesktopEntries.length,
@@ -194,6 +253,21 @@ export function DesktopShell({
     },
     [desktop, explorer.open, focusDesktopWindow],
   );
+  const openSystemShortcut = useCallback(
+    (id: SystemAppId): void => {
+      if (id === SYSTEM_APP_ID.DOCUMENTS) {
+        const config = SYSTEM_APP_CONFIG[SYSTEM_APP_ID.DOCUMENTS];
+        openDocumentsDirectory(
+          FILESYSTEM_ROOT_ID.DOCUMENTS,
+          config.title,
+          config.iconPath,
+        );
+        return;
+      }
+      openSystemApp(id);
+    },
+    [openDocumentsDirectory, openSystemApp],
+  );
   const openMediaViewer = useCallback(
     (request: Parameters<typeof media.open>[0]): void => {
       const id = media.open(request, desktop);
@@ -246,7 +320,7 @@ export function DesktopShell({
       const widget = widgets.find(
         (candidate) => candidate.id === entry.widgetId,
       );
-      if (!widget) return;
+      if (!widget || widget.type === WIDGET_TYPE.STORAGE_STATUS) return;
       onWidgetChange({
         ...widget,
         file: {
@@ -296,18 +370,18 @@ export function DesktopShell({
       payload: DragFilesystemEntryPayload,
       parentId: string,
       targetIndex?: number,
-    ): Promise<FilesystemEntry> => {
+    ): Promise<FilesystemBatchResult> => {
       const placement =
         parentId === FILESYSTEM_ROOT_ID.DESKTOP
           ? desktopPlacement(targetIndex)
           : undefined;
       if (payload.source === FILESYSTEM_DRAG_SOURCE.TRASH) {
-        return filesystemGateway.restoreEntry(payload.id, {
+        return filesystemGateway.restoreEntries(payload.ids, {
           parentId,
           ...(placement === undefined ? {} : { desktopPlacement: placement }),
         });
       } else {
-        return filesystemGateway.moveEntry(payload.id, {
+        return filesystemGateway.moveEntries(payload.ids, {
           parentId,
           ...(placement === undefined ? {} : { desktopPlacement: placement }),
         });
@@ -343,8 +417,12 @@ export function DesktopShell({
       const payload = readFilesystemDragPayload(event.dataTransfer);
       if (payload) {
         void runFilesystemChange(async () => {
-          synchronizeWidgetFile(
-            await movePayload(payload, parentId, targetIndex),
+          const result = await movePayload(payload, parentId, targetIndex);
+          result.entries.forEach(synchronizeWidgetFile);
+          removeWidgetWindows(result.closedWidgetIds);
+          setBatchResult(result.failures.length > 0 ? result : null);
+          desktopSelection.replace(
+            result.failures.map((failure) => failure.id),
           );
         });
       } else {
@@ -353,7 +431,141 @@ export function DesktopShell({
         );
       }
     },
-    [movePayload, runFilesystemChange, synchronizeWidgetFile, uploadDrop],
+    [
+      desktopSelection.replace,
+      movePayload,
+      removeWidgetWindows,
+      runFilesystemChange,
+      synchronizeWidgetFile,
+      uploadDrop,
+    ],
+  );
+
+  const trashDesktopEntries = useCallback(
+    (entries: readonly FilesystemEntry[]): void => {
+      void runFilesystemChange(async () => {
+        const result = await filesystemGateway.trashEntries(
+          entries.map((entry) => entry.id),
+        );
+        removeWidgetWindows(result.closedWidgetIds);
+        setBatchResult(result.failures.length > 0 ? result : null);
+        desktopSelection.replace(
+          result.failures.map((failure) => failure.id),
+        );
+      });
+    },
+    [
+      desktopSelection.replace,
+      filesystemGateway,
+      removeWidgetWindows,
+      runFilesystemChange,
+    ],
+  );
+
+  const openDesktopEntryMenu = useCallback(
+    (
+      entry: FilesystemEntry,
+      event: { preventDefault: () => void; stopPropagation: () => void; clientX: number; clientY: number },
+    ): void => {
+      const entries = desktopSelection.selectedIds.has(entry.id)
+        ? selectedDesktopEntries
+        : [entry];
+      if (!desktopSelection.selectedIds.has(entry.id)) {
+        desktopSelection.replace([entry.id]);
+      }
+      setSelectedSystemShortcutId(null);
+      contextMenu.openFromEvent(event, [
+        contextMenuCommand(
+          XP_CONTEXT_MENU_COMMAND_ID.OPEN,
+          FILESYSTEM_COPY.OPEN,
+          () => openFilesystemEntry(entries[0] ?? entry),
+          entries.length !== 1,
+        ),
+        contextMenuCommand(
+          XP_CONTEXT_MENU_COMMAND_ID.DOWNLOAD,
+          FILESYSTEM_COPY.DOWNLOAD,
+          () => download.start(entries),
+          entries.every((candidate) => candidate.kind === FILESYSTEM_ENTRY_KIND.WIDGET),
+        ),
+        contextMenuSeparator("desktop-entry-separator-1"),
+        contextMenuCommand(
+          XP_CONTEXT_MENU_COMMAND_ID.RENAME,
+          FILESYSTEM_COPY.RENAME,
+          () => setDesktopDialog({ kind: "rename", entries }),
+          entries.length !== 1,
+        ),
+        contextMenuCommand(
+          XP_CONTEXT_MENU_COMMAND_ID.MOVE,
+          FILESYSTEM_COPY.MOVE,
+          () => setDesktopDialog({ kind: "move", entries }),
+        ),
+        contextMenuCommand(
+          XP_CONTEXT_MENU_COMMAND_ID.TRASH,
+          FILESYSTEM_COPY.DELETE,
+          () => trashDesktopEntries(entries),
+        ),
+      ], FILESYSTEM_COPY.CONTEXT_MENU);
+    },
+    [
+      contextMenu,
+      desktopSelection,
+      download,
+      openFilesystemEntry,
+      selectedDesktopEntries,
+      trashDesktopEntries,
+    ],
+  );
+
+  const openBlankDesktopMenu = useCallback(
+    (event: { preventDefault: () => void; stopPropagation: () => void; clientX: number; clientY: number }): void => {
+      contextMenu.openFromEvent(event, [
+        contextMenuCommand(
+          XP_CONTEXT_MENU_COMMAND_ID.NEW_FOLDER,
+          FILESYSTEM_COPY.NEW_FOLDER,
+          () => setDesktopDialog({ kind: "create" }),
+        ),
+        contextMenuSeparator("desktop-blank-separator-1"),
+        contextMenuCommand(
+          XP_CONTEXT_MENU_COMMAND_ID.ADD_MEMO,
+          DASHBOARD_COPY.ADD_MEMO_WIDGET,
+          () => addWidget(WIDGET_TYPE.MEMO),
+        ),
+        contextMenuCommand(
+          XP_CONTEXT_MENU_COMMAND_ID.ADD_CHECKLIST,
+          DASHBOARD_COPY.ADD_CHECKLIST_WIDGET,
+          () => addWidget(WIDGET_TYPE.DAILY_CHECKLIST),
+        ),
+        contextMenuCommand(
+          XP_CONTEXT_MENU_COMMAND_ID.ADD_STORAGE_STATUS,
+          DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET,
+          () => addWidget(WIDGET_TYPE.STORAGE_STATUS),
+        ),
+        contextMenuSeparator("desktop-blank-separator-2"),
+        contextMenuCommand(
+          XP_CONTEXT_MENU_COMMAND_ID.REFRESH,
+          FILESYSTEM_COPY.REFRESH,
+          notifyFilesystemChanged,
+        ),
+      ]);
+    },
+    [addWidget, contextMenu, notifyFilesystemChanged],
+  );
+
+  const runDesktopDialogChange = useCallback(
+    async (operation: () => Promise<void>): Promise<void> => {
+      setDesktopDialogBusy(true);
+      setDesktopError(null);
+      try {
+        await operation();
+        setDesktopDialog(null);
+        notifyFilesystemChanged();
+      } catch (error) {
+        setDesktopError(errorMessage(error, FILESYSTEM_COPY.CHANGE_FAILED));
+      } finally {
+        setDesktopDialogBusy(false);
+      }
+    },
+    [notifyFilesystemChanged],
   );
 
   const dropOnSystemApp = useCallback(
@@ -369,14 +581,24 @@ export function DesktopShell({
           return;
         }
         void runFilesystemChange(async () => {
-          const result = await filesystemGateway.trashEntry(payload.id);
+          const result = await filesystemGateway.trashEntries(payload.ids);
           removeWidgetWindows(result.closedWidgetIds);
+          setBatchResult(result.failures.length > 0 ? result : null);
+          desktopSelection.replace(
+            result.failures.map((failure) => failure.id),
+          );
         });
         return;
       }
       handleDrop(event, FILESYSTEM_ROOT_ID.DOCUMENTS);
     },
-    [filesystemGateway, handleDrop, removeWidgetWindows, runFilesystemChange],
+    [
+      desktopSelection.replace,
+      filesystemGateway,
+      handleDrop,
+      removeWidgetWindows,
+      runFilesystemChange,
+    ],
   );
 
   const dropOnEntry = useCallback(
@@ -398,7 +620,7 @@ export function DesktopShell({
     (widgetId: string): void => {
       const widget = widgets.find((candidate) => candidate.id === widgetId);
       if (!widget) return;
-      if (!widget.file) {
+      if (!widget.file && !WIDGET_BEHAVIOR[widget.type].persistsWithoutFile) {
         setClosePromptWidgetId(widgetId);
         return;
       }
@@ -519,6 +741,108 @@ export function DesktopShell({
     ],
   );
 
+  const restoreManagedWindow = useCallback(
+    (id: string): void => {
+      const explorerWindow = explorer.windows.find((window) => window.id === id);
+      if (explorerWindow) {
+        if (explorerWindow.windowState === WINDOW_STATE.MAXIMIZED) {
+          explorer.toggleMaximize(id);
+        } else {
+          explorer.restore(id);
+        }
+        focusDesktopWindow(id);
+        return;
+      }
+      if (isSystemAppId(id)) {
+        if (system.windows[id].windowState === WINDOW_STATE.MAXIMIZED) {
+          system.toggleMaximize(id);
+        } else {
+          system.restore(id);
+        }
+        focusDesktopWindow(id);
+        return;
+      }
+      const mediaWindow = media.windows.find((window) => window.id === id);
+      if (mediaWindow) {
+        if (mediaWindow.windowState === WINDOW_STATE.MAXIMIZED) {
+          media.toggleMaximize(id);
+        } else {
+          media.restore(id);
+        }
+        focusDesktopWindow(id);
+        return;
+      }
+      const widget = widgets.find((candidate) => candidate.id === id);
+      if (!widget) return;
+      if (widget.windowState === WINDOW_STATE.MAXIMIZED) {
+        onToggleMaximizeWindow(id);
+      } else if (widget.windowState === WINDOW_STATE.MINIMIZED) {
+        onActivateTaskbarWindow(id);
+      }
+      focusDesktopWindow(id, () => onFocusWindow(id));
+    },
+    [
+      explorer,
+      focusDesktopWindow,
+      media,
+      onActivateTaskbarWindow,
+      onFocusWindow,
+      onToggleMaximizeWindow,
+      system,
+      widgets,
+    ],
+  );
+
+  const minimizeManagedWindow = useCallback(
+    (id: string): void => {
+      if (explorer.windows.some((window) => window.id === id)) {
+        explorer.minimize(id);
+      } else if (isSystemAppId(id)) {
+        system.minimize(id);
+      } else if (media.windows.some((window) => window.id === id)) {
+        media.minimize(id);
+      } else if (widgets.some((widget) => widget.id === id)) {
+        onMinimizeWindow(id);
+      }
+      setActiveWindowId((current) => (current === id ? null : current));
+    },
+    [explorer, media, onMinimizeWindow, system, widgets],
+  );
+
+  const maximizeManagedWindow = useCallback(
+    (id: string): void => {
+      if (explorer.windows.some((window) => window.id === id)) {
+        explorer.toggleMaximize(id);
+      } else if (isSystemAppId(id)) {
+        system.toggleMaximize(id);
+      } else if (media.windows.some((window) => window.id === id)) {
+        media.toggleMaximize(id);
+      } else if (widgets.some((widget) => widget.id === id)) {
+        onToggleMaximizeWindow(id);
+      } else {
+        return;
+      }
+      focusDesktopWindow(id);
+    },
+    [explorer, focusDesktopWindow, media, onToggleMaximizeWindow, system, widgets],
+  );
+
+  const closeManagedWindow = useCallback(
+    (id: string): void => {
+      if (explorer.windows.some((window) => window.id === id)) {
+        explorer.close(id);
+      } else if (isSystemAppId(id)) {
+        system.close(id);
+      } else if (media.windows.some((window) => window.id === id)) {
+        media.close(id);
+      } else if (widgets.some((widget) => widget.id === id)) {
+        requestWidgetClose(id);
+      }
+      setActiveWindowId((current) => (current === id ? null : current));
+    },
+    [explorer, media, requestWidgetClose, system, widgets],
+  );
+
   const taskbarWindows = useMemo<readonly TaskbarWindowItem[]>(
     () => [
       ...widgets.map((widget) => ({
@@ -527,6 +851,7 @@ export function DesktopShell({
         iconPath: WIDGET_ICON_PATH_BY_TYPE[widget.type],
         isActive: activeWindowId === widget.id,
         isMinimized: widget.windowState === WINDOW_STATE.MINIMIZED,
+        isMaximized: widget.windowState === WINDOW_STATE.MAXIMIZED,
       })),
       ...SYSTEM_APP_ID_VALUES.filter((id) => system.windows[id].isOpen).map((id) => ({
         id,
@@ -534,6 +859,7 @@ export function DesktopShell({
         iconPath: SYSTEM_APP_CONFIG[id].iconPath,
         isActive: activeWindowId === id,
         isMinimized: system.windows[id].windowState === WINDOW_STATE.MINIMIZED,
+        isMaximized: system.windows[id].windowState === WINDOW_STATE.MAXIMIZED,
       })),
       ...explorer.windows.map((window) => ({
         id: window.id,
@@ -541,6 +867,7 @@ export function DesktopShell({
         iconPath: window.iconPath,
         isActive: activeWindowId === window.id,
         isMinimized: window.windowState === WINDOW_STATE.MINIMIZED,
+        isMaximized: window.windowState === WINDOW_STATE.MAXIMIZED,
       })),
       ...media.windows.flatMap((window) => {
         const kind = mediaKindFromContentType(window.currentFile.contentType);
@@ -552,6 +879,7 @@ export function DesktopShell({
           iconPath: config.iconPath,
           isActive: activeWindowId === window.id,
           isMinimized: window.windowState === WINDOW_STATE.MINIMIZED,
+          isMaximized: window.windowState === WINDOW_STATE.MAXIMIZED,
         }];
       }),
     ],
@@ -579,15 +907,53 @@ export function DesktopShell({
   } as CSSProperties;
 
   return (
-    <div className="desktop-shell" style={desktopStyle}>
+    <div
+      className="desktop-shell"
+      style={desktopStyle}
+      onContextMenu={(event) =>
+        contextMenu.openFromEvent(event, [
+          contextMenuCommand(
+            XP_CONTEXT_MENU_COMMAND_ID.STORAGE_STATUS,
+            XP_CONTEXT_MENU_COPY.STORAGE_STATUS,
+            () => addWidget(WIDGET_TYPE.STORAGE_STATUS),
+          ),
+          contextMenuCommand(
+            XP_CONTEXT_MENU_COMMAND_ID.REFRESH_PAGE,
+            XP_CONTEXT_MENU_COPY.REFRESH_PAGE,
+            () => window.location.reload(),
+          ),
+        ])
+      }
+    >
       <main
         ref={workAreaRef}
         className="desktop-work-area"
         data-drop-target={isDesktopDropTarget}
         aria-label={DASHBOARD_COPY.DESKTOP}
-        onMouseDown={(event) => {
+        onPointerDown={(event) => {
           closeStartMenu();
-          if (event.target === event.currentTarget) setSelectedShortcutId(null);
+          contextMenu.close();
+          if (event.target === event.currentTarget) {
+            setSelectedSystemShortcutId(null);
+          }
+          desktopMarquee.onPointerDown(event);
+        }}
+        onPointerMove={desktopMarquee.onPointerMove}
+        onPointerUp={desktopMarquee.onPointerUp}
+        onPointerCancel={desktopMarquee.onPointerCancel}
+        onKeyDown={(event) => {
+          if (
+            (event.ctrlKey || event.metaKey) &&
+            event.key.toLocaleLowerCase() === KEYBOARD_KEY.A
+          ) {
+            event.preventDefault();
+            setSelectedSystemShortcutId(null);
+            desktopSelection.selectAll();
+          } else if (event.key === KEYBOARD_KEY.ESCAPE) {
+            setSelectedSystemShortcutId(null);
+            desktopSelection.clear();
+            contextMenu.close();
+          }
         }}
         onDragEnter={(event) => {
           if (event.target === event.currentTarget) {
@@ -605,34 +971,52 @@ export function DesktopShell({
           setIsDesktopDropTarget(false);
           handleDrop(event, FILESYSTEM_ROOT_ID.DESKTOP);
         }}
+        onContextMenu={(event) => {
+          if (event.target === event.currentTarget) openBlankDesktopMenu(event);
+        }}
       >
         <DesktopShortcuts
           entries={visibleDesktopEntries}
-          selectedId={selectedShortcutId}
+          selectedSystemId={selectedSystemShortcutId}
+          selectedEntryIds={desktopSelection.selectedIds}
           thumbnailUrl={(id) => filesystemGateway.thumbnailUrl(id)}
-          onSelect={setSelectedShortcutId}
-          onOpenSystem={(id) => {
-            if (id === SYSTEM_APP_ID.DOCUMENTS) {
-              const config = SYSTEM_APP_CONFIG[SYSTEM_APP_ID.DOCUMENTS];
-              openDocumentsDirectory(
-                FILESYSTEM_ROOT_ID.DOCUMENTS,
-                config.title,
-                config.iconPath,
-              );
-              return;
-            }
-            openSystemApp(id);
+          onSelectSystem={(id) => {
+            desktopSelection.clear();
+            setSelectedSystemShortcutId(id);
+            contextMenu.close();
           }}
+          onSelectEntry={(id, event) => {
+            setSelectedSystemShortcutId(null);
+            contextMenu.close();
+            desktopSelection.select(id, event);
+          }}
+          onOpenSystem={openSystemShortcut}
           onOpenEntry={openFilesystemEntry}
           onDragEntry={(entry, event) => {
+            const ids = desktopSelection.dragIds(entry.id);
+            desktopSelection.replace(ids);
             writeFilesystemDragPayload(event.dataTransfer, {
-              id: entry.id,
+              ids,
+              primaryId: entry.id,
               source: FILESYSTEM_DRAG_SOURCE.ACTIVE,
             });
           }}
           onDropSystem={dropOnSystemApp}
           onDropEntry={dropOnEntry}
+          onContextMenuEntry={openDesktopEntryMenu}
+          onContextMenuSystem={(id, event) => {
+            setSelectedSystemShortcutId(id);
+            desktopSelection.clear();
+            contextMenu.openFromEvent(event, [
+              contextMenuCommand(
+                XP_CONTEXT_MENU_COMMAND_ID.OPEN,
+                FILESYSTEM_COPY.OPEN,
+                () => openSystemShortcut(id),
+              ),
+            ]);
+          }}
         />
+        <FilesystemSelectionMarquee bounds={desktopMarquee.bounds} />
         {widgets.length === 0 &&
         desktopEntries.entries.length === 0 &&
         media.windows.length === 0 &&
@@ -648,6 +1032,7 @@ export function DesktopShell({
             isActive={widget.id === activeWindowId}
             zIndex={desktopWindowZIndex(widget.id, zOrders, widget.stackOrder)}
             gateway={gateway}
+            storageStatusGateway={storageStatusGateway}
             onFocus={() => focusDesktopWindow(widget.id, () => onFocusWindow(widget.id))}
             onMinimize={() => {
               onMinimizeWindow(widget.id);
@@ -758,6 +1143,69 @@ export function DesktopShell({
         ))}
       </main>
 
+      {desktopDialog?.kind === "create" ? (
+        <NameDialog
+          title={FILESYSTEM_COPY.CREATE_FOLDER_TITLE}
+          label={FILESYSTEM_COPY.FOLDER_NAME}
+          busy={desktopDialogBusy}
+          onSubmit={(name) =>
+            void runDesktopDialogChange(async () => {
+              await filesystemGateway.createDirectory(
+                FILESYSTEM_ROOT_ID.DESKTOP,
+                name,
+                desktopPlacement(),
+              );
+            })
+          }
+          onCancel={() => setDesktopDialog(null)}
+        />
+      ) : null}
+      {desktopDialog?.kind === "rename" && desktopDialog.entries[0] ? (
+        <NameDialog
+          title={FILESYSTEM_COPY.RENAME_TITLE}
+          label={FILESYSTEM_COPY.ENTRY_NAME}
+          initialValue={desktopDialog.entries[0].name}
+          busy={desktopDialogBusy}
+          onSubmit={(name) =>
+            void runDesktopDialogChange(async () => {
+              synchronizeWidgetFile(
+                await filesystemGateway.updateEntry(
+                  desktopDialog.entries[0]!.id,
+                  { name },
+                ),
+              );
+            })
+          }
+          onCancel={() => setDesktopDialog(null)}
+        />
+      ) : null}
+      {desktopDialog?.kind === "move" ? (
+        <DirectoryPickerDialog
+          gateway={filesystemGateway}
+          excludedEntryIds={desktopDialog.entries
+            .filter((entry) => entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY)
+            .map((entry) => entry.id)}
+          busy={desktopDialogBusy}
+          onSelect={(parentId) =>
+            void runDesktopDialogChange(async () => {
+              const result = await filesystemGateway.moveEntries(
+                desktopDialog.entries.map((entry) => entry.id),
+                {
+                  parentId,
+                  ...(parentId === FILESYSTEM_ROOT_ID.DESKTOP
+                    ? { desktopPlacement: desktopPlacement() }
+                    : {}),
+                },
+              );
+              result.entries.forEach(synchronizeWidgetFile);
+              removeWidgetWindows(result.closedWidgetIds);
+              setBatchResult(result.failures.length > 0 ? result : null);
+            })
+          }
+          onCancel={() => setDesktopDialog(null)}
+        />
+      ) : null}
+
       {saveWidgetId ? (
         <WidgetSaveDialog
           gateway={filesystemGateway}
@@ -803,6 +1251,15 @@ export function DesktopShell({
         />
       ) : null}
       <UploadTransferDialog state={upload.state} onClose={upload.close} />
+      <DownloadTransferDialog
+        state={download.state}
+        onCancel={download.cancel}
+        onClose={download.close}
+      />
+      <FilesystemBatchResultDialog
+        result={batchResult}
+        onClose={() => setBatchResult(null)}
+      />
 
       {layoutSaveStatus === LAYOUT_SAVE_STATUS.ERROR && layoutSaveError ? (
         <DesktopNotification
@@ -848,6 +1305,7 @@ export function DesktopShell({
         onClose={closeStartMenu}
         onAddMemo={() => addWidget(WIDGET_TYPE.MEMO)}
         onAddChecklist={() => addWidget(WIDGET_TYPE.DAILY_CHECKLIST)}
+        onAddStorageStatus={() => addWidget(WIDGET_TYPE.STORAGE_STATUS)}
       />
       <Taskbar
         windows={taskbarWindows}
@@ -855,6 +1313,10 @@ export function DesktopShell({
         saveStatus={layoutSaveStatus}
         onToggleStartMenu={() => setIsStartMenuOpen((current) => !current)}
         onActivateWindow={activateTaskbarWindow}
+        onRestoreWindow={restoreManagedWindow}
+        onMinimizeWindow={minimizeManagedWindow}
+        onToggleMaximizeWindow={maximizeManagedWindow}
+        onCloseWindow={closeManagedWindow}
       />
     </div>
   );

@@ -5,6 +5,8 @@ import type { DesktopAppWindowProps } from "../../types/desktop";
 import { XpWindowControlButton } from "../ui/xp-window-control-button";
 import { MovableDesktopWindow } from "./movable-desktop-window";
 import { XpWindowFrame } from "./xp-window-frame";
+import { useXpContextMenu } from "../../state/context-menu-context";
+import { windowContextMenuItems } from "../../domain/window-context-menu";
 
 export function DesktopAppWindow({
   title,
@@ -27,6 +29,7 @@ export function DesktopAppWindow({
   children,
 }: DesktopAppWindowProps) {
   const isMaximized = window.windowState === WINDOW_STATE.MAXIMIZED;
+  const contextMenu = useXpContextMenu();
   return (
     <MovableDesktopWindow
       position={window.position}
@@ -38,6 +41,17 @@ export function DesktopAppWindow({
       zIndex={zIndex}
       onFocus={onFocus}
       onCommitBounds={onCommitBounds}
+      onContextMenu={(event) =>
+        contextMenu.openFromEvent(
+          event,
+          windowContextMenuItems({
+            isMaximized,
+            onMinimize,
+            onToggleMaximize,
+            onClose,
+          }),
+        )
+      }
     >
       <XpWindowFrame
         className={className}

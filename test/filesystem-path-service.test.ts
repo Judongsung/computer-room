@@ -10,6 +10,7 @@ import {
 import { WIDGET_TYPE } from "../src/constants/widget";
 import { filesystemNameKey } from "../src/domain/filesystem-name";
 import {
+  MemoryDirectorySortRepository,
   MemoryFileRepository,
   MemoryObjectStorage,
   SequenceIdGenerator,
@@ -59,6 +60,7 @@ describe("FilesystemPathService", () => {
     );
     const filesystem = new FilesystemService(
       repository,
+      new MemoryDirectorySortRepository(),
       new SequenceIdGenerator(["unused"]),
       clock,
     );
@@ -92,6 +94,7 @@ describe("FilesystemPathService", () => {
     );
     const filesystem = new FilesystemService(
       repository,
+      new MemoryDirectorySortRepository(),
       new SequenceIdGenerator(["unused"]),
       clock,
     );

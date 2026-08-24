@@ -2,6 +2,7 @@ import {
   useState,
   type DragEvent,
   type KeyboardEvent,
+  type MouseEvent,
   type ReactNode,
 } from "react";
 import type { FilesystemEntry } from "../../../types/filesystem";
@@ -14,12 +15,18 @@ import {
 } from "../../constants/system-app";
 import type { SystemAppId } from "../../types/system-app";
 import { FilesystemEntryIcon } from "../filesystem/filesystem-entry-icon";
+import { FILESYSTEM_SELECTION_DATA_ATTRIBUTE } from "../../constants/filesystem";
 
 interface DesktopShortcutsProps {
   readonly entries: readonly FilesystemEntry[];
-  readonly selectedId: string | null;
+  readonly selectedSystemId: SystemAppId | null;
+  readonly selectedEntryIds: ReadonlySet<string>;
   readonly thumbnailUrl: (id: string) => string;
-  readonly onSelect: (id: string) => void;
+  readonly onSelectSystem: (id: SystemAppId) => void;
+  readonly onSelectEntry: (
+    id: string,
+    event: SelectionModifiers,
+  ) => void;
   readonly onOpenSystem: (id: SystemAppId) => void;
   readonly onOpenEntry: (entry: FilesystemEntry) => void;
   readonly onDragEntry: (
@@ -35,18 +42,36 @@ interface DesktopShortcutsProps {
     index: number,
     event: DragEvent<HTMLButtonElement>,
   ) => void;
+  readonly onContextMenuEntry: (
+    entry: FilesystemEntry,
+    event: MouseEvent<HTMLButtonElement>,
+  ) => void;
+  readonly onContextMenuSystem: (
+    id: SystemAppId,
+    event: MouseEvent<HTMLButtonElement>,
+  ) => void;
+}
+
+interface SelectionModifiers {
+  readonly ctrlKey: boolean;
+  readonly metaKey: boolean;
+  readonly shiftKey: boolean;
 }
 
 export function DesktopShortcuts({
   entries,
-  selectedId,
+  selectedSystemId,
+  selectedEntryIds,
   thumbnailUrl,
-  onSelect,
+  onSelectSystem,
+  onSelectEntry,
   onOpenSystem,
   onOpenEntry,
   onDragEntry,
   onDropSystem,
   onDropEntry,
+  onContextMenuEntry,
+  onContextMenuSystem,
 }: DesktopShortcutsProps) {
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
 
@@ -57,14 +82,14 @@ export function DesktopShortcuts({
         return (
           <ShortcutButton
             key={id}
-            id={id}
             title={app.title}
             icon={<img src={app.iconPath} alt="" draggable={false} />}
-            selected={selectedId === id}
+            selected={selectedSystemId === id}
             dropTarget={dropTargetId === id}
             canHighlightDrop={id !== SYSTEM_APP_ID.MY_COMPUTER}
-            onSelect={onSelect}
+            onSelect={() => onSelectSystem(id)}
             onOpen={() => onOpenSystem(id)}
+            onContextMenu={(event) => onContextMenuSystem(id, event)}
             onDrop={(event) => onDropSystem(id, event)}
             onDropTargetChange={(active) =>
               setDropTargetId(active ? id : null)
@@ -75,7 +100,6 @@ export function DesktopShortcuts({
       {entries.map((entry, index) => (
         <ShortcutButton
           key={entry.id}
-          id={entry.id}
           title={entry.name}
           icon={
             <FilesystemEntryIcon
@@ -83,11 +107,13 @@ export function DesktopShortcuts({
               thumbnailUrl={thumbnailUrl}
             />
           }
-          selected={selectedId === entry.id}
+          selected={selectedEntryIds.has(entry.id)}
           dropTarget={dropTargetId === entry.id}
           draggable
-          onSelect={onSelect}
+          selectionId={entry.id}
+          onSelect={(event) => onSelectEntry(entry.id, event)}
           onOpen={() => onOpenEntry(entry)}
+          onContextMenu={(event) => onContextMenuEntry(entry, event)}
           onDragStart={(event) => onDragEntry(entry, event)}
           onDrop={(event) => onDropEntry(entry, index, event)}
           onDropTargetChange={(active) =>
@@ -100,28 +126,30 @@ export function DesktopShortcuts({
 }
 
 function ShortcutButton({
-  id,
   title,
   icon,
   selected,
   dropTarget,
   canHighlightDrop = true,
   draggable = false,
+  selectionId,
   onSelect,
   onOpen,
+  onContextMenu,
   onDragStart,
   onDrop,
   onDropTargetChange,
 }: {
-  readonly id: string;
   readonly title: string;
   readonly icon: ReactNode;
   readonly selected: boolean;
   readonly dropTarget: boolean;
   readonly canHighlightDrop?: boolean;
   readonly draggable?: boolean;
-  readonly onSelect: (id: string) => void;
+  readonly selectionId?: string;
+  readonly onSelect: (event: SelectionModifiers) => void;
   readonly onOpen: () => void;
+  readonly onContextMenu?: (event: MouseEvent<HTMLButtonElement>) => void;
   readonly onDragStart?: (event: DragEvent<HTMLButtonElement>) => void;
   readonly onDrop: (event: DragEvent<HTMLButtonElement>) => void;
   readonly onDropTargetChange: (active: boolean) => void;
@@ -135,11 +163,15 @@ function ShortcutButton({
           : "desktop-shortcut"
       }
       aria-pressed={selected}
+      {...(selectionId
+        ? { [FILESYSTEM_SELECTION_DATA_ATTRIBUTE]: selectionId }
+        : {})}
       data-drop-target={dropTarget && canHighlightDrop}
       draggable={draggable}
       onMouseDown={(event) => event.stopPropagation()}
-      onClick={() => onSelect(id)}
+      onClick={onSelect}
       onDoubleClick={onOpen}
+      onContextMenu={onContextMenu}
       onDragStart={onDragStart}
       onDragEnter={() => {
         if (canHighlightDrop) onDropTargetChange(true);
@@ -155,7 +187,7 @@ function ShortcutButton({
       onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
         if (event.key === KEYBOARD_KEY.ENTER) {
           event.preventDefault();
-          onSelect(id);
+          onSelect(event);
           onOpen();
         }
       }}
