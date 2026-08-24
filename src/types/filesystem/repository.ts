@@ -10,7 +10,7 @@ import type {
   RootedFilesystemEntryRecord,
 } from "@/types/filesystem/filesystem";
 
-export interface FilesystemRepository {
+export interface FilesystemQueryRepository {
   findEntry(id: string): Promise<FilesystemEntryRecord | null>;
   findEntryWithinRoots(
     id: string,
@@ -31,17 +31,23 @@ export interface FilesystemRepository {
   ): Promise<FilesystemEntryRecord[]>;
   listBreadcrumbs(directoryId: string): Promise<FilesystemBreadcrumb[]>;
   listNameKeys(parentId: string, excludeId?: string): Promise<string[]>;
-  listDesktopEntryIds(): Promise<string[]>;
-  replaceDesktopEntryOrder(entryIds: readonly string[]): Promise<void>;
   isWithinRoot(entryId: string, rootId: string): Promise<boolean>;
   isDescendant(entryId: string, candidateId: string): Promise<boolean>;
+  findWidgetEntry(widgetId: string): Promise<FilesystemEntryRecord | null>;
+}
+
+export interface DesktopEntryOrderRepository {
+  listDesktopEntryIds(): Promise<string[]>;
+  replaceDesktopEntryOrder(entryIds: readonly string[]): Promise<void>;
+}
+
+export interface FilesystemMutationRepository {
   insertDirectory(directory: NewFilesystemDirectory): Promise<void>;
   ensureDirectory(
     directory: NewExactFilesystemDirectory,
   ): Promise<FilesystemEntryRecord>;
   insertPendingFile(file: NewFilesystemFile): Promise<void>;
   insertWidget(widget: NewFilesystemWidget): Promise<void>;
-  findWidgetEntry(widgetId: string): Promise<FilesystemEntryRecord | null>;
   markFileReady(id: string, size: number, etag: string): Promise<void>;
   deleteFileMetadata(id: string): Promise<void>;
   updateEntry(
@@ -52,6 +58,9 @@ export interface FilesystemRepository {
     updatedAt: number,
     desktopEntryIds?: readonly string[],
   ): Promise<void>;
+}
+
+export interface RecycleBinRepository {
   moveToTrash(
     id: string,
     previousParentId: string,
@@ -72,3 +81,17 @@ export interface FilesystemRepository {
   listSubtreeFileObjects(rootId: string): Promise<FilesystemFileObject[]>;
   purgeEntry(rootId: string): Promise<void>;
 }
+
+export interface FilesystemRepository
+  extends FilesystemQueryRepository,
+    DesktopEntryOrderRepository,
+    FilesystemMutationRepository,
+    RecycleBinRepository {}
+
+export type FileRepository = FilesystemQueryRepository & FilesystemMutationRepository;
+export type DirectoryRepository = FilesystemQueryRepository &
+  FilesystemMutationRepository &
+  DesktopEntryOrderRepository;
+export type RecycleBinDataRepository = FilesystemQueryRepository &
+  DesktopEntryOrderRepository &
+  RecycleBinRepository;

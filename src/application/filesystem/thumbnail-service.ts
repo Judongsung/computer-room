@@ -11,7 +11,7 @@ import {
   thumbnailObjectKey,
 } from "@/domain/filesystem/thumbnail";
 import { FILE_ERRORS } from "@/constants/filesystem/errors/file";
-import type { FilesystemRepository } from "@/types/filesystem/repository";
+import type { FilesystemQueryRepository } from "@/types/filesystem/repository";
 import type { FileObjectStorage, StoredObjectBody } from "@/types/filesystem/storage";
 import type {
   ImageThumbnailGenerator,
@@ -21,7 +21,7 @@ import type {
 
 export class ThumbnailService implements ThumbnailUseCases, ThumbnailPreparer {
   constructor(
-    private readonly repository: FilesystemRepository,
+    private readonly repository: FilesystemQueryRepository,
     private readonly storage: FileObjectStorage,
     private readonly generator: ImageThumbnailGenerator,
   ) {}

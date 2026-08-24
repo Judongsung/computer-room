@@ -30,7 +30,7 @@ import type {
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import type { FilesystemUseCases } from "@/types/filesystem/filesystem-service";
 import type { DirectorySortRepository } from "@/types/filesystem/directory-sort-repository";
-import type { FilesystemRepository } from "@/types/filesystem/repository";
+import type { DirectoryRepository, RecycleBinRepository } from "@/types/filesystem/repository";
 import type { Clock, IdGenerator } from "@/types/platform/runtime";
 import { assertDesktopPlacement, nextDesktopOrder } from "@/application/filesystem/desktop-placement";
 import {
@@ -40,7 +40,7 @@ import {
 
 export class FilesystemService implements FilesystemUseCases {
   constructor(
-    private readonly repository: FilesystemRepository,
+    private readonly repository: DirectoryRepository & RecycleBinRepository,
     private readonly directorySorts: DirectorySortRepository,
     private readonly idGenerator: IdGenerator,
     private readonly clock: Clock,

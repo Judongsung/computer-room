@@ -19,7 +19,7 @@ import type {
 } from "@/types/filesystem/filesystem";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import type { RecycleBinUseCases } from "@/types/filesystem/filesystem-service";
-import type { FilesystemRepository } from "@/types/filesystem/repository";
+import type { RecycleBinDataRepository } from "@/types/filesystem/repository";
 import type { Clock } from "@/types/platform/runtime";
 import type { FileObjectStorage } from "@/types/filesystem/storage";
 import { toPublicEntry } from "@/application/filesystem/filesystem-service";
@@ -28,7 +28,7 @@ import { settleFilesystemOperations } from "@/application/filesystem/filesystem-
 
 export class RecycleBinService implements RecycleBinUseCases {
   constructor(
-    private readonly repository: FilesystemRepository,
+    private readonly repository: RecycleBinDataRepository,
     private readonly storage: FileObjectStorage,
     private readonly clock: Clock,
   ) {}

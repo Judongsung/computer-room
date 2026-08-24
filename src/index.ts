@@ -131,9 +131,7 @@ export default {
       ),
     );
     const router = new ApiRouter(
-      fileApiHandler,
-      widgetApiHandler,
-      storageStatusApiHandler,
+      [fileApiHandler, widgetApiHandler, storageStatusApiHandler],
       novelAiImageApiHandler,
       createIdentityVerifier(env),
       createServiceRequestVerifier(env),

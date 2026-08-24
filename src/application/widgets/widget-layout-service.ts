@@ -26,7 +26,7 @@ import type {
   SaveWidgetFileInput,
 } from "@/types/filesystem/filesystem";
 import type { MemoRepository } from "@/types/widgets/memo-repository";
-import type { FilesystemRepository } from "@/types/filesystem/repository";
+import type { DirectoryRepository } from "@/types/filesystem/repository";
 import type { Clock, IdGenerator } from "@/types/platform/runtime";
 import type {
   CreateWidgetInput,
@@ -46,7 +46,7 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     private readonly layouts: WidgetLayoutRepository,
     private readonly memos: MemoRepository,
     private readonly checklists: ChecklistRepository,
-    private readonly filesystem: FilesystemRepository,
+    private readonly filesystem: DirectoryRepository,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
   ) {}

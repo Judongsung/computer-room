@@ -16,7 +16,6 @@ import {
   THUMBNAIL_RESPONSE_HEADERS,
 } from "@/constants/platform/http";
 import {
-  DEFAULT_PAGE_OFFSET,
   FILESYSTEM_PAGE_LIMIT,
   LEGACY_FILE_PAGE_LIMIT,
 } from "@/constants/filesystem/pagination";
@@ -30,15 +29,31 @@ import type {
   FilesystemDownloadManifestUseCases,
   RecycleBinUseCases,
 } from "@/types/filesystem/filesystem-service";
-import type { DesktopPlacement } from "@/types/filesystem/filesystem";
-import type { AppErrorDefinition } from "@/types/platform/error";
 import type { FeatureApiHandler } from "@/types/platform/http";
 import type { ThumbnailUseCases } from "@/types/filesystem/thumbnail";
-import { parseIntegerParameter } from "@/http/shared/query-parameters";
 import { parseRangeHeader } from "@/http/filesystem/byte-range";
 import { readJsonBody } from "@/http/shared/request-body";
 import { emptyResponse, jsonResponse } from "@/http/shared/responses";
 import { readDeclaredFileSize } from "@/http/filesystem/file-upload-request";
+import {
+  assertMethod,
+  contentDisposition,
+  isRecord,
+  methodNotAllowed,
+  readDesktopPlacement,
+  readDesktopPlacementFromQuery,
+  readIdArray,
+  readOptionalJsonObject,
+  readOptionalString,
+  readPageParameters,
+  readRequiredJsonObject,
+  readRouteId,
+} from "@/http/filesystem/filesystem-request";
+import {
+  fileContentResponse,
+  fileDownloadResponse,
+  thumbnailResponse,
+} from "@/http/filesystem/file-content-response";
 
 const FILE_DOWNLOAD_PATH = new RegExp(`^${API_PATHS.FILES}/([^/]+)/download$`);
 const FILE_CONTENT_PATH = new RegExp(
@@ -161,7 +176,7 @@ export class FileApiHandler implements FeatureApiHandler {
       const body = await readRequiredJsonObject(request);
       return jsonResponse({
         sort: await this.filesystem.updateDirectorySort(
-          readId(directorySortMatch),
+          readRouteId(directorySortMatch),
           requireFilesystemDirectorySort(body),
         ),
       });
@@ -174,7 +189,7 @@ export class FileApiHandler implements FeatureApiHandler {
       const parentId = readOptionalString(body.parentId);
       const desktopPlacement = readDesktopPlacement(body);
       return jsonResponse({
-        entry: await this.recycleBin.restoreEntry(readId(restoreMatch), {
+        entry: await this.recycleBin.restoreEntry(readRouteId(restoreMatch), {
           ...(parentId === undefined ? {} : { parentId }),
           ...(desktopPlacement === undefined ? {} : { desktopPlacement }),
         }),
@@ -183,30 +198,30 @@ export class FileApiHandler implements FeatureApiHandler {
     const trashEntryMatch = FILESYSTEM_TRASH_ENTRY_PATH.exec(url.pathname);
     if (trashEntryMatch) {
       assertMethod(request, HTTP_METHOD.DELETE);
-      await this.recycleBin.permanentlyDeleteEntry(readId(trashEntryMatch));
+      await this.recycleBin.permanentlyDeleteEntry(readRouteId(trashEntryMatch));
       return emptyResponse();
     }
     const downloadMatch = FILE_DOWNLOAD_PATH.exec(url.pathname);
     if (downloadMatch) {
-      return this.handleDownload(request, readId(downloadMatch));
+      return fileDownloadResponse(this.files, request, readRouteId(downloadMatch));
     }
     const contentMatch = FILE_CONTENT_PATH.exec(url.pathname);
     if (contentMatch) {
-      return this.handleContent(request, readId(contentMatch));
+      return fileContentResponse(this.files, request, readRouteId(contentMatch));
     }
     const thumbnailMatch = FILE_THUMBNAIL_PATH.exec(url.pathname);
     if (thumbnailMatch) {
-      return this.handleThumbnail(request, readId(thumbnailMatch));
+      return thumbnailResponse(this.thumbnails, request, readRouteId(thumbnailMatch));
     }
     const legacyFileMatch = FILE_PATH.exec(url.pathname);
     if (legacyFileMatch) {
       assertMethod(request, HTTP_METHOD.DELETE);
-      await this.filesystem.trashEntry(readId(legacyFileMatch));
+      await this.filesystem.trashEntry(readRouteId(legacyFileMatch));
       return emptyResponse();
     }
     const entryMatch = FILESYSTEM_ENTRY_PATH.exec(url.pathname);
     if (entryMatch) {
-      return this.handleEntry(request, readId(entryMatch));
+      return this.handleEntry(request, readRouteId(entryMatch));
     }
     const moveMatch = FILESYSTEM_MOVE_PATH.exec(url.pathname);
     if (moveMatch) {
@@ -217,7 +232,7 @@ export class FileApiHandler implements FeatureApiHandler {
       }
       const desktopPlacement = readDesktopPlacement(body);
       return jsonResponse({
-        entry: await this.filesystem.moveEntry(readId(moveMatch), {
+        entry: await this.filesystem.moveEntry(readRouteId(moveMatch), {
           parentId: body.parentId,
           ...(desktopPlacement === undefined ? {} : { desktopPlacement }),
         }),
@@ -228,7 +243,7 @@ export class FileApiHandler implements FeatureApiHandler {
 
   private async handleFiles(request: Request, url: URL): Promise<Response> {
     if (request.method === HTTP_METHOD.GET) {
-      const { offset, limit } = pageParameters(
+      const { offset, limit } = readPageParameters(
         url,
         LEGACY_FILE_PAGE_LIMIT,
         HTTP_ERRORS.INVALID_LIMIT,
@@ -253,7 +268,7 @@ export class FileApiHandler implements FeatureApiHandler {
 
   private async handleEntries(request: Request, url: URL): Promise<Response> {
     assertMethod(request, HTTP_METHOD.GET);
-    const { offset, limit } = pageParameters(
+    const { offset, limit } = readPageParameters(
       url,
       FILESYSTEM_PAGE_LIMIT,
       HTTP_ERRORS.INVALID_FILESYSTEM_LIMIT,
@@ -309,7 +324,7 @@ export class FileApiHandler implements FeatureApiHandler {
 
   private async handleTrash(request: Request, url: URL): Promise<Response> {
     if (request.method === HTTP_METHOD.GET) {
-      const { offset, limit } = pageParameters(
+      const { offset, limit } = readPageParameters(
         url,
         FILESYSTEM_PAGE_LIMIT,
         HTTP_ERRORS.INVALID_FILESYSTEM_LIMIT,
@@ -323,205 +338,4 @@ export class FileApiHandler implements FeatureApiHandler {
     throw methodNotAllowed();
   }
 
-  private async handleDownload(
-    request: Request,
-    id: string,
-  ): Promise<Response> {
-    assertMethod(request, HTTP_METHOD.GET);
-    const { entry, object } = await this.files.downloadFile(id);
-    return new Response(object.body, {
-      headers: {
-        ...FILE_DOWNLOAD_RESPONSE_HEADERS,
-        [HTTP_HEADERS.CONTENT_DISPOSITION]: contentDisposition(
-          entry.name,
-          CONTENT_DISPOSITION_MODE.ATTACHMENT,
-        ),
-        [HTTP_HEADERS.CONTENT_LENGTH]: String(object.size),
-        [HTTP_HEADERS.CONTENT_TYPE]: object.contentType,
-        [HTTP_HEADERS.ETAG]: object.httpEtag,
-      },
-    });
-  }
-
-  private async handleContent(
-    request: Request,
-    id: string,
-  ): Promise<Response> {
-    assertMethod(request, HTTP_METHOD.GET);
-    try {
-      const { entry, object, range } = await this.files.streamFile(
-        id,
-        parseRangeHeader(request.headers.get(HTTP_HEADERS.RANGE)),
-      );
-      const headers = new Headers(FILE_CONTENT_RESPONSE_HEADERS);
-      headers.set(
-        HTTP_HEADERS.CONTENT_DISPOSITION,
-        contentDisposition(entry.name, CONTENT_DISPOSITION_MODE.INLINE),
-      );
-      headers.set(HTTP_HEADERS.CONTENT_LENGTH, String(range?.length ?? object.size));
-      headers.set(HTTP_HEADERS.CONTENT_TYPE, object.contentType);
-      headers.set(HTTP_HEADERS.ETAG, object.httpEtag);
-      if (range) {
-        const lastByte = range.offset + range.length - 1;
-        headers.set(
-          HTTP_HEADERS.CONTENT_RANGE,
-          `${HTTP_RANGE_UNIT} ${range.offset}-${lastByte}/${object.size}`,
-        );
-      }
-      return new Response(object.body, {
-        status: range ? HTTP_STATUS.PARTIAL_CONTENT : HTTP_STATUS.OK,
-        headers,
-      });
-    } catch (error) {
-      if (error instanceof FileRangeNotSatisfiableError) {
-        return jsonResponse(
-          { error: { code: error.code, message: error.message } },
-          error.status,
-          {
-            ...FILE_CONTENT_RESPONSE_HEADERS,
-            [HTTP_HEADERS.CONTENT_RANGE]: `${HTTP_RANGE_UNIT} */${error.totalSize}`,
-          },
-        );
-      }
-      throw error;
-    }
-  }
-
-  private async handleThumbnail(
-    request: Request,
-    id: string,
-  ): Promise<Response> {
-    assertMethod(request, HTTP_METHOD.GET);
-    const object = await this.thumbnails.getThumbnail(id);
-    const headers = new Headers(THUMBNAIL_RESPONSE_HEADERS);
-    headers.set(HTTP_HEADERS.CONTENT_LENGTH, String(object.size));
-    headers.set(HTTP_HEADERS.CONTENT_TYPE, object.contentType);
-    headers.set(HTTP_HEADERS.ETAG, object.httpEtag);
-    return new Response(object.body, { headers });
-  }
-}
-
-function pageParameters(
-  url: URL,
-  maximumLimit: number,
-  invalidLimit: AppErrorDefinition,
-): { offset: number; limit: number } {
-  const offset = parseIntegerParameter(
-    url.searchParams.get(API_QUERY_PARAMETERS.OFFSET),
-    DEFAULT_PAGE_OFFSET,
-  );
-  const limit = parseIntegerParameter(
-    url.searchParams.get(API_QUERY_PARAMETERS.LIMIT),
-    maximumLimit,
-  );
-  if (limit < 1 || limit > maximumLimit) {
-    throw new AppError(invalidLimit);
-  }
-  return { offset, limit };
-}
-
-function readIdArray(value: unknown): string[] {
-  if (
-    !Array.isArray(value) ||
-    value.length === 0 ||
-    !value.every(
-      (id) =>
-        typeof id === "string" && id.length > 0 && id.trim() === id,
-    )
-  ) {
-    throw new AppError(HTTP_ERRORS.INVALID_JSON);
-  }
-  return [...new Set(value)];
-}
-
-function assertMethod(request: Request, expected: string): void {
-  if (request.method !== expected) {
-    throw methodNotAllowed();
-  }
-}
-
-function methodNotAllowed(): AppError {
-  return new AppError(HTTP_ERRORS.METHOD_NOT_ALLOWED);
-}
-
-function readId(match: RegExpExecArray): string {
-  return decodeURIComponent(match[1] ?? "");
-}
-
-function readOptionalString(value: unknown): string | undefined {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-  if (typeof value !== "string") {
-    throw new AppError(HTTP_ERRORS.INVALID_JSON);
-  }
-  return value;
-}
-
-async function readRequiredJsonObject(
-  request: Request,
-): Promise<Record<string, unknown>> {
-  const body = await readJsonBody(request);
-  if (!isRecord(body)) {
-    throw new AppError(HTTP_ERRORS.INVALID_JSON);
-  }
-  return body;
-}
-
-async function readOptionalJsonObject(
-  request: Request,
-): Promise<Record<string, unknown>> {
-  if (!request.body) {
-    return {};
-  }
-  return readRequiredJsonObject(request);
-}
-
-function readDesktopPlacement(
-  value: Record<string, unknown>,
-): DesktopPlacement | undefined {
-  const targetIndex = value.desktopTargetIndex;
-  const capacity = value.desktopCapacity;
-  if (targetIndex === undefined && capacity === undefined) {
-    return undefined;
-  }
-  if (typeof targetIndex !== "number" || typeof capacity !== "number") {
-    throw new AppError(HTTP_ERRORS.INVALID_JSON);
-  }
-  return { targetIndex, capacity };
-}
-
-function readDesktopPlacementFromQuery(
-  url: URL,
-): { desktopPlacement?: DesktopPlacement } {
-  const targetIndex = url.searchParams.get(
-    API_QUERY_PARAMETERS.DESKTOP_TARGET_INDEX,
-  );
-  const capacity = url.searchParams.get(API_QUERY_PARAMETERS.DESKTOP_CAPACITY);
-  if (targetIndex === null && capacity === null) {
-    return {};
-  }
-  if (targetIndex === null || capacity === null) {
-    throw new AppError(HTTP_ERRORS.INVALID_JSON);
-  }
-  return {
-    desktopPlacement: {
-      targetIndex: parseIntegerParameter(targetIndex, -1),
-      capacity: parseIntegerParameter(capacity, -1),
-    },
-  };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
-
-function contentDisposition(fileName: string, mode: string): string {
-  const fallback = fileName
-    .replace(/[^\x20-\x7e]/g, "_")
-    .replace(/["\\]/g, "_");
-  const encoded = encodeURIComponent(fileName).replace(/[!'()*]/g, (character) =>
-    `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
-  );
-  return `${mode}; filename="${fallback}"; filename*=UTF-8''${encoded}`;
 }

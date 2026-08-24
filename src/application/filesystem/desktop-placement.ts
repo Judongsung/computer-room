@@ -2,10 +2,10 @@ import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import { AppError } from "@/domain/shared/errors";
 import type { DesktopPlacement } from "@/types/filesystem/filesystem";
-import type { FilesystemRepository } from "@/types/filesystem/repository";
+import type { DesktopEntryOrderRepository } from "@/types/filesystem/repository";
 
 export async function nextDesktopOrder(
-  repository: FilesystemRepository,
+  repository: DesktopEntryOrderRepository,
   parentId: string,
   placement?: DesktopPlacement,
 ): Promise<number | undefined> {

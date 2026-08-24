@@ -28,7 +28,10 @@ import type {
   UploadFilesystemFileInput,
 } from "@/types/filesystem/filesystem";
 import type { FileUseCases } from "@/types/filesystem/file-service";
-import type { FilesystemRepository } from "@/types/filesystem/repository";
+import type {
+  DesktopEntryOrderRepository,
+  FileRepository,
+} from "@/types/filesystem/repository";
 import type { Clock, IdGenerator } from "@/types/platform/runtime";
 import type { RequestedByteRange } from "@/types/filesystem/media";
 import type { FileObjectStorage } from "@/types/filesystem/storage";
@@ -37,7 +40,7 @@ import { nextDesktopOrder } from "@/application/filesystem/desktop-placement";
 
 export class FileService implements FileUseCases {
   constructor(
-    private readonly repository: FilesystemRepository,
+    private readonly repository: FileRepository & DesktopEntryOrderRepository,
     private readonly storage: FileObjectStorage,
     private readonly idGenerator: IdGenerator,
     private readonly clock: Clock,

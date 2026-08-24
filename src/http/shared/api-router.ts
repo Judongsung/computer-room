@@ -15,9 +15,7 @@ import { errorResponse, jsonResponse } from "@/http/shared/responses";
 
 export class ApiRouter {
   constructor(
-    private readonly files: FeatureApiHandler,
-    private readonly widgets: FeatureApiHandler,
-    private readonly storageStatus: FeatureApiHandler,
+    private readonly ownerHandlers: readonly FeatureApiHandler[],
     private readonly novelAiImages: FeatureApiHandler,
     private readonly identities: IdentityVerifier,
     private readonly serviceRequests: RequestVerifier,
@@ -41,17 +39,9 @@ export class ApiRouter {
       if (url.pathname === API_PATHS.SESSION) {
         return this.handleSession(request, identity);
       }
-      const fileResponse = await this.files.handle(request, url);
-      if (fileResponse !== null) {
-        return fileResponse;
-      }
-      const widgetResponse = await this.widgets.handle(request, url);
-      if (widgetResponse !== null) {
-        return widgetResponse;
-      }
-      const storageStatusResponse = await this.storageStatus.handle(request, url);
-      if (storageStatusResponse !== null) {
-        return storageStatusResponse;
+      for (const handler of this.ownerHandlers) {
+        const response = await handler.handle(request, url);
+        if (response !== null) return response;
       }
       throw new AppError(HTTP_ERRORS.ROUTE_NOT_FOUND);
     } catch (error) {

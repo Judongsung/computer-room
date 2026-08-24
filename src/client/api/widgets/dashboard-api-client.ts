@@ -34,7 +34,7 @@ import { API_REQUEST_OPTIONS } from "@client/constants/shared/api";
 import { CLIENT_ERRORS } from "@client/constants/shared/errors";
 import { ClientError } from "@client/errors/client-error";
 import type { DashboardGateway } from "@client/types/widgets/api";
-import { isWidgetEntry } from "@client/api/filesystem/filesystem-api-client";
+import { isWidgetEntry } from "@client/api/filesystem/filesystem-api-contract";
 
 export class DashboardApiClient implements DashboardGateway {
   async getSession(): Promise<SessionInfo> {

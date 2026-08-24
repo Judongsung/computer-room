@@ -7,13 +7,13 @@ import {
 } from "@/domain/filesystem/filesystem-name";
 import type { FilesystemDirectoryEntry } from "@/types/filesystem/filesystem";
 import type { FilesystemPathUseCases } from "@/types/filesystem/filesystem-service";
-import type { FilesystemRepository } from "@/types/filesystem/repository";
+import type { DirectoryRepository } from "@/types/filesystem/repository";
 import type { Clock, IdGenerator } from "@/types/platform/runtime";
 import { toPublicEntry } from "@/application/filesystem/filesystem-service";
 
 export class FilesystemPathService implements FilesystemPathUseCases {
   constructor(
-    private readonly repository: FilesystemRepository,
+    private readonly repository: DirectoryRepository,
     private readonly idGenerator: IdGenerator,
     private readonly clock: Clock,
   ) {}

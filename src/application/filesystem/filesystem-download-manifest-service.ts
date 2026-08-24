@@ -11,14 +11,14 @@ import type {
   FilesystemArchiveSourceManifest,
 } from "@/types/filesystem/download";
 import type { FilesystemDownloadManifestUseCases } from "@/types/filesystem/filesystem-service";
-import type { FilesystemRepository } from "@/types/filesystem/repository";
+import type { FilesystemQueryRepository } from "@/types/filesystem/repository";
 import { toPublicEntry } from "@/application/filesystem/filesystem-service";
 import { uniqueFilesystemIds } from "@/application/filesystem/filesystem-batch";
 
 export class FilesystemDownloadManifestService
   implements FilesystemDownloadManifestUseCases
 {
-  constructor(private readonly repository: FilesystemRepository) {}
+  constructor(private readonly repository: FilesystemQueryRepository) {}
 
   async createManifest(
     ids: readonly string[],
