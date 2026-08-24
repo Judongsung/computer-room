@@ -1,0 +1,103 @@
+.memo-editor {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+}
+
+.memo-editor__tabs {
+  flex: none;
+}
+
+.memo-editor__panel {
+  display: flex;
+  overflow: auto;
+  min-height: 140px;
+  flex: 1;
+  padding: 8px;
+}
+
+.memo-editor__textarea {
+  width: 100%;
+  min-height: 140px;
+  flex: 1;
+  resize: none;
+  border: 1px solid var(--luna-border);
+  background: #fff;
+  box-shadow: inset 1px 1px 2px rgb(0 0 0 / 20%);
+}
+
+.markdown-content {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.memo-editor__panel > .markdown-content {
+  width: 100%;
+}
+
+.markdown-content > :first-child {
+  margin-top: 0;
+}
+
+.markdown-content > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-content h1 {
+  font-size: 23px;
+}
+
+.markdown-content h2 {
+  font-size: 20px;
+}
+
+.markdown-content h3 {
+  font-size: 18px;
+}
+
+.markdown-content h4 {
+  font-size: 16px;
+}
+
+.markdown-content img {
+  max-width: 100%;
+}
+
+.markdown-content pre {
+  overflow: auto;
+  padding: 9px;
+  font-size: 15px;
+}
+
+.markdown-content table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.markdown-content th,
+.markdown-content td {
+  padding: 4px 6px;
+  border: 1px solid #919b9c;
+}
+
+.markdown-content .contains-task-list {
+  padding-left: 4px;
+  list-style: none;
+}
+
+.markdown-content .task-list-item {
+  display: flex;
+  align-items: flex-start;
+}
+
+.markdown-content .task-list-item > input[type="checkbox"] {
+  position: static;
+  width: 13px;
+  height: 13px;
+  flex: none;
+  margin: 2px 6px 0 0;
+  appearance: auto;
+  opacity: 1;
+}
+

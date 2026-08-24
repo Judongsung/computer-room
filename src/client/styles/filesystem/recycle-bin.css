@@ -1,0 +1,71 @@
+.recycle-list {
+  position: relative;
+  display: flex;
+  overflow: auto;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  background: #fff;
+}
+
+.recycle-list__header,
+.recycle-list__row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1.4fr) minmax(150px, 1fr) minmax(165px, 1fr);
+  align-items: center;
+}
+
+.recycle-list__header {
+  position: sticky;
+  z-index: 1;
+  top: 0;
+  min-height: 27px;
+  border-bottom: 1px solid #aca899;
+  background: #ece9d8;
+}
+
+.recycle-list__header span {
+  padding: 3px 7px;
+  border-right: 1px solid #aca899;
+}
+
+.recycle-list__row {
+  width: 100%;
+  min-width: 520px;
+  min-height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 0;
+  color: #111;
+  background: #fff;
+  box-shadow: none;
+  text-align: left;
+}
+
+.recycle-list__row > span,
+.recycle-list__row > time {
+  overflow: hidden;
+  padding: 3px 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recycle-list__row > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.recycle-list__row img {
+  width: 20px;
+  height: 20px;
+}
+
+.recycle-list__row:focus,
+.recycle-list__row:active,
+.recycle-list__row--selected {
+  color: #fff;
+  background: #316ac5;
+  box-shadow: none;
+}
+

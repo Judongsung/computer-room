@@ -1,0 +1,45 @@
+.widget-card {
+  width: 100%;
+  height: 100%;
+}
+
+.widget-card__header {
+  flex: none;
+  user-select: none;
+}
+
+.widget-card__drag-handle {
+  cursor: grab;
+}
+
+.widget-card__drag-handle:active {
+  cursor: grabbing;
+}
+
+.desktop-window--maximized .widget-card__drag-handle {
+  cursor: default;
+}
+
+.widget-card__body {
+  display: block;
+  overflow: auto;
+  padding: 7px;
+}
+
+.widget-empty {
+  margin: 0;
+  color: #666;
+}
+
+.widget-error {
+  margin: 8px 0 0;
+  color: var(--luna-error);
+}
+
+.widget-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+

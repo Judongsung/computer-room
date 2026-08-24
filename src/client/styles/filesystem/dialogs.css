@@ -1,0 +1,83 @@
+.filesystem-dialog-backdrop {
+  position: absolute;
+  z-index: 20;
+  display: grid;
+  padding: 14px;
+  place-items: center;
+  background: rgb(0 0 0 / 28%);
+  inset: 0;
+}
+
+.filesystem-dialog {
+  display: grid;
+  width: min(390px, calc(100% - 20px));
+  padding: 14px;
+  gap: 12px;
+  border: 2px solid #0055ea;
+  border-radius: 4px;
+  background: #ece9d8;
+  box-shadow: 3px 4px 12px rgb(0 0 0 / 45%);
+}
+
+.filesystem-dialog label {
+  display: grid;
+  gap: 4px;
+}
+
+.filesystem-dialog input {
+  width: 100%;
+}
+
+.filesystem-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.filesystem-dialog--picker {
+  width: min(480px, calc(100% - 20px));
+}
+
+.filesystem-picker__breadcrumbs {
+  overflow: hidden;
+  padding: 4px 6px;
+  border: 1px solid #7f9db9;
+  background: #fff;
+  white-space: nowrap;
+}
+
+.filesystem-picker__breadcrumbs button + button::before {
+  color: #111;
+  content: " › ";
+}
+
+.filesystem-picker__folders {
+  display: grid;
+  overflow: auto;
+  min-height: 130px;
+  max-height: 240px;
+  padding: 7px;
+  border: 1px solid #7f9db9;
+  background: #fff;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 4px;
+}
+
+.filesystem-picker__folders button {
+  display: flex;
+  min-width: 0;
+  min-height: 32px;
+  padding: 3px 5px;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+
+.filesystem-picker__folders img {
+  width: 24px;
+  height: 24px;
+}
+

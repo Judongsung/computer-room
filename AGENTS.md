@@ -20,6 +20,9 @@ Preserve the existing separation between client, domain, application, infrastruc
 * Keep framework-specific and Cloudflare-specific code inside adapters, infrastructure, HTTP, or composition roots.
 * Do not bypass architectural boundaries for convenience.
 * Reuse existing types, utilities, and abstractions before creating new ones.
+* Organize every layer by feature (`filesystem`, `widgets`, `media`, `integrations`, `storage`, or `platform/shared`) when the layer contains multiple responsibilities.
+* Use `@/*`, `@client/*`, and `@test/*` aliases and import the owning module directly; do not add barrel `index.ts` files.
+* Mirror source features under `test` and place reusable fakes in `test/support/<feature>`.
 
 ## Change Discipline
 
@@ -88,6 +91,8 @@ Treat API contracts, database schemas, storage conventions, and shared constants
 * Do not remove or weaken existing tests merely to make a change pass.
 * Run relevant tests, type checks, and lint checks after changes.
 * Run `npm run check:migrations` for schema changes and use the guarded `npm run deploy` pipeline for releases.
+* Keep `npm run check:structure` passing: at most 12 direct source files per directory; oversized files require an explicit review reason.
+* Keep the production client entry bundle below the limit enforced by `npm run check:bundle`.
 * Update documentation when behavior, configuration, schemas, or public contracts change.
 
 ## Completion Report

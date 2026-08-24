@@ -73,14 +73,17 @@ Cloudflare Zero Trust에서 이 엔드포인트를 사용하려면 다음 설정
 
 ## 구조
 
-- `src/client`: React 화면, UI 상태, 브라우저 API 어댑터
-- `src/domain`: 위젯 배치와 파일 규칙처럼 플랫폼에 의존하지 않는 핵심 로직
-- `src/application`: 위젯 배치, 파일 시스템, 파일 전송과 휴지통 유스케이스
-- `src/constants`: 조정 가능한 정책값과 API·인증·HTTP 계약, 책임별 오류 카탈로그
-- `src/types`: 도메인 모델과 포트 인터페이스
-- `src/infrastructure`: D1, R2, Cloudflare Access 구현체
-- `src/http`: 요청 검증, 라우팅, 응답 직렬화
+- `src/client`: React 화면, UI 상태, 브라우저 API 어댑터. `components`, `hooks`, `api`, `state`, `styles` 안을 다시 `desktop`, `filesystem`, `widgets`, `media`, `shared` 기능으로 나눕니다.
+- `src/domain`: 위젯 배치와 파일 규칙처럼 플랫폼에 의존하지 않는 순수 핵심 로직. 기능별 하위 디렉터리를 사용합니다.
+- `src/application`: 파일 시스템·위젯·통합·저장소 유스케이스와 이들이 의존하는 포트 조합
+- `src/constants`: 조정 가능한 정책값과 API·인증·HTTP 계약, 기능별 오류 카탈로그
+- `src/types`: 기능별 도메인 모델과 조회·변경·저장소 포트 인터페이스
+- `src/infrastructure`: D1, R2, Cloudflare Access 구현체. 구체 구현은 이 계층 밖으로 노출하지 않습니다.
+- `src/http`: 기능별 요청 검증, 라우팅, 응답 직렬화
 - `src/index.ts`: 구체 구현을 조립하는 composition root
+- `test`: 소스 계층과 기능 구조를 미러링하며 공용 fixture와 fake는 `test/support/<feature>`에 둡니다.
+
+소스 import는 `@/*`(`src/*`), `@client/*`(`src/client/*`), `@test/*`(`test/*`) 별칭을 사용하고 실제 소유 모듈을 직접 가리킵니다. 기능을 묶기 위한 barrel `index.ts`는 만들지 않습니다. 탐색기, 휴지통, 내 컴퓨터, 미디어 뷰어와 저장소 상태 위젯은 초기 화면과 별도 청크로 지연 로딩됩니다.
 
 페이지 크기, 창 기본 크기, 자동 저장 간격, 파일 제한처럼 운영 중 조정할 수 있는 값은 사용처 수와 관계없이 `constants`에 둡니다. 변경 가능성이 없고 한 모듈에만 속하는 정규식·DOM 선택자 같은 구현 상수는 사용 위치 가까이에 둡니다.
 
@@ -128,3 +131,5 @@ npm test
 npm run build
 git diff --check
 ```
+
+`npm run check`에는 `check:structure`가 포함됩니다. 한 디렉터리의 직접 TypeScript·TSX·CSS 파일은 최대 12개이며, 제품 파일 400줄과 테스트 파일 600줄을 넘으면 책임 재검토 또는 이유가 적힌 allowlist가 필요합니다. `npm run build`는 빌드 후 초기 클라이언트 entry JavaScript가 500KiB 이하인지 `check:bundle`로 확인합니다.

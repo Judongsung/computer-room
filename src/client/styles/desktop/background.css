@@ -1,0 +1,55 @@
+.desktop-shell,
+.desktop-state {
+  position: fixed;
+  min-width: var(--desktop-min-width);
+  min-height: var(--desktop-min-height);
+  background-color: #3a6ea5;
+  background-image: var(--desktop-background-image);
+  background-position: center;
+  background-size: cover;
+  inset: 0;
+}
+
+.desktop-work-area {
+  position: absolute;
+  overflow: hidden;
+  inset: 0 0 var(--taskbar-height) 0;
+}
+
+.desktop-empty-hint {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  max-width: 285px;
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid #000;
+  border-radius: 3px;
+  color: #111;
+  background: #ffffe1;
+  box-shadow: 2px 2px 4px rgb(0 0 0 / 38%);
+}
+
+.desktop-empty-hint::before,
+.desktop-empty-hint::after {
+  position: absolute;
+  left: 31px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  content: "";
+}
+
+.desktop-empty-hint::before {
+  bottom: -10px;
+  border-width: 10px 8px 0;
+  border-color: #000 transparent transparent;
+}
+
+.desktop-empty-hint::after {
+  bottom: -8px;
+  margin-left: 1px;
+  border-width: 8px 7px 0;
+  border-color: #ffffe1 transparent transparent;
+}
+

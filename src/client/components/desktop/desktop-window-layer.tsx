@@ -10,13 +10,34 @@ import type { LocalUploadNode } from "@client/types/filesystem/upload";
 import type { useExplorerWindows } from "@client/hooks/desktop/use-explorer-windows";
 import type { useSystemWindows } from "@client/hooks/desktop/use-system-windows";
 import type { useMediaWindows } from "@client/hooks/media/use-media-windows";
-import { SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
+import {
+  SYSTEM_APP_CONFIG,
+  SYSTEM_APP_ID,
+} from "@client/constants/desktop/system-app";
 import { DESKTOP_LAYOUT } from "@client/constants/desktop/desktop";
 import { DesktopWindow } from "./desktop-window";
-import { DocumentsWindow } from "@client/components/filesystem/documents-window";
-import { MyComputerWindow } from "@client/components/filesystem/my-computer-window";
-import { RecycleBinWindow } from "@client/components/filesystem/recycle-bin-window";
-import { MediaViewerWindow } from "@client/components/media/media-viewer-window";
+import { LazyFeatureBoundary } from "@client/components/shared/lazy-feature-boundary";
+
+const DocumentsWindow = lazy(() =>
+  import("@client/components/filesystem/documents-window").then((module) => ({
+    default: module.DocumentsWindow,
+  })),
+);
+const MyComputerWindow = lazy(() =>
+  import("@client/components/filesystem/my-computer-window").then((module) => ({
+    default: module.MyComputerWindow,
+  })),
+);
+const RecycleBinWindow = lazy(() =>
+  import("@client/components/filesystem/recycle-bin-window").then((module) => ({
+    default: module.RecycleBinWindow,
+  })),
+);
+const MediaViewerWindow = lazy(() =>
+  import("@client/components/media/media-viewer-window").then((module) => ({
+    default: module.MediaViewerWindow,
+  })),
+);
 
 interface DesktopWindowLayerProps {
   readonly desktop: DesktopDimensions;
@@ -131,8 +152,8 @@ export function DesktopWindowLayer({
         />
       ))}
       {explorer.windows.map((window) => (
-        <DocumentsWindow
-          key={window.id}
+        <LazyFeatureBoundary key={window.id} title={window.title}>
+          <DocumentsWindow
           windowId={window.id}
           title={window.title}
           iconPath={window.iconPath}
@@ -165,23 +186,28 @@ export function DesktopWindowLayer({
           onEntryChanged={onEntryChanged}
           onWidgetsClosed={onWidgetsClosed}
           onUploadNodes={onUploadNodes}
-        />
+          />
+        </LazyFeatureBoundary>
       ))}
       {system.windows[SYSTEM_APP_ID.MY_COMPUTER].isOpen ? (
-        <MyComputerWindow {...systemChrome(SYSTEM_APP_ID.MY_COMPUTER)} onAddWidget={onAddWidget} />
+        <LazyFeatureBoundary title={SYSTEM_APP_CONFIG[SYSTEM_APP_ID.MY_COMPUTER].title}>
+          <MyComputerWindow {...systemChrome(SYSTEM_APP_ID.MY_COMPUTER)} onAddWidget={onAddWidget} />
+        </LazyFeatureBoundary>
       ) : null}
       {system.windows[SYSTEM_APP_ID.RECYCLE_BIN].isOpen ? (
-        <RecycleBinWindow
-          {...systemChrome(SYSTEM_APP_ID.RECYCLE_BIN)}
-          gateway={filesystemGateway}
-          desktopCapacity={desktopCapacity}
-          filesystemRevision={filesystemRevision}
-          onFilesystemChanged={onFilesystemChanged}
-        />
+        <LazyFeatureBoundary title={SYSTEM_APP_CONFIG[SYSTEM_APP_ID.RECYCLE_BIN].title}>
+          <RecycleBinWindow
+            {...systemChrome(SYSTEM_APP_ID.RECYCLE_BIN)}
+            gateway={filesystemGateway}
+            desktopCapacity={desktopCapacity}
+            filesystemRevision={filesystemRevision}
+            onFilesystemChanged={onFilesystemChanged}
+          />
+        </LazyFeatureBoundary>
       ) : null}
       {media.windows.map((window) => (
-        <MediaViewerWindow
-          key={window.id}
+        <LazyFeatureBoundary key={window.id} title={window.currentFile.name}>
+          <MediaViewerWindow
           window={window}
           desktop={desktop}
           gateway={filesystemGateway}
@@ -203,7 +229,8 @@ export function DesktopWindowLayer({
           }}
           onCommitBounds={(bounds) => media.commitBounds(window.id, bounds)}
           onChangeFile={(entry) => media.changeFile(window.id, entry)}
-        />
+          />
+        </LazyFeatureBoundary>
       ))}
     </>
   );
@@ -216,3 +243,4 @@ function desktopWindowZIndex(
 ): number {
   return DESKTOP_LAYOUT.BASE_WINDOW_Z_INDEX + (zOrders[id] ?? fallback);
 }
+import { lazy } from "react";

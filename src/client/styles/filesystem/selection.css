@@ -1,0 +1,8 @@
+.filesystem-selection-marquee {
+  position: absolute;
+  z-index: 3;
+  border: 1px dotted #1d4f91;
+  background: rgb(49 106 197 / 18%);
+  pointer-events: none;
+}
+

@@ -1,0 +1,12 @@
+.lazy-feature-status {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1000;
+  width: 320px;
+  transform: translate(-50%, -50%);
+}
+
+.lazy-feature-status__message {
+  margin: 0 0 12px;
+}

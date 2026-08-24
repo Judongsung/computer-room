@@ -393,7 +393,7 @@ describe("App", () => {
     );
 
     await user.dblClick(screen.getByRole("button", { name: "휴지통" }));
-    const recycleWindow = desktopWindowByTitle("휴지통");
+    const recycleWindow = await waitFor(() => desktopWindowByTitle("휴지통"));
     const recycleItem = await within(recycleWindow).findByRole("button", {
       name: new RegExp(recycledImage.name),
     });
@@ -521,7 +521,7 @@ describe("App", () => {
     render(<App api={api} filesystemApi={filesystem} />);
 
     await user.dblClick(await screen.findByRole("button", { name: "내 컴퓨터" }));
-    const computerWindow = desktopWindowByTitle("내 컴퓨터");
+    const computerWindow = await waitFor(() => desktopWindowByTitle("내 컴퓨터"));
     await user.dblClick(within(computerWindow).getByRole("button", { name: MEMO_WIDGET_COPY.TITLE }));
     expect(await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT)).toBeInTheDocument();
     await waitFor(() => expect(api.savedWidgets).toHaveLength(1));

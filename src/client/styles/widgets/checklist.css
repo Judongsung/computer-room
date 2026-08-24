@@ -1,0 +1,138 @@
+.checklist-widget {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checklist-items {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  gap: 8px;
+  list-style: none;
+}
+
+.checklist-items > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.checklist-item-label {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: flex-start;
+}
+
+.checklist-item-label > input[type="checkbox"] + label {
+  display: block;
+  min-width: 0;
+  flex: 1;
+  cursor: pointer;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.checklist-item-label > input[type="checkbox"]:disabled + label {
+  cursor: not-allowed;
+}
+
+.checklist-item-label del {
+  color: #777;
+}
+
+.checklist-item-actions,
+.checklist-item-editor,
+.checklist-add-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.checklist-item-actions button {
+  min-width: auto;
+  padding-inline: 8px;
+}
+
+.checklist-item-editor,
+.checklist-add-form {
+  width: 100%;
+}
+
+.checklist-add-form {
+  margin-top: auto;
+}
+
+.checklist-item-editor input,
+.checklist-add-form input {
+  min-width: 0;
+  min-height: 28px;
+  flex: 1;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  z-index: var(--modal-z-index);
+  display: grid;
+  padding: 20px;
+  place-items: center;
+  background: rgb(0 0 0 / 46%);
+  inset: 0;
+}
+
+.checklist-log-dialog {
+  width: 640px;
+  max-height: calc(100vh - 40px);
+}
+
+.dialog-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px 8px;
+  background: var(--luna-surface);
+}
+
+.checklist-log-dialog__body {
+  overflow: auto;
+  min-height: 120px;
+  flex: 1;
+  margin: 8px;
+  padding: 12px;
+  background: #fff;
+}
+
+.checklist-log-group + .checklist-log-group {
+  margin-top: 20px;
+}
+
+.checklist-log-group h4 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.checklist-log-group ol {
+  display: grid;
+  margin: 8px 0 0;
+  padding: 0;
+  gap: 5px;
+  list-style: none;
+}
+
+.checklist-log-group li {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.checklist-log-group time,
+.checklist-log-group small {
+  color: #666;
+}
+

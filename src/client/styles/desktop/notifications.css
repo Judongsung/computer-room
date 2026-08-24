@@ -1,0 +1,43 @@
+.desktop-notification {
+  position: absolute;
+  z-index: var(--modal-z-index);
+  right: 14px;
+  bottom: calc(var(--taskbar-height) + 12px);
+  width: 340px;
+}
+
+.desktop-notification__body {
+  padding: 10px;
+}
+
+.desktop-notification p {
+  margin-bottom: 9px;
+  color: var(--luna-error);
+}
+
+.desktop-state {
+  display: grid;
+  place-items: center;
+}
+
+.state-window {
+  width: 440px;
+}
+
+.state-window__body {
+  padding: 10px;
+  text-align: center;
+}
+
+.state-window__body p {
+  margin-bottom: 10px;
+}
+
+.state-window progress {
+  width: 280px;
+}
+
+.state-window__body button {
+  display: block;
+  margin-inline: auto;
+}
