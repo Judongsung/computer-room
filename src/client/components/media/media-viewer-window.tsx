@@ -1,21 +1,21 @@
 import { useEffect } from "react";
-import { mediaKindFromContentType } from "../../../domain/media-type";
-import { MEDIA_KIND } from "../../../constants/media";
-import { WINDOW_STATE } from "../../../constants/widget";
+import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
+import { MEDIA_KIND } from "@/constants/filesystem/media";
+import { WINDOW_STATE } from "@/constants/widgets/widget";
 import {
   MEDIA_VIEWER_COPY,
   MEDIA_WINDOW_CONFIG,
-} from "../../constants/media";
-import { useMediaDirectory } from "../../hooks/use-media-directory";
-import type { MediaViewerWindowProps } from "../../types/media";
-import { downloadFile } from "../../utils/download-file";
-import { DesktopAppWindow } from "../desktop/desktop-app-window";
-import { PictureViewer } from "./picture-viewer";
-import { WindowsMediaPlayer } from "./windows-media-player";
-import { useXpContextMenu } from "../../state/context-menu-context";
-import { contextMenuCommand, contextMenuSeparator } from "../../domain/context-menu";
-import { XP_CONTEXT_MENU_COMMAND_ID } from "../../constants/context-menu";
-import { windowContextMenuItems } from "../../domain/window-context-menu";
+} from "@client/constants/media/media";
+import { useMediaDirectory } from "@client/hooks/media/use-media-directory";
+import type { MediaViewerWindowProps } from "@client/types/media/media";
+import { downloadFile } from "@client/utils/download-file";
+import { DesktopAppWindow } from "@client/components/desktop/desktop-app-window";
+import { PictureViewer } from "@client/components/media/picture-viewer";
+import { WindowsMediaPlayer } from "@client/components/media/windows-media-player";
+import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
+import { contextMenuCommand, contextMenuSeparator } from "@client/domain/context-menu/context-menu";
+import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
+import { windowContextMenuItems } from "@client/domain/context-menu/window-context-menu";
 
 export function MediaViewerWindow({
   window,

@@ -1,17 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
-import { FileService } from "../src/application/file-service";
-import { ThumbnailPreparingFileService } from "../src/application/thumbnail-preparing-file-service";
-import { BACKGROUND_TASK_FAILURE_CODE } from "../src/constants/background-task";
-import { FILESYSTEM_ROOT_ID } from "../src/constants/filesystem";
-import type { BackgroundTaskScheduler } from "../src/types/runtime";
-import type { ThumbnailPreparer } from "../src/types/thumbnail";
+import { FileService } from "@/application/filesystem/file-service";
+import { ThumbnailPreparingFileService } from "@/application/filesystem/thumbnail-preparing-file-service";
+import { BACKGROUND_TASK_FAILURE_CODE } from "@/constants/platform/background-task";
+import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
+import type { BackgroundTaskScheduler } from "@/types/platform/runtime";
+import type { ThumbnailPreparer } from "@/types/filesystem/thumbnail";
 import {
   MemoryFileRepository,
   MemoryObjectStorage,
   SequenceIdGenerator,
   StaticClock,
   streamFromText,
-} from "./fakes";
+} from "@test/fakes";
 
 const NOW = Date.parse("2026-08-23T00:00:00.000Z");
 

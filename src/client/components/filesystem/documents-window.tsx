@@ -11,75 +11,75 @@ import {
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
-} from "../../../constants/filesystem";
-import { FILESYSTEM_SORT_DIRECTION_VALUES } from "../../../constants/filesystem-sort";
+} from "@/constants/filesystem/filesystem";
+import { FILESYSTEM_SORT_DIRECTION_VALUES } from "@/constants/filesystem/sort";
 import {
   isFilesystemSortDirection,
   isFilesystemSortField,
-} from "../../../domain/filesystem-sort";
+} from "@/domain/filesystem/filesystem-sort";
 import {
   isPotentialMediaContentType,
   mediaKindFromContentType,
-} from "../../../domain/media-type";
+} from "@/domain/filesystem/media-type";
 import {
   FILE_PICKER_ABORT_ERROR_NAME,
   FILESYSTEM_DRAG_SOURCE,
   FILESYSTEM_COPY,
   FILESYSTEM_SELECTION_DATA_ATTRIBUTE,
-} from "../../constants/filesystem";
+} from "@client/constants/filesystem/filesystem";
 import {
   SYSTEM_APP_CONFIG,
   SYSTEM_APP_ID,
-} from "../../constants/system-app";
-import { MEDIA_VIEWER_COPY } from "../../constants/media";
-import { KEYBOARD_KEY } from "../../constants/keyboard";
+} from "@client/constants/desktop/system-app";
+import { MEDIA_VIEWER_COPY } from "@client/constants/media/media";
+import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import type {
   FilesystemDirectorySort,
   FilesystemDirectoryPage,
   FilesystemEntry,
-} from "../../../types/filesystem";
-import type { FilesystemBatchResult } from "../../../types/filesystem-batch";
-import type { LocalUploadNode } from "../../types/upload";
+} from "@/types/filesystem/filesystem";
+import type { FilesystemBatchResult } from "@/types/filesystem/batch";
+import type { LocalUploadNode } from "@client/types/filesystem/upload";
 import type {
   FilesystemGateway,
   FilesystemWindowSyncProps,
-} from "../../types/filesystem";
-import type { DesktopAppWindowProps } from "../../types/desktop";
-import type { MediaViewerOpenRequest } from "../../types/media";
-import { downloadFile } from "../../utils/download-file";
-import { formatFileSize } from "../../utils/format-file-size";
-import { useFilesystemSelection } from "../../hooks/use-filesystem-selection";
-import { useFilesystemMarqueeSelection } from "../../hooks/use-filesystem-marquee-selection";
-import { useFilesystemDownload } from "../../hooks/use-filesystem-download";
+} from "@client/types/filesystem/filesystem";
+import type { DesktopAppWindowProps } from "@client/types/desktop/desktop";
+import type { MediaViewerOpenRequest } from "@client/types/media/media";
+import { downloadFile } from "@client/utils/download-file";
+import { formatFileSize } from "@client/utils/format-file-size";
+import { useFilesystemSelection } from "@client/hooks/filesystem/use-filesystem-selection";
+import { useFilesystemMarqueeSelection } from "@client/hooks/filesystem/use-filesystem-marquee-selection";
+import { useFilesystemDownload } from "@client/hooks/filesystem/use-filesystem-download";
 import {
   collectDroppedUploadNodes,
   collectSelectedUploadNodes,
   selectDirectoryUploadNode,
   supportsDirectoryHandlePicker,
-} from "../../domain/local-file-tree";
+} from "@client/domain/filesystem/local-file-tree";
 import {
   readFilesystemDragPayload,
   writeFilesystemDragPayload,
-} from "../../domain/filesystem-drag";
-import { DesktopAppWindow } from "../desktop/desktop-app-window";
+} from "@client/domain/filesystem/drag";
+import { DesktopAppWindow } from "@client/components/desktop/desktop-app-window";
 import {
   DirectoryPickerDialog,
   ConfirmDialog,
   NameDialog,
-} from "./filesystem-dialogs";
-import { FilesystemEntryIcon } from "./filesystem-entry-icon";
-import { FilesystemSelectionMarquee } from "./filesystem-selection-marquee";
-import { FilesystemBatchResultDialog } from "./filesystem-batch-result-dialog";
-import { DownloadTransferDialog } from "./download-transfer-dialog";
-import { useXpContextMenu } from "../../state/context-menu-context";
-import { contextMenuCommand, contextMenuSeparator } from "../../domain/context-menu";
-import { XP_CONTEXT_MENU_COMMAND_ID } from "../../constants/context-menu";
+} from "@client/components/filesystem/filesystem-dialogs";
+import { FilesystemEntryIcon } from "@client/components/filesystem/filesystem-entry-icon";
+import { FilesystemSelectionMarquee } from "@client/components/filesystem/filesystem-selection-marquee";
+import { FilesystemBatchResultDialog } from "@client/components/filesystem/filesystem-batch-result-dialog";
+import { DownloadTransferDialog } from "@client/components/filesystem/download-transfer-dialog";
+import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
+import { contextMenuCommand, contextMenuSeparator } from "@client/domain/context-menu/context-menu";
+import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
 import {
   FILESYSTEM_SORT_CLASS_NAME,
   FILESYSTEM_SORT_COPY,
   FILESYSTEM_SORT_DIRECTION_LABELS,
   FILESYSTEM_SORT_FIELD_OPTIONS,
-} from "../../constants/filesystem-sort";
+} from "@client/constants/filesystem/sort";
 
 type DocumentsDialog = "create" | "rename" | "move" | null;
 const EMPTY_ENTRY_IDS: readonly string[] = [];

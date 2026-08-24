@@ -3,9 +3,9 @@ import type {
   StoredObject,
   StoredObjectBody,
   StoredObjectRange,
-} from "../src/types/storage";
-import type { FilesystemRepository } from "../src/types/repository";
-import type { DirectorySortRepository } from "../src/types/directory-sort-repository";
+} from "@/types/filesystem/storage";
+import type { FilesystemRepository } from "@/types/filesystem/repository";
+import type { DirectorySortRepository } from "@/types/filesystem/directory-sort-repository";
 import type {
   FilesystemBreadcrumb,
   FilesystemDirectorySort,
@@ -16,20 +16,20 @@ import type {
   NewFilesystemFile,
   NewFilesystemWidget,
   RootedFilesystemEntryRecord,
-} from "../src/types/filesystem";
-import { FILE_STATUS } from "../src/constants/file";
+} from "@/types/filesystem/filesystem";
+import { FILE_STATUS } from "@/constants/filesystem/file";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
   FILESYSTEM_ROOT_NAME,
-} from "../src/constants/filesystem";
-import { WIDGET_TYPE } from "../src/constants/widget";
-import type { StoredWidgetLayout, WidgetLayout } from "../src/types/widget";
-import type { WidgetType } from "../src/types/widget";
-import type { WidgetLayoutRepository } from "../src/types/widget-repository";
-import type { MemoRepository } from "../src/types/memo-repository";
-import type { MemoRecord } from "../src/types/memo";
-import type { ChecklistRepository } from "../src/types/checklist-repository";
+} from "@/constants/filesystem/filesystem";
+import { WIDGET_TYPE } from "@/constants/widgets/widget";
+import type { StoredWidgetLayout, WidgetLayout } from "@/types/widgets/widget";
+import type { WidgetType } from "@/types/widgets/widget";
+import type { WidgetLayoutRepository } from "@/types/widgets/widget-repository";
+import type { MemoRepository } from "@/types/widgets/memo-repository";
+import type { MemoRecord } from "@/types/widgets/memo";
+import type { ChecklistRepository } from "@/types/widgets/checklist-repository";
 import type {
   ArchiveChecklistItemRecord,
   ChecklistEventRecord,
@@ -37,13 +37,13 @@ import type {
   CreateChecklistItemRecord,
   SetChecklistStateRecord,
   UpdateChecklistItemRecord,
-} from "../src/types/checklist";
+} from "@/types/widgets/checklist";
 import {
   CHECKLIST_EVENT_ACTION,
-} from "../src/constants/checklist";
-import type { Clock, IdGenerator } from "../src/types/runtime";
-import type { MemoryObject } from "./types/fakes";
-import { compareFilesystemEntries } from "../src/domain/filesystem-sort";
+} from "@/constants/widgets/checklist";
+import type { Clock, IdGenerator } from "@/types/platform/runtime";
+import type { MemoryObject } from "@test/types/fakes";
+import { compareFilesystemEntries } from "@/domain/filesystem/filesystem-sort";
 
 export class MemoryDirectorySortRepository implements DirectorySortRepository {
   readonly sorts = new Map<string, FilesystemDirectorySort>();

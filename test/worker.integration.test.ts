@@ -6,43 +6,43 @@ import {
   API_QUERY_PARAMETERS,
   FILESYSTEM_API_PATHS,
   NOVELAI_IMAGE_UPLOAD_API_PATH,
-} from "../src/constants/api";
-import { ACCESS_LOGOUT_PATH } from "../src/constants/auth";
-import { CHECKLIST_EVENT_ACTION } from "../src/constants/checklist";
-import { FILESYSTEM_ERRORS } from "../src/constants/errors/filesystem";
+} from "@/constants/platform/api";
+import { ACCESS_LOGOUT_PATH } from "@/constants/platform/auth";
+import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
+import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import {
   DEFAULT_CONTENT_TYPE,
   FILE_OBJECT_KEY_PREFIX,
   FILE_STATUS,
   MAX_FILE_SIZE_BYTES,
-} from "../src/constants/file";
+} from "@/constants/filesystem/file";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
-} from "../src/constants/filesystem";
+} from "@/constants/filesystem/filesystem";
 import {
   DEFAULT_FILESYSTEM_DIRECTORY_SORT,
   FILESYSTEM_SORT_DIRECTION,
   FILESYSTEM_SORT_FIELD,
-} from "../src/constants/filesystem-sort";
+} from "@/constants/filesystem/sort";
 import {
   HTTP_HEADERS,
   HTTP_MEDIA_TYPE,
   HTTP_METHOD,
   HTTP_STATUS,
-} from "../src/constants/http";
+} from "@/constants/platform/http";
 import {
   WIDGET_TYPE,
   WIDGET_WINDOW_POLICY,
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
-} from "../src/constants/widget";
-import { NOVELAI_STORAGE_PATH } from "../src/constants/novelai";
-import { THUMBNAIL_SPEC } from "../src/constants/thumbnail";
-import { filesystemNameKey } from "../src/domain/filesystem-name";
-import { thumbnailObjectKey } from "../src/domain/thumbnail";
-import type { DashboardWidget, WidgetLayout, WidgetType } from "../src/types/widget";
-import type { StorageStatusSnapshot } from "../src/types/storage-status";
+} from "@/constants/widgets/widget";
+import { NOVELAI_STORAGE_PATH } from "@/constants/integrations/novelai";
+import { THUMBNAIL_SPEC } from "@/constants/filesystem/thumbnail";
+import { filesystemNameKey } from "@/domain/filesystem/filesystem-name";
+import { thumbnailObjectKey } from "@/domain/filesystem/thumbnail";
+import type { DashboardWidget, WidgetLayout, WidgetType } from "@/types/widgets/widget";
+import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
 
 const ORIGIN = "http://localhost";
 const TEST_MEDIA_TYPE = {

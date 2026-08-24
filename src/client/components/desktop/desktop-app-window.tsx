@@ -1,12 +1,12 @@
-import { WINDOW_STATE } from "../../../constants/widget";
-import { DASHBOARD_COPY } from "../../constants/content";
-import { XP_WINDOW_CONTROL_ACTION } from "../../constants/xp";
-import type { DesktopAppWindowProps } from "../../types/desktop";
-import { XpWindowControlButton } from "../ui/xp-window-control-button";
-import { MovableDesktopWindow } from "./movable-desktop-window";
-import { XpWindowFrame } from "./xp-window-frame";
-import { useXpContextMenu } from "../../state/context-menu-context";
-import { windowContextMenuItems } from "../../domain/window-context-menu";
+import { WINDOW_STATE } from "@/constants/widgets/widget";
+import { DASHBOARD_COPY } from "@client/constants/widgets/content";
+import { XP_WINDOW_CONTROL_ACTION } from "@client/constants/shared/xp";
+import type { DesktopAppWindowProps } from "@client/types/desktop/desktop";
+import { XpWindowControlButton } from "@client/components/shared/xp-window-control-button";
+import { MovableDesktopWindow } from "@client/components/desktop/movable-desktop-window";
+import { XpWindowFrame } from "@client/components/desktop/xp-window-frame";
+import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
+import { windowContextMenuItems } from "@client/domain/context-menu/window-context-menu";
 
 export function DesktopAppWindow({
   title,

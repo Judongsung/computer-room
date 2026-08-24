@@ -1,15 +1,15 @@
 import { useEffect, useRef } from "react";
-import { DASHBOARD_COPY } from "../../constants/content";
+import { DASHBOARD_COPY } from "@client/constants/widgets/content";
 import {
   DESKTOP_ASSET_PATHS,
   WIDGET_ICON_PATH_BY_TYPE,
-} from "../../constants/desktop";
-import { KEYBOARD_KEY } from "../../constants/keyboard";
-import { WIDGET_TYPE } from "../../../constants/widget";
-import type { StartMenuProps } from "../../types/desktop";
-import { useXpContextMenu } from "../../state/context-menu-context";
-import { contextMenuCommand } from "../../domain/context-menu";
-import { XP_CONTEXT_MENU_COMMAND_ID } from "../../constants/context-menu";
+} from "@client/constants/desktop/desktop";
+import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
+import { WIDGET_TYPE } from "@/constants/widgets/widget";
+import type { StartMenuProps } from "@client/types/desktop/desktop";
+import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
+import { contextMenuCommand } from "@client/domain/context-menu/context-menu";
+import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
 
 export function StartMenu({
   isOpen,

@@ -1,21 +1,21 @@
 import { describe, expect, it, vi } from "vitest";
-import { StorageStatusService } from "../src/application/storage-status-service";
+import { StorageStatusService } from "@/application/storage/storage-status-service";
 import {
   R2_STORAGE_CLASS,
   STORAGE_MIME_CATEGORY,
   STORAGE_OBJECT_PURPOSE,
-} from "../src/constants/storage-status";
-import { STORAGE_STATUS_ERRORS } from "../src/constants/errors/storage-status";
+} from "@/constants/storage/storage-status";
+import { STORAGE_STATUS_ERRORS } from "@/constants/storage/errors/storage-status";
 import {
   storageMimeCategory,
   storageObjectPurpose,
-} from "../src/domain/storage-status";
-import { R2ObjectStorageUsageReader } from "../src/infrastructure/r2-object-storage-usage-reader";
+} from "@/domain/storage/storage-status";
+import { R2ObjectStorageUsageReader } from "@/infrastructure/storage/r2-object-storage-usage-reader";
 import type {
   DatabaseStorageUsage,
   ObjectStorageUsage,
-} from "../src/types/storage-status";
-import { StaticClock } from "./fakes";
+} from "@/types/storage/storage-status";
+import { StaticClock } from "@test/fakes";
 
 const NOW = Date.parse("2026-08-23T12:34:56.789Z");
 

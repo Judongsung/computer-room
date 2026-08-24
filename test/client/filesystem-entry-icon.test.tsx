@@ -1,12 +1,12 @@
 import { act, fireEvent, render, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FilesystemEntryIcon } from "../../src/client/components/filesystem/filesystem-entry-icon";
-import { DESKTOP_ASSET_PATHS } from "../../src/client/constants/desktop";
-import { ThumbnailLoadCoordinator } from "../../src/client/domain/thumbnail-load-coordinator";
-import { ThumbnailLoadProvider } from "../../src/client/state/thumbnail-load-context";
-import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "../../src/constants/filesystem";
-import { THUMBNAIL_SPEC } from "../../src/constants/thumbnail";
-import type { FilesystemFileEntry } from "../../src/types/filesystem";
+import { FilesystemEntryIcon } from "@client/components/filesystem/filesystem-entry-icon";
+import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
+import { ThumbnailLoadCoordinator } from "@client/domain/filesystem/thumbnail-load-coordinator";
+import { ThumbnailLoadProvider } from "@client/state/filesystem/thumbnail-load-context";
+import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
+import { THUMBNAIL_SPEC } from "@/constants/filesystem/thumbnail";
+import type { FilesystemFileEntry } from "@/types/filesystem/filesystem";
 
 const IMAGE_ENTRY: FilesystemFileEntry = {
   id: "image-id",

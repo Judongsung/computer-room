@@ -1,4 +1,4 @@
-import type { ErrorDefinition } from "../../types/error";
+import type { ErrorDefinition } from "@/types/platform/error";
 
 export class ClientError extends Error {
   readonly code: string;

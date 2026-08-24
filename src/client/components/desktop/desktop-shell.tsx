@@ -11,91 +11,91 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
   FILESYSTEM_ROOT_NAME,
-} from "../../../constants/filesystem";
+} from "@/constants/filesystem/filesystem";
 import {
   WIDGET_BEHAVIOR,
   WIDGET_TYPE,
   WINDOW_STATE,
-} from "../../../constants/widget";
-import { mediaKindFromContentType } from "../../../domain/media-type";
-import type { FilesystemEntry } from "../../../types/filesystem";
-import type { FilesystemBatchResult } from "../../../types/filesystem-batch";
-import type { WidgetType } from "../../../types/widget";
+} from "@/constants/widgets/widget";
+import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
+import type { FilesystemEntry } from "@/types/filesystem/filesystem";
+import type { FilesystemBatchResult } from "@/types/filesystem/batch";
+import type { WidgetType } from "@/types/widgets/widget";
 import {
   DASHBOARD_COPY,
   SITE_COPY,
   UNSAVED_WIDGET_TITLE_BY_TYPE,
-} from "../../constants/content";
+} from "@client/constants/widgets/content";
 import {
   DESKTOP_ASSET_PATHS,
   DESKTOP_LAYOUT,
   WIDGET_ICON_PATH_BY_TYPE,
-} from "../../constants/desktop";
-import { LAYOUT_SAVE_STATUS } from "../../constants/layout-save";
+} from "@client/constants/desktop/desktop";
+import { LAYOUT_SAVE_STATUS } from "@client/constants/desktop/layout-save";
 import {
   SYSTEM_APP_CONFIG,
   SYSTEM_APP_ID,
   SYSTEM_APP_ID_VALUES,
-} from "../../constants/system-app";
-import { MEDIA_WINDOW_CONFIG } from "../../constants/media";
-import { KEYBOARD_KEY } from "../../constants/keyboard";
-import { useDesktopDimensions } from "../../hooks/use-desktop-dimensions";
-import { useSystemWindows } from "../../hooks/use-system-windows";
-import { useMediaWindows } from "../../hooks/use-media-windows";
-import { useExplorerWindows } from "../../hooks/use-explorer-windows";
-import { useDesktopEntries } from "../../hooks/use-desktop-entries";
-import { useFilesystemUpload } from "../../hooks/use-filesystem-upload";
-import { useFilesystemSelection } from "../../hooks/use-filesystem-selection";
-import { useFilesystemMarqueeSelection } from "../../hooks/use-filesystem-marquee-selection";
-import { useFilesystemDownload } from "../../hooks/use-filesystem-download";
-import { desktopIconLayout } from "../../domain/desktop-icon-layout";
-import { collectDroppedUploadNodes } from "../../domain/local-file-tree";
+} from "@client/constants/desktop/system-app";
+import { MEDIA_WINDOW_CONFIG } from "@client/constants/media/media";
+import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
+import { useDesktopDimensions } from "@client/hooks/desktop/use-desktop-dimensions";
+import { useSystemWindows } from "@client/hooks/desktop/use-system-windows";
+import { useMediaWindows } from "@client/hooks/media/use-media-windows";
+import { useExplorerWindows } from "@client/hooks/desktop/use-explorer-windows";
+import { useDesktopEntries } from "@client/hooks/filesystem/use-desktop-entries";
+import { useFilesystemUpload } from "@client/hooks/filesystem/use-filesystem-upload";
+import { useFilesystemSelection } from "@client/hooks/filesystem/use-filesystem-selection";
+import { useFilesystemMarqueeSelection } from "@client/hooks/filesystem/use-filesystem-marquee-selection";
+import { useFilesystemDownload } from "@client/hooks/filesystem/use-filesystem-download";
+import { desktopIconLayout } from "@client/domain/desktop/desktop-icon-layout";
+import { collectDroppedUploadNodes } from "@client/domain/filesystem/local-file-tree";
 import {
   readFilesystemDragPayload,
   writeFilesystemDragPayload,
-} from "../../domain/filesystem-drag";
-import type { DragFilesystemEntryPayload } from "../../types/filesystem";
+} from "@client/domain/filesystem/drag";
+import type { DragFilesystemEntryPayload } from "@client/types/filesystem/filesystem";
 import type {
   DesktopShellProps,
   TaskbarWindowItem,
   WindowBounds,
-} from "../../types/desktop";
-import type { SystemAppId } from "../../types/system-app";
-import { DocumentsWindow } from "../filesystem/documents-window";
-import { MyComputerWindow } from "../filesystem/my-computer-window";
-import { RecycleBinWindow } from "../filesystem/recycle-bin-window";
-import { UploadTransferDialog } from "../filesystem/upload-transfer-dialog";
-import { DownloadTransferDialog } from "../filesystem/download-transfer-dialog";
-import { FilesystemBatchResultDialog } from "../filesystem/filesystem-batch-result-dialog";
-import { FilesystemSelectionMarquee } from "../filesystem/filesystem-selection-marquee";
+} from "@client/types/desktop/desktop";
+import type { SystemAppId } from "@client/types/desktop/system-app";
+import { DocumentsWindow } from "@client/components/filesystem/documents-window";
+import { MyComputerWindow } from "@client/components/filesystem/my-computer-window";
+import { RecycleBinWindow } from "@client/components/filesystem/recycle-bin-window";
+import { UploadTransferDialog } from "@client/components/filesystem/upload-transfer-dialog";
+import { DownloadTransferDialog } from "@client/components/filesystem/download-transfer-dialog";
+import { FilesystemBatchResultDialog } from "@client/components/filesystem/filesystem-batch-result-dialog";
+import { FilesystemSelectionMarquee } from "@client/components/filesystem/filesystem-selection-marquee";
 import {
   UnsavedWidgetDialog,
   WidgetSaveDialog,
-} from "../filesystem/widget-file-dialogs";
+} from "@client/components/filesystem/widget-file-dialogs";
 import {
   DirectoryPickerDialog,
   NameDialog,
-} from "../filesystem/filesystem-dialogs";
-import { MediaViewerWindow } from "../media/media-viewer-window";
-import { DesktopNotification } from "./desktop-notification";
-import { DesktopShortcuts } from "./desktop-shortcuts";
-import { DesktopWindow } from "./desktop-window";
-import { StartMenu } from "./start-menu";
-import { Taskbar } from "./taskbar";
-import { downloadFile } from "../../utils/download-file";
+} from "@client/components/filesystem/filesystem-dialogs";
+import { MediaViewerWindow } from "@client/components/media/media-viewer-window";
+import { DesktopNotification } from "@client/components/desktop/desktop-notification";
+import { DesktopShortcuts } from "@client/components/desktop/desktop-shortcuts";
+import { DesktopWindow } from "@client/components/desktop/desktop-window";
+import { StartMenu } from "@client/components/desktop/start-menu";
+import { Taskbar } from "@client/components/desktop/taskbar";
+import { downloadFile } from "@client/utils/download-file";
 import {
   FILESYSTEM_COPY,
   FILESYSTEM_DRAG_SOURCE,
-} from "../../constants/filesystem";
-import { useXpContextMenu } from "../../state/context-menu-context";
+} from "@client/constants/filesystem/filesystem";
+import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
 import {
   contextMenuCommand,
   contextMenuSeparator,
-} from "../../domain/context-menu";
+} from "@client/domain/context-menu/context-menu";
 import {
   XP_CONTEXT_MENU_COMMAND_ID,
   XP_CONTEXT_MENU_COPY,
-} from "../../constants/context-menu";
+} from "@client/constants/context-menu/context-menu";
 
 type DesktopFilesystemDialog =
   | { readonly kind: "create" }

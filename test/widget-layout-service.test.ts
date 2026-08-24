@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { WidgetLayoutService } from "../src/application/widget-layout-service";
+import { WidgetLayoutService } from "@/application/widgets/widget-layout-service";
 import {
   WIDGET_TYPE,
   WIDGET_WINDOW_POLICY,
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
-} from "../src/constants/widget";
-import { WIDGET_ERRORS } from "../src/constants/errors/widget";
+} from "@/constants/widgets/widget";
+import { WIDGET_ERRORS } from "@/constants/widgets/errors/widget";
 import {
   MemoryChecklistRepository,
   MemoryFileRepository,
@@ -14,7 +14,7 @@ import {
   MemoryWidgetLayoutRepository,
   StaticClock,
   SequenceIdGenerator,
-} from "./fakes";
+} from "@test/fakes";
 
 const MEMO_WINDOW_POLICY = WIDGET_WINDOW_POLICY[WIDGET_TYPE.MEMO];
 const NOW = Date.parse("2026-08-20T01:00:00.000Z");

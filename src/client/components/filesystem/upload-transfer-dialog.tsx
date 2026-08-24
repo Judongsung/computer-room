@@ -1,5 +1,5 @@
-import { FILESYSTEM_COPY } from "../../constants/filesystem";
-import type { UploadTransferState } from "../../types/upload";
+import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
+import type { UploadTransferState } from "@client/types/filesystem/upload";
 
 interface UploadTransferDialogProps {
   readonly state: UploadTransferState;

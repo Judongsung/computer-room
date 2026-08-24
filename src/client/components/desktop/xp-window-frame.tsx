@@ -1,5 +1,5 @@
-import { XP_WINDOW_INTERACTION_CLASS_NAME } from "../../constants/xp";
-import type { XpWindowFrameProps } from "../../types/xp";
+import { XP_WINDOW_INTERACTION_CLASS_NAME } from "@client/constants/shared/xp";
+import type { XpWindowFrameProps } from "@client/types/shared/xp";
 
 export function XpWindowFrame({
   title,

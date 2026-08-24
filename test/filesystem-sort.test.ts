@@ -1,32 +1,32 @@
 import { describe, expect, it } from "vitest";
-import { FilesystemService } from "../src/application/filesystem-service";
-import { FILE_STATUS } from "../src/constants/file";
+import { FilesystemService } from "@/application/filesystem/filesystem-service";
+import { FILE_STATUS } from "@/constants/filesystem/file";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
-} from "../src/constants/filesystem";
+} from "@/constants/filesystem/filesystem";
 import {
   DEFAULT_FILESYSTEM_DIRECTORY_SORT,
   FILESYSTEM_SORT_DIRECTION,
   FILESYSTEM_SORT_DIRECTION_VALUES,
   FILESYSTEM_SORT_FIELD,
   FILESYSTEM_SORT_FIELD_VALUES,
-} from "../src/constants/filesystem-sort";
-import { WIDGET_TYPE } from "../src/constants/widget";
+} from "@/constants/filesystem/sort";
+import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import {
   compareFilesystemEntries,
   requireFilesystemDirectorySort,
-} from "../src/domain/filesystem-sort";
+} from "@/domain/filesystem/filesystem-sort";
 import type {
   FilesystemDirectorySort,
   FilesystemEntryRecord,
-} from "../src/types/filesystem";
+} from "@/types/filesystem/filesystem";
 import {
   MemoryDirectorySortRepository,
   MemoryFileRepository,
   SequenceIdGenerator,
   StaticClock,
-} from "./fakes";
+} from "@test/fakes";
 
 describe("filesystem directory sorting", () => {
   it("sorts all supported fields in both directions with directories first", () => {

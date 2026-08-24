@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { FileService } from "../src/application/file-service";
-import { FilesystemPathService } from "../src/application/filesystem-path-service";
-import { NovelAiImageService } from "../src/application/novelai-image-service";
-import { FILE_ERRORS } from "../src/constants/errors/file";
-import { NOVELAI_ERRORS } from "../src/constants/errors/novelai";
-import { FILE_OBJECT_KEY_PREFIX } from "../src/constants/file";
-import { FILESYSTEM_ROOT_ID } from "../src/constants/filesystem";
-import { novelAiImageFileName } from "../src/domain/novelai-image";
+import { FileService } from "@/application/filesystem/file-service";
+import { FilesystemPathService } from "@/application/filesystem/filesystem-path-service";
+import { NovelAiImageService } from "@/application/integrations/novelai-image-service";
+import { FILE_ERRORS } from "@/constants/filesystem/errors/file";
+import { NOVELAI_ERRORS } from "@/constants/integrations/errors/novelai";
+import { FILE_OBJECT_KEY_PREFIX } from "@/constants/filesystem/file";
+import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
+import { novelAiImageFileName } from "@/domain/integrations/novelai-image";
 import {
   MemoryFileRepository,
   MemoryObjectStorage,
   SequenceIdGenerator,
   StaticClock,
   streamFromText,
-} from "./fakes";
+} from "@test/fakes";
 
 const KOREA_MIDNIGHT = Date.parse("2026-08-21T15:00:00.123Z");
 const IMAGE_BODY = "png";

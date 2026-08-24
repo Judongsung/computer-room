@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { WIDGET_ERRORS } from "../src/constants/errors/widget";
+import { WIDGET_ERRORS } from "@/constants/widgets/errors/widget";
 import {
   WIDGET_TYPE,
   WIDGET_WINDOW_POLICY,
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
-} from "../src/constants/widget";
-import { widgetLayoutsEqual } from "../src/domain/widget-layout";
-import { validateWidgetLayout } from "../src/domain/widget-layout-validation";
-import type { WidgetLayout } from "../src/types/widget";
+} from "@/constants/widgets/widget";
+import { widgetLayoutsEqual } from "@/domain/widgets/widget-layout";
+import { validateWidgetLayout } from "@/domain/widgets/widget-layout-validation";
+import type { WidgetLayout } from "@/types/widgets/widget";
 
 describe("widget layout rules", () => {
   it("accepts overlapping windows and sorts them by stack order", () => {

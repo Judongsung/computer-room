@@ -16,14 +16,14 @@ import {
   MEDIA_VIEWER_COPY,
   PERCENT_MULTIPLIER,
   PICTURE_VIEWER_CANVAS_PADDING_PX,
-} from "../../constants/media";
-import { useElementSize } from "../../hooks/use-element-size";
+} from "@client/constants/media/media";
+import { useElementSize } from "@client/hooks/shared/use-element-size";
 import type {
   ImageViewerZoomMode,
   MediaFailureProps,
   MediaRendererProps,
   MediaViewerToolbarButtonProps,
-} from "../../types/media";
+} from "@client/types/media/media";
 
 export function PictureViewer({
   file,

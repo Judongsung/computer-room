@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { WIDGET_TYPE } from "../../../constants/widget";
-import type { WidgetType } from "../../../types/widget";
+import { WIDGET_TYPE } from "@/constants/widgets/widget";
+import type { WidgetType } from "@/types/widgets/widget";
 import {
   WIDGET_TITLE_BY_TYPE,
-} from "../../constants/content";
-import { FILESYSTEM_COPY } from "../../constants/filesystem";
-import { WIDGET_ICON_PATH_BY_TYPE } from "../../constants/desktop";
-import { SYSTEM_APP_ID } from "../../constants/system-app";
-import type { SystemWindowChromeProps } from "../../types/system-app";
-import { SystemAppWindow } from "../desktop/system-app-window";
-import { useXpContextMenu } from "../../state/context-menu-context";
-import { contextMenuCommand } from "../../domain/context-menu";
-import { XP_CONTEXT_MENU_COMMAND_ID } from "../../constants/context-menu";
+} from "@client/constants/widgets/content";
+import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
+import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
+import { SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
+import type { SystemWindowChromeProps } from "@client/types/desktop/system-app";
+import { SystemAppWindow } from "@client/components/desktop/system-app-window";
+import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
+import { contextMenuCommand } from "@client/domain/context-menu/context-menu";
+import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
 
 const WIDGET_CATALOG = [
   WIDGET_TYPE.MEMO,

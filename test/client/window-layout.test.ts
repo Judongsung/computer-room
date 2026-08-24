@@ -4,7 +4,7 @@ import {
   WIDGET_WINDOW_POLICY,
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
-} from "../../src/constants/widget";
+} from "@/constants/widgets/widget";
 import {
   activeWidgetId,
   bringWidgetToFront,
@@ -13,8 +13,8 @@ import {
   minimizeWindow,
   restoreWindow,
   toggleMaximizeWindow,
-} from "../../src/client/domain/window-layout";
-import type { WidgetLayout } from "../../src/types/widget";
+} from "@client/domain/desktop/window-layout";
+import type { WidgetLayout } from "@/types/widgets/widget";
 
 describe("desktop window layout", () => {
   it("cascades new windows and clamps stored bounds to the desktop", () => {

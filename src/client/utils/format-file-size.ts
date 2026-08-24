@@ -1,7 +1,7 @@
 import {
   FILE_SIZE_DISPLAY,
   FILESYSTEM_COPY,
-} from "../constants/filesystem";
+} from "@client/constants/filesystem/filesystem";
 
 export function formatFileSize(size: number): string {
   if (size < FILE_SIZE_DISPLAY.KILOBYTE_BYTES) {

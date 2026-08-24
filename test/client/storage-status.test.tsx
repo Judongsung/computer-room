@@ -1,27 +1,27 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { StorageStatusWidget } from "../../src/client/components/dashboard/storage-status-widget";
+import { StorageStatusWidget } from "@client/components/widgets/storage-status-widget";
 import {
   STORAGE_STATUS_COPY,
   STORAGE_USAGE_LEVEL,
-} from "../../src/client/constants/storage-status";
+} from "@client/constants/storage/storage-status";
 import {
   storageGraphPercent,
   storageUsageLevel,
   storageUsagePercent,
-} from "../../src/client/domain/storage-status";
-import type { StorageStatusGateway } from "../../src/client/types/storage-status";
+} from "@client/domain/storage/storage-status";
+import type { StorageStatusGateway } from "@client/types/storage/storage-status";
 import {
   STORAGE_FREE_REFERENCE_BYTES,
-} from "../../src/constants/storage-status";
+} from "@/constants/storage/storage-status";
 import {
   WIDGET_TYPE,
   WIDGET_WINDOW_POLICY,
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
-} from "../../src/constants/widget";
-import type { StorageStatusSnapshot } from "../../src/types/storage-status";
+} from "@/constants/widgets/widget";
+import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
 
 describe("storage status presentation", () => {
   it("classifies zero, warning, limit, and over-limit usage", () => {

@@ -1,19 +1,19 @@
 import { useState, type CSSProperties } from "react";
-import { DesktopShell } from "./components/desktop/desktop-shell";
-import { XpWindowFrame } from "./components/desktop/xp-window-frame";
-import { DASHBOARD_COPY, SITE_COPY } from "./constants/content";
-import { LOAD_STATUS, UI_MESSAGES } from "./constants/dashboard";
-import { DESKTOP_ASSET_PATHS } from "./constants/desktop";
-import { useDashboard } from "./hooks/use-dashboard";
-import { DashboardApiClient } from "./api/dashboard-api-client";
-import { FilesystemApiClient } from "./api/filesystem-api-client";
-import { StorageStatusApiClient } from "./api/storage-status-api-client";
-import type { AppProps } from "./types/app";
-import type { DashboardGateway } from "./types/api";
-import type { FilesystemGateway } from "./types/filesystem";
-import type { StorageStatusGateway } from "./types/storage-status";
-import { ThumbnailLoadProvider } from "./state/thumbnail-load-context";
-import { XpContextMenuProvider } from "./state/context-menu-context";
+import { DesktopShell } from "@client/components/desktop/desktop-shell";
+import { XpWindowFrame } from "@client/components/desktop/xp-window-frame";
+import { DASHBOARD_COPY, SITE_COPY } from "@client/constants/widgets/content";
+import { LOAD_STATUS, UI_MESSAGES } from "@client/constants/widgets/dashboard";
+import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
+import { useDashboard } from "@client/hooks/widgets/use-dashboard";
+import { DashboardApiClient } from "@client/api/widgets/dashboard-api-client";
+import { FilesystemApiClient } from "@client/api/filesystem/filesystem-api-client";
+import { StorageStatusApiClient } from "@client/api/storage/storage-status-api-client";
+import type { AppProps } from "@client/types/app/app";
+import type { DashboardGateway } from "@client/types/widgets/api";
+import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { StorageStatusGateway } from "@client/types/storage/storage-status";
+import { ThumbnailLoadProvider } from "@client/state/filesystem/thumbnail-load-context";
+import { XpContextMenuProvider } from "@client/state/context-menu/context-menu-context";
 
 const DESKTOP_BACKGROUND_STYLE = {
   "--desktop-background-image": `url("${DESKTOP_ASSET_PATHS.BACKGROUND}")`,

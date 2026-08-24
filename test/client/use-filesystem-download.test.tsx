@@ -1,11 +1,11 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FILESYSTEM_ENTRY_KIND } from "../../src/constants/filesystem";
-import type { FilesystemDirectoryEntry } from "../../src/types/filesystem";
-import type { FilesystemDownloadManifest } from "../../src/types/filesystem-download";
-import { FILESYSTEM_DOWNLOAD_STATUS } from "../../src/client/constants/filesystem-download";
-import { useFilesystemDownload } from "../../src/client/hooks/use-filesystem-download";
-import type { FilesystemDownloadGateway } from "../../src/client/types/filesystem";
+import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
+import type { FilesystemDirectoryEntry } from "@/types/filesystem/filesystem";
+import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
+import { FILESYSTEM_DOWNLOAD_STATUS } from "@client/constants/filesystem/download";
+import { useFilesystemDownload } from "@client/hooks/filesystem/use-filesystem-download";
+import type { FilesystemDownloadGateway } from "@client/types/filesystem/filesystem";
 
 const UPDATED_AT = "2026-08-23T01:00:00.000Z";
 const DIRECTORY: FilesystemDirectoryEntry = {

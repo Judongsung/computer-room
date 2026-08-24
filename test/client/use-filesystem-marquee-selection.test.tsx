@@ -4,9 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import {
   FILESYSTEM_SELECTION_DATA_ATTRIBUTE,
   FILESYSTEM_SELECTION_POLICY,
-} from "../../src/client/constants/filesystem";
-import { FilesystemSelectionMarquee } from "../../src/client/components/filesystem/filesystem-selection-marquee";
-import { useFilesystemMarqueeSelection } from "../../src/client/hooks/use-filesystem-marquee-selection";
+} from "@client/constants/filesystem/filesystem";
+import { FilesystemSelectionMarquee } from "@client/components/filesystem/filesystem-selection-marquee";
+import { useFilesystemMarqueeSelection } from "@client/hooks/filesystem/use-filesystem-marquee-selection";
 
 describe("filesystem marquee selection", () => {
   it("selects intersecting items and scrolls near the lower edge", () => {

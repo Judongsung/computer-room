@@ -1,7 +1,7 @@
-import { FILESYSTEM_DOWNLOAD_STATUS } from "../../constants/filesystem-download";
-import { FILESYSTEM_COPY } from "../../constants/filesystem";
-import type { FilesystemDownloadState } from "../../types/filesystem-download";
-import { formatFileSize } from "../../utils/format-file-size";
+import { FILESYSTEM_DOWNLOAD_STATUS } from "@client/constants/filesystem/download";
+import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
+import type { FilesystemDownloadState } from "@client/types/filesystem/download";
+import { formatFileSize } from "@client/utils/format-file-size";
 
 export function DownloadTransferDialog({
   state,

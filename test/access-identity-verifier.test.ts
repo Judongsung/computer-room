@@ -2,16 +2,16 @@ import { describe, expect, it } from "vitest";
 import {
   API_PATHS,
   NOVELAI_IMAGE_UPLOAD_API_PATH,
-} from "../src/constants/api";
-import { ACCESS_JWT_HEADER } from "../src/constants/auth";
-import { AUTH_ERRORS } from "../src/constants/errors/auth";
+} from "@/constants/platform/api";
+import { ACCESS_JWT_HEADER } from "@/constants/platform/auth";
+import { AUTH_ERRORS } from "@/constants/platform/errors/auth";
 import {
   CloudflareAccessApplicationVerifier,
   CloudflareAccessIdentityVerifier,
   LocalIdentityVerifier,
   LocalRequestVerifier,
-} from "../src/infrastructure/access-identity-verifier";
-import type { AccessTokenVerifier } from "../src/types/auth";
+} from "@/infrastructure/auth/access-identity-verifier";
+import type { AccessTokenVerifier } from "@/types/platform/auth";
 
 class StaticTokenVerifier implements AccessTokenVerifier {
   constructor(

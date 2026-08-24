@@ -5,17 +5,17 @@ import {
   type MouseEvent,
   type ReactNode,
 } from "react";
-import type { FilesystemEntry } from "../../../types/filesystem";
-import { FILESYSTEM_COPY } from "../../constants/filesystem";
-import { KEYBOARD_KEY } from "../../constants/keyboard";
+import type { FilesystemEntry } from "@/types/filesystem/filesystem";
+import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
+import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import {
   SYSTEM_APP_CONFIG,
   SYSTEM_APP_ID,
   SYSTEM_APP_ID_VALUES,
-} from "../../constants/system-app";
-import type { SystemAppId } from "../../types/system-app";
-import { FilesystemEntryIcon } from "../filesystem/filesystem-entry-icon";
-import { FILESYSTEM_SELECTION_DATA_ATTRIBUTE } from "../../constants/filesystem";
+} from "@client/constants/desktop/system-app";
+import type { SystemAppId } from "@client/types/desktop/system-app";
+import { FilesystemEntryIcon } from "@client/components/filesystem/filesystem-entry-icon";
+import { FILESYSTEM_SELECTION_DATA_ATTRIBUTE } from "@client/constants/filesystem/filesystem";
 
 interface DesktopShortcutsProps {
   readonly entries: readonly FilesystemEntry[];

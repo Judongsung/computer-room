@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { FileService } from "../src/application/file-service";
-import { FilesystemPathService } from "../src/application/filesystem-path-service";
-import { FilesystemService } from "../src/application/filesystem-service";
-import { FILESYSTEM_ERRORS } from "../src/constants/errors/filesystem";
+import { FileService } from "@/application/filesystem/file-service";
+import { FilesystemPathService } from "@/application/filesystem/filesystem-path-service";
+import { FilesystemService } from "@/application/filesystem/filesystem-service";
+import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
-} from "../src/constants/filesystem";
-import { WIDGET_TYPE } from "../src/constants/widget";
-import { filesystemNameKey } from "../src/domain/filesystem-name";
+} from "@/constants/filesystem/filesystem";
+import { WIDGET_TYPE } from "@/constants/widgets/widget";
+import { filesystemNameKey } from "@/domain/filesystem/filesystem-name";
 import {
   MemoryDirectorySortRepository,
   MemoryFileRepository,
@@ -16,7 +16,7 @@ import {
   SequenceIdGenerator,
   StaticClock,
   streamFromText,
-} from "./fakes";
+} from "@test/fakes";
 
 const NOW = Date.parse("2026-08-22T01:00:00.000Z");
 

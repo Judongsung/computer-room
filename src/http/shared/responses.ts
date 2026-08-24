@@ -1,0 +1,50 @@
+import { HTTP_ERRORS, HTTP_LOG_MESSAGES } from "@/constants/platform/errors/http";
+import {
+  API_RESPONSE_HEADERS,
+  EMPTY_RESPONSE_HEADERS,
+  HTTP_STATUS,
+} from "@/constants/platform/http";
+import { AppError } from "@/domain/shared/errors";
+
+export function jsonResponse(
+  data: unknown,
+  status: number = HTTP_STATUS.OK,
+  additionalHeaders?: HeadersInit,
+): Response {
+  const headers = new Headers(API_RESPONSE_HEADERS);
+  if (additionalHeaders) {
+    new Headers(additionalHeaders).forEach((value, name) => headers.set(name, value));
+  }
+  return new Response(JSON.stringify(data), {
+    status,
+    headers,
+  });
+}
+
+export function emptyResponse(status: number = HTTP_STATUS.NO_CONTENT): Response {
+  return new Response(null, {
+    status,
+    headers: EMPTY_RESPONSE_HEADERS,
+  });
+}
+
+export function errorResponse(error: unknown): Response {
+  if (error instanceof AppError) {
+    return jsonResponse(
+      { error: { code: error.code, message: error.message } },
+      error.status,
+    );
+  }
+
+  console.error(HTTP_LOG_MESSAGES.UNHANDLED_API_ERROR, error);
+  const internalError = HTTP_ERRORS.INTERNAL_ERROR;
+  return jsonResponse(
+    {
+      error: {
+        code: internalError.code,
+        message: internalError.message,
+      },
+    },
+    internalError.status,
+  );
+}

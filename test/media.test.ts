@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { FILE_ERRORS } from "../src/constants/errors/file";
-import { BYTE_RANGE_KIND, MEDIA_KIND } from "../src/constants/media";
-import { normalizeByteRange } from "../src/domain/byte-range";
+import { FILE_ERRORS } from "@/constants/filesystem/errors/file";
+import { BYTE_RANGE_KIND, MEDIA_KIND } from "@/constants/filesystem/media";
+import { normalizeByteRange } from "@/domain/filesystem/byte-range";
 import {
   isPotentialMediaContentType,
   mediaKindFromContentType,
-} from "../src/domain/media-type";
-import { parseRangeHeader } from "../src/http/byte-range";
+} from "@/domain/filesystem/media-type";
+import { parseRangeHeader } from "@/http/filesystem/byte-range";
 
 describe("media type", () => {
   it("classifies only supported image and video media types", () => {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ThumbnailLoadCoordinator } from "../../src/client/domain/thumbnail-load-coordinator";
+import { ThumbnailLoadCoordinator } from "@client/domain/filesystem/thumbnail-load-coordinator";
 
 describe("ThumbnailLoadCoordinator", () => {
   it("starts no more than four loads until a permit is released", async () => {

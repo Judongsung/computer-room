@@ -1,43 +1,43 @@
-import { ChecklistService } from "./application/checklist-service";
-import { FileService } from "./application/file-service";
-import { FilesystemPathService } from "./application/filesystem-path-service";
-import { FilesystemService } from "./application/filesystem-service";
-import { FilesystemDownloadManifestService } from "./application/filesystem-download-manifest-service";
-import { NovelAiImageService } from "./application/novelai-image-service";
-import { RecycleBinService } from "./application/recycle-bin-service";
-import { MemoService } from "./application/memo-service";
-import { ThumbnailService } from "./application/thumbnail-service";
-import { ThumbnailPreparingFileService } from "./application/thumbnail-preparing-file-service";
-import { WidgetLayoutService } from "./application/widget-layout-service";
-import { StorageStatusService } from "./application/storage-status-service";
+import { ChecklistService } from "@/application/widgets/checklist-service";
+import { FileService } from "@/application/filesystem/file-service";
+import { FilesystemPathService } from "@/application/filesystem/filesystem-path-service";
+import { FilesystemService } from "@/application/filesystem/filesystem-service";
+import { FilesystemDownloadManifestService } from "@/application/filesystem/filesystem-download-manifest-service";
+import { NovelAiImageService } from "@/application/integrations/novelai-image-service";
+import { RecycleBinService } from "@/application/filesystem/recycle-bin-service";
+import { MemoService } from "@/application/widgets/memo-service";
+import { ThumbnailService } from "@/application/filesystem/thumbnail-service";
+import { ThumbnailPreparingFileService } from "@/application/filesystem/thumbnail-preparing-file-service";
+import { WidgetLayoutService } from "@/application/widgets/widget-layout-service";
+import { StorageStatusService } from "@/application/storage/storage-status-service";
 import {
   ENABLED_ENV_VALUE,
   LOCAL_AUTH_DEFAULT_EMAIL,
   RUNTIME_ENVIRONMENT,
-} from "./constants/auth";
-import { ApiRouter } from "./http/api-router";
-import { FileApiHandler } from "./http/file-api-handler";
-import { NovelAiImageApiHandler } from "./http/novelai-image-api-handler";
-import { WidgetApiHandler } from "./http/widget-api-handler";
-import { StorageStatusApiHandler } from "./http/storage-status-api-handler";
+} from "@/constants/platform/auth";
+import { ApiRouter } from "@/http/shared/api-router";
+import { FileApiHandler } from "@/http/filesystem/file-api-handler";
+import { NovelAiImageApiHandler } from "@/http/integrations/novelai-image-api-handler";
+import { WidgetApiHandler } from "@/http/widgets/widget-api-handler";
+import { StorageStatusApiHandler } from "@/http/storage/storage-status-api-handler";
 import {
   CloudflareAccessIdentityVerifier,
   CloudflareAccessApplicationVerifier,
   LocalIdentityVerifier,
   LocalRequestVerifier,
-} from "./infrastructure/access-identity-verifier";
-import { D1FilesystemRepository } from "./infrastructure/d1-filesystem-repository";
-import { D1DirectorySortRepository } from "./infrastructure/d1-directory-sort-repository";
-import { D1ChecklistRepository } from "./infrastructure/d1-checklist-repository";
-import { D1MemoRepository } from "./infrastructure/d1-memo-repository";
-import { D1WidgetLayoutRepository } from "./infrastructure/d1-widget-layout-repository";
-import { D1StorageUsageReader } from "./infrastructure/d1-storage-usage-reader";
-import { R2FileObjectStorage } from "./infrastructure/r2-file-object-storage";
-import { R2ObjectStorageUsageReader } from "./infrastructure/r2-object-storage-usage-reader";
-import { CloudflareImageThumbnailGenerator } from "./infrastructure/cloudflare-image-thumbnail-generator";
-import { CloudflareBackgroundTaskScheduler } from "./infrastructure/cloudflare-background-task-scheduler";
-import { CryptoIdGenerator, SystemClock } from "./infrastructure/runtime";
-import type { IdentityVerifier, RequestVerifier } from "./types/auth";
+} from "@/infrastructure/auth/access-identity-verifier";
+import { D1FilesystemRepository } from "@/infrastructure/filesystem/d1-filesystem-repository";
+import { D1DirectorySortRepository } from "@/infrastructure/filesystem/d1-directory-sort-repository";
+import { D1ChecklistRepository } from "@/infrastructure/widgets/d1-checklist-repository";
+import { D1MemoRepository } from "@/infrastructure/widgets/d1-memo-repository";
+import { D1WidgetLayoutRepository } from "@/infrastructure/widgets/d1-widget-layout-repository";
+import { D1StorageUsageReader } from "@/infrastructure/storage/d1-storage-usage-reader";
+import { R2FileObjectStorage } from "@/infrastructure/filesystem/r2-file-object-storage";
+import { R2ObjectStorageUsageReader } from "@/infrastructure/storage/r2-object-storage-usage-reader";
+import { CloudflareImageThumbnailGenerator } from "@/infrastructure/filesystem/cloudflare-image-thumbnail-generator";
+import { CloudflareBackgroundTaskScheduler } from "@/infrastructure/platform/cloudflare-background-task-scheduler";
+import { CryptoIdGenerator, SystemClock } from "@/infrastructure/platform/runtime";
+import type { IdentityVerifier, RequestVerifier } from "@/types/platform/auth";
 
 export default {
   async fetch(

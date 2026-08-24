@@ -3,10 +3,10 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
   FILESYSTEM_ROOT_NAME,
-} from "../../../constants/filesystem";
-import { DESKTOP_ASSET_PATHS } from "../../constants/desktop";
-import { FILESYSTEM_COPY } from "../../constants/filesystem";
-import type { FilesystemGateway } from "../../types/filesystem";
+} from "@/constants/filesystem/filesystem";
+import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
+import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
+import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
 interface NameDialogProps {
   readonly title: string;

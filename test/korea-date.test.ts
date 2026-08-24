@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getKoreaDateContext } from "../src/domain/korea-date";
+import { getKoreaDateContext } from "@/domain/shared/korea-date";
 
 describe("Korea business date", () => {
   it("changes at midnight in Asia/Seoul", () => {

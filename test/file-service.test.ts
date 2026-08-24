@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { FileService } from "../src/application/file-service";
-import { FILE_ERRORS } from "../src/constants/errors/file";
-import { BYTE_RANGE_KIND } from "../src/constants/media";
+import { FileService } from "@/application/filesystem/file-service";
+import { FILE_ERRORS } from "@/constants/filesystem/errors/file";
+import { BYTE_RANGE_KIND } from "@/constants/filesystem/media";
 import {
   DEFAULT_CONTENT_TYPE,
   FILE_OBJECT_KEY_PREFIX,
   FILE_STATUS,
   MAX_FILE_SIZE_BYTES,
-} from "../src/constants/file";
+} from "@/constants/filesystem/file";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
-} from "../src/constants/filesystem";
-import { MemoryFileRepository, MemoryObjectStorage, streamFromText } from "./fakes";
+} from "@/constants/filesystem/filesystem";
+import { MemoryFileRepository, MemoryObjectStorage, streamFromText } from "@test/fakes";
 
 const TEST_FILE = {
   ID: "fixed-id",

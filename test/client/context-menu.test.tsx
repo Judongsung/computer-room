@@ -5,12 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   XP_CONTEXT_MENU_COPY,
   XP_CONTEXT_MENU_ITEM_KIND,
-} from "../../src/client/constants/context-menu";
-import { contextMenuCommand } from "../../src/client/domain/context-menu";
+} from "@client/constants/context-menu/context-menu";
+import { contextMenuCommand } from "@client/domain/context-menu/context-menu";
 import {
   XpContextMenuProvider,
   useXpContextMenu,
-} from "../../src/client/state/context-menu-context";
+} from "@client/state/context-menu/context-menu-context";
 
 describe("XpContextMenuProvider", () => {
   beforeEach(() => {

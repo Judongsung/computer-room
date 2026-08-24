@@ -1,6 +1,6 @@
-import { DESKTOP_ASSET_PATHS } from "../../constants/desktop";
-import type { DesktopNotificationProps } from "../../types/desktop";
-import { XpWindowFrame } from "./xp-window-frame";
+import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
+import type { DesktopNotificationProps } from "@client/types/desktop/desktop";
+import { XpWindowFrame } from "@client/components/desktop/xp-window-frame";
 
 export function DesktopNotification({
   title,

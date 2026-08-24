@@ -3,13 +3,13 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
   FILESYSTEM_ROOT_NAME,
-} from "../../../constants/filesystem";
-import { WIDGET_TYPE } from "../../../constants/widget";
-import type { WidgetType } from "../../../types/widget";
-import { DESKTOP_ASSET_PATHS } from "../../constants/desktop";
-import { CHECKLIST_WIDGET_COPY, MEMO_WIDGET_COPY } from "../../constants/content";
-import { FILESYSTEM_COPY } from "../../constants/filesystem";
-import type { FilesystemGateway } from "../../types/filesystem";
+} from "@/constants/filesystem/filesystem";
+import { WIDGET_TYPE } from "@/constants/widgets/widget";
+import type { WidgetType } from "@/types/widgets/widget";
+import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
+import { CHECKLIST_WIDGET_COPY, MEMO_WIDGET_COPY } from "@client/constants/widgets/content";
+import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
+import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
 interface WidgetSaveDialogProps {
   readonly gateway: FilesystemGateway;

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   changeFilesystemSelection,
   orderedSelectedIds,
-} from "../../src/client/domain/filesystem-selection";
+} from "@client/domain/filesystem/selection";
 
 const ORDER = ["a", "b", "c", "d"] as const;
 

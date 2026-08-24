@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { FileService } from "../src/application/file-service";
-import { FilesystemService } from "../src/application/filesystem-service";
-import { RecycleBinService } from "../src/application/recycle-bin-service";
-import { FILESYSTEM_ERRORS } from "../src/constants/errors/filesystem";
-import { FILE_OBJECT_KEY_PREFIX } from "../src/constants/file";
-import { FILESYSTEM_ROOT_ID } from "../src/constants/filesystem";
-import { thumbnailObjectKey } from "../src/domain/thumbnail";
+import { FileService } from "@/application/filesystem/file-service";
+import { FilesystemService } from "@/application/filesystem/filesystem-service";
+import { RecycleBinService } from "@/application/filesystem/recycle-bin-service";
+import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
+import { FILE_OBJECT_KEY_PREFIX } from "@/constants/filesystem/file";
+import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
+import { thumbnailObjectKey } from "@/domain/filesystem/thumbnail";
 import {
   MemoryDirectorySortRepository,
   MemoryFileRepository,
@@ -13,7 +13,7 @@ import {
   SequenceIdGenerator,
   StaticClock,
   streamFromText,
-} from "./fakes";
+} from "@test/fakes";
 
 const NOW = Date.parse("2026-08-22T01:00:00.000Z");
 const IDS = [

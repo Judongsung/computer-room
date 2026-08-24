@@ -8,8 +8,8 @@ import {
   MEDIA_TOOLBAR_GLYPH,
   MEDIA_VIEWER_COPY,
   MEDIA_VOLUME_RANGE,
-} from "../../constants/media";
-import type { MediaRendererProps } from "../../types/media";
+} from "@client/constants/media/media";
+import type { MediaRendererProps } from "@client/types/media/media";
 
 export function WindowsMediaPlayer({
   file,

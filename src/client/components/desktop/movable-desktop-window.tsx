@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 import { Rnd } from "react-rnd";
-import { WINDOW_STATE } from "../../../constants/widget";
-import { DESKTOP_WINDOW_CLASS_NAME } from "../../constants/desktop";
+import { WINDOW_STATE } from "@/constants/widgets/widget";
+import { DESKTOP_WINDOW_CLASS_NAME } from "@client/constants/desktop/desktop";
 import {
   XP_WINDOW_INTERACTION_CLASS_NAME,
   XP_WINDOW_INTERACTION_SELECTOR,
-} from "../../constants/xp";
-import { clampWindowBounds } from "../../domain/window-layout";
+} from "@client/constants/shared/xp";
+import { clampWindowBounds } from "@client/domain/desktop/window-layout";
 import type {
   MovableDesktopWindowProps,
   WindowBounds,
-} from "../../types/desktop";
+} from "@client/types/desktop/desktop";
 
 const RESIZE_HANDLES = {
   top: true,

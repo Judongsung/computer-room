@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { FILESYSTEM_ENTRY_KIND } from "../../src/constants/filesystem";
+import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import {
   collectDirectoryHandleUploadNode,
   collectDroppedUploadNodes,
   collectSelectedUploadNodes,
-} from "../../src/client/domain/local-file-tree";
+} from "@client/domain/filesystem/local-file-tree";
 
 describe("collectSelectedUploadNodes", () => {
   it("preserves nested relative paths selected through the folder picker", () => {

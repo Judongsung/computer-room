@@ -1,17 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
-import { FileService } from "../src/application/file-service";
-import { FilesystemService } from "../src/application/filesystem-service";
-import { ThumbnailService } from "../src/application/thumbnail-service";
-import { THUMBNAIL_ERRORS } from "../src/constants/errors/thumbnail";
-import { FILE_ERRORS } from "../src/constants/errors/file";
-import { FILE_OBJECT_KEY_PREFIX } from "../src/constants/file";
-import { FILESYSTEM_ROOT_ID } from "../src/constants/filesystem";
-import { THUMBNAIL_SPEC } from "../src/constants/thumbnail";
-import { thumbnailObjectKey } from "../src/domain/thumbnail";
+import { FileService } from "@/application/filesystem/file-service";
+import { FilesystemService } from "@/application/filesystem/filesystem-service";
+import { ThumbnailService } from "@/application/filesystem/thumbnail-service";
+import { THUMBNAIL_ERRORS } from "@/constants/filesystem/errors/thumbnail";
+import { FILE_ERRORS } from "@/constants/filesystem/errors/file";
+import { FILE_OBJECT_KEY_PREFIX } from "@/constants/filesystem/file";
+import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
+import { THUMBNAIL_SPEC } from "@/constants/filesystem/thumbnail";
+import { thumbnailObjectKey } from "@/domain/filesystem/thumbnail";
 import type {
   GeneratedThumbnail,
   ImageThumbnailGenerator,
-} from "../src/types/thumbnail";
+} from "@/types/filesystem/thumbnail";
 import {
   MemoryDirectorySortRepository,
   MemoryFileRepository,
@@ -19,7 +19,7 @@ import {
   SequenceIdGenerator,
   StaticClock,
   streamFromText,
-} from "./fakes";
+} from "@test/fakes";
 
 const FILE_ID = "thumbnail-source";
 const NOW = Date.parse("2026-08-23T00:00:00.000Z");

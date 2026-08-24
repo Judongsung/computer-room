@@ -3,7 +3,7 @@ import {
   CHECKLIST_LOG_PAGE_LIMIT,
   FILESYSTEM_PAGE_LIMIT,
   LEGACY_FILE_PAGE_LIMIT,
-} from "../src/constants/pagination";
+} from "@/constants/filesystem/pagination";
 
 describe("pagination policy", () => {
   it("keeps filesystem pages at 100 without changing unrelated APIs", () => {

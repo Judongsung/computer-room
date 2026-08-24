@@ -1,9 +1,9 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "xp.css/dist/XP.css";
-import { App } from "./app";
-import { SITE_COPY } from "./constants/content";
-import { DESKTOP_LAYOUT } from "./constants/desktop";
+import { App } from "@client/app";
+import { SITE_COPY } from "@client/constants/widgets/content";
+import { DESKTOP_LAYOUT } from "@client/constants/desktop/desktop";
 import "./styles/global.css";
 
 document.title = SITE_COPY.TITLE;

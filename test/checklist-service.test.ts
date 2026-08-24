@@ -1,18 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { ChecklistService } from "../src/application/checklist-service";
-import { CHECKLIST_EVENT_ACTION } from "../src/constants/checklist";
+import { ChecklistService } from "@/application/widgets/checklist-service";
+import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
 import {
   WIDGET_TYPE,
   WIDGET_WINDOW_POLICY,
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
-} from "../src/constants/widget";
+} from "@/constants/widgets/widget";
 import {
   MemoryChecklistRepository,
   MemoryWidgetLayoutRepository,
   SequenceIdGenerator,
   StaticClock,
-} from "./fakes";
+} from "@test/fakes";
 
 const WIDGET_ID = "00000000-0000-4000-8000-000000000101";
 const ITEM_ID = "00000000-0000-4000-8000-000000000102";

@@ -12,21 +12,21 @@ import {
 import {
   CHECKLIST_EVENT_ACTION_VALUES,
   CHECKLIST_ITEM_LABEL_MAX_LENGTH,
-} from "../src/constants/checklist";
+} from "@/constants/widgets/checklist";
 import {
   FILE_STATUS,
   FILE_STATUS_VALUES,
   MAX_FILE_SIZE_BYTES,
-} from "../src/constants/file";
+} from "@/constants/filesystem/file";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ENTRY_KIND_VALUES,
-} from "../src/constants/filesystem";
+} from "@/constants/filesystem/filesystem";
 import {
   FILESYSTEM_SORT_DIRECTION_VALUES,
   FILESYSTEM_SORT_FIELD_VALUES,
-} from "../src/constants/filesystem-sort";
-import { EMPTY_MEMO_MARKDOWN } from "../src/constants/memo";
+} from "@/constants/filesystem/sort";
+import { EMPTY_MEMO_MARKDOWN } from "@/constants/widgets/memo";
 import {
   WIDGET_TYPE,
   WIDGET_TYPE_VALUES,
@@ -36,7 +36,7 @@ import {
   WINDOW_SIZE_LIMITS,
   WINDOW_STATE,
   WINDOW_STATE_VALUES,
-} from "../src/constants/widget";
+} from "@/constants/widgets/widget";
 
 const FILE_STATUS_SQL = FILE_STATUS_VALUES.map((status) => `'${status}'`).join(", ");
 const FILESYSTEM_ENTRY_KIND_SQL = FILESYSTEM_ENTRY_KIND_VALUES.map(

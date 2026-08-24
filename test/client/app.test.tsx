@@ -8,34 +8,34 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { App } from "../../src/client/app";
+import { App } from "@client/app";
 import {
   CHECKLIST_WIDGET_COPY,
   DASHBOARD_COPY,
   MEMO_WIDGET_COPY,
-} from "../../src/client/constants/content";
-import { STORAGE_STATUS_COPY } from "../../src/client/constants/storage-status";
-import type { DashboardGateway } from "../../src/client/types/api";
-import type { FilesystemGateway } from "../../src/client/types/filesystem";
-import { FILESYSTEM_COPY } from "../../src/client/constants/filesystem";
-import { FILESYSTEM_SORT_COPY } from "../../src/client/constants/filesystem-sort";
-import { MEDIA_VIEWER_COPY } from "../../src/client/constants/media";
-import { ACCESS_LOGOUT_PATH } from "../../src/constants/auth";
-import { CHECKLIST_EVENT_ACTION } from "../../src/constants/checklist";
-import { MAX_FILE_SIZE_BYTES } from "../../src/constants/file";
+} from "@client/constants/widgets/content";
+import { STORAGE_STATUS_COPY } from "@client/constants/storage/storage-status";
+import type { DashboardGateway } from "@client/types/widgets/api";
+import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
+import { FILESYSTEM_SORT_COPY } from "@client/constants/filesystem/sort";
+import { MEDIA_VIEWER_COPY } from "@client/constants/media/media";
+import { ACCESS_LOGOUT_PATH } from "@/constants/platform/auth";
+import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
+import { MAX_FILE_SIZE_BYTES } from "@/constants/filesystem/file";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
-} from "../../src/constants/filesystem";
-import { DEFAULT_FILESYSTEM_DIRECTORY_SORT } from "../../src/constants/filesystem-sort";
+} from "@/constants/filesystem/filesystem";
+import { DEFAULT_FILESYSTEM_DIRECTORY_SORT } from "@/constants/filesystem/sort";
 import {
   WIDGET_TYPE,
   WIDGET_WINDOW_POLICY,
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
-} from "../../src/constants/widget";
-import { cloneDashboardWidgets } from "../../src/domain/widget-layout";
-import type { SessionInfo } from "../../src/types/auth";
+} from "@/constants/widgets/widget";
+import { cloneDashboardWidgets } from "@/domain/widgets/widget-layout";
+import type { SessionInfo } from "@/types/platform/auth";
 import type {
   ChecklistItem,
   ChecklistLogEvent,
@@ -45,7 +45,7 @@ import type {
   CreateWidgetInput,
   MemoData,
   WidgetLayout,
-} from "../../src/types/widget";
+} from "@/types/widgets/widget";
 import type {
   FilesystemDirectoryEntry,
   FilesystemDirectoryPage,
@@ -57,10 +57,10 @@ import type {
   MoveFilesystemEntryInput,
   SaveWidgetFileInput,
   UpdateFilesystemEntryInput,
-} from "../../src/types/filesystem";
-import type { FilesystemBatchResult } from "../../src/types/filesystem-batch";
-import type { FilesystemDownloadManifest } from "../../src/types/filesystem-download";
-import type { StorageStatusSnapshot } from "../../src/types/storage-status";
+} from "@/types/filesystem/filesystem";
+import type { FilesystemBatchResult } from "@/types/filesystem/batch";
+import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
+import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
 
 vi.mock("react-rnd", () => ({
   Rnd: ({ children }: { readonly children: ReactNode }) => (

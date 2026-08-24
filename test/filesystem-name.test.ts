@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { FILESYSTEM_ERRORS } from "../src/constants/errors/filesystem";
-import { MAX_FILE_NAME_BYTES } from "../src/constants/file";
+import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
+import { MAX_FILE_NAME_BYTES } from "@/constants/filesystem/file";
 import {
   availableFilesystemName,
   filesystemNameKey,
   normalizeFilesystemName,
-} from "../src/domain/filesystem-name";
+} from "@/domain/filesystem/filesystem-name";
 
 describe("filesystem names", () => {
   it("normalizes Unicode and compares sibling names without case", () => {

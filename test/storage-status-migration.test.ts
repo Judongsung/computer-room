@@ -1,11 +1,11 @@
 import type { D1Migration } from "@cloudflare/vitest-pool-workers";
 import { applyD1Migrations, env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
-import { WIDGET_TYPE } from "../src/constants/widget";
+import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
-} from "../src/constants/filesystem";
+} from "@/constants/filesystem/filesystem";
 
 interface MigrationTestEnvironment {
   readonly MIGRATION_REGRESSION_DB: D1Database;

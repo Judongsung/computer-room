@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { desktopIconLayout } from "../../src/client/domain/desktop-icon-layout";
+import { desktopIconLayout } from "@client/domain/desktop/desktop-icon-layout";
 
 describe("desktopIconLayout", () => {
   it("flows fixed and dynamic icons from top to bottom before adding columns", () => {

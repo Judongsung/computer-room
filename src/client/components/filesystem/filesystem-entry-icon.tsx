@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState, type CSSProperties } from "react";
-import { FILESYSTEM_ENTRY_KIND } from "../../../constants/filesystem";
-import { isThumbnailSourceSupported } from "../../../domain/thumbnail";
-import type { FilesystemEntry } from "../../../types/filesystem";
+import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
+import { isThumbnailSourceSupported } from "@/domain/filesystem/thumbnail";
+import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import {
   DESKTOP_ASSET_PATHS,
   WIDGET_ICON_PATH_BY_TYPE,
-} from "../../constants/desktop";
-import { THUMBNAIL_LOAD_POLICY } from "../../constants/thumbnail";
-import { useThumbnailLoadScheduler } from "../../state/thumbnail-load-context";
-import type { ThumbnailLoadPermit } from "../../types/thumbnail";
+} from "@client/constants/desktop/desktop";
+import { THUMBNAIL_LOAD_POLICY } from "@client/constants/filesystem/thumbnail";
+import { useThumbnailLoadScheduler } from "@client/state/filesystem/thumbnail-load-context";
+import type { ThumbnailLoadPermit } from "@client/types/filesystem/thumbnail";
 
 interface FilesystemEntryIconProps {
   readonly entry: FilesystemEntry;

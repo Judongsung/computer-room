@@ -7,35 +7,35 @@ import {
   type DragEvent,
   type MouseEvent,
 } from "react";
-import { KOREA_LOCALE } from "../../../constants/date";
+import { KOREA_LOCALE } from "@/constants/platform/date";
 import type {
   FilesystemTrashPage,
   TrashedFilesystemEntry,
-} from "../../../types/filesystem";
-import type { FilesystemBatchResult } from "../../../types/filesystem-batch";
+} from "@/types/filesystem/filesystem";
+import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import {
   FILESYSTEM_COPY,
   FILESYSTEM_DRAG_SOURCE,
   FILESYSTEM_SELECTION_DATA_ATTRIBUTE,
-} from "../../constants/filesystem";
-import { KEYBOARD_KEY } from "../../constants/keyboard";
-import { SYSTEM_APP_ID } from "../../constants/system-app";
+} from "@client/constants/filesystem/filesystem";
+import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
+import { SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
 import type {
   FilesystemGateway,
   FilesystemWindowSyncProps,
-} from "../../types/filesystem";
-import type { SystemWindowChromeProps } from "../../types/system-app";
-import { SystemAppWindow } from "../desktop/system-app-window";
-import { ConfirmDialog } from "./filesystem-dialogs";
-import { writeFilesystemDragPayload } from "../../domain/filesystem-drag";
-import { FilesystemEntryIcon } from "./filesystem-entry-icon";
-import { FilesystemBatchResultDialog } from "./filesystem-batch-result-dialog";
-import { FilesystemSelectionMarquee } from "./filesystem-selection-marquee";
-import { useFilesystemSelection } from "../../hooks/use-filesystem-selection";
-import { useFilesystemMarqueeSelection } from "../../hooks/use-filesystem-marquee-selection";
-import { useXpContextMenu } from "../../state/context-menu-context";
-import { contextMenuCommand, contextMenuSeparator } from "../../domain/context-menu";
-import { XP_CONTEXT_MENU_COMMAND_ID } from "../../constants/context-menu";
+} from "@client/types/filesystem/filesystem";
+import type { SystemWindowChromeProps } from "@client/types/desktop/system-app";
+import { SystemAppWindow } from "@client/components/desktop/system-app-window";
+import { ConfirmDialog } from "@client/components/filesystem/filesystem-dialogs";
+import { writeFilesystemDragPayload } from "@client/domain/filesystem/drag";
+import { FilesystemEntryIcon } from "@client/components/filesystem/filesystem-entry-icon";
+import { FilesystemBatchResultDialog } from "@client/components/filesystem/filesystem-batch-result-dialog";
+import { FilesystemSelectionMarquee } from "@client/components/filesystem/filesystem-selection-marquee";
+import { useFilesystemSelection } from "@client/hooks/filesystem/use-filesystem-selection";
+import { useFilesystemMarqueeSelection } from "@client/hooks/filesystem/use-filesystem-marquee-selection";
+import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
+import { contextMenuCommand, contextMenuSeparator } from "@client/domain/context-menu/context-menu";
+import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
 
 type RecycleDialog = "delete" | "empty" | null;
 const EMPTY_ENTRY_IDS: readonly string[] = [];

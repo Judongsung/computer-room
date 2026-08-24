@@ -1,5 +1,5 @@
-import type { FilesystemBatchResult } from "../../../types/filesystem-batch";
-import { FILESYSTEM_COPY } from "../../constants/filesystem";
+import type { FilesystemBatchResult } from "@/types/filesystem/batch";
+import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
 
 export function FilesystemBatchResultDialog({
   result,

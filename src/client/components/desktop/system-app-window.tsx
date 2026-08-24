@@ -1,6 +1,6 @@
-import { SYSTEM_APP_CONFIG } from "../../constants/system-app";
-import type { SystemAppWindowProps } from "../../types/system-app";
-import { DesktopAppWindow } from "./desktop-app-window";
+import { SYSTEM_APP_CONFIG } from "@client/constants/desktop/system-app";
+import type { SystemAppWindowProps } from "@client/types/desktop/system-app";
+import { DesktopAppWindow } from "@client/components/desktop/desktop-app-window";
 
 export function SystemAppWindow({
   appId,

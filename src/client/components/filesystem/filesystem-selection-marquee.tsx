@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { FilesystemMarqueeBounds } from "../../hooks/use-filesystem-marquee-selection";
+import type { FilesystemMarqueeBounds } from "@client/hooks/filesystem/use-filesystem-marquee-selection";
 
 export function FilesystemSelectionMarquee({
   bounds,

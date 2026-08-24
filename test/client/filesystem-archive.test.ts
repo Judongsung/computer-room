@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { FILESYSTEM_ENTRY_KIND } from "../../src/constants/filesystem";
-import type { FilesystemDownloadManifest } from "../../src/types/filesystem-download";
+import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
+import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
 import {
   createFilesystemArchiveStream,
   FilesystemArchiveFileError,
-} from "../../src/client/domain/filesystem-archive";
+} from "@client/domain/filesystem/archive";
 
 const UPDATED_AT = "2026-08-23T01:00:00.000Z";
 

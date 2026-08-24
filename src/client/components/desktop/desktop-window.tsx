@@ -2,12 +2,12 @@ import {
   WIDGET_BEHAVIOR,
   WIDGET_WINDOW_POLICY,
   WINDOW_STATE,
-} from "../../../constants/widget";
-import type { DesktopWindowProps } from "../../types/desktop";
-import { WidgetRenderer } from "../dashboard/widget-renderer";
-import { MovableDesktopWindow } from "./movable-desktop-window";
-import { useXpContextMenu } from "../../state/context-menu-context";
-import { windowContextMenuItems } from "../../domain/window-context-menu";
+} from "@/constants/widgets/widget";
+import type { DesktopWindowProps } from "@client/types/desktop/desktop";
+import { WidgetRenderer } from "@client/components/widgets/widget-renderer";
+import { MovableDesktopWindow } from "@client/components/desktop/movable-desktop-window";
+import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
+import { windowContextMenuItems } from "@client/domain/context-menu/window-context-menu";
 
 export function DesktopWindow({
   widget,

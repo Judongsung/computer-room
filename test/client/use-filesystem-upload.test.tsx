@@ -1,10 +1,10 @@
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { useFilesystemUpload } from "../../src/client/hooks/use-filesystem-upload";
-import type { FilesystemGateway } from "../../src/client/types/filesystem";
-import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "../../src/constants/filesystem";
-import type { DesktopPlacement } from "../../src/types/filesystem";
-import type { LocalUploadNode } from "../../src/client/types/upload";
+import { useFilesystemUpload } from "@client/hooks/filesystem/use-filesystem-upload";
+import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
+import type { DesktopPlacement } from "@/types/filesystem/filesystem";
+import type { LocalUploadNode } from "@client/types/filesystem/upload";
 
 describe("useFilesystemUpload", () => {
   it("limits ordinary file uploads to three concurrent requests", async () => {
