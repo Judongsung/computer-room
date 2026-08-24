@@ -26,7 +26,7 @@ import {
   MemoryFileRepository,
   SequenceIdGenerator,
   StaticClock,
-} from "@test/fakes";
+} from "@test/support/fakes";
 
 describe("filesystem directory sorting", () => {
   it("sorts all supported fields in both directions with directories first", () => {

@@ -13,7 +13,7 @@ import {
   SequenceIdGenerator,
   StaticClock,
   streamFromText,
-} from "@test/fakes";
+} from "@test/support/fakes";
 
 const KOREA_MIDNIGHT = Date.parse("2026-08-21T15:00:00.123Z");
 const IMAGE_BODY = "png";

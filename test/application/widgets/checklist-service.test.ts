@@ -12,7 +12,7 @@ import {
   MemoryWidgetLayoutRepository,
   SequenceIdGenerator,
   StaticClock,
-} from "@test/fakes";
+} from "@test/support/fakes";
 
 const WIDGET_ID = "00000000-0000-4000-8000-000000000101";
 const ITEM_ID = "00000000-0000-4000-8000-000000000102";

@@ -14,7 +14,7 @@ import {
   MemoryWidgetLayoutRepository,
   StaticClock,
   SequenceIdGenerator,
-} from "@test/fakes";
+} from "@test/support/fakes";
 
 const MEMO_WINDOW_POLICY = WIDGET_WINDOW_POLICY[WIDGET_TYPE.MEMO];
 const NOW = Date.parse("2026-08-20T01:00:00.000Z");

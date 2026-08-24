@@ -11,7 +11,7 @@ import {
   SequenceIdGenerator,
   StaticClock,
   streamFromText,
-} from "@test/fakes";
+} from "@test/support/fakes";
 
 const NOW = Date.parse("2026-08-23T00:00:00.000Z");
 

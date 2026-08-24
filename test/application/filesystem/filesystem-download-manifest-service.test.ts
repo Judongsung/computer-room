@@ -15,7 +15,7 @@ import {
   SequenceIdGenerator,
   StaticClock,
   streamFromText,
-} from "@test/fakes";
+} from "@test/support/fakes";
 
 describe("FilesystemDownloadManifestService", () => {
   it("preserves nested and empty folders, Korean names, and excludes widgets", async () => {
