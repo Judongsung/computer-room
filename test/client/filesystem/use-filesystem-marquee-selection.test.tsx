@@ -16,9 +16,7 @@ describe("filesystem marquee selection", () => {
     const second = screen.getByTestId("entry-b");
     const scrollBy = vi.fn();
     Object.defineProperty(container, "scrollBy", { value: scrollBy });
-    Object.defineProperty(container, "getBoundingClientRect", {
-      value: () => rectangle(0, 0, 200, 200),
-    });
+    configureScrollableContainer(container);
     Object.defineProperty(first, "getBoundingClientRect", {
       value: () => rectangle(10, 10, 20, 20),
     });
@@ -56,11 +54,52 @@ describe("filesystem marquee selection", () => {
       container.querySelector(".filesystem-selection-marquee"),
     ).not.toBeInTheDocument();
   });
+
+  it.each([
+    ["vertical", { clientX: 190, clientY: 50 }],
+    ["horizontal", { clientX: 50, clientY: 190 }],
+  ])(
+    "ignores pointer input in the %s scrollbar gutter",
+    (_direction, coordinates) => {
+      render(<MarqueeHarness initialSelected={["a"]} />);
+      const container = screen.getByTestId("selection-area");
+      const setPointerCapture = vi.fn();
+      const scrollBy = vi.fn();
+      configureScrollableContainer(container);
+      Object.defineProperties(container, {
+        setPointerCapture: { value: setPointerCapture },
+        scrollBy: { value: scrollBy },
+      });
+
+      fireEvent.pointerDown(container, {
+        button: 0,
+        pointerId: 1,
+        ...coordinates,
+      });
+      fireEvent.pointerMove(container, {
+        pointerId: 1,
+        clientX: coordinates.clientX,
+        clientY: 195,
+      });
+
+      expect(screen.getByTestId("selected-ids")).toHaveTextContent("a");
+      expect(
+        container.querySelector(".filesystem-selection-marquee"),
+      ).not.toBeInTheDocument();
+      expect(setPointerCapture).not.toHaveBeenCalled();
+      expect(scrollBy).not.toHaveBeenCalled();
+    },
+  );
 });
 
-function MarqueeHarness() {
+function MarqueeHarness({
+  initialSelected = [],
+}: {
+  readonly initialSelected?: readonly string[];
+}) {
   const ref = useRef<HTMLDivElement>(null);
-  const [selected, setSelected] = useState<readonly string[]>([]);
+  const [selected, setSelected] =
+    useState<readonly string[]>(initialSelected);
   const marquee = useFilesystemMarqueeSelection(
     ref,
     new Set(selected),
@@ -89,6 +128,16 @@ function MarqueeHarness() {
       <FilesystemSelectionMarquee bounds={marquee.bounds} />
     </div>
   );
+}
+
+function configureScrollableContainer(container: HTMLElement): void {
+  Object.defineProperties(container, {
+    clientWidth: { value: 184 },
+    clientHeight: { value: 184 },
+    getBoundingClientRect: {
+      value: () => rectangle(0, 0, 200, 200),
+    },
+  });
 }
 
 function rectangle(

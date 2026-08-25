@@ -44,6 +44,16 @@ export function useFilesystemMarqueeSelection(
       }
       const container = containerRef.current;
       const rect = container.getBoundingClientRect();
+      if (
+        !isPointerInsideClientArea(
+          container,
+          rect,
+          event.clientX,
+          event.clientY,
+        )
+      ) {
+        return;
+      }
       const additive = event.ctrlKey || event.metaKey;
       const x = event.clientX - rect.left + container.scrollLeft;
       const y = event.clientY - rect.top + container.scrollTop;
@@ -131,6 +141,22 @@ function rectangleBetween(
     width: Math.abs(endX - startX),
     height: Math.abs(endY - startY),
   };
+}
+
+function isPointerInsideClientArea(
+  container: HTMLElement,
+  rect: DOMRect,
+  pointerX: number,
+  pointerY: number,
+): boolean {
+  const clientLeft = rect.left + container.clientLeft;
+  const clientTop = rect.top + container.clientTop;
+  return (
+    pointerX >= clientLeft &&
+    pointerX < clientLeft + container.clientWidth &&
+    pointerY >= clientTop &&
+    pointerY < clientTop + container.clientHeight
+  );
 }
 
 function intersects(
