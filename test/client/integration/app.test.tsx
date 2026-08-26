@@ -19,6 +19,7 @@ import type { DashboardGateway } from "@client/types/widgets/api";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
 import { FILESYSTEM_SORT_COPY } from "@client/constants/filesystem/sort";
+import { FOLDER_PROPERTIES_COPY } from "@client/constants/filesystem/details";
 import { MEDIA_VIEWER_COPY } from "@client/constants/media/media";
 import { ACCESS_LOGOUT_PATH } from "@/constants/platform/auth";
 import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
@@ -59,6 +60,7 @@ import type {
   UpdateFilesystemEntryInput,
 } from "@/types/filesystem/filesystem";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
+import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
 import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
 import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
 
@@ -330,6 +332,79 @@ describe("App", () => {
     });
     expect(within(taskbar).getByRole("button", { name: "사진" })).toBeInTheDocument();
     expect(within(taskbar).getByRole("button", { name: "음악" })).toBeInTheDocument();
+  });
+
+  it("shows recursive folder properties from keyboard, toolbar, and context menu", async () => {
+    const api = new FakeDashboardGateway();
+    const filesystem = new FakeFilesystemGateway();
+    const photos = await filesystem.createDirectory(
+      FILESYSTEM_ROOT_ID.DOCUMENTS,
+      "사진",
+    );
+    await filesystem.createDirectory(photos.id, "여행");
+    filesystem.addFile("제주.txt", "text/plain", photos.id);
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    const documentsShortcut = await screen.findByRole("button", {
+      name: "내 문서",
+    });
+    fireEvent.keyDown(documentsShortcut, { key: "Enter", altKey: true });
+    let dialog = await screen.findByRole("dialog", { name: "내 문서 속성" });
+    expect(
+      within(dialog).getByText(
+        FOLDER_PROPERTIES_COPY.CONTAINS_VALUE("1", "2", "0"),
+      ),
+    ).toBeInTheDocument();
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: FOLDER_PROPERTIES_COPY.CLOSE,
+      }),
+    );
+
+    await user.dblClick(documentsShortcut);
+    const documentsWindow = desktopWindowByTitle("내 문서");
+    const photosButton = await within(documentsWindow).findByRole("button", {
+      name: "사진",
+    });
+    await user.click(photosButton);
+    fireEvent.keyDown(photosButton, { key: "Enter", altKey: true });
+    dialog = await screen.findByRole("dialog", { name: "사진 속성" });
+    expect(desktopWindowTitles()).toContain("내 문서");
+    expect(desktopWindowTitles()).not.toContain("사진");
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: FOLDER_PROPERTIES_COPY.CLOSE,
+      }),
+    );
+
+    await user.click(
+      within(documentsWindow).getByRole("button", {
+        name: FOLDER_PROPERTIES_COPY.PROPERTIES,
+      }),
+    );
+    dialog = await screen.findByRole("dialog", { name: "사진 속성" });
+    expect(within(dialog).getByText("내 문서\\사진")).toBeInTheDocument();
+    expect(
+      within(dialog).getByText(
+        FOLDER_PROPERTIES_COPY.CONTAINS_VALUE("1", "1", "0"),
+      ),
+    ).toBeInTheDocument();
+    await user.click(
+      within(dialog).getByRole("button", {
+        name: FOLDER_PROPERTIES_COPY.CLOSE,
+      }),
+    );
+
+    fireEvent.contextMenu(photosButton);
+    await user.click(
+      screen.getByRole("menuitem", {
+        name: FOLDER_PROPERTIES_COPY.PROPERTIES,
+      }),
+    );
+    expect(
+      await screen.findByRole("dialog", { name: "사진 속성" }),
+    ).toBeInTheDocument();
   });
 
   it("opens the same supported image in independent viewer windows", async () => {
@@ -1394,6 +1469,32 @@ class FakeFilesystemGateway implements FilesystemGateway {
     return { ...sort };
   }
 
+  async getDirectoryDetails(
+    directoryId: string,
+  ): Promise<FilesystemDirectoryDetails> {
+    const directory = this.findDirectory(directoryId);
+    if (!directory) throw new Error("Directory not found");
+
+    const descendants = this.collectDescendants(directory.id);
+    const files = descendants.filter(
+      (entry): entry is FilesystemFileEntry =>
+        entry.kind === FILESYSTEM_ENTRY_KIND.FILE,
+    );
+
+    return {
+      directory,
+      breadcrumbs: this.buildBreadcrumbs(directory),
+      totalBytes: files.reduce((total, file) => total + file.size, 0),
+      fileCount: files.length,
+      directoryCount: descendants.filter(
+        (entry) => entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY,
+      ).length,
+      widgetCount: descendants.filter(
+        (entry) => entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET,
+      ).length,
+    };
+  }
+
   async createDirectory(parentId: string, name: string): Promise<FilesystemDirectoryEntry> {
     const directory: FilesystemDirectoryEntry = {
       id: `folder-${this.nextId++}`,
@@ -1547,6 +1648,40 @@ class FakeFilesystemGateway implements FilesystemGateway {
 
   async emptyTrash(): Promise<void> {
     this.trash.splice(0);
+  }
+
+  private findDirectory(id: string): FilesystemDirectoryEntry | null {
+    if (id === this.root.id) return this.root;
+    if (id === this.desktopRoot.id) return this.desktopRoot;
+    return (
+      this.entries.find(
+        (entry): entry is FilesystemDirectoryEntry =>
+          entry.id === id && entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY,
+      ) ?? null
+    );
+  }
+
+  private collectDescendants(directoryId: string): FilesystemEntry[] {
+    const children = this.entries.filter(
+      (entry) => entry.parentId === directoryId,
+    );
+    return children.flatMap((entry) =>
+      entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY
+        ? [entry, ...this.collectDescendants(entry.id)]
+        : [entry],
+    );
+  }
+
+  private buildBreadcrumbs(
+    directory: FilesystemDirectoryEntry,
+  ): FilesystemDirectoryDetails["breadcrumbs"] {
+    const breadcrumbs: Array<{ id: string; name: string }> = [];
+    let current: FilesystemDirectoryEntry | null = directory;
+    while (current) {
+      breadcrumbs.unshift({ id: current.id, name: current.name });
+      current = current.parentId ? this.findDirectory(current.parentId) : null;
+    }
+    return breadcrumbs;
   }
 }
 

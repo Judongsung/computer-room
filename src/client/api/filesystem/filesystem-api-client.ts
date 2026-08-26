@@ -26,9 +26,11 @@ import type {
 } from "@/types/filesystem/filesystem";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
+import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
 import {
   isBatchResult,
   isDirectoryEntry,
+  isDirectoryDetails,
   isDirectoryPage,
   isDownloadManifest,
   isFileEntry,
@@ -94,6 +96,18 @@ export class FilesystemApiClient implements FilesystemGateway {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
     }
     return value.directory;
+  }
+
+  async getDirectoryDetails(
+    directoryId: string,
+  ): Promise<FilesystemDirectoryDetails> {
+    const value = await this.requestJson(
+      `${FILESYSTEM_DIRECTORIES_PATH}/${encodeURIComponent(directoryId)}/${API_PATH_SEGMENTS.DETAILS}`,
+    );
+    if (!isRecord(value) || !isDirectoryDetails(value.details)) {
+      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    }
+    return value.details;
   }
 
   async updateDirectorySort(

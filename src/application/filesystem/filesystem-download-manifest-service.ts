@@ -12,7 +12,7 @@ import type {
 } from "@/types/filesystem/download";
 import type { FilesystemDownloadManifestUseCases } from "@/types/filesystem/filesystem-service";
 import type { FilesystemQueryRepository } from "@/types/filesystem/repository";
-import { toPublicEntry } from "@/application/filesystem/filesystem-service";
+import { toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper";
 import { uniqueFilesystemIds } from "@/application/filesystem/filesystem-batch";
 
 export class FilesystemDownloadManifestService

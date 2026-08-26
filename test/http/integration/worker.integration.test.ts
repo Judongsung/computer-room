@@ -43,6 +43,7 @@ import { filesystemNameKey } from "@/domain/filesystem/filesystem-name";
 import { thumbnailObjectKey } from "@/domain/filesystem/thumbnail";
 import type { DashboardWidget, WidgetLayout, WidgetType } from "@/types/widgets/widget";
 import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
+import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
 
 const ORIGIN = "http://localhost";
 const TEST_MEDIA_TYPE = {
@@ -572,6 +573,85 @@ describe("computer-room Worker", () => {
     const listing = await SELF.fetch(`${ORIGIN}${entriesPath}?${query}`);
     const page = (await listing.json()) as { items: Array<{ name: string }> };
     expect(page.items.map((item) => item.name)).toEqual(["여행-완료.jpg"]);
+  });
+
+  it("reports recursive details only for active folders", async () => {
+    const photosResponse = await jsonRequest(
+      FILESYSTEM_API_PATHS.DIRECTORIES,
+      HTTP_METHOD.POST,
+      { parentId: FILESYSTEM_ROOT_ID.DOCUMENTS, name: "사진" },
+    );
+    const photos = (await photosResponse.json()) as {
+      directory: { id: string };
+    };
+    const tripResponse = await jsonRequest(
+      FILESYSTEM_API_PATHS.DIRECTORIES,
+      HTTP_METHOD.POST,
+      { parentId: photos.directory.id, name: "여행" },
+    );
+    const trip = (await tripResponse.json()) as {
+      directory: { id: string };
+    };
+    const rootFileResponse = await uploadFile(
+      "목록.txt",
+      "root",
+      photos.directory.id,
+    );
+    const rootFile = (await rootFileResponse.json()) as {
+      file: { id: string };
+    };
+    await uploadFile("일정.txt", "nested", trip.directory.id);
+    const widget = await createWidget(WIDGET_TYPE.MEMO, { x: 32, y: 32 });
+    expect(
+      (
+        await jsonRequest(
+          `${widgetPath(widget.id)}/${API_PATH_SEGMENTS.FILE}`,
+          HTTP_METHOD.POST,
+          { parentId: trip.directory.id, name: "여행 메모" },
+        )
+      ).status,
+    ).toBe(HTTP_STATUS.CREATED);
+
+    const detailsPath = `${FILESYSTEM_API_PATHS.DIRECTORIES}/${photos.directory.id}/${API_PATH_SEGMENTS.DETAILS}`;
+    const response = await SELF.fetch(`${ORIGIN}${detailsPath}`);
+    const body = (await response.json()) as {
+      details: FilesystemDirectoryDetails;
+    };
+
+    expect(response.status).toBe(HTTP_STATUS.OK);
+    expect(body.details).toMatchObject({
+      directory: { id: photos.directory.id, name: "사진" },
+      breadcrumbs: [
+        { id: FILESYSTEM_ROOT_ID.DOCUMENTS, name: "내 문서" },
+        { id: photos.directory.id, name: "사진" },
+      ],
+      totalBytes: 10,
+      fileCount: 2,
+      directoryCount: 1,
+      widgetCount: 1,
+    });
+
+    const fileResponse = await SELF.fetch(
+      `${ORIGIN}${FILESYSTEM_API_PATHS.DIRECTORIES}/${rootFile.file.id}/${API_PATH_SEGMENTS.DETAILS}`,
+    );
+    expect(fileResponse.status).toBe(HTTP_STATUS.NOT_FOUND);
+
+    const wrongMethod = await jsonRequest(detailsPath, HTTP_METHOD.POST, {});
+    expect(wrongMethod.status).toBe(HTTP_STATUS.METHOD_NOT_ALLOWED);
+
+    expect(
+      (
+        await SELF.fetch(
+          `${ORIGIN}${FILESYSTEM_API_PATHS.ENTRIES}/${photos.directory.id}`,
+          {
+            method: HTTP_METHOD.DELETE,
+            headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN },
+          },
+        )
+      ).status,
+    ).toBe(HTTP_STATUS.OK);
+    const trashedResponse = await SELF.fetch(`${ORIGIN}${detailsPath}`);
+    expect(trashedResponse.status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("remembers independent sort settings for each active directory", async () => {

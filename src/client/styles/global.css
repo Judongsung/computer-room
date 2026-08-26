@@ -11,6 +11,7 @@
 @import "./filesystem/explorer.css";
 @import "./filesystem/selection.css";
 @import "./filesystem/dialogs.css";
+@import "./filesystem/folder-properties.css";
 @import "./filesystem/transfer.css";
 @import "./filesystem/recycle-bin.css";
 @import "./filesystem/widget-catalog.css";

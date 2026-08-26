@@ -3,6 +3,7 @@ import { FileService } from "@/application/filesystem/file-service";
 import { FilesystemPathService } from "@/application/filesystem/filesystem-path-service";
 import { FilesystemService } from "@/application/filesystem/filesystem-service";
 import { FilesystemDownloadManifestService } from "@/application/filesystem/filesystem-download-manifest-service";
+import { DirectoryDetailsService } from "@/application/filesystem/directory-details-service";
 import { NovelAiImageService } from "@/application/integrations/novelai-image-service";
 import { RecycleBinService } from "@/application/filesystem/recycle-bin-service";
 import { MemoService } from "@/application/widgets/memo-service";
@@ -17,6 +18,7 @@ import {
 } from "@/constants/platform/auth";
 import { ApiRouter } from "@/http/shared/api-router";
 import { FileApiHandler } from "@/http/filesystem/file-api-handler";
+import { DirectoryDetailsApiHandler } from "@/http/filesystem/directory-details-api-handler";
 import { NovelAiImageApiHandler } from "@/http/integrations/novelai-image-api-handler";
 import { WidgetApiHandler } from "@/http/widgets/widget-api-handler";
 import { StorageStatusApiHandler } from "@/http/storage/storage-status-api-handler";
@@ -28,6 +30,7 @@ import {
 } from "@/infrastructure/auth/access-identity-verifier";
 import { D1FilesystemRepository } from "@/infrastructure/filesystem/d1-filesystem-repository";
 import { D1DirectorySortRepository } from "@/infrastructure/filesystem/d1-directory-sort-repository";
+import { D1DirectoryDetailsRepository } from "@/infrastructure/filesystem/d1-directory-details-repository";
 import { D1ChecklistRepository } from "@/infrastructure/widgets/d1-checklist-repository";
 import { D1MemoRepository } from "@/infrastructure/widgets/d1-memo-repository";
 import { D1WidgetLayoutRepository } from "@/infrastructure/widgets/d1-widget-layout-repository";
@@ -97,6 +100,12 @@ export default {
       recycleBinService,
       downloadManifestService,
     );
+    const directoryDetailsApiHandler = new DirectoryDetailsApiHandler(
+      new DirectoryDetailsService(
+        fileRepository,
+        new D1DirectoryDetailsRepository(env.DB),
+      ),
+    );
     const novelAiImageApiHandler = new NovelAiImageApiHandler(
       novelAiImageService,
     );
@@ -131,7 +140,12 @@ export default {
       ),
     );
     const router = new ApiRouter(
-      [fileApiHandler, widgetApiHandler, storageStatusApiHandler],
+      [
+        fileApiHandler,
+        directoryDetailsApiHandler,
+        widgetApiHandler,
+        storageStatusApiHandler,
+      ],
       novelAiImageApiHandler,
       createIdentityVerifier(env),
       createServiceRequestVerifier(env),

@@ -4,6 +4,7 @@ import { WIDGET_TYPE_VALUES } from "@/constants/widgets/widget";
 import { isFilesystemDirectorySort } from "@/domain/filesystem/filesystem-sort";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
+import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
 import type {
   FilesystemDirectoryEntry,
   FilesystemDirectoryPage,
@@ -21,6 +22,21 @@ export function isDirectoryPage(value: unknown): value is FilesystemDirectoryPag
     Array.isArray(value.items) && value.items.every(isFilesystemEntry) &&
     (value.nextOffset === null || typeof value.nextOffset === "number") &&
     isFilesystemDirectorySort(value.sort);
+}
+
+export function isDirectoryDetails(
+  value: unknown,
+): value is FilesystemDirectoryDetails {
+  return (
+    isRecord(value) &&
+    isDirectoryEntry(value.directory) &&
+    Array.isArray(value.breadcrumbs) &&
+    value.breadcrumbs.every(isBreadcrumb) &&
+    isNonNegativeInteger(value.totalBytes) &&
+    isNonNegativeInteger(value.fileCount) &&
+    isNonNegativeInteger(value.directoryCount) &&
+    isNonNegativeInteger(value.widgetCount)
+  );
 }
 
 export function isTrashPage(value: unknown): value is FilesystemTrashPage {

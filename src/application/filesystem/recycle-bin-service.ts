@@ -22,7 +22,7 @@ import type { RecycleBinUseCases } from "@/types/filesystem/filesystem-service";
 import type { RecycleBinDataRepository } from "@/types/filesystem/repository";
 import type { Clock } from "@/types/platform/runtime";
 import type { FileObjectStorage } from "@/types/filesystem/storage";
-import { toPublicEntry } from "@/application/filesystem/filesystem-service";
+import { toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper";
 import { nextDesktopOrder } from "@/application/filesystem/desktop-placement";
 import { settleFilesystemOperations } from "@/application/filesystem/filesystem-batch";
 

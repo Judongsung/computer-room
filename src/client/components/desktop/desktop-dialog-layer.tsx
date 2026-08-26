@@ -7,11 +7,13 @@ import type { FilesystemGateway, DesktopFilesystemDialog } from "@client/types/f
 import type { useFilesystemDownload } from "@client/hooks/filesystem/use-filesystem-download";
 import type { useFilesystemUpload } from "@client/hooks/filesystem/use-filesystem-upload";
 import type { useWidgetFileLifecycle } from "@client/hooks/widgets/use-widget-file-lifecycle";
+import type { useFolderProperties } from "@client/hooks/filesystem/use-folder-properties";
 import { DirectoryPickerDialog, NameDialog } from "@client/components/filesystem/filesystem-dialogs";
 import { UnsavedWidgetDialog, WidgetSaveDialog } from "@client/components/filesystem/widget-file-dialogs";
 import { UploadTransferDialog } from "@client/components/filesystem/upload-transfer-dialog";
 import { DownloadTransferDialog } from "@client/components/filesystem/download-transfer-dialog";
 import { FilesystemBatchResultDialog } from "@client/components/filesystem/filesystem-batch-result-dialog";
+import { FolderPropertiesDialog } from "@client/components/filesystem/details/folder-properties-dialog";
 
 interface DesktopDialogLayerProps {
   readonly gateway: FilesystemGateway;
@@ -22,6 +24,7 @@ interface DesktopDialogLayerProps {
   readonly upload: ReturnType<typeof useFilesystemUpload>;
   readonly download: ReturnType<typeof useFilesystemDownload>;
   readonly batchResult: FilesystemBatchResult | null;
+  readonly folderProperties: ReturnType<typeof useFolderProperties>;
   readonly onCreate: (name: string) => void;
   readonly onRename: (name: string) => void;
   readonly onMove: (parentId: string) => void;
@@ -38,6 +41,7 @@ export function DesktopDialogLayer({
   upload,
   download,
   batchResult,
+  folderProperties,
   onCreate,
   onRename,
   onMove,
@@ -96,6 +100,7 @@ export function DesktopDialogLayer({
       <UploadTransferDialog state={upload.state} onClose={upload.close} />
       <DownloadTransferDialog state={download.state} onCancel={download.cancel} onClose={download.close} />
       <FilesystemBatchResultDialog result={batchResult} onClose={onCloseBatchResult} />
+      <FolderPropertiesDialog controller={folderProperties} />
     </>
   );
 }

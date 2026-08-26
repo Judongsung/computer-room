@@ -13,6 +13,7 @@ import type {
 } from "@/types/filesystem/filesystem";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
+import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
 import type { FILESYSTEM_DRAG_SOURCE } from "@client/constants/filesystem/filesystem";
 import type {
   DesktopDimensions,
@@ -26,6 +27,7 @@ export interface FilesystemGateway {
     directoryId: string,
     sort: FilesystemDirectorySort,
   ): Promise<FilesystemDirectorySort>;
+  getDirectoryDetails(directoryId: string): Promise<FilesystemDirectoryDetails>;
   createDirectory(
     parentId: string,
     name: string,

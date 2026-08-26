@@ -55,6 +55,7 @@ export const XP_CONTEXT_MENU_COMMAND_ID = {
   EMPTY_RECYCLE_BIN: "empty-recycle-bin",
   UPLOAD_FILES: "upload-files",
   UPLOAD_FOLDER: "upload-folder",
+  PROPERTIES: "properties",
 } as const;
 
 export const XP_CONTEXT_MENU_LAYOUT = {

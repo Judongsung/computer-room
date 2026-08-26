@@ -40,6 +40,7 @@ import { useWidgetFileLifecycle } from "@client/hooks/widgets/use-widget-file-li
 import { useMediaWindows } from "@client/hooks/media/use-media-windows";
 import { useExplorerWindows } from "@client/hooks/desktop/use-explorer-windows";
 import { useDesktopFilesystemController } from "@client/hooks/desktop/use-desktop-filesystem-controller";
+import { useFolderProperties } from "@client/hooks/filesystem/use-folder-properties";
 import { collectDroppedUploadNodes } from "@client/domain/filesystem/local-file-tree";
 import {
   readFilesystemDragPayload,
@@ -72,6 +73,7 @@ import {
   XP_CONTEXT_MENU_COMMAND_ID,
   XP_CONTEXT_MENU_COPY,
 } from "@client/constants/context-menu/context-menu";
+import { FOLDER_PROPERTIES_COPY } from "@client/constants/filesystem/details";
 
 const DESKTOP_BACKGROUND_STYLE = {
   "--desktop-background-image": `url("${DESKTOP_ASSET_PATHS.BACKGROUND}")`,
@@ -149,6 +151,7 @@ export function DesktopShell({
     workAreaRef,
     desktop,
   );
+  const folderProperties = useFolderProperties(filesystemGateway);
   const {
     revision: filesystemRevision,
     notifyChanged: notifyFilesystemChanged,
@@ -404,6 +407,11 @@ export function DesktopShell({
       const entries = desktopSelection.selectedIds.has(entry.id)
         ? selectedDesktopEntries
         : [entry];
+      const directory =
+        entries.length === 1 &&
+        entries[0]?.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY
+          ? entries[0]
+          : null;
       if (!desktopSelection.selectedIds.has(entry.id)) {
         desktopSelection.replace([entry.id]);
       }
@@ -438,12 +446,23 @@ export function DesktopShell({
           FILESYSTEM_COPY.DELETE,
           () => trashDesktopEntries(entries),
         ),
+        ...(directory
+          ? [
+              contextMenuSeparator("desktop-entry-separator-2"),
+              contextMenuCommand(
+                XP_CONTEXT_MENU_COMMAND_ID.PROPERTIES,
+                FOLDER_PROPERTIES_COPY.PROPERTIES,
+                () => folderProperties.open(directory),
+              ),
+            ]
+          : []),
       ], FILESYSTEM_COPY.CONTEXT_MENU);
     },
     [
       contextMenu,
       desktopSelection,
       download,
+      folderProperties,
       openFilesystemEntry,
       selectedDesktopEntries,
       trashDesktopEntries,
@@ -675,6 +694,19 @@ export function DesktopShell({
           onDropSystem={dropOnSystemApp}
           onDropEntry={dropOnEntry}
           onContextMenuEntry={openDesktopEntryMenu}
+          onShowEntryProperties={(entry) => {
+            if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
+              folderProperties.open(entry);
+            }
+          }}
+          onShowSystemProperties={(id) => {
+            if (id === SYSTEM_APP_ID.DOCUMENTS) {
+              folderProperties.open({
+                id: FILESYSTEM_ROOT_ID.DOCUMENTS,
+                name: FILESYSTEM_ROOT_NAME.DOCUMENTS,
+              });
+            }
+          }}
           onContextMenuSystem={(id, event) => {
             setSelectedSystemShortcutId(id);
             desktopSelection.clear();
@@ -684,6 +716,20 @@ export function DesktopShell({
                 FILESYSTEM_COPY.OPEN,
                 () => openSystemShortcut(id),
               ),
+              ...(id === SYSTEM_APP_ID.DOCUMENTS
+                ? [
+                    contextMenuSeparator("desktop-system-separator-1"),
+                    contextMenuCommand(
+                      XP_CONTEXT_MENU_COMMAND_ID.PROPERTIES,
+                      FOLDER_PROPERTIES_COPY.PROPERTIES,
+                      () =>
+                        folderProperties.open({
+                          id: FILESYSTEM_ROOT_ID.DOCUMENTS,
+                          name: FILESYSTEM_ROOT_NAME.DOCUMENTS,
+                        }),
+                    ),
+                  ]
+                : []),
             ]);
           }}
         />
@@ -745,6 +791,7 @@ export function DesktopShell({
         upload={upload}
         download={download}
         batchResult={batchResult}
+        folderProperties={folderProperties}
         onCreate={(name) =>
           void runDesktopDialogChange(async () => {
             await filesystemGateway.createDirectory(

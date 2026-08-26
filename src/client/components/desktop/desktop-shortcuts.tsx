@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from "react";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
+import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import {
@@ -50,6 +51,8 @@ interface DesktopShortcutsProps {
     id: SystemAppId,
     event: MouseEvent<HTMLButtonElement>,
   ) => void;
+  readonly onShowEntryProperties: (entry: FilesystemEntry) => void;
+  readonly onShowSystemProperties: (id: SystemAppId) => void;
 }
 
 interface SelectionModifiers {
@@ -72,6 +75,8 @@ export function DesktopShortcuts({
   onDropEntry,
   onContextMenuEntry,
   onContextMenuSystem,
+  onShowEntryProperties,
+  onShowSystemProperties,
 }: DesktopShortcutsProps) {
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
 
@@ -90,6 +95,9 @@ export function DesktopShortcuts({
             onSelect={() => onSelectSystem(id)}
             onOpen={() => onOpenSystem(id)}
             onContextMenu={(event) => onContextMenuSystem(id, event)}
+            {...(id === SYSTEM_APP_ID.DOCUMENTS
+              ? { onShowProperties: () => onShowSystemProperties(id) }
+              : {})}
             onDrop={(event) => onDropSystem(id, event)}
             onDropTargetChange={(active) =>
               setDropTargetId(active ? id : null)
@@ -114,6 +122,9 @@ export function DesktopShortcuts({
           onSelect={(event) => onSelectEntry(entry.id, event)}
           onOpen={() => onOpenEntry(entry)}
           onContextMenu={(event) => onContextMenuEntry(entry, event)}
+          {...(entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY
+            ? { onShowProperties: () => onShowEntryProperties(entry) }
+            : {})}
           onDragStart={(event) => onDragEntry(entry, event)}
           onDrop={(event) => onDropEntry(entry, index, event)}
           onDropTargetChange={(active) =>
@@ -136,6 +147,7 @@ function ShortcutButton({
   onSelect,
   onOpen,
   onContextMenu,
+  onShowProperties,
   onDragStart,
   onDrop,
   onDropTargetChange,
@@ -150,6 +162,7 @@ function ShortcutButton({
   readonly onSelect: (event: SelectionModifiers) => void;
   readonly onOpen: () => void;
   readonly onContextMenu?: (event: MouseEvent<HTMLButtonElement>) => void;
+  readonly onShowProperties?: () => void;
   readonly onDragStart?: (event: DragEvent<HTMLButtonElement>) => void;
   readonly onDrop: (event: DragEvent<HTMLButtonElement>) => void;
   readonly onDropTargetChange: (active: boolean) => void;
@@ -185,7 +198,14 @@ function ShortcutButton({
         onDrop(event);
       }}
       onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
-        if (event.key === KEYBOARD_KEY.ENTER) {
+        if (
+          event.altKey &&
+          event.key === KEYBOARD_KEY.ENTER &&
+          onShowProperties
+        ) {
+          event.preventDefault();
+          onShowProperties();
+        } else if (event.key === KEYBOARD_KEY.ENTER) {
           event.preventDefault();
           onSelect(event);
           onOpen();

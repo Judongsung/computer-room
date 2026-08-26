@@ -1,5 +1,6 @@
 import type { ChangeEvent, RefObject } from "react";
 import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
+import { FOLDER_PROPERTIES_COPY } from "@client/constants/filesystem/details";
 
 interface DocumentsToolbarProps {
   readonly busy: boolean;
@@ -8,6 +9,7 @@ interface DocumentsToolbarProps {
   readonly canMutate: boolean;
   readonly canDownload: boolean;
   readonly canRename: boolean;
+  readonly canShowProperties: boolean;
   readonly hasSelection: boolean;
   readonly fileInputRef: RefObject<HTMLInputElement | null>;
   readonly folderInputRef: RefObject<HTMLInputElement | null>;
@@ -21,6 +23,7 @@ interface DocumentsToolbarProps {
   readonly onRename: () => void;
   readonly onMove: () => void;
   readonly onDelete: () => void;
+  readonly onShowProperties: () => void;
 }
 
 export function DocumentsToolbar({
@@ -30,6 +33,7 @@ export function DocumentsToolbar({
   canMutate,
   canDownload,
   canRename,
+  canShowProperties,
   hasSelection,
   fileInputRef,
   folderInputRef,
@@ -43,6 +47,7 @@ export function DocumentsToolbar({
   onRename,
   onMove,
   onDelete,
+  onShowProperties,
 }: DocumentsToolbarProps) {
   return (
     <div className="explorer-toolbar" aria-label={FILESYSTEM_COPY.FILE_TOOLBAR}>
@@ -59,6 +64,10 @@ export function DocumentsToolbar({
       <button type="button" disabled={!canRename || busy} onClick={onRename}>{FILESYSTEM_COPY.RENAME}</button>
       <button type="button" disabled={!hasSelection || busy} onClick={onMove}>{FILESYSTEM_COPY.MOVE}</button>
       <button type="button" disabled={!hasSelection || busy} onClick={onDelete}>{FILESYSTEM_COPY.DELETE}</button>
+      <span className="explorer-toolbar__separator" />
+      <button type="button" disabled={!canShowProperties || busy} onClick={onShowProperties}>
+        {FOLDER_PROPERTIES_COPY.PROPERTIES}
+      </button>
     </div>
   );
 }

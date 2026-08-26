@@ -30,6 +30,7 @@ export const API_PATH_SEGMENTS = {
   MANIFEST: "manifest",
   DELETE: "delete",
   SORT: "sort",
+  DETAILS: "details",
 } as const;
 
 export const FILESYSTEM_API_PATHS = {

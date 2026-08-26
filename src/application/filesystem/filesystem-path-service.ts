@@ -9,7 +9,7 @@ import type { FilesystemDirectoryEntry } from "@/types/filesystem/filesystem";
 import type { FilesystemPathUseCases } from "@/types/filesystem/filesystem-service";
 import type { DirectoryRepository } from "@/types/filesystem/repository";
 import type { Clock, IdGenerator } from "@/types/platform/runtime";
-import { toPublicEntry } from "@/application/filesystem/filesystem-service";
+import { toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper";
 
 export class FilesystemPathService implements FilesystemPathUseCases {
   constructor(

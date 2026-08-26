@@ -39,7 +39,7 @@ import type {
 import type { WidgetLayoutRepository } from "@/types/widgets/widget-repository";
 import type { WidgetLayoutUseCases } from "@/types/widgets/widget-service";
 import { nextDesktopOrder } from "@/application/filesystem/desktop-placement";
-import { toPublicEntry } from "@/application/filesystem/filesystem-service";
+import { toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper";
 
 export class WidgetLayoutService implements WidgetLayoutUseCases {
   constructor(

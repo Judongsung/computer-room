@@ -35,7 +35,7 @@ import type {
 import type { Clock, IdGenerator } from "@/types/platform/runtime";
 import type { RequestedByteRange } from "@/types/filesystem/media";
 import type { FileObjectStorage } from "@/types/filesystem/storage";
-import { toPublicEntry } from "@/application/filesystem/filesystem-service";
+import { toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper";
 import { nextDesktopOrder } from "@/application/filesystem/desktop-placement";
 
 export class FileService implements FileUseCases {

@@ -46,6 +46,7 @@ import { formatFileSize } from "@client/utils/format-file-size";
 import { useFilesystemSelection } from "@client/hooks/filesystem/use-filesystem-selection";
 import { useFilesystemMarqueeSelection } from "@client/hooks/filesystem/use-filesystem-marquee-selection";
 import { useFilesystemDownload } from "@client/hooks/filesystem/use-filesystem-download";
+import { useFolderProperties } from "@client/hooks/filesystem/use-folder-properties";
 import {
   collectDroppedUploadNodes,
   collectSelectedUploadNodes,
@@ -66,9 +67,11 @@ import { FilesystemEntryIcon } from "@client/components/filesystem/filesystem-en
 import { FilesystemSelectionMarquee } from "@client/components/filesystem/filesystem-selection-marquee";
 import { FilesystemBatchResultDialog } from "@client/components/filesystem/filesystem-batch-result-dialog";
 import { DownloadTransferDialog } from "@client/components/filesystem/download-transfer-dialog";
+import { FolderPropertiesDialog } from "@client/components/filesystem/details/folder-properties-dialog";
 import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
 import { contextMenuCommand, contextMenuSeparator } from "@client/domain/context-menu/context-menu";
 import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
+import { FOLDER_PROPERTIES_COPY } from "@client/constants/filesystem/details";
 import { DirectorySortControls } from "./directory-sort-controls";
 import { DocumentsToolbar } from "./documents-toolbar";
 
@@ -155,6 +158,7 @@ export function DocumentsWindow({
     selection.replace,
   );
   const download = useFilesystemDownload(gateway);
+  const folderProperties = useFolderProperties(gateway);
 
   useEffect(() => {
     let active = true;
@@ -195,6 +199,10 @@ export function DocumentsWindow({
   );
   const selected =
     selectedEntries.length === 1 ? selectedEntries[0] ?? null : null;
+  const selectedDirectory =
+    selected?.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY ? selected : null;
+  const propertiesTarget =
+    selectedEntries.length === 0 ? page?.directory ?? null : selectedDirectory;
   const currentDirectoryId = page?.directory.id;
   const runChange = useCallback(
     async (operation: () => Promise<unknown>): Promise<void> => {
@@ -392,6 +400,11 @@ export function DocumentsWindow({
     const entries = selection.selectedIds.has(entry.id)
       ? selectedEntries
       : [entry];
+    const directory =
+      entries.length === 1 &&
+      entries[0]?.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY
+        ? entries[0]
+        : null;
     if (!selection.selectedIds.has(entry.id)) selection.replace([entry.id]);
     contextMenu.openFromEvent(event, [
       contextMenuCommand(
@@ -423,6 +436,16 @@ export function DocumentsWindow({
         FILESYSTEM_COPY.DELETE,
         () => runBatchChange(() => gateway.trashEntries(entries.map((candidate) => candidate.id))),
       ),
+      ...(directory
+        ? [
+            contextMenuSeparator("explorer-entry-separator-2"),
+            contextMenuCommand(
+              XP_CONTEXT_MENU_COMMAND_ID.PROPERTIES,
+              FOLDER_PROPERTIES_COPY.PROPERTIES,
+              () => folderProperties.open(directory),
+            ),
+          ]
+        : []),
     ]);
   };
 
@@ -454,6 +477,15 @@ export function DocumentsWindow({
         FILESYSTEM_COPY.REFRESH,
         onFilesystemChanged,
       ),
+      contextMenuSeparator("explorer-directory-separator-2"),
+      contextMenuCommand(
+        XP_CONTEXT_MENU_COMMAND_ID.PROPERTIES,
+        FOLDER_PROPERTIES_COPY.PROPERTIES,
+        () => {
+          if (page) folderProperties.open(page.directory);
+        },
+        !page,
+      ),
     ]);
   };
 
@@ -474,6 +506,7 @@ export function DocumentsWindow({
             (entry) => entry.kind !== FILESYSTEM_ENTRY_KIND.WIDGET,
           )}
           canRename={Boolean(selected)}
+          canShowProperties={Boolean(propertiesTarget)}
           hasSelection={selectedEntries.length > 0}
           fileInputRef={fileInputRef}
           folderInputRef={folderInputRef}
@@ -490,6 +523,9 @@ export function DocumentsWindow({
             void runBatchChange(() =>
               gateway.trashEntries(selection.selectedInOrder),
             )
+          }
+          onShowProperties={() =>
+            propertiesTarget && folderProperties.open(propertiesTarget)
           }
         />
       }
@@ -540,6 +576,13 @@ export function DocumentsWindow({
           onPointerCancel={marquee.onPointerCancel}
           onKeyDown={(event) => {
             if (
+              event.altKey &&
+              event.key === KEYBOARD_KEY.ENTER &&
+              selectedDirectory
+            ) {
+              event.preventDefault();
+              folderProperties.open(selectedDirectory);
+            } else if (
               (event.ctrlKey || event.metaKey) &&
               event.key.toLocaleLowerCase() === KEYBOARD_KEY.A
             ) {
@@ -605,7 +648,17 @@ export function DocumentsWindow({
                 }
               }}
               onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
-                if (event.key === KEYBOARD_KEY.ENTER) openEntry(entry);
+                if (event.key !== KEYBOARD_KEY.ENTER) return;
+                if (event.altKey) {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
+                    selection.replace([entry.id]);
+                    folderProperties.open(entry);
+                  }
+                  return;
+                }
+                openEntry(entry);
               }}
             >
               <FilesystemEntryIcon
@@ -703,6 +756,7 @@ export function DocumentsWindow({
         onCancel={download.cancel}
         onClose={download.close}
       />
+      <FolderPropertiesDialog controller={folderProperties} />
     </DesktopAppWindow>
   );
 }
