@@ -13,11 +13,13 @@ import type { ThumbnailLoadPermit } from "@client/types/filesystem/thumbnail";
 interface FilesystemEntryIconProps {
   readonly entry: FilesystemEntry;
   readonly thumbnailUrl: (id: string) => string;
+  readonly fallbackPath?: string;
 }
 
 export function FilesystemEntryIcon({
   entry,
   thumbnailUrl,
+  fallbackPath: customFallbackPath,
 }: FilesystemEntryIconProps) {
   const scheduler = useThumbnailLoadScheduler();
   const imageRef = useRef<HTMLImageElement>(null);
@@ -26,7 +28,7 @@ export function FilesystemEntryIcon({
   const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
   const [thumbnailVisible, setThumbnailVisible] = useState(false);
   const [thumbnailRequested, setThumbnailRequested] = useState(false);
-  const fallbackPath = fallbackIconPath(entry);
+  const fallbackPath = customFallbackPath ?? fallbackIconPath(entry);
   const canUseThumbnail =
     entry.kind === FILESYSTEM_ENTRY_KIND.FILE &&
     isThumbnailSourceSupported(entry.contentType, entry.size);

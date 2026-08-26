@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { KOREA_LOCALE } from "@/constants/platform/date";
 import {
-  DESKTOP_CLOCK_REFRESH_MILLISECONDS,
+  KOREA_CLOCK_REFRESH_MILLISECONDS,
   KOREA_DATE_TIME_FORMAT_OPTIONS,
   KOREA_TIME_FORMAT_OPTIONS,
-} from "@client/constants/desktop/desktop";
-import type { KoreaClock } from "@client/types/desktop/desktop";
+} from "@client/constants/shared/korea-clock";
+import type { KoreaClock } from "@client/types/shared/korea-clock";
 
 export function useKoreaClock(): KoreaClock {
   const [now, setNow] = useState(() => new Date());
@@ -21,7 +21,7 @@ export function useKoreaClock(): KoreaClock {
   useEffect(() => {
     const interval = window.setInterval(
       () => setNow(new Date()),
-      DESKTOP_CLOCK_REFRESH_MILLISECONDS,
+      KOREA_CLOCK_REFRESH_MILLISECONDS,
     );
     return () => window.clearInterval(interval);
   }, []);

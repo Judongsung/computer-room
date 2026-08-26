@@ -9,7 +9,11 @@ import type {
   SaveWidgetFileInput,
 } from "@/types/filesystem/filesystem";
 
-export interface WidgetLayoutUseCases {
+export interface WidgetReader {
+  getWidget(widgetId: string): Promise<DashboardWidget>;
+}
+
+export interface WidgetLayoutUseCases extends WidgetReader {
   listWidgets(): Promise<DashboardWidget[]>;
   replaceWidgets(
     widgets: readonly WidgetLayout[],

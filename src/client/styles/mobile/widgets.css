@@ -1,0 +1,71 @@
+.android-widget {
+  display: grid;
+  min-height: 100%;
+  align-content: start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.android-widget__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.android-widget textarea {
+  width: 100%;
+  min-height: 220px;
+  padding: 10px;
+  resize: vertical;
+}
+
+.android-widget .markdown-content {
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
+.android-widget__checklist {
+  display: grid;
+  gap: 1px;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  background: #343a34;
+}
+
+.android-widget__checklist li {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  background: #171a17;
+}
+
+.android-widget__checklist label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.android-widget__checklist input[type="checkbox"] {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--android-green);
+}
+
+.android-widget__panel {
+  padding: 12px;
+  border: 1px solid #454c45;
+  background: #1a1d1a;
+}
+
+.android-widget__panel dl {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.android-widget__panel dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}

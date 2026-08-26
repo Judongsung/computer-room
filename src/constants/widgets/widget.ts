@@ -88,3 +88,8 @@ export const WIDGET_WINDOW_POLICY = {
     ...WINDOW_SIZE_LIMITS,
   },
 } as const;
+
+export const WIDGET_FILE_DEFAULT_LAYOUT = {
+  POSITION: { x: 32, y: 32 },
+  STACK_ORDER: 0,
+} as const;

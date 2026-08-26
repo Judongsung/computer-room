@@ -34,7 +34,7 @@ import {
 } from "@client/domain/desktop/window-layout";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/desktop";
-import { useUnsavedChangesWarning } from "@client/hooks/desktop/use-unsaved-changes-warning";
+import { useUnsavedChangesWarning } from "@client/hooks/shared/use-unsaved-changes-warning";
 import { useWidgetLayoutAutoSave } from "@client/hooks/widgets/use-widget-layout-auto-save";
 import { useDashboardState } from "@client/hooks/widgets/use-dashboard-state";
 

@@ -4,6 +4,7 @@ export const API_PATHS = {
   FILESYSTEM: "/api/filesystem",
   INTEGRATIONS: "/api/integrations",
   WIDGETS: "/api/widgets",
+  WIDGET_FILES: "/api/widget-files",
   STORAGE_STATUS: "/api/storage/status",
 } as const;
 

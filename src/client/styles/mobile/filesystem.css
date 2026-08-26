@@ -1,0 +1,78 @@
+.android-list {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.android-list__item {
+  display: flex;
+  width: 100%;
+  min-height: 64px !important;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 0 !important;
+  border-bottom: 1px solid #343a34 !important;
+  border-radius: 0 !important;
+  background: rgba(26, 29, 26, 0.94) !important;
+  box-shadow: none !important;
+  text-align: left;
+}
+
+.android-list__item:active {
+  background: #31451d !important;
+}
+
+.android-list__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+}
+
+.android-list__icon img {
+  max-width: 42px;
+  max-height: 42px;
+  object-fit: contain;
+}
+
+.android-list__text {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 3px;
+}
+
+.android-list__text > strong {
+  overflow: hidden;
+  font-weight: 400;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.android-list__meta {
+  color: var(--android-muted);
+  font-size: 11px;
+}
+
+.android-breadcrumbs {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  overflow-x: auto;
+  border-bottom: 1px solid #343a34;
+  background: #111411;
+  white-space: nowrap;
+}
+
+.android-breadcrumbs button {
+  min-height: 26px;
+  padding: 2px 7px;
+  border: 0;
+  color: #b8e27a;
+  background: transparent;
+  box-shadow: none;
+}

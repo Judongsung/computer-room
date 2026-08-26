@@ -5,9 +5,6 @@ import {
   useState,
   type KeyboardEvent,
 } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkBreaks from "remark-breaks";
-import remarkGfm from "remark-gfm";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { MemoWidget as MemoWidgetData } from "@/types/widgets/widget";
 import { MEMO_WIDGET_COPY } from "@client/constants/widgets/content";
@@ -15,12 +12,11 @@ import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import { MEMO_EDITOR_MODE } from "@client/constants/widgets/memo";
 import { XP_WIDGET_TOOLBAR_ACTION } from "@client/constants/shared/xp";
-import { useUnsavedChangesWarning } from "@client/hooks/desktop/use-unsaved-changes-warning";
+import { useUnsavedChangesWarning } from "@client/hooks/shared/use-unsaved-changes-warning";
 import type { WidgetComponentProps } from "@client/types/desktop/desktop";
 import { XpWidgetToolbarButton } from "@client/components/shared/xp-widget-toolbar-button";
 import { WidgetCard } from "@client/components/widgets/widget-card";
-
-const MARKDOWN_PLUGINS = [remarkGfm, remarkBreaks];
+import { MarkdownContent } from "@client/components/widgets/markdown-content";
 
 export function MemoWidget(props: WidgetComponentProps) {
   if (props.widget.type !== WIDGET_TYPE.MEMO) {
@@ -216,17 +212,6 @@ function MemoWidgetContent({
         <MarkdownContent markdown={widget.data.markdown} />
       )}
     </WidgetCard>
-  );
-}
-
-function MarkdownContent({ markdown }: { readonly markdown: string }) {
-  if (markdown.length === 0) {
-    return <p className="widget-empty">{MEMO_WIDGET_COPY.EMPTY_CONTENT}</p>;
-  }
-  return (
-    <div className="markdown-content">
-      <ReactMarkdown remarkPlugins={MARKDOWN_PLUGINS}>{markdown}</ReactMarkdown>
-    </div>
   );
 }
 

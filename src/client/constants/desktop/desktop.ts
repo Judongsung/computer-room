@@ -1,5 +1,4 @@
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
-import { KOREA_TIME_ZONE } from "@/constants/platform/date";
 
 export const DESKTOP_LAYOUT = {
   MIN_WIDTH_PX: 1_024,
@@ -63,26 +62,6 @@ export const WIDGET_ICON_PATH_BY_TYPE = {
   [WIDGET_TYPE.DAILY_CHECKLIST]: DESKTOP_ASSET_PATHS.CHECKLIST_ICON,
   [WIDGET_TYPE.STORAGE_STATUS]: DESKTOP_ASSET_PATHS.STORAGE_STATUS_ICON,
 } as const;
-
-export const KOREA_TIME_FORMAT_OPTIONS = {
-  timeZone: KOREA_TIME_ZONE,
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-} as const satisfies Intl.DateTimeFormatOptions;
-
-export const KOREA_DATE_TIME_FORMAT_OPTIONS = {
-  timeZone: KOREA_TIME_ZONE,
-  year: "numeric",
-  month: "long",
-  day: "numeric",
-  weekday: "long",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-} as const satisfies Intl.DateTimeFormatOptions;
-
-export const DESKTOP_CLOCK_REFRESH_MILLISECONDS = 1_000;
 
 export const DESKTOP_DRAG_DATA_TYPE =
   "application/x-computer-room-filesystem-entry";

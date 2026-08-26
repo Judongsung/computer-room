@@ -55,6 +55,10 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     return this.hydrate(await this.layouts.list());
   }
 
+  async getWidget(widgetId: string): Promise<DashboardWidget> {
+    return this.hydrateOne(await this.requireWidget(widgetId));
+  }
+
   async replaceWidgets(
     widgets: readonly WidgetLayout[],
   ): Promise<DashboardWidget[]> {

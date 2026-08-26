@@ -92,11 +92,6 @@ export interface WidgetCardProps {
   readonly children: ReactNode;
 }
 
-export interface KoreaClock {
-  readonly time: string;
-  readonly dateTime: string;
-}
-
 export interface DesktopShellProps {
   readonly session: SessionInfo;
   readonly widgets: readonly DashboardWidget[];

@@ -1,12 +1,13 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import "xp.css/dist/XP.css";
 import { App } from "@client/app";
 import { SITE_COPY } from "@client/constants/widgets/content";
 import { DESKTOP_LAYOUT } from "@client/constants/desktop/desktop";
+import { detectClientInterfaceMode } from "@client/domain/platform/interface-mode";
 import "./styles/global.css";
 
 document.title = SITE_COPY.TITLE;
+document.documentElement.dataset.interfaceMode = detectClientInterfaceMode();
 const ROOT_DESKTOP_STYLE = {
   "--desktop-min-width": `${DESKTOP_LAYOUT.MIN_WIDTH_PX}px`,
   "--desktop-min-height": `${DESKTOP_LAYOUT.MIN_HEIGHT_PX}px`,

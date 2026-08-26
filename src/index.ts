@@ -10,6 +10,7 @@ import { MemoService } from "@/application/widgets/memo-service";
 import { ThumbnailService } from "@/application/filesystem/thumbnail-service";
 import { ThumbnailPreparingFileService } from "@/application/filesystem/thumbnail-preparing-file-service";
 import { WidgetLayoutService } from "@/application/widgets/widget-layout-service";
+import { WidgetFileService } from "@/application/widgets/widget-file-service";
 import { StorageStatusService } from "@/application/storage/storage-status-service";
 import {
   ENABLED_ENV_VALUE,
@@ -21,6 +22,7 @@ import { FileApiHandler } from "@/http/filesystem/file-api-handler";
 import { DirectoryDetailsApiHandler } from "@/http/filesystem/directory-details-api-handler";
 import { NovelAiImageApiHandler } from "@/http/integrations/novelai-image-api-handler";
 import { WidgetApiHandler } from "@/http/widgets/widget-api-handler";
+import { WidgetFileApiHandler } from "@/http/widgets/widget-file-api-handler";
 import { StorageStatusApiHandler } from "@/http/storage/storage-status-api-handler";
 import {
   CloudflareAccessIdentityVerifier,
@@ -34,6 +36,7 @@ import { D1DirectoryDetailsRepository } from "@/infrastructure/filesystem/d1-dir
 import { D1ChecklistRepository } from "@/infrastructure/widgets/d1-checklist-repository";
 import { D1MemoRepository } from "@/infrastructure/widgets/d1-memo-repository";
 import { D1WidgetLayoutRepository } from "@/infrastructure/widgets/d1-widget-layout-repository";
+import { D1WidgetFileDraftRepository } from "@/infrastructure/widgets/d1-widget-file-draft-repository";
 import { D1StorageUsageReader } from "@/infrastructure/storage/d1-storage-usage-reader";
 import { R2FileObjectStorage } from "@/infrastructure/filesystem/r2-file-object-storage";
 import { R2ObjectStorageUsageReader } from "@/infrastructure/storage/r2-object-storage-usage-reader";
@@ -120,6 +123,15 @@ export default {
       ids,
       clock,
     );
+    const widgetFileApiHandler = new WidgetFileApiHandler(
+      new WidgetFileService(
+        widgetService,
+        fileRepository,
+        new D1WidgetFileDraftRepository(env.DB),
+        ids,
+        clock,
+      ),
+    );
     const memoService = new MemoService(layoutRepository, memoRepository, clock);
     const checklistService = new ChecklistService(
       layoutRepository,
@@ -143,6 +155,7 @@ export default {
       [
         fileApiHandler,
         directoryDetailsApiHandler,
+        widgetFileApiHandler,
         widgetApiHandler,
         storageStatusApiHandler,
       ],
