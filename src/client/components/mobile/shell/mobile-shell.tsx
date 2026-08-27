@@ -7,6 +7,7 @@ import type { WidgetFileDocument } from "@/types/widgets/widget-file";
 import { MobileDirectory } from "@client/components/mobile/filesystem/mobile-directory";
 import { MobileRecycleBin } from "@client/components/mobile/filesystem/mobile-recycle-bin";
 import { MobileHome } from "@client/components/mobile/launcher/mobile-home";
+import { MobileWallpaperPicker } from "@client/components/mobile/launcher/mobile-wallpaper-picker";
 import { MobileMediaViewer } from "@client/components/mobile/media/mobile-media-viewer";
 import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
 import { MobileMenu } from "@client/components/mobile/shared/mobile-menu";
@@ -23,10 +24,12 @@ import {
   MOBILE_LAYOUT_CSS_VARIABLES,
 } from "@client/constants/shared/mobile";
 import { useDesktopEntries } from "@client/hooks/filesystem/use-desktop-entries";
+import { useMobilePreferences } from "@client/hooks/platform/use-mobile-preferences";
 import { useMobileNavigation } from "@client/hooks/shared/use-mobile-navigation";
 import { useLocalWidgetDraft } from "@client/hooks/widgets/use-local-widget-draft";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
+import type { MobilePreferencesGateway } from "@client/types/platform/mobile-preferences";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { WidgetFileGateway } from "@client/types/widgets/widget-file";
 import { downloadFile } from "@client/utils/download-file";
@@ -37,6 +40,7 @@ interface MobileShellProps {
   readonly filesystem: FilesystemGateway;
   readonly storageStatus: StorageStatusGateway;
   readonly widgetFiles: WidgetFileGateway;
+  readonly mobilePreferences: MobilePreferencesGateway;
 }
 
 export function MobileShell({
@@ -45,8 +49,10 @@ export function MobileShell({
   filesystem,
   storageStatus,
   widgetFiles,
+  mobilePreferences: mobilePreferencesGateway,
 }: MobileShellProps) {
   const localDraft = useLocalWidgetDraft();
+  const mobilePreferences = useMobilePreferences(mobilePreferencesGateway);
   const navigation = useMobileNavigation(
     localDraft.draft
       ? { kind: MOBILE_ACTIVITY_KIND.WIDGET_DRAFT }
@@ -151,15 +157,29 @@ export function MobileShell({
           if (menuEnabled) setMenuOpen((current) => !current);
         }}
       />
-      <MobileMenu open={menuOpen} onClose={() => setMenuOpen(false)}>
+      <MobileMenu
+        open={
+          menuOpen &&
+          navigation.current.kind !== MOBILE_ACTIVITY_KIND.DIRECTORY
+        }
+        onClose={() => setMenuOpen(false)}
+      >
         {navigation.current.kind === MOBILE_ACTIVITY_KIND.HOME ? (
           <>
             <button type="button" onClick={refresh}>{MOBILE_COPY.REFRESH}</button>
+            <button
+              type="button"
+              onClick={() => {
+                navigation.push({ kind: MOBILE_ACTIVITY_KIND.WALLPAPER });
+                setMenuOpen(false);
+              }}
+            >
+              {MOBILE_COPY.WALLPAPER}
+            </button>
             <a href={session.logoutUrl}>{MOBILE_COPY.LOGOUT}</a>
           </>
         ) : null}
-        {navigation.current.kind === MOBILE_ACTIVITY_KIND.DIRECTORY ||
-        navigation.current.kind === MOBILE_ACTIVITY_KIND.TRASH ? (
+        {navigation.current.kind === MOBILE_ACTIVITY_KIND.TRASH ? (
           <button type="button" onClick={refresh}>{MOBILE_COPY.REFRESH}</button>
         ) : null}
         {navigation.current.kind === MOBILE_ACTIVITY_KIND.MEDIA ? (
@@ -265,6 +285,13 @@ export function MobileShell({
             onOpenComputer={() => navigation.push({ kind: MOBILE_ACTIVITY_KIND.COMPUTER })}
             onOpenTrash={() => navigation.push({ kind: MOBILE_ACTIVITY_KIND.TRASH })}
             onOpenEntry={openEntry}
+            wallpaperUrl={
+              mobilePreferences.preferences.wallpaper
+                ? filesystem.contentUrl(
+                    mobilePreferences.preferences.wallpaper.id,
+                  )
+                : null
+            }
           />
         );
       case MOBILE_ACTIVITY_KIND.DIRECTORY:
@@ -273,7 +300,10 @@ export function MobileShell({
             directoryId={activity.directoryId}
             title={activity.title}
             revision={revision}
+            menuOpen={menuOpen}
             gateway={filesystem}
+            onCloseMenu={() => setMenuOpen(false)}
+            onRefresh={refresh}
             onOpenDirectory={openDirectory}
             onOpenEntry={openEntry}
           />
@@ -289,7 +319,22 @@ export function MobileShell({
         return <MobileRecycleBin gateway={filesystem} revision={revision} />;
       case MOBILE_ACTIVITY_KIND.MEDIA: {
         const kind = mediaKindFromContentType(activity.file.contentType);
-        return kind ? <MobileMediaViewer file={activity.file} kind={kind} gateway={filesystem} /> : null;
+        return kind ? (
+          <MobileMediaViewer
+            file={activity.file}
+            kind={kind}
+            directoryId={activity.directoryId}
+            filesystemRevision={revision}
+            gateway={filesystem}
+            onChangeFile={(file) =>
+              navigation.replace({
+                kind: MOBILE_ACTIVITY_KIND.MEDIA,
+                file,
+                directoryId: activity.directoryId,
+              })
+            }
+          />
+        ) : null;
       }
       case MOBILE_ACTIVITY_KIND.WIDGET_FILE:
         return (
@@ -319,6 +364,19 @@ export function MobileShell({
         );
       case MOBILE_ACTIVITY_KIND.STORAGE_STATUS:
         return <MobileStorageStatus gateway={storageStatus} />;
+      case MOBILE_ACTIVITY_KIND.WALLPAPER:
+        return (
+          <MobileWallpaperPicker
+            currentWallpaper={mobilePreferences.preferences.wallpaper}
+            loadingPreferences={mobilePreferences.loading}
+            saving={mobilePreferences.saving}
+            preferenceError={mobilePreferences.error}
+            filesystem={filesystem}
+            onApply={mobilePreferences.updateWallpaper}
+            onApplied={navigation.home}
+            onRetryPreferences={mobilePreferences.refresh}
+          />
+        );
     }
   }
 }

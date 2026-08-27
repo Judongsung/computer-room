@@ -21,6 +21,10 @@ export const MOBILE_LAYOUT_CSS_VARIABLES: CSSProperties &
   "--android-dialog-z-index": `${MOBILE_LAYOUT.DIALOG_Z_INDEX}`,
 };
 
+export const MOBILE_CSS_VARIABLE = {
+  HOME_WALLPAPER_IMAGE: "--android-home-wallpaper-image",
+} as const;
+
 export const MOBILE_ASSET_PATHS = {
   DOCUMENTS: "/assets/android/documents.svg",
   COMPUTER: "/assets/android/computer.svg",
@@ -47,6 +51,7 @@ export const MOBILE_ACTIVITY_KIND = {
   WIDGET_FILE: "widget-file",
   WIDGET_DRAFT: "widget-draft",
   STORAGE_STATUS: "storage-status",
+  WALLPAPER: "wallpaper",
 } as const;
 
 export const MOBILE_ACTIVITY_MENU_AVAILABILITY = {
@@ -58,6 +63,7 @@ export const MOBILE_ACTIVITY_MENU_AVAILABILITY = {
   [MOBILE_ACTIVITY_KIND.WIDGET_FILE]: false,
   [MOBILE_ACTIVITY_KIND.WIDGET_DRAFT]: true,
   [MOBILE_ACTIVITY_KIND.STORAGE_STATUS]: false,
+  [MOBILE_ACTIVITY_KIND.WALLPAPER]: false,
 } as const;
 
 export const MOBILE_SYSTEM_ITEM_ID = {
@@ -79,6 +85,10 @@ export const MOBILE_COPY = {
   MY_COMPUTER: "내 컴퓨터",
   RECYCLE_BIN: "휴지통",
   REFRESH: "새로 고침",
+  DETAILS: "상세 정보",
+  SORT: "정렬",
+  SORT_TITLE: (name: string) => `${name} 정렬`,
+  APPLY: "적용",
   LOGOUT: "로그아웃",
   HOME_SCREEN: "홈 화면",
   HOME_PAGES: "홈 화면 페이지",
@@ -129,6 +139,16 @@ export const MOBILE_COPY = {
   HISTORY: "로그",
   NO_LOGS: "기록이 없습니다.",
   STATUS_DRAFT_RETAINED: "로그아웃해도 이 기기의 작성 중 초안은 유지됩니다.",
+  WALLPAPER: "배경화면",
+  WALLPAPER_PREVIEW: "배경화면 미리보기",
+  DEFAULT_WALLPAPER: "기본 Android 배경",
+  USE_DEFAULT_WALLPAPER: "기본 배경 사용",
+  SET_WALLPAPER: "배경화면 설정",
+  NO_WALLPAPER_IMAGES: "이 폴더에는 선택할 수 있는 이미지가 없습니다.",
+  WALLPAPER_LOAD_FAILED: "배경화면 설정을 불러오지 못했습니다.",
+  WALLPAPER_SAVE_FAILED: "배경화면 설정을 저장하지 못했습니다.",
+  WALLPAPER_PREVIEW_FAILED: "이 이미지를 배경화면으로 표시할 수 없습니다.",
+  SORT_SAVE_FAILED: "정렬 설정을 저장하지 못했습니다.",
 } as const;
 
 export const MOBILE_NAVIGATION_GLYPH = {
@@ -175,5 +195,19 @@ export const MOBILE_CLASS_NAME = {
   WIDGET_CHECKLIST: "android-widget__checklist",
   WIDGET_PANEL: "android-widget__panel",
   MEDIA: "android-media",
+  MEDIA_VIEWPORT: "android-media__viewport",
+  MEDIA_NAVIGATION_ERROR: "android-media__navigation-error",
   MEDIA_ACTIONS: "android-media__actions",
+  FOLDER_DETAILS: "android-folder-details",
+  FOLDER_DETAILS_ROW: "android-folder-details__row",
+  FOLDER_SORT: "android-folder-sort",
+  WALLPAPER: "android-wallpaper",
+  WALLPAPER_ROOTS: "android-wallpaper__roots",
+  WALLPAPER_PREVIEW: "android-wallpaper__preview",
+  WALLPAPER_PREVIEW_IMAGE: "android-wallpaper__preview-image",
+  WALLPAPER_PREVIEW_DEFAULT: "android-wallpaper__preview-default",
+  WALLPAPER_DEFAULT: "android-wallpaper__default",
+  WALLPAPER_SELECTED: "android-wallpaper__selected",
+  WALLPAPER_ERROR: "android-wallpaper__error",
+  WALLPAPER_ACTIONS: "android-wallpaper__actions",
 } as const;

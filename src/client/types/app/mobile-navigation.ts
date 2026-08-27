@@ -24,7 +24,8 @@ export type MobileActivity =
       readonly title: string;
     }
   | { readonly kind: typeof MOBILE_ACTIVITY_KIND.WIDGET_DRAFT }
-  | { readonly kind: typeof MOBILE_ACTIVITY_KIND.STORAGE_STATUS };
+  | { readonly kind: typeof MOBILE_ACTIVITY_KIND.STORAGE_STATUS }
+  | { readonly kind: typeof MOBILE_ACTIVITY_KIND.WALLPAPER };
 
 export interface MobileNavigationController {
   readonly current: MobileActivity;

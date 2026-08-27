@@ -1,0 +1,1 @@
+export const MOBILE_PREFERENCES_SINGLETON_ID = 1;

@@ -425,6 +425,7 @@ export class D1FilesystemRepository implements FilesystemRepository {
        SET parent_id = ?2, restore_parent_id = ?3, restore_path = ?4,
            trashed_at = ?5, updated_at = ?5 WHERE id = ?1`,
     ).bind(id, FILESYSTEM_ROOT_ID.RECYCLE_BIN, previousParentId, restorePath, trashedAt)];
+    statements.push(this.clearWallpaperWithinSubtree(id));
     if (widgetIds.length > 0) {
       const placeholders = widgetIds.map((_, index) => `?${index + 1}`).join(", ");
       statements.push(this.database.prepare(
@@ -514,6 +515,24 @@ export class D1FilesystemRepository implements FilesystemRepository {
        ) SELECT widget_id FROM subtree WHERE widget_id IS NOT NULL ORDER BY widget_id`,
     ).bind(rootId).all<WidgetIdRow>();
     return result.results.map((row) => row.widget_id);
+  }
+
+  private clearWallpaperWithinSubtree(rootId: string): D1PreparedStatement {
+    return this.database
+      .prepare(
+        `UPDATE mobile_preferences
+         SET wallpaper_entry_id = NULL
+         WHERE wallpaper_entry_id IN (
+           WITH RECURSIVE subtree(id) AS (
+             SELECT id FROM filesystem_entries WHERE id = ?1
+             UNION ALL
+             SELECT child.id FROM filesystem_entries child
+             JOIN subtree parent ON child.parent_id = parent.id
+           )
+           SELECT id FROM subtree
+         )`,
+      )
+      .bind(rootId);
   }
 
   private desktopOrderInsert(entryId: string, sortOrder: number): D1PreparedStatement {

@@ -12,6 +12,7 @@ import { ThumbnailPreparingFileService } from "@/application/filesystem/thumbnai
 import { WidgetLayoutService } from "@/application/widgets/widget-layout-service";
 import { WidgetFileService } from "@/application/widgets/widget-file-service";
 import { StorageStatusService } from "@/application/storage/storage-status-service";
+import { MobilePreferencesService } from "@/application/platform/mobile-preferences-service";
 import {
   ENABLED_ENV_VALUE,
   LOCAL_AUTH_DEFAULT_EMAIL,
@@ -24,6 +25,7 @@ import { NovelAiImageApiHandler } from "@/http/integrations/novelai-image-api-ha
 import { WidgetApiHandler } from "@/http/widgets/widget-api-handler";
 import { WidgetFileApiHandler } from "@/http/widgets/widget-file-api-handler";
 import { StorageStatusApiHandler } from "@/http/storage/storage-status-api-handler";
+import { MobilePreferencesApiHandler } from "@/http/platform/mobile-preferences-api-handler";
 import {
   CloudflareAccessIdentityVerifier,
   CloudflareAccessApplicationVerifier,
@@ -42,6 +44,7 @@ import { R2FileObjectStorage } from "@/infrastructure/filesystem/r2-file-object-
 import { R2ObjectStorageUsageReader } from "@/infrastructure/storage/r2-object-storage-usage-reader";
 import { CloudflareImageThumbnailGenerator } from "@/infrastructure/filesystem/cloudflare-image-thumbnail-generator";
 import { CloudflareBackgroundTaskScheduler } from "@/infrastructure/platform/cloudflare-background-task-scheduler";
+import { D1MobilePreferencesRepository } from "@/infrastructure/platform/d1-mobile-preferences-repository";
 import { CryptoIdGenerator, SystemClock } from "@/infrastructure/platform/runtime";
 import type { IdentityVerifier, RequestVerifier } from "@/types/platform/auth";
 
@@ -151,6 +154,12 @@ export default {
         clock,
       ),
     );
+    const mobilePreferencesApiHandler = new MobilePreferencesApiHandler(
+      new MobilePreferencesService(
+        new D1MobilePreferencesRepository(env.DB),
+        fileRepository,
+      ),
+    );
     const router = new ApiRouter(
       [
         fileApiHandler,
@@ -158,6 +167,7 @@ export default {
         widgetFileApiHandler,
         widgetApiHandler,
         storageStatusApiHandler,
+        mobilePreferencesApiHandler,
       ],
       novelAiImageApiHandler,
       createIdentityVerifier(env),

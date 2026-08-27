@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
 import type { FilesystemFileEntry } from "@/types/filesystem/filesystem";
+import type { MediaKind } from "@/types/filesystem/media";
 import {
   MEDIA_NAVIGATION_INITIAL_OFFSET,
   MEDIA_VIEWER_COPY,
@@ -12,6 +13,7 @@ export function useMediaDirectory(
   gateway: FilesystemGateway,
   directoryId: string,
   filesystemRevision: number,
+  mediaKind?: MediaKind,
 ) {
   const [entries, setEntries] = useState<readonly FilesystemFileEntry[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +23,7 @@ export function useMediaDirectory(
     let active = true;
     setIsLoading(true);
     setError(null);
-    void loadAllMedia(gateway, directoryId)
+    void loadAllMedia(gateway, directoryId, mediaKind)
       .then((items) => {
         if (active) setEntries(items);
       })
@@ -40,7 +42,7 @@ export function useMediaDirectory(
     return () => {
       active = false;
     };
-  }, [directoryId, filesystemRevision, gateway]);
+  }, [directoryId, filesystemRevision, gateway, mediaKind]);
 
   return { entries, error, isLoading };
 }
@@ -48,6 +50,7 @@ export function useMediaDirectory(
 async function loadAllMedia(
   gateway: FilesystemGateway,
   directoryId: string,
+  mediaKind?: MediaKind,
 ): Promise<readonly FilesystemFileEntry[]> {
   const entries: FilesystemFileEntry[] = [];
   let offset = MEDIA_NAVIGATION_INITIAL_OFFSET;
@@ -55,9 +58,14 @@ async function loadAllMedia(
     const page = await gateway.listDirectory(directoryId, offset);
     entries.push(
       ...page.items.filter(
-        (entry): entry is FilesystemFileEntry =>
-          entry.kind === FILESYSTEM_ENTRY_KIND.FILE &&
-          mediaKindFromContentType(entry.contentType) !== null,
+        (entry): entry is FilesystemFileEntry => {
+          if (entry.kind !== FILESYSTEM_ENTRY_KIND.FILE) return false;
+          const entryMediaKind = mediaKindFromContentType(entry.contentType);
+          return (
+            entryMediaKind !== null &&
+            (mediaKind === undefined || entryMediaKind === mediaKind)
+          );
+        },
       ),
     );
     if (page.nextOffset === null) {

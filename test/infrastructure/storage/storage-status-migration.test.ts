@@ -24,9 +24,20 @@ describe("storage status widget migration", () => {
   it("preserves widget content, checklist history, files, order, and foreign keys", async () => {
     const testEnvironment = env as typeof env & MigrationTestEnvironment;
     const migrations = testEnvironment.TEST_MIGRATIONS;
-    const previousMigrations = migrations.slice(0, -2);
-    const storageStatusMigration = migrations.slice(-2, -1);
-    const directorySortMigration = migrations.slice(-1);
+    const storageStatusIndex = migrations.findIndex((migration) =>
+      migration.name.includes("0007_storage_status_widget"),
+    );
+    expect(storageStatusIndex).toBeGreaterThanOrEqual(0);
+    const previousMigrations = migrations.slice(0, storageStatusIndex);
+    const storageStatusMigration = [
+      migrationByName(migrations, "0007_storage_status_widget"),
+    ];
+    const directorySortMigration = [
+      migrationByName(migrations, "0008_complex_strong_guy"),
+    ];
+    const mobilePreferencesMigration = [
+      migrationByName(migrations, "0009_mobile_preferences"),
+    ];
     const database = testEnvironment.MIGRATION_REGRESSION_DB;
 
     await applyD1Migrations(database, previousMigrations);
@@ -142,8 +153,43 @@ describe("storage status widget migration", () => {
         .first("count"),
     ).resolves.toBe(0);
     await expect(rows(database, "PRAGMA foreign_key_check")).resolves.toEqual([]);
+
+    await applyD1Migrations(database, mobilePreferencesMigration);
+    await expect(rows(database, "SELECT * FROM mobile_preferences")).resolves.toEqual([
+      { singleton_id: 1, wallpaper_entry_id: null },
+    ]);
+    await database
+      .prepare(
+        "UPDATE mobile_preferences SET wallpaper_entry_id = ?1 WHERE singleton_id = 1",
+      )
+      .bind(MEMO_ENTRY_ID)
+      .run();
+    await database
+      .prepare("DELETE FROM filesystem_entries WHERE id = ?1")
+      .bind(MEMO_ENTRY_ID)
+      .run();
+    await expect(rows(database, "SELECT * FROM mobile_preferences")).resolves.toEqual([
+      { singleton_id: 1, wallpaper_entry_id: null },
+    ]);
+    await expect(
+      database
+        .prepare(
+          "INSERT INTO mobile_preferences(singleton_id, wallpaper_entry_id) VALUES (2, NULL)",
+        )
+        .run(),
+    ).rejects.toThrow();
+    await expect(rows(database, "PRAGMA foreign_key_check")).resolves.toEqual([]);
   });
 });
+
+function migrationByName(
+  migrations: readonly D1Migration[],
+  name: string,
+): D1Migration {
+  const migration = migrations.find((candidate) => candidate.name.includes(name));
+  if (!migration) throw new Error(`Missing test migration: ${name}`);
+  return migration;
+}
 
 async function seedExistingWidgetData(database: D1Database): Promise<void> {
   await database.batch([

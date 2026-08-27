@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
@@ -14,12 +14,17 @@ import type { FilesystemDirectoryPage, FilesystemEntry } from "@/types/filesyste
 import type { WidgetFileDocument } from "@/types/widgets/widget-file";
 import { App } from "@client/app";
 import { CLIENT_INTERFACE_MODE } from "@client/constants/shared/interface-mode";
-import { MOBILE_COPY } from "@client/constants/shared/mobile";
+import {
+  MOBILE_COPY,
+  MOBILE_CSS_VARIABLE,
+} from "@client/constants/shared/mobile";
+import { POINTER_TYPE } from "@client/constants/shared/pointer";
 import { LOCAL_WIDGET_DRAFT_STORAGE_KEY, LOCAL_WIDGET_DRAFT_VERSION } from "@client/constants/widgets/local-widget-draft";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { WidgetFileGateway } from "@client/types/widgets/widget-file";
+import type { MobilePreferencesGateway } from "@client/types/platform/mobile-preferences";
 
 const SESSION: SessionInfo = {
   email: "owner@example.com",
@@ -113,16 +118,199 @@ describe("mobile application", () => {
     expect(getWidgetFile).toHaveBeenCalledWith(entry.id);
     expect(openWidget).not.toHaveBeenCalled();
   });
+
+  it("replaces the current image while swiping without adding history", async () => {
+    const first = pictureEntry();
+    const second = fileEntry("picture-file-2", "두 번째 사진", "image/webp");
+    const filesystem = filesystemGateway([first, second]);
+    const user = userEvent.setup();
+    renderMobile({
+      dashboard: dashboardGateway(),
+      filesystem,
+    });
+
+    await user.click(await screen.findByRole("button", { name: first.name }));
+    expect(
+      await screen.findByRole("heading", { name: first.name }),
+    ).toBeInTheDocument();
+    await waitFor(() =>
+      expect(filesystem.listDirectory).toHaveBeenCalledTimes(2),
+    );
+    const viewport = screen.getByAltText(first.name).parentElement;
+    if (!viewport) throw new Error("Expected image swipe viewport.");
+    fireEvent.pointerDown(viewport, {
+      pointerId: 1,
+      isPrimary: true,
+      clientX: 260,
+      clientY: 100,
+    });
+    fireEvent.pointerUp(viewport, {
+      pointerId: 1,
+      clientX: 120,
+      clientY: 100,
+    });
+
+    expect(
+      await screen.findByRole("heading", { name: second.name }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: MOBILE_COPY.BACK }));
+    expect(
+      await screen.findByRole("main", { name: MOBILE_COPY.HOME_SCREEN }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens home on the first touch after an image swipe omits click", async () => {
+    const first = pictureEntry();
+    const second = fileEntry("picture-file-2", "두 번째 사진", "image/webp");
+    const filesystem = filesystemGateway([first, second]);
+    const user = userEvent.setup();
+    renderMobile({
+      dashboard: dashboardGateway(),
+      filesystem,
+    });
+
+    await user.click(await screen.findByRole("button", { name: first.name }));
+    await waitFor(() =>
+      expect(filesystem.listDirectory).toHaveBeenCalledTimes(2),
+    );
+    const viewport = screen.getByAltText(first.name).parentElement;
+    if (!viewport) throw new Error("Expected image swipe viewport.");
+    fireEvent.pointerDown(viewport, {
+      pointerId: 1,
+      pointerType: POINTER_TYPE.TOUCH,
+      isPrimary: true,
+      clientX: 260,
+      clientY: 100,
+    });
+    fireEvent.pointerUp(viewport, {
+      pointerId: 1,
+      pointerType: POINTER_TYPE.TOUCH,
+      isPrimary: true,
+      clientX: 120,
+      clientY: 100,
+    });
+    expect(
+      await screen.findByRole("heading", { name: second.name }),
+    ).toBeInTheDocument();
+
+    const home = screen.getByRole("button", { name: MOBILE_COPY.HOME });
+    fireEvent.pointerDown(home, {
+      pointerId: 2,
+      pointerType: POINTER_TYPE.TOUCH,
+      isPrimary: true,
+    });
+    fireEvent.pointerUp(home, {
+      pointerId: 2,
+      pointerType: POINTER_TYPE.TOUCH,
+      isPrimary: true,
+    });
+
+    expect(
+      await screen.findByRole("main", { name: MOBILE_COPY.HOME_SCREEN }),
+    ).toBeInTheDocument();
+  });
+
+  it("applies the shared wallpaper only to the home and resets it to default", async () => {
+    const wallpaper = pictureEntry();
+    const updateWallpaper = vi.fn(async () => ({ wallpaper: null }));
+    const user = userEvent.setup();
+    renderMobile({
+      dashboard: dashboardGateway(),
+      filesystem: filesystemGateway([wallpaper]),
+      mobilePreferencesApi: {
+        getPreferences: vi.fn(async () => ({ wallpaper })),
+        updateWallpaper,
+      },
+    });
+
+    const home = await screen.findByRole("main", {
+      name: MOBILE_COPY.HOME_SCREEN,
+    });
+    await waitFor(() =>
+      expect(
+        home.style.getPropertyValue(MOBILE_CSS_VARIABLE.HOME_WALLPAPER_IMAGE),
+      ).toContain(`/content/${wallpaper.id}`),
+    );
+
+    await user.click(screen.getByRole("button", { name: MOBILE_COPY.MENU }));
+    await user.click(screen.getByRole("button", { name: MOBILE_COPY.WALLPAPER }));
+    expect(
+      await screen.findByRole("heading", { name: MOBILE_COPY.WALLPAPER }),
+    ).toBeInTheDocument();
+    fireEvent.load(screen.getByAltText(wallpaper.name));
+    await user.click(
+      screen.getByRole("button", { name: MOBILE_COPY.USE_DEFAULT_WALLPAPER }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: MOBILE_COPY.SET_WALLPAPER }),
+    );
+
+    await waitFor(() => expect(updateWallpaper).toHaveBeenCalledWith(null));
+    const restoredHome = await screen.findByRole("main", {
+      name: MOBILE_COPY.HOME_SCREEN,
+    });
+    expect(
+      restoredHome.style.getPropertyValue(
+        MOBILE_CSS_VARIABLE.HOME_WALLPAPER_IMAGE,
+      ),
+    ).toBe("");
+  });
+
+  it("selects an existing server image and hides non-image files", async () => {
+    const wallpaper = pictureEntry();
+    const textFile = fileEntry("notes", "메모.txt", "text/plain");
+    const updateWallpaper = vi.fn(async () => ({ wallpaper }));
+    const user = userEvent.setup();
+    renderMobile({
+      dashboard: dashboardGateway(),
+      filesystem: filesystemGateway([wallpaper, textFile]),
+      mobilePreferencesApi: {
+        getPreferences: vi.fn(async () => ({ wallpaper: null })),
+        updateWallpaper,
+      },
+    });
+
+    await screen.findByRole("main", { name: MOBILE_COPY.HOME_SCREEN });
+    await user.click(screen.getByRole("button", { name: MOBILE_COPY.MENU }));
+    await user.click(screen.getByRole("button", { name: MOBILE_COPY.WALLPAPER }));
+    await screen.findByRole("heading", { name: MOBILE_COPY.WALLPAPER });
+    expect(screen.queryByRole("button", { name: textFile.name })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: wallpaper.name }));
+    const preview = await screen.findByAltText(wallpaper.name);
+    expect(
+      screen.getByRole("button", { name: MOBILE_COPY.SET_WALLPAPER }),
+    ).toBeDisabled();
+    fireEvent.load(preview);
+    expect(
+      screen.getByRole("button", { name: MOBILE_COPY.SET_WALLPAPER }),
+    ).toBeEnabled();
+    await user.click(
+      screen.getByRole("button", { name: MOBILE_COPY.SET_WALLPAPER }),
+    );
+
+    await waitFor(() =>
+      expect(updateWallpaper).toHaveBeenCalledWith(wallpaper.id),
+    );
+    const home = await screen.findByRole("main", {
+      name: MOBILE_COPY.HOME_SCREEN,
+    });
+    expect(
+      home.style.getPropertyValue(MOBILE_CSS_VARIABLE.HOME_WALLPAPER_IMAGE),
+    ).toContain(`/content/${wallpaper.id}`);
+  });
 });
 
 function renderMobile({
   dashboard,
   filesystem = filesystemGateway(),
   widgetFileApi = {} as WidgetFileGateway,
+  mobilePreferencesApi = mobilePreferencesGateway(),
 }: {
   readonly dashboard: DashboardGateway;
   readonly filesystem?: FilesystemGateway;
   readonly widgetFileApi?: WidgetFileGateway;
+  readonly mobilePreferencesApi?: MobilePreferencesGateway;
 }) {
   render(
     <App
@@ -131,6 +319,7 @@ function renderMobile({
       filesystemApi={filesystem}
       storageStatusApi={{ getStatus: vi.fn() } as unknown as StorageStatusGateway}
       widgetFileApi={widgetFileApi}
+      mobilePreferencesApi={mobilePreferencesApi}
     />,
   );
 }
@@ -147,17 +336,7 @@ function dashboardGateway(
 function filesystemGateway(
   desktopEntries?: readonly FilesystemEntry[],
 ): FilesystemGateway {
-  const picture: FilesystemEntry = {
-    id: "picture-file",
-    parentId: FILESYSTEM_ROOT_ID.DESKTOP,
-    kind: FILESYSTEM_ENTRY_KIND.FILE,
-    name: "사진",
-    contentType: "image/png",
-    size: 10,
-    createdAt: new Date(0).toISOString(),
-    updatedAt: new Date(0).toISOString(),
-    desktopOrder: 0,
-  };
+  const picture = pictureEntry();
   return {
     listDirectory: vi.fn(async (parentId = FILESYSTEM_ROOT_ID.DOCUMENTS) =>
       directoryPage(
@@ -171,6 +350,35 @@ function filesystemGateway(
     contentUrl: (id: string) => `/content/${id}`,
     downloadUrl: (id: string) => `/download/${id}`,
   } as unknown as FilesystemGateway;
+}
+
+function mobilePreferencesGateway(): MobilePreferencesGateway {
+  return {
+    getPreferences: vi.fn(async () => ({ wallpaper: null })),
+    updateWallpaper: vi.fn(async () => ({ wallpaper: null })),
+  };
+}
+
+function pictureEntry(): Extract<FilesystemEntry, { kind: "file" }> {
+  return fileEntry("picture-file", "사진", "image/png");
+}
+
+function fileEntry(
+  id: string,
+  name: string,
+  contentType: string,
+): Extract<FilesystemEntry, { kind: "file" }> {
+  return {
+    id,
+    parentId: FILESYSTEM_ROOT_ID.DESKTOP,
+    kind: FILESYSTEM_ENTRY_KIND.FILE,
+    name,
+    contentType,
+    size: 10,
+    createdAt: new Date(0).toISOString(),
+    updatedAt: new Date(0).toISOString(),
+    desktopOrder: 0,
+  };
 }
 
 function widgetEntry(): Extract<FilesystemEntry, { kind: "widget" }> {

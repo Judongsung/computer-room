@@ -5,6 +5,7 @@ import { DashboardApiClient } from "@client/api/widgets/dashboard-api-client";
 import { FilesystemApiClient } from "@client/api/filesystem/filesystem-api-client";
 import { StorageStatusApiClient } from "@client/api/storage/storage-status-api-client";
 import { WidgetFileApiClient } from "@client/api/widgets/widget-file-api-client";
+import { MobilePreferencesApiClient } from "@client/api/platform/mobile-preferences-api-client";
 import { MobileShell } from "@client/components/mobile/shell/mobile-shell";
 import {
   MOBILE_CLASS_NAME,
@@ -15,6 +16,7 @@ import { ThumbnailLoadProvider } from "@client/state/filesystem/thumbnail-load-c
 import type { AppProps } from "@client/types/app/app";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
+import type { MobilePreferencesGateway } from "@client/types/platform/mobile-preferences";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { WidgetFileGateway } from "@client/types/widgets/widget-file";
 
@@ -23,11 +25,15 @@ export function MobileApplication({
   filesystemApi,
   storageStatusApi,
   widgetFileApi,
+  mobilePreferencesApi,
 }: AppProps) {
   const [dashboard] = useState<DashboardGateway>(() => api ?? new DashboardApiClient());
   const [filesystem] = useState<FilesystemGateway>(() => filesystemApi ?? new FilesystemApiClient());
   const [storageStatus] = useState<StorageStatusGateway>(() => storageStatusApi ?? new StorageStatusApiClient());
   const [widgetFiles] = useState<WidgetFileGateway>(() => widgetFileApi ?? new WidgetFileApiClient());
+  const [mobilePreferences] = useState<MobilePreferencesGateway>(
+    () => mobilePreferencesApi ?? new MobilePreferencesApiClient(),
+  );
   const [session, setSession] = useState<SessionInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
@@ -62,6 +68,7 @@ export function MobileApplication({
         filesystem={filesystem}
         storageStatus={storageStatus}
         widgetFiles={widgetFiles}
+        mobilePreferences={mobilePreferences}
       />
     </ThumbnailLoadProvider>
   );

@@ -6,6 +6,7 @@ export const API_PATHS = {
   WIDGETS: "/api/widgets",
   WIDGET_FILES: "/api/widget-files",
   STORAGE_STATUS: "/api/storage/status",
+  PREFERENCES: "/api/preferences",
 } as const;
 
 export const API_PATH_SEGMENTS = {
@@ -32,6 +33,7 @@ export const API_PATH_SEGMENTS = {
   DELETE: "delete",
   SORT: "sort",
   DETAILS: "details",
+  MOBILE: "mobile",
 } as const;
 
 export const FILESYSTEM_API_PATHS = {
@@ -53,6 +55,9 @@ export const FILESYSTEM_API_PATHS = {
 
 export const NOVELAI_IMAGE_UPLOAD_API_PATH =
   `${API_PATHS.INTEGRATIONS}/${API_PATH_SEGMENTS.NOVELAI}/${API_PATH_SEGMENTS.IMAGES}`;
+
+export const MOBILE_PREFERENCES_API_PATH =
+  `${API_PATHS.PREFERENCES}/${API_PATH_SEGMENTS.MOBILE}`;
 
 export const API_QUERY_PARAMETERS = {
   OFFSET: "offset",

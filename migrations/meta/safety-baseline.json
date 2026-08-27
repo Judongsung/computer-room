@@ -9,6 +9,7 @@
     "0005_young_shiva.sql": "35dfcd8adc7e43bebc79a94d6d7b184900b1cf688b962a12d02deb7bedb4d8be",
     "0006_blushing_shard.sql": "c3b54a1ca0fedb8808471ae146e1b11aa0dca63fb7bd925a12dde34706eeaa0d",
     "0007_storage_status_widget.sql": "e9dcd8e7da07971cd8a1aabc3bcda305af7827a54156a311387010d7e000614c",
-    "0008_complex_strong_guy.sql": "4307934c6e10ecc76e2e42ac9eae26e5b83ee7b4c26e40e4765aa1b12a7c356b"
+    "0008_complex_strong_guy.sql": "4307934c6e10ecc76e2e42ac9eae26e5b83ee7b4c26e40e4765aa1b12a7c356b",
+    "0009_mobile_preferences.sql": "45b2c7c876a46017707c43347ea2fb6a30b3a808dad23a4b6489ec7f00a2e904"
   }
 }

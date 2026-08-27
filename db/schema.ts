@@ -27,6 +27,7 @@ import {
   FILESYSTEM_SORT_FIELD_VALUES,
 } from "@/constants/filesystem/sort";
 import { EMPTY_MEMO_MARKDOWN } from "@/constants/widgets/memo";
+import { MOBILE_PREFERENCES_SINGLETON_ID } from "@/constants/platform/mobile-preferences";
 import {
   WIDGET_TYPE,
   WIDGET_TYPE_VALUES,
@@ -156,6 +157,25 @@ export const filesystemDirectoryPreferences = sqliteTable(
     check(
       "filesystem_directory_preferences_direction_check",
       sql`${table.sortDirection} IN (${sql.raw(FILESYSTEM_SORT_DIRECTION_SQL)})`,
+    ),
+  ],
+);
+
+export const mobilePreferences = sqliteTable(
+  "mobile_preferences",
+  {
+    singletonId: integer("singleton_id")
+      .primaryKey()
+      .default(MOBILE_PREFERENCES_SINGLETON_ID),
+    wallpaperEntryId: text("wallpaper_entry_id").references(
+      () => filesystemEntries.id,
+      { onDelete: "set null" },
+    ),
+  },
+  (table) => [
+    check(
+      "mobile_preferences_singleton_check",
+      sql`${table.singletonId} = ${sql.raw(String(MOBILE_PREFERENCES_SINGLETON_ID))}`,
     ),
   ],
 );

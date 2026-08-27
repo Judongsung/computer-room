@@ -5,6 +5,7 @@ import {
   MOBILE_ASSET_PATHS,
   MOBILE_CLASS_NAME,
   MOBILE_COPY,
+  MOBILE_CSS_VARIABLE,
   MOBILE_LAYOUT,
   MOBILE_SYSTEM_ITEM_ID,
 } from "@client/constants/shared/mobile";
@@ -19,6 +20,7 @@ interface MobileHomeProps {
   readonly onOpenComputer: () => void;
   readonly onOpenTrash: () => void;
   readonly onOpenEntry: (entry: FilesystemEntry) => void;
+  readonly wallpaperUrl: string | null;
 }
 
 type HomeItem =
@@ -38,6 +40,7 @@ export function MobileHome({
   onOpenComputer,
   onOpenTrash,
   onOpenEntry,
+  wallpaperUrl,
 }: MobileHomeProps) {
   const pagesRef = useRef<HTMLDivElement>(null);
   const size = useElementSize(pagesRef);
@@ -93,7 +96,11 @@ export function MobileHome({
   };
 
   return (
-    <main className={MOBILE_CLASS_NAME.HOME} aria-label={MOBILE_COPY.HOME_SCREEN}>
+    <main
+      className={MOBILE_CLASS_NAME.HOME}
+      aria-label={MOBILE_COPY.HOME_SCREEN}
+      style={wallpaperUrl ? wallpaperStyle(wallpaperUrl) : undefined}
+    >
       <div
         ref={pagesRef}
         className={MOBILE_CLASS_NAME.HOME_PAGES}
@@ -141,6 +148,14 @@ export function MobileHome({
       {error ? <p className={MOBILE_CLASS_NAME.ERROR} role="alert">{error}</p> : null}
     </main>
   );
+}
+
+function wallpaperStyle(
+  url: string,
+): CSSProperties & Record<`--${string}`, string> {
+  return {
+    [MOBILE_CSS_VARIABLE.HOME_WALLPAPER_IMAGE]: `url(${JSON.stringify(url)})`,
+  };
 }
 
 function chunk<T>(items: readonly T[], size: number): readonly (readonly T[])[] {

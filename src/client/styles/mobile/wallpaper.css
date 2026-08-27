@@ -1,0 +1,70 @@
+.android-home {
+  background-image: var(--android-home-wallpaper-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.android-wallpaper {
+  display: grid;
+  min-height: 100%;
+  align-content: start;
+}
+
+.android-wallpaper__roots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  padding: 1px;
+  background: #050605;
+}
+
+.android-wallpaper__preview {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  overflow: hidden;
+  border-bottom: 1px solid #4c554c;
+  background: #080b08;
+}
+
+.android-wallpaper__preview-image {
+  display: block;
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  object-position: center;
+}
+
+.android-wallpaper__preview-default {
+  display: grid;
+  width: 100%;
+  min-height: 180px;
+  place-items: center;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(137, 202, 48, 0.24), transparent 26%),
+    radial-gradient(circle at 84% 72%, rgba(82, 128, 31, 0.22), transparent 28%),
+    linear-gradient(145deg, #182218 0%, #080b08 58%, #1a221a 100%);
+  color: var(--android-muted);
+}
+
+.android-wallpaper__default {
+  border-radius: 0 !important;
+}
+
+.android-wallpaper__selected {
+  background: #31451d !important;
+}
+
+.android-wallpaper__error {
+  display: grid;
+  justify-items: center;
+}
+
+.android-wallpaper__actions {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  padding: 8px;
+  background: rgba(15, 18, 15, 0.96);
+}

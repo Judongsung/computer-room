@@ -1,0 +1,4 @@
+export const MOBILE_IMAGE_SWIPE = {
+  MIN_DISTANCE_PX: 48,
+  HORIZONTAL_DOMINANCE_RATIO: 1.25,
+} as const;
