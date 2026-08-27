@@ -15,11 +15,13 @@ import type {
 import {
   MemoryDirectorySortRepository,
   MemoryFileRepository,
-  MemoryObjectStorage,
+} from "@test/support/filesystem/memory-filesystem-repository";
+import { MemoryObjectStorage } from "@test/support/filesystem/memory-object-storage";
+import {
   SequenceIdGenerator,
   StaticClock,
   streamFromText,
-} from "@test/support/fakes";
+} from "@test/support/platform/runtime-fakes";
 
 const FILE_ID = "thumbnail-source";
 const NOW = Date.parse("2026-08-23T00:00:00.000Z");

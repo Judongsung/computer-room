@@ -3,7 +3,8 @@ import {
   FOLDER_PROPERTIES_COPY,
   FOLDER_PROPERTIES_STATUS,
 } from "@client/constants/filesystem/details";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
+import { messageFromError } from "@client/errors/error-message";
 import type {
   FolderPropertiesController,
   FolderPropertiesState,
@@ -15,7 +16,7 @@ const CLOSED_STATE: FolderPropertiesState = {
 };
 
 export function useFolderProperties(
-  gateway: FilesystemGateway,
+  gateway: Pick<FilesystemDirectoryGateway, "getDirectoryDetails">,
 ): FolderPropertiesController {
   const requestSequence = useRef(0);
   const [state, setState] = useState<FolderPropertiesState>(CLOSED_STATE);
@@ -39,7 +40,7 @@ export function useFolderProperties(
           setState({
             status: FOLDER_PROPERTIES_STATUS.ERROR,
             target,
-            message: errorMessage(reason),
+            message: messageFromError(reason, FOLDER_PROPERTIES_COPY.LOAD_FAILED),
           });
         });
     },
@@ -65,10 +66,4 @@ export function useFolderProperties(
   );
 
   return { state, open: load, refresh, close };
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error && error.message
-    ? error.message
-    : FOLDER_PROPERTIES_COPY.LOAD_FAILED;
 }

@@ -3,11 +3,11 @@ import type { ChecklistLogEvent } from "@/types/widgets/widget";
 import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
 import { CHECKLIST_WIDGET_COPY } from "@client/constants/widgets/content";
-import type { DashboardGateway } from "@client/types/widgets/api";
+import type { ChecklistGateway } from "@client/types/widgets/ports/checklist";
 
 interface MobileChecklistLogsProps {
   readonly widgetId: string;
-  readonly gateway: DashboardGateway;
+  readonly gateway: ChecklistGateway;
   readonly onClose: () => void;
 }
 

@@ -24,9 +24,8 @@ import type {
 import {
   MemoryDirectorySortRepository,
   MemoryFileRepository,
-  SequenceIdGenerator,
-  StaticClock,
-} from "@test/support/fakes";
+} from "@test/support/filesystem/memory-filesystem-repository";
+import { SequenceIdGenerator, StaticClock } from "@test/support/platform/runtime-fakes";
 
 describe("filesystem directory sorting", () => {
   it("sorts all supported fields in both directions with directories first", () => {

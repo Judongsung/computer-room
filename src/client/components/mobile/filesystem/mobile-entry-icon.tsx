@@ -5,11 +5,11 @@ import {
   MOBILE_ASSET_PATHS,
   MOBILE_WIDGET_ICON_PATH,
 } from "@client/constants/shared/mobile";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
 
 interface MobileEntryIconProps {
   readonly entry: FilesystemEntry;
-  readonly gateway: Pick<FilesystemGateway, "thumbnailUrl">;
+  readonly gateway: Pick<FilesystemContentGateway, "thumbnailUrl">;
 }
 
 export function MobileEntryIcon({ entry, gateway }: MobileEntryIconProps) {

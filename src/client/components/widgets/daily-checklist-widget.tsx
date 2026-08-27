@@ -13,7 +13,6 @@ import {
 import { CHECKLIST_WIDGET_COPY } from "@client/constants/widgets/content";
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { XP_WIDGET_TOOLBAR_ACTION } from "@client/constants/shared/xp";
-import type { DashboardGateway } from "@client/types/widgets/api";
 import { XpWidgetToolbarButton } from "@client/components/shared/xp-widget-toolbar-button";
 import { ChecklistLogDialog } from "@client/components/widgets/checklist-log-dialog";
 import { WidgetCard } from "@client/components/widgets/widget-card";

@@ -15,12 +15,12 @@ import {
   FILESYSTEM_SORT_FIELD_OPTIONS,
 } from "@client/constants/filesystem/sort";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 
 interface MobileDirectorySortDialogProps {
   readonly directory: FilesystemDirectoryEntry;
   readonly sort: FilesystemDirectorySort;
-  readonly gateway: FilesystemGateway;
+  readonly gateway: Pick<FilesystemDirectoryGateway, "updateDirectorySort">;
   readonly onClose: () => void;
   readonly onSaved: () => void;
 }

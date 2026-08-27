@@ -9,14 +9,18 @@ import { MobileActivity } from "@client/components/mobile/shared/mobile-activity
 import { MobileEntryIcon } from "@client/components/mobile/filesystem/mobile-entry-icon";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
 import { formatFileSize } from "@client/utils/format-file-size";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
+import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
+
+type MobileDirectoryGateway = FilesystemDirectoryGateway &
+  Pick<FilesystemContentGateway, "thumbnailUrl">;
 
 interface MobileDirectoryProps {
   readonly directoryId: string;
   readonly title: string;
   readonly revision: number;
   readonly menuOpen: boolean;
-  readonly gateway: FilesystemGateway;
+  readonly gateway: MobileDirectoryGateway;
   readonly onCloseMenu: () => void;
   readonly onRefresh: () => void;
   readonly onOpenDirectory: (id: string, title: string) => void;

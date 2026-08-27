@@ -5,14 +5,14 @@ import { MobileFolderPropertiesDialog } from "@client/components/mobile/filesyst
 import { MobileMenu } from "@client/components/mobile/shared/mobile-menu";
 import { MOBILE_COPY } from "@client/constants/shared/mobile";
 import { useFolderProperties } from "@client/hooks/filesystem/use-folder-properties";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 
 interface MobileDirectoryMenuProps {
   readonly directoryId: string;
   readonly page: FilesystemDirectoryPage | null;
   readonly busy: boolean;
   readonly open: boolean;
-  readonly gateway: FilesystemGateway;
+  readonly gateway: FilesystemDirectoryGateway;
   readonly onClose: () => void;
   readonly onRefresh: () => void;
 }

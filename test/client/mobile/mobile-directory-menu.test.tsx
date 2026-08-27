@@ -20,7 +20,11 @@ import { MobileDirectory } from "@client/components/mobile/filesystem/mobile-dir
 import { FOLDER_PROPERTIES_COPY } from "@client/constants/filesystem/details";
 import { FILESYSTEM_SORT_COPY } from "@client/constants/filesystem/sort";
 import { MOBILE_COPY } from "@client/constants/shared/mobile";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
+import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
+
+type DirectoryGateway = FilesystemDirectoryGateway &
+  Pick<FilesystemContentGateway, "thumbnailUrl">;
 
 describe("mobile directory menu", () => {
   it("shows details for the current folder and refreshes them", async () => {
@@ -129,7 +133,7 @@ describe("mobile directory menu", () => {
   });
 });
 
-function DirectoryHarness({ gateway }: { readonly gateway: FilesystemGateway }) {
+function DirectoryHarness({ gateway }: { readonly gateway: DirectoryGateway }) {
   const [revision, setRevision] = useState(0);
   const [menuOpen, setMenuOpen] = useState(true);
   return (
@@ -148,8 +152,8 @@ function DirectoryHarness({ gateway }: { readonly gateway: FilesystemGateway }) 
 }
 
 function directoryGateway(
-  overrides: Partial<FilesystemGateway> = {},
-): FilesystemGateway {
+  overrides: Partial<DirectoryGateway> = {},
+): DirectoryGateway {
   return {
     listDirectory: vi.fn(async () =>
       directoryPage(DEFAULT_FILESYSTEM_DIRECTORY_SORT),
@@ -158,7 +162,7 @@ function directoryGateway(
     getDirectoryDetails: vi.fn(async () => directoryDetails()),
     thumbnailUrl: (id: string) => `/thumbnail/${id}`,
     ...overrides,
-  } as unknown as FilesystemGateway;
+  };
 }
 
 function directoryPage(

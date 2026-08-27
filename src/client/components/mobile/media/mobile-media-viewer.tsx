@@ -5,7 +5,8 @@ import { MobileActivity } from "@client/components/mobile/shared/mobile-activity
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
 import { useHorizontalImageSwipe } from "@client/hooks/media/use-horizontal-image-swipe";
 import { useMediaDirectory } from "@client/hooks/media/use-media-directory";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
+import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
 import { downloadFile } from "@client/utils/download-file";
 
 interface MobileMediaViewerProps {
@@ -13,7 +14,8 @@ interface MobileMediaViewerProps {
   readonly kind: MediaKind;
   readonly directoryId: string;
   readonly filesystemRevision: number;
-  readonly gateway: FilesystemGateway;
+  readonly gateway: Pick<FilesystemDirectoryGateway, "listDirectory"> &
+    Pick<FilesystemContentGateway, "downloadUrl" | "contentUrl">;
   readonly onChangeFile: (file: FilesystemFileEntry) => void;
 }
 

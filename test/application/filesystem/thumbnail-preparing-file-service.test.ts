@@ -5,13 +5,13 @@ import { BACKGROUND_TASK_FAILURE_CODE } from "@/constants/platform/background-ta
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import type { BackgroundTaskScheduler } from "@/types/platform/runtime";
 import type { ThumbnailPreparer } from "@/types/filesystem/thumbnail";
+import { MemoryFileRepository } from "@test/support/filesystem/memory-filesystem-repository";
+import { MemoryObjectStorage } from "@test/support/filesystem/memory-object-storage";
 import {
-  MemoryFileRepository,
-  MemoryObjectStorage,
   SequenceIdGenerator,
   StaticClock,
   streamFromText,
-} from "@test/support/fakes";
+} from "@test/support/platform/runtime-fakes";
 
 const NOW = Date.parse("2026-08-23T00:00:00.000Z");
 

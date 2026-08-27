@@ -7,14 +7,13 @@ import {
   WINDOW_STATE,
 } from "@/constants/widgets/widget";
 import { WIDGET_ERRORS } from "@/constants/widgets/errors/widget";
+import { MemoryFileRepository } from "@test/support/filesystem/memory-filesystem-repository";
+import { SequenceIdGenerator, StaticClock } from "@test/support/platform/runtime-fakes";
+import { MemoryChecklistRepository } from "@test/support/widgets/memory-checklist-repository";
 import {
-  MemoryChecklistRepository,
-  MemoryFileRepository,
   MemoryMemoRepository,
   MemoryWidgetLayoutRepository,
-  StaticClock,
-  SequenceIdGenerator,
-} from "@test/support/fakes";
+} from "@test/support/widgets/memory-widget-repositories";
 
 const MEMO_WINDOW_POLICY = WIDGET_WINDOW_POLICY[WIDGET_TYPE.MEMO];
 const NOW = Date.parse("2026-08-20T01:00:00.000Z");

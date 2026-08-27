@@ -15,7 +15,7 @@ import type {
   DatabaseStorageUsage,
   ObjectStorageUsage,
 } from "@/types/storage/storage-status";
-import { StaticClock } from "@test/support/fakes";
+import { StaticClock } from "@test/support/platform/runtime-fakes";
 
 const NOW = Date.parse("2026-08-23T12:34:56.789Z");
 

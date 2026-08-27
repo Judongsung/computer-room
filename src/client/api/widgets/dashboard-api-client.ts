@@ -3,11 +3,7 @@ import {
   API_PATH_SEGMENTS,
   API_QUERY_PARAMETERS,
 } from "@/constants/platform/api";
-import {
-  HTTP_HEADERS,
-  HTTP_MEDIA_TYPE,
-  HTTP_METHOD,
-} from "@/constants/platform/http";
+import { HTTP_METHOD } from "@/constants/platform/http";
 import {
   isChecklistItem,
   isChecklistLogPage,
@@ -30,15 +26,16 @@ import type {
   FilesystemWidgetEntry,
   SaveWidgetFileInput,
 } from "@/types/filesystem/filesystem";
-import { API_REQUEST_OPTIONS } from "@client/constants/shared/api";
 import { CLIENT_ERRORS } from "@client/constants/shared/errors";
 import { ClientError } from "@client/errors/client-error";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import { isWidgetEntry } from "@client/api/filesystem/filesystem-api-contract";
+import { isRecord } from "@client/api/shared/api-contract";
+import { jsonRequest, requestJson } from "@client/api/shared/api-request";
 
 export class DashboardApiClient implements DashboardGateway {
   async getSession(): Promise<SessionInfo> {
-    const value = await this.requestJson(API_PATHS.SESSION);
+    const value = await requestJson(API_PATHS.SESSION);
     if (!isSessionInfo(value)) {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
     }
@@ -46,7 +43,7 @@ export class DashboardApiClient implements DashboardGateway {
   }
 
   async listWidgets(): Promise<DashboardWidget[]> {
-    const value = await this.requestJson(API_PATHS.WIDGETS);
+    const value = await requestJson(API_PATHS.WIDGETS);
     if (!isDashboardWidgetCollection(value)) {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
     }
@@ -56,7 +53,7 @@ export class DashboardApiClient implements DashboardGateway {
   async replaceWidgets(
     widgets: readonly WidgetLayout[],
   ): Promise<DashboardWidget[]> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       API_PATHS.WIDGETS,
       jsonRequest(HTTP_METHOD.PUT, { items: widgets }),
     );
@@ -67,7 +64,7 @@ export class DashboardApiClient implements DashboardGateway {
   }
 
   async createWidget(input: CreateWidgetInput): Promise<DashboardWidget> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       API_PATHS.WIDGETS,
       jsonRequest(HTTP_METHOD.POST, input),
     );
@@ -78,7 +75,7 @@ export class DashboardApiClient implements DashboardGateway {
     widgetId: string,
     input: SaveWidgetFileInput,
   ): Promise<{ widget: DashboardWidget; entry: FilesystemWidgetEntry }> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       `${widgetPath(widgetId)}/${API_PATH_SEGMENTS.FILE}`,
       jsonRequest(HTTP_METHOD.POST, {
         parentId: input.parentId,
@@ -102,7 +99,7 @@ export class DashboardApiClient implements DashboardGateway {
   }
 
   async openWidget(widgetId: string): Promise<DashboardWidget> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       `${widgetPath(widgetId)}/${API_PATH_SEGMENTS.OPEN}`,
       { method: HTTP_METHOD.POST },
     );
@@ -110,19 +107,19 @@ export class DashboardApiClient implements DashboardGateway {
   }
 
   async closeWidget(widgetId: string): Promise<void> {
-    await this.requestJson(`${widgetPath(widgetId)}/${API_PATH_SEGMENTS.CLOSE}`, {
+    await requestJson(`${widgetPath(widgetId)}/${API_PATH_SEGMENTS.CLOSE}`, {
       method: HTTP_METHOD.POST,
     });
   }
 
   async discardWidget(widgetId: string): Promise<void> {
-    await this.requestJson(widgetPath(widgetId), {
+    await requestJson(widgetPath(widgetId), {
       method: HTTP_METHOD.DELETE,
     });
   }
 
   async updateMemo(widgetId: string, markdown: string): Promise<MemoData> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       memoPath(widgetId),
       jsonRequest(HTTP_METHOD.PUT, { markdown }),
     );
@@ -133,7 +130,7 @@ export class DashboardApiClient implements DashboardGateway {
   }
 
   async getChecklist(widgetId: string): Promise<DailyChecklistData> {
-    const value = await this.requestJson(checklistPath(widgetId));
+    const value = await requestJson(checklistPath(widgetId));
     if (!isDailyChecklistData(value)) {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
     }
@@ -144,7 +141,7 @@ export class DashboardApiClient implements DashboardGateway {
     widgetId: string,
     label: string,
   ): Promise<ChecklistItem> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       checklistItemsPath(widgetId),
       jsonRequest(HTTP_METHOD.POST, { label }),
     );
@@ -156,7 +153,7 @@ export class DashboardApiClient implements DashboardGateway {
     itemId: string,
     label: string,
   ): Promise<ChecklistItem> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       checklistItemPath(widgetId, itemId),
       jsonRequest(HTTP_METHOD.PUT, { label }),
     );
@@ -167,7 +164,7 @@ export class DashboardApiClient implements DashboardGateway {
     widgetId: string,
     itemId: string,
   ): Promise<void> {
-    await this.requestJson(checklistItemPath(widgetId, itemId), {
+    await requestJson(checklistItemPath(widgetId, itemId), {
       method: HTTP_METHOD.DELETE,
     });
   }
@@ -177,7 +174,7 @@ export class DashboardApiClient implements DashboardGateway {
     itemId: string,
     checked: boolean,
   ): Promise<ChecklistItem> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       `${checklistItemPath(widgetId, itemId)}/${API_PATH_SEGMENTS.CHECK}`,
       jsonRequest(HTTP_METHOD.PUT, { checked }),
     );
@@ -191,7 +188,7 @@ export class DashboardApiClient implements DashboardGateway {
     const query = new URLSearchParams({
       [API_QUERY_PARAMETERS.OFFSET]: String(offset),
     });
-    const value = await this.requestJson(
+    const value = await requestJson(
       `${checklistPath(widgetId)}/${API_PATH_SEGMENTS.LOGS}?${query}`,
     );
     if (!isChecklistLogPage(value)) {
@@ -200,33 +197,6 @@ export class DashboardApiClient implements DashboardGateway {
     return value;
   }
 
-  private async requestJson(
-    url: string,
-    options: RequestInit = {},
-  ): Promise<unknown> {
-    const response = await fetch(url, {
-      credentials: API_REQUEST_OPTIONS.CREDENTIALS,
-      ...options,
-    });
-    const payload = await response.json().catch(() => null);
-
-    if (!response.ok) {
-      const error = readApiError(payload);
-      throw new ApiError(error.code, error.message, response.status);
-    }
-
-    return payload;
-  }
-}
-
-function jsonRequest(method: string, body: unknown): RequestInit {
-  return {
-    method,
-    headers: {
-      [HTTP_HEADERS.CONTENT_TYPE]: HTTP_MEDIA_TYPE.JSON,
-    },
-    body: JSON.stringify(body),
-  };
 }
 
 function memoPath(widgetId: string): string {
@@ -263,17 +233,6 @@ function readWidgetEnvelope(value: unknown): DashboardWidget {
   return value.widget;
 }
 
-export class ApiError extends ClientError {
-  constructor(
-    code: string,
-    message: string,
-    readonly status: number,
-  ) {
-    super({ code, message });
-    this.name = "ApiError";
-  }
-}
-
 function isSessionInfo(value: unknown): value is SessionInfo {
   if (!isRecord(value) || !isRecord(value.filePolicy)) {
     return false;
@@ -284,24 +243,4 @@ function isSessionInfo(value: unknown): value is SessionInfo {
     typeof value.logoutUrl === "string" &&
     typeof value.filePolicy.maxUploadSizeBytes === "number"
   );
-}
-
-function readApiError(value: unknown): { code: string; message: string } {
-  if (
-    isRecord(value) &&
-    isRecord(value.error) &&
-    typeof value.error.code === "string" &&
-    typeof value.error.message === "string"
-  ) {
-    return { code: value.error.code, message: value.error.message };
-  }
-
-  return {
-    code: CLIENT_ERRORS.REQUEST_FAILED.code,
-    message: CLIENT_ERRORS.REQUEST_FAILED.message,
-  };
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }

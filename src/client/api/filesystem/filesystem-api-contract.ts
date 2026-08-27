@@ -14,7 +14,7 @@ import type {
   FilesystemTrashPage,
   FilesystemWidgetEntry,
 } from "@/types/filesystem/filesystem";
-import { CLIENT_ERRORS } from "@client/constants/shared/errors";
+import { isRecord } from "@client/api/shared/api-contract";
 
 export function isDirectoryPage(value: unknown): value is FilesystemDirectoryPage {
   return isRecord(value) && isDirectoryEntry(value.directory) &&
@@ -94,18 +94,6 @@ export function isDownloadManifest(value: unknown): value is FilesystemDownloadM
         entry.downloadUrl === `${API_PATHS.FILES}/${encodeURIComponent(entry.id)}/download`;
     }) && isNonNegativeInteger(value.totalFileCount) && isNonNegativeInteger(value.totalBytes) &&
     Array.isArray(value.skippedWidgetIds) && value.skippedWidgetIds.every(isString);
-}
-
-export function readApiError(value: unknown): { code: string; message: string } {
-  if (isRecord(value) && isRecord(value.error) &&
-    typeof value.error.code === "string" && typeof value.error.message === "string") {
-    return { code: value.error.code, message: value.error.message };
-  }
-  return CLIENT_ERRORS.REQUEST_FAILED;
-}
-
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
 
 function isBaseEntry(value: unknown): value is Record<string, unknown> & {

@@ -36,16 +36,14 @@ import {
   isFileEntry,
   isFilesystemEntry,
   isMutationResult,
-  isRecord,
   isTrashPage,
-  readApiError,
 } from "@client/api/filesystem/filesystem-api-contract";
 import {
   appendPlacementQuery,
-  jsonRequest,
   placementBody,
 } from "@client/api/filesystem/filesystem-api-request";
-import { API_REQUEST_OPTIONS } from "@client/constants/shared/api";
+import { isRecord } from "@client/api/shared/api-contract";
+import { jsonRequest, requestJson } from "@client/api/shared/api-request";
 import { CLIENT_ERRORS } from "@client/constants/shared/errors";
 import { ClientError } from "@client/errors/client-error";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
@@ -72,7 +70,7 @@ export class FilesystemApiClient implements FilesystemGateway {
     if (parentId) {
       query.set(API_QUERY_PARAMETERS.PARENT_ID, parentId);
     }
-    const value = await this.requestJson(`${FILESYSTEM_ENTRIES_PATH}?${query}`);
+    const value = await requestJson(`${FILESYSTEM_ENTRIES_PATH}?${query}`);
     if (!isDirectoryPage(value)) {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
     }
@@ -84,7 +82,7 @@ export class FilesystemApiClient implements FilesystemGateway {
     name: string,
     desktopPlacement?: DesktopPlacement,
   ): Promise<FilesystemDirectoryEntry> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       FILESYSTEM_DIRECTORIES_PATH,
       jsonRequest(HTTP_METHOD.POST, {
         parentId,
@@ -101,7 +99,7 @@ export class FilesystemApiClient implements FilesystemGateway {
   async getDirectoryDetails(
     directoryId: string,
   ): Promise<FilesystemDirectoryDetails> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       `${FILESYSTEM_DIRECTORIES_PATH}/${encodeURIComponent(directoryId)}/${API_PATH_SEGMENTS.DETAILS}`,
     );
     if (!isRecord(value) || !isDirectoryDetails(value.details)) {
@@ -114,7 +112,7 @@ export class FilesystemApiClient implements FilesystemGateway {
     directoryId: string,
     sort: FilesystemDirectorySort,
   ): Promise<FilesystemDirectorySort> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       `${FILESYSTEM_DIRECTORIES_PATH}/${encodeURIComponent(directoryId)}/${API_PATH_SEGMENTS.SORT}`,
       jsonRequest(HTTP_METHOD.PUT, sort),
     );
@@ -134,7 +132,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       [API_QUERY_PARAMETERS.FILE_NAME]: file.name,
     });
     appendPlacementQuery(query, desktopPlacement);
-    const value = await this.requestJson(`${API_PATHS.FILES}?${query}`, {
+    const value = await requestJson(`${API_PATHS.FILES}?${query}`, {
       method: HTTP_METHOD.POST,
       headers: {
         [HTTP_HEADERS.CONTENT_TYPE]: file.type || DEFAULT_CONTENT_TYPE,
@@ -152,7 +150,7 @@ export class FilesystemApiClient implements FilesystemGateway {
     id: string,
     input: UpdateFilesystemEntryInput,
   ): Promise<FilesystemEntry> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       `${FILESYSTEM_ENTRIES_PATH}/${encodeURIComponent(id)}`,
       jsonRequest(HTTP_METHOD.PATCH, input),
     );
@@ -166,7 +164,7 @@ export class FilesystemApiClient implements FilesystemGateway {
     id: string,
     input: MoveFilesystemEntryInput,
   ): Promise<FilesystemEntry> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       `${FILESYSTEM_ENTRIES_PATH}/${encodeURIComponent(id)}/${API_PATH_SEGMENTS.MOVE}`,
       jsonRequest(HTTP_METHOD.POST, {
         parentId: input.parentId,
@@ -183,7 +181,7 @@ export class FilesystemApiClient implements FilesystemGateway {
     ids: readonly string[],
     input: MoveFilesystemEntryInput,
   ): Promise<FilesystemBatchResult> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       FILESYSTEM_BATCH_MOVE_PATH,
       jsonRequest(HTTP_METHOD.POST, {
         entryIds: ids,
@@ -198,7 +196,7 @@ export class FilesystemApiClient implements FilesystemGateway {
   }
 
   async trashEntry(id: string): Promise<FilesystemMutationResult> {
-    const value = await this.requestJson(`${FILESYSTEM_ENTRIES_PATH}/${encodeURIComponent(id)}`, {
+    const value = await requestJson(`${FILESYSTEM_ENTRIES_PATH}/${encodeURIComponent(id)}`, {
       method: HTTP_METHOD.DELETE,
     });
     if (!isMutationResult(value)) {
@@ -214,7 +212,7 @@ export class FilesystemApiClient implements FilesystemGateway {
   async createDownloadManifest(
     ids: readonly string[],
   ): Promise<FilesystemDownloadManifest> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       FILESYSTEM_DOWNLOAD_MANIFEST_PATH,
       jsonRequest(HTTP_METHOD.POST, { entryIds: ids }),
     );
@@ -240,7 +238,7 @@ export class FilesystemApiClient implements FilesystemGateway {
     const query = new URLSearchParams({
       [API_QUERY_PARAMETERS.OFFSET]: String(offset),
     });
-    const value = await this.requestJson(`${FILESYSTEM_TRASH_PATH}?${query}`);
+    const value = await requestJson(`${FILESYSTEM_TRASH_PATH}?${query}`);
     if (!isTrashPage(value)) {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
     }
@@ -251,7 +249,7 @@ export class FilesystemApiClient implements FilesystemGateway {
     id: string,
     input: RestoreFilesystemEntryInput = {},
   ): Promise<FilesystemEntry> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       `${FILESYSTEM_TRASH_PATH}/${encodeURIComponent(id)}/${API_PATH_SEGMENTS.RESTORE}`,
       jsonRequest(HTTP_METHOD.POST, {
         ...(input.parentId === undefined ? {} : { parentId: input.parentId }),
@@ -268,7 +266,7 @@ export class FilesystemApiClient implements FilesystemGateway {
     ids: readonly string[],
     input: RestoreFilesystemEntryInput = {},
   ): Promise<FilesystemBatchResult> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       FILESYSTEM_BATCH_RESTORE_PATH,
       jsonRequest(HTTP_METHOD.POST, {
         entryIds: ids,
@@ -283,7 +281,7 @@ export class FilesystemApiClient implements FilesystemGateway {
   }
 
   async permanentlyDeleteEntry(id: string): Promise<void> {
-    await this.requestJson(`${FILESYSTEM_TRASH_PATH}/${encodeURIComponent(id)}`, {
+    await requestJson(`${FILESYSTEM_TRASH_PATH}/${encodeURIComponent(id)}`, {
       method: HTTP_METHOD.DELETE,
     });
   }
@@ -295,38 +293,16 @@ export class FilesystemApiClient implements FilesystemGateway {
   }
 
   async emptyTrash(): Promise<void> {
-    await this.requestJson(FILESYSTEM_TRASH_PATH, {
+    await requestJson(FILESYSTEM_TRASH_PATH, {
       method: HTTP_METHOD.DELETE,
     });
-  }
-
-  private async requestJson(
-    url: string,
-    options: RequestInit = {},
-  ): Promise<unknown> {
-    const response = await fetch(url, {
-      credentials: API_REQUEST_OPTIONS.CREDENTIALS,
-      ...options,
-    });
-    if (response.status === 204) {
-      if (!response.ok) {
-        throw new ClientError(CLIENT_ERRORS.REQUEST_FAILED);
-      }
-      return null;
-    }
-    const payload = await response.json().catch(() => null);
-    if (!response.ok) {
-      const error = readApiError(payload);
-      throw new FilesystemApiError(error.code, error.message, response.status);
-    }
-    return payload;
   }
 
   private async requestBatch(
     path: string,
     ids: readonly string[],
   ): Promise<FilesystemBatchResult> {
-    const value = await this.requestJson(
+    const value = await requestJson(
       path,
       jsonRequest(HTTP_METHOD.POST, { entryIds: ids }),
     );
@@ -334,12 +310,5 @@ export class FilesystemApiClient implements FilesystemGateway {
       throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
     }
     return value;
-  }
-}
-
-export class FilesystemApiError extends ClientError {
-  constructor(code: string, message: string, readonly status: number) {
-    super({ code, message });
-    this.name = "FilesystemApiError";
   }
 }

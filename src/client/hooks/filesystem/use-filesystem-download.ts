@@ -14,7 +14,7 @@ import {
   createFilesystemArchiveStream,
   FilesystemArchiveFileError,
 } from "@client/domain/filesystem/archive";
-import type { FilesystemDownloadGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemDownloadGateway } from "@client/types/filesystem/ports/transfer";
 import type {
   BrowserSaveFilePicker,
   FilesystemDownloadState,

@@ -5,7 +5,8 @@ import {
   LAYOUT_SAVE_DEBOUNCE_MILLISECONDS,
   LAYOUT_SAVE_STATUS,
 } from "@client/constants/desktop/layout-save";
-import type { DashboardGateway } from "@client/types/widgets/api";
+import type { WidgetLayoutGateway } from "@client/types/widgets/ports/layout";
+import { messageFromError } from "@client/errors/error-message";
 import type {
   LayoutSaveStatus,
   WidgetLayoutAutoSaveController,
@@ -13,7 +14,7 @@ import type {
 } from "@client/types/widgets/dashboard";
 
 export function useWidgetLayoutAutoSave(
-  api: DashboardGateway,
+  api: WidgetLayoutGateway,
   options: WidgetLayoutAutoSaveOptions,
 ): WidgetLayoutAutoSaveController {
   const [status, setStatus] = useState<LayoutSaveStatus>(
@@ -56,7 +57,7 @@ export function useWidgetLayoutAutoSave(
       isSaving.current = false;
       latestSnapshot.current ??= snapshot;
       setStatus(LAYOUT_SAVE_STATUS.ERROR);
-      setError(errorMessage(saveError, options.fallbackErrorMessage));
+      setError(messageFromError(saveError, options.fallbackErrorMessage));
     }
   }, [api, options]);
 
@@ -116,8 +117,4 @@ export function useWidgetLayoutAutoSave(
     forget,
     retry,
   };
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }

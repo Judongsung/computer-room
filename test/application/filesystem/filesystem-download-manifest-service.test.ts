@@ -11,11 +11,13 @@ import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import {
   MemoryDirectorySortRepository,
   MemoryFileRepository,
-  MemoryObjectStorage,
+} from "@test/support/filesystem/memory-filesystem-repository";
+import { MemoryObjectStorage } from "@test/support/filesystem/memory-object-storage";
+import {
   SequenceIdGenerator,
   StaticClock,
   streamFromText,
-} from "@test/support/fakes";
+} from "@test/support/platform/runtime-fakes";
 
 describe("FilesystemDownloadManifestService", () => {
   it("preserves nested and empty folders, Korean names, and excludes widgets", async () => {

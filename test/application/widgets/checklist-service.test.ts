@@ -7,12 +7,9 @@ import {
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
 } from "@/constants/widgets/widget";
-import {
-  MemoryChecklistRepository,
-  MemoryWidgetLayoutRepository,
-  SequenceIdGenerator,
-  StaticClock,
-} from "@test/support/fakes";
+import { SequenceIdGenerator, StaticClock } from "@test/support/platform/runtime-fakes";
+import { MemoryChecklistRepository } from "@test/support/widgets/memory-checklist-repository";
+import { MemoryWidgetLayoutRepository } from "@test/support/widgets/memory-widget-repositories";
 
 const WIDGET_ID = "00000000-0000-4000-8000-000000000101";
 const ITEM_ID = "00000000-0000-4000-8000-000000000102";

@@ -5,7 +5,7 @@ import type { FilesystemDirectoryEntry } from "@/types/filesystem/filesystem";
 import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
 import { FILESYSTEM_DOWNLOAD_STATUS } from "@client/constants/filesystem/download";
 import { useFilesystemDownload } from "@client/hooks/filesystem/use-filesystem-download";
-import type { FilesystemDownloadGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemDownloadGateway } from "@client/types/filesystem/ports/transfer";
 
 const UPDATED_AT = "2026-08-23T01:00:00.000Z";
 const DIRECTORY: FilesystemDirectoryEntry = {

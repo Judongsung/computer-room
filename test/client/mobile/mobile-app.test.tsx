@@ -25,6 +25,8 @@ import type { StorageStatusGateway } from "@client/types/storage/storage-status"
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { WidgetFileGateway } from "@client/types/widgets/widget-file";
 import type { MobilePreferencesGateway } from "@client/types/platform/mobile-preferences";
+import { FakeFilesystemGateway } from "@test/support/filesystem/fake-filesystem-gateway";
+import { FakeDashboardGateway } from "@test/support/widgets/fake-dashboard-gateway";
 
 const SESSION: SessionInfo = {
   email: "owner@example.com",
@@ -100,16 +102,19 @@ describe("mobile application", () => {
     const document = widgetDocument(entry);
     const getWidgetFile = vi.fn(async () => document);
     const openWidget = vi.fn();
-    const dashboard = {
-      ...dashboardGateway(),
-      openWidget,
-    } as unknown as DashboardGateway;
+    const dashboard = dashboardGateway();
+    dashboard.openWidget = openWidget;
     const user = userEvent.setup();
 
     renderMobile({
       dashboard,
       filesystem: filesystemGateway([entry]),
-      widgetFileApi: { getWidgetFile } as unknown as WidgetFileGateway,
+      widgetFileApi: {
+        getWidgetFile,
+        createWidgetFile: vi.fn(async () => {
+          throw new Error("Unexpected widget file creation.");
+        }),
+      },
     });
 
     await user.click(await screen.findByRole("button", { name: entry.name }));
@@ -304,7 +309,7 @@ describe("mobile application", () => {
 function renderMobile({
   dashboard,
   filesystem = filesystemGateway(),
-  widgetFileApi = {} as WidgetFileGateway,
+  widgetFileApi = widgetFileGateway(),
   mobilePreferencesApi = mobilePreferencesGateway(),
 }: {
   readonly dashboard: DashboardGateway;
@@ -317,7 +322,7 @@ function renderMobile({
       interfaceMode={CLIENT_INTERFACE_MODE.MOBILE}
       api={dashboard}
       filesystemApi={filesystem}
-      storageStatusApi={{ getStatus: vi.fn() } as unknown as StorageStatusGateway}
+      storageStatusApi={storageStatusGateway()}
       widgetFileApi={widgetFileApi}
       mobilePreferencesApi={mobilePreferencesApi}
     />,
@@ -327,29 +332,48 @@ function renderMobile({
 function dashboardGateway(
   listWidgets = vi.fn(async () => []),
 ): DashboardGateway {
-  return {
-    getSession: vi.fn(async () => SESSION),
-    listWidgets,
-  } as unknown as DashboardGateway;
+  const gateway = new FakeDashboardGateway();
+  gateway.getSession = vi.fn(async () => SESSION);
+  gateway.listWidgets = listWidgets;
+  return gateway;
 }
 
 function filesystemGateway(
   desktopEntries?: readonly FilesystemEntry[],
 ): FilesystemGateway {
   const picture = pictureEntry();
-  return {
-    listDirectory: vi.fn(async (parentId = FILESYSTEM_ROOT_ID.DOCUMENTS) =>
+  const gateway = new FakeFilesystemGateway();
+  gateway.listDirectory = vi.fn(async (parentId = FILESYSTEM_ROOT_ID.DOCUMENTS) =>
       directoryPage(
         parentId,
         parentId === FILESYSTEM_ROOT_ID.DESKTOP
           ? (desktopEntries ?? [picture])
           : [],
       ),
-    ),
-    thumbnailUrl: (id: string) => `/thumbnail/${id}`,
-    contentUrl: (id: string) => `/content/${id}`,
-    downloadUrl: (id: string) => `/download/${id}`,
-  } as unknown as FilesystemGateway;
+    );
+  gateway.thumbnailUrl = (id: string) => `/thumbnail/${id}`;
+  gateway.contentUrl = (id: string) => `/content/${id}`;
+  gateway.downloadUrl = (id: string) => `/download/${id}`;
+  return gateway;
+}
+
+function storageStatusGateway(): StorageStatusGateway {
+  return {
+    getStatus: vi.fn(async () => {
+      throw new Error("Unexpected storage status request.");
+    }),
+  };
+}
+
+function widgetFileGateway(): WidgetFileGateway {
+  return {
+    getWidgetFile: vi.fn(async () => {
+      throw new Error("Unexpected widget file read.");
+    }),
+    createWidgetFile: vi.fn(async () => {
+      throw new Error("Unexpected widget file creation.");
+    }),
+  };
 }
 
 function mobilePreferencesGateway(): MobilePreferencesGateway {

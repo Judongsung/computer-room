@@ -12,7 +12,9 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "@/constants/filesystem/filesystem";
-import { MemoryFileRepository, MemoryObjectStorage, streamFromText } from "@test/support/fakes";
+import { MemoryFileRepository } from "@test/support/filesystem/memory-filesystem-repository";
+import { MemoryObjectStorage } from "@test/support/filesystem/memory-object-storage";
+import { streamFromText } from "@test/support/platform/runtime-fakes";
 
 const TEST_FILE = {
   ID: "fixed-id",

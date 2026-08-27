@@ -7,10 +7,11 @@ import {
   MEDIA_NAVIGATION_INITIAL_OFFSET,
   MEDIA_VIEWER_COPY,
 } from "@client/constants/media/media";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
+import { messageFromError } from "@client/errors/error-message";
 
 export function useMediaDirectory(
-  gateway: FilesystemGateway,
+  gateway: Pick<FilesystemDirectoryGateway, "listDirectory">,
   directoryId: string,
   filesystemRevision: number,
   mediaKind?: MediaKind,
@@ -30,9 +31,7 @@ export function useMediaDirectory(
       .catch((reason: unknown) => {
         if (active) {
           setError(
-            reason instanceof Error && reason.message
-              ? reason.message
-              : MEDIA_VIEWER_COPY.NAVIGATION_FAILED,
+            messageFromError(reason, MEDIA_VIEWER_COPY.NAVIGATION_FAILED),
           );
         }
       })
@@ -48,7 +47,7 @@ export function useMediaDirectory(
 }
 
 async function loadAllMedia(
-  gateway: FilesystemGateway,
+  gateway: Pick<FilesystemDirectoryGateway, "listDirectory">,
   directoryId: string,
   mediaKind?: MediaKind,
 ): Promise<readonly FilesystemFileEntry[]> {

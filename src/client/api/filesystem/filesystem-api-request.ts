@@ -1,14 +1,5 @@
 import { API_QUERY_PARAMETERS } from "@/constants/platform/api";
-import { HTTP_HEADERS, HTTP_MEDIA_TYPE } from "@/constants/platform/http";
 import type { DesktopPlacement } from "@/types/filesystem/filesystem";
-
-export function jsonRequest(method: string, body: unknown): RequestInit {
-  return {
-    method,
-    headers: { [HTTP_HEADERS.CONTENT_TYPE]: HTTP_MEDIA_TYPE.JSON },
-    body: JSON.stringify(body),
-  };
-}
 
 export function placementBody(placement?: DesktopPlacement): Record<string, number> {
   return placement ? {

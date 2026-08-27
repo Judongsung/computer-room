@@ -10,9 +10,8 @@ import type { DirectoryDetailsRepository } from "@/types/filesystem/directory-de
 import {
   MemoryDirectorySortRepository,
   MemoryFileRepository,
-  SequenceIdGenerator,
-  StaticClock,
-} from "@test/support/fakes";
+} from "@test/support/filesystem/memory-filesystem-repository";
+import { SequenceIdGenerator, StaticClock } from "@test/support/platform/runtime-fakes";
 
 const NOW = Date.parse("2026-08-25T01:02:03.000Z");
 

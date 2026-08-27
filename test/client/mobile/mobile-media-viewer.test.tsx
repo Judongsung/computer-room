@@ -14,7 +14,11 @@ import type {
 } from "@/types/filesystem/filesystem";
 import { MobileMediaViewer } from "@client/components/mobile/media/mobile-media-viewer";
 import { MEDIA_VIEWER_COPY } from "@client/constants/media/media";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
+import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
+
+type MediaGateway = Pick<FilesystemDirectoryGateway, "listDirectory"> &
+  Pick<FilesystemContentGateway, "downloadUrl" | "contentUrl">;
 
 const FIRST_IMAGE = file("image-1", "첫 이미지", "image/png");
 const CURRENT_IMAGE = file("image-2", "두 번째 이미지", "image/webp");
@@ -140,7 +144,7 @@ describe("MobileMediaViewer", () => {
       listDirectory: vi.fn(async () => {
         throw new Error(MEDIA_VIEWER_COPY.NAVIGATION_FAILED);
       }),
-    } as unknown as FilesystemGateway;
+    } satisfies MediaGateway;
     render(
       <MobileMediaViewer
         file={CURRENT_IMAGE}
@@ -159,7 +163,7 @@ describe("MobileMediaViewer", () => {
   });
 });
 
-function ImageViewerHarness({ gateway }: { readonly gateway: FilesystemGateway }) {
+function ImageViewerHarness({ gateway }: { readonly gateway: MediaGateway }) {
   const [current, setCurrent] = useState(CURRENT_IMAGE);
   return (
     <MobileMediaViewer
@@ -175,7 +179,7 @@ function ImageViewerHarness({ gateway }: { readonly gateway: FilesystemGateway }
 
 function mediaGateway(
   contentUrl = vi.fn((id: string) => `/content/${id}`),
-): FilesystemGateway {
+): MediaGateway {
   return {
     listDirectory: vi.fn(async (_parentId?: string, offset = 0) =>
       offset === 0
@@ -187,7 +191,7 @@ function mediaGateway(
     ),
     contentUrl,
     downloadUrl: (id: string) => `/download/${id}`,
-  } as unknown as FilesystemGateway;
+  };
 }
 
 function directoryPage(

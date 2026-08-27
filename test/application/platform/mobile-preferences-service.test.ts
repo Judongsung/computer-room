@@ -8,7 +8,7 @@ import {
 import { MOBILE_PREFERENCES_ERRORS } from "@/constants/platform/errors/mobile-preferences";
 import type { NewFilesystemFile } from "@/types/filesystem/filesystem";
 import type { MobilePreferencesRepository } from "@/types/platform/mobile-preferences";
-import { MemoryFileRepository } from "@test/support/fakes";
+import { MemoryFileRepository } from "@test/support/filesystem/memory-filesystem-repository";
 
 const NOW = 1_700_000_000_000;
 

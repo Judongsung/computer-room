@@ -7,13 +7,13 @@ import { NOVELAI_ERRORS } from "@/constants/integrations/errors/novelai";
 import { FILE_OBJECT_KEY_PREFIX } from "@/constants/filesystem/file";
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { novelAiImageFileName } from "@/domain/integrations/novelai-image";
+import { MemoryFileRepository } from "@test/support/filesystem/memory-filesystem-repository";
+import { MemoryObjectStorage } from "@test/support/filesystem/memory-object-storage";
 import {
-  MemoryFileRepository,
-  MemoryObjectStorage,
   SequenceIdGenerator,
   StaticClock,
   streamFromText,
-} from "@test/support/fakes";
+} from "@test/support/platform/runtime-fakes";
 
 const KOREA_MIDNIGHT = Date.parse("2026-08-21T15:00:00.123Z");
 const IMAGE_BODY = "png";

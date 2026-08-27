@@ -4,7 +4,7 @@ import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
 import { FOLDER_PROPERTIES_STATUS } from "@client/constants/filesystem/details";
 import { useFolderProperties } from "@client/hooks/filesystem/use-folder-properties";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 
 const DETAILS: FilesystemDirectoryDetails = {
   directory: {
@@ -30,7 +30,7 @@ describe("useFolderProperties", () => {
   it("loads details and refreshes the currently open folder", async () => {
     const getDirectoryDetails = vi.fn(async () => DETAILS);
     const { result } = renderHook(() =>
-      useFolderProperties({ getDirectoryDetails } as unknown as FilesystemGateway),
+      useFolderProperties({ getDirectoryDetails }),
     );
 
     act(() => result.current.open({ id: "folder", name: "사진" }));
@@ -51,7 +51,7 @@ describe("useFolderProperties", () => {
     });
     const gateway = {
       getDirectoryDetails: vi.fn(() => pending),
-    } as unknown as FilesystemGateway;
+    } satisfies Pick<FilesystemDirectoryGateway, "getDirectoryDetails">;
     const { result } = renderHook(() => useFolderProperties(gateway));
 
     act(() => result.current.open({ id: "folder", name: "사진" }));

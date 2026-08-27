@@ -7,7 +7,7 @@ import { CHECKLIST_WIDGET_COPY } from "@client/constants/widgets/content";
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import { XP_WINDOW_CONTROL_ACTION } from "@client/constants/shared/xp";
-import type { DashboardGateway } from "@client/types/widgets/api";
+import type { ChecklistGateway } from "@client/types/widgets/ports/checklist";
 import { XpWindowFrame } from "@client/components/desktop/xp-window-frame";
 import { XpWindowControlButton } from "@client/components/shared/xp-window-control-button";
 
@@ -28,7 +28,7 @@ const CHECKLIST_EVENT_LABEL_BY_ACTION = {
 
 interface ChecklistLogDialogProps {
   readonly widgetId: string;
-  readonly gateway: DashboardGateway;
+  readonly gateway: ChecklistGateway;
   readonly onClose: () => void;
 }
 
