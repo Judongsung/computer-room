@@ -11,6 +11,4 @@ export const SOURCE_STRUCTURE_REVIEW_ALLOWLIST = new Map([
   ["src/client/components/filesystem/documents-window.tsx", "Explorer commands share one selection and dialog transaction boundary; further extraction is tracked by this warning."],
   ["src/client/components/filesystem/recycle-bin-window.tsx", "The file is a single recycle-bin view and only narrowly exceeds the review threshold."],
   ["src/infrastructure/filesystem/d1-filesystem-repository.ts", "D1 statements remain transactionally cohesive behind segregated repository ports."],
-  ["test/client/integration/app.test.tsx", "Cross-feature desktop regression suite intentionally shares one realistic fake application harness."],
-  ["test/http/integration/worker.integration.test.ts", "Cross-feature Worker contract suite intentionally shares one migrated D1/R2 integration environment."],
 ]);
