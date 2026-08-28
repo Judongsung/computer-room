@@ -5,18 +5,13 @@ import {
   MAX_FILE_SIZE_BYTES,
 } from "@/constants/filesystem/file";
 import {
-  FILESYSTEM_ACTIVE_ROOT_IDS,
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "@/constants/filesystem/filesystem";
 import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import { AppError } from "@/domain/shared/errors";
 import { normalizeByteRange } from "@/domain/filesystem/byte-range";
-import {
-  availableFilesystemName,
-  filesystemNameKey,
-  normalizeFilesystemName,
-} from "@/domain/filesystem/filesystem-name";
+import { filesystemNameKey } from "@/domain/filesystem/filesystem-name";
 import { normalizeContentType } from "@/domain/filesystem/file-name";
 import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
 import type {
@@ -34,8 +29,14 @@ import type {
 import type { Clock, IdGenerator } from "@/types/platform/runtime";
 import type { RequestedByteRange } from "@/types/filesystem/media";
 import type { FileObjectStorage } from "@/types/filesystem/storage";
+import type {
+  ActiveFilesystemEntryResolver as ActiveFilesystemEntryResolverPort,
+  FilesystemNameAllocator as FilesystemNameAllocatorPort,
+} from "@/types/filesystem/policies/filesystem-policies";
 import { toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper";
 import { nextDesktopOrder } from "@/application/filesystem/desktop-placement";
+import { ActiveFilesystemEntryResolver } from "@/application/filesystem/policies/active-filesystem-entry-resolver";
+import { FilesystemNameAllocator } from "@/application/filesystem/policies/filesystem-name-allocator";
 
 export class FileService implements FileTransferUseCases {
   constructor(
@@ -43,6 +44,10 @@ export class FileService implements FileTransferUseCases {
     private readonly storage: FileObjectStorage,
     private readonly idGenerator: IdGenerator,
     private readonly clock: Clock,
+    private readonly activeEntries: ActiveFilesystemEntryResolverPort =
+      new ActiveFilesystemEntryResolver(repository),
+    private readonly names: FilesystemNameAllocatorPort =
+      new FilesystemNameAllocator(repository),
   ) {}
 
   async uploadFile(
@@ -55,9 +60,7 @@ export class FileService implements FileTransferUseCases {
 
     const parentId = input.parentId ?? FILESYSTEM_ROOT_ID.DOCUMENTS;
     await this.requireActiveDirectory(parentId);
-    const requestedName = normalizeFilesystemName(input.originalName);
-    const occupied = new Set(await this.repository.listNameKeys(parentId));
-    const name = availableFilesystemName(requestedName, occupied);
+    const name = await this.names.allocate(parentId, input.originalName);
     const id = this.idGenerator.generate();
     const createdAt = this.clock.now();
     const objectKey = `${FILE_OBJECT_KEY_PREFIX}/${id}`;
@@ -144,26 +147,21 @@ export class FileService implements FileTransferUseCases {
   }
 
   private async requireActiveDirectory(id: string): Promise<void> {
-    const entry = await this.repository.findEntry(id);
-    if (
-      !entry ||
-      entry.kind !== FILESYSTEM_ENTRY_KIND.DIRECTORY ||
-      !(await this.isWithinActiveRoot(id))
-    ) {
-      throw new AppError(FILESYSTEM_ERRORS.DIRECTORY_NOT_FOUND);
-    }
+    await this.activeEntries.requireDirectory(id, {
+      notFound: FILESYSTEM_ERRORS.DIRECTORY_NOT_FOUND,
+      inactive: FILESYSTEM_ERRORS.DIRECTORY_NOT_FOUND,
+    });
   }
 
   private async requireReadyFile(
     id: string,
   ): Promise<{ entry: FilesystemFileEntry; objectKey: string }> {
-    const storedEntry = await this.repository.findEntry(id);
+    const storedEntry = await this.activeEntries.find(id);
     if (
       !storedEntry ||
       storedEntry.kind !== FILESYSTEM_ENTRY_KIND.FILE ||
       storedEntry.fileStatus !== FILE_STATUS.READY ||
-      !storedEntry.objectKey ||
-      !(await this.isWithinActiveRoot(id))
+      !storedEntry.objectKey
     ) {
       throw new AppError(FILE_ERRORS.FILE_NOT_FOUND);
     }
@@ -181,14 +179,5 @@ export class FileService implements FileTransferUseCases {
     if (size > MAX_FILE_SIZE_BYTES) {
       throw new AppError(FILE_ERRORS.FILE_TOO_LARGE);
     }
-  }
-
-  private async isWithinActiveRoot(id: string): Promise<boolean> {
-    const matches = await Promise.all(
-      FILESYSTEM_ACTIVE_ROOT_IDS.map((rootId) =>
-        this.repository.isWithinRoot(id, rootId),
-      ),
-    );
-    return matches.some(Boolean);
   }
 }

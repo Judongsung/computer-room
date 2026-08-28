@@ -13,6 +13,8 @@ import { WidgetLayoutService } from "@/application/widgets/widget-layout-service
 import { WidgetFileService } from "@/application/widgets/widget-file-service";
 import { StorageStatusService } from "@/application/storage/storage-status-service";
 import { MobilePreferencesService } from "@/application/platform/mobile-preferences-service";
+import { ActiveFilesystemEntryResolver } from "@/application/filesystem/policies/active-filesystem-entry-resolver";
+import { FilesystemNameAllocator } from "@/application/filesystem/policies/filesystem-name-allocator";
 import {
   ENABLED_ENV_VALUE,
   LOCAL_AUTH_DEFAULT_EMAIL,
@@ -55,6 +57,10 @@ export default {
     context: ExecutionContext,
   ): Promise<Response> {
     const fileRepository = new D1FilesystemRepository(env.DB);
+    const activeFilesystemEntries = new ActiveFilesystemEntryResolver(
+      fileRepository,
+    );
+    const filesystemNames = new FilesystemNameAllocator(fileRepository);
     const storage = new R2FileObjectStorage(env.FILES);
     const ids = new CryptoIdGenerator();
     const clock = new SystemClock();
@@ -68,6 +74,8 @@ export default {
       storage,
       ids,
       clock,
+      activeFilesystemEntries,
+      filesystemNames,
     );
     const fileService = new ThumbnailPreparingFileService(
       storedFileService,
@@ -79,11 +87,14 @@ export default {
       new D1DirectorySortRepository(env.DB),
       ids,
       clock,
+      activeFilesystemEntries,
+      filesystemNames,
     );
     const filesystemPathService = new FilesystemPathService(
       fileRepository,
       ids,
       clock,
+      activeFilesystemEntries,
     );
     const novelAiImageService = new NovelAiImageService(
       filesystemPathService,
@@ -95,6 +106,8 @@ export default {
       fileRepository,
       storage,
       clock,
+      activeFilesystemEntries,
+      filesystemNames,
     );
     const downloadManifestService = new FilesystemDownloadManifestService(
       fileRepository,

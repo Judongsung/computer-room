@@ -1,5 +1,4 @@
 import {
-  FILESYSTEM_ACTIVE_ROOT_IDS,
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_PATH_SEPARATOR,
   FILESYSTEM_ROOT_ID,
@@ -9,11 +8,7 @@ import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import { DEFAULT_FILESYSTEM_DIRECTORY_SORT } from "@/constants/filesystem/sort";
 import { AppError } from "@/domain/shared/errors";
 import { requireFilesystemDirectorySort } from "@/domain/filesystem/filesystem-sort";
-import {
-  availableFilesystemName,
-  filesystemNameKey,
-  normalizeFilesystemName,
-} from "@/domain/filesystem/filesystem-name";
+import { filesystemNameKey } from "@/domain/filesystem/filesystem-name";
 import type {
   FilesystemDirectoryEntry,
   FilesystemDirectoryPage,
@@ -30,6 +25,10 @@ import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import type { FilesystemUseCases } from "@/types/filesystem/filesystem-service";
 import type { DirectorySortRepository } from "@/types/filesystem/directory-sort-repository";
 import type { DirectoryRepository, RecycleBinRepository } from "@/types/filesystem/repository";
+import type {
+  ActiveFilesystemEntryResolver as ActiveFilesystemEntryResolverPort,
+  FilesystemNameAllocator as FilesystemNameAllocatorPort,
+} from "@/types/filesystem/policies/filesystem-policies";
 import type { Clock, IdGenerator } from "@/types/platform/runtime";
 import { assertDesktopPlacement, nextDesktopOrder } from "@/application/filesystem/desktop-placement";
 import {
@@ -40,6 +39,8 @@ import {
   toPublicDirectory,
   toPublicEntry,
 } from "@/application/filesystem/filesystem-entry-mapper";
+import { ActiveFilesystemEntryResolver } from "@/application/filesystem/policies/active-filesystem-entry-resolver";
+import { FilesystemNameAllocator } from "@/application/filesystem/policies/filesystem-name-allocator";
 
 export class FilesystemService implements FilesystemUseCases {
   constructor(
@@ -47,6 +48,10 @@ export class FilesystemService implements FilesystemUseCases {
     private readonly directorySorts: DirectorySortRepository,
     private readonly idGenerator: IdGenerator,
     private readonly clock: Clock,
+    private readonly activeEntries: ActiveFilesystemEntryResolverPort =
+      new ActiveFilesystemEntryResolver(repository),
+    private readonly names: FilesystemNameAllocatorPort =
+      new FilesystemNameAllocator(repository),
   ) {}
 
   async listDirectory(parentId: string | null, offset: number, limit: number): Promise<FilesystemDirectoryPage> {
@@ -86,7 +91,7 @@ export class FilesystemService implements FilesystemUseCases {
     desktopPlacement?: DesktopPlacement,
   ): Promise<FilesystemDirectoryEntry> {
     const parent = await this.requireActiveDirectory(parentId ?? FILESYSTEM_ROOT_ID.DOCUMENTS);
-    const name = await this.resolveAvailableName(parent.id, requestedName);
+    const name = await this.names.allocate(parent.id, requestedName);
     const createdAt = this.clock.now();
     const desktopOrder = await nextDesktopOrder(
       this.repository,
@@ -124,7 +129,11 @@ export class FilesystemService implements FilesystemUseCases {
     }
     const parentId = entry.parentId;
     if (!parentId) throw new AppError(FILESYSTEM_ERRORS.INVALID_PARENT);
-    const name = await this.resolveAvailableName(parentId, input.name ?? entry.name, entry.id);
+    const name = await this.names.allocate(
+      parentId,
+      input.name ?? entry.name,
+      entry.id,
+    );
     const updatedAt = this.clock.now();
     await this.repository.updateEntry(entry.id, parentId, name, filesystemNameKey(name), updatedAt);
     return toPublicEntry({ ...entry, name, nameKey: filesystemNameKey(name), updatedAt });
@@ -140,7 +149,7 @@ export class FilesystemService implements FilesystemUseCases {
     }
 
     const desktopIds = await this.desktopOrderAfterMove(entry, target.id, input);
-    const name = await this.resolveAvailableName(target.id, entry.name, entry.id);
+    const name = await this.names.allocate(target.id, entry.name, entry.id);
     const updatedAt = this.clock.now();
     await this.repository.updateEntry(entry.id, target.id, name, filesystemNameKey(name),
       updatedAt, desktopIds);
@@ -267,32 +276,17 @@ export class FilesystemService implements FilesystemUseCases {
 
   private async requireActiveEntry(id: string): Promise<FilesystemEntryRecord> {
     this.assertMutableEntry(id);
-    const entry = await this.repository.findEntry(id);
-    if (!entry) throw new AppError(FILESYSTEM_ERRORS.ENTRY_NOT_FOUND);
-    if (!(await this.isWithinActiveRoot(id))) throw new AppError(FILESYSTEM_ERRORS.ENTRY_NOT_ACTIVE);
-    return entry;
+    return this.activeEntries.requireEntry(id, {
+      notFound: FILESYSTEM_ERRORS.ENTRY_NOT_FOUND,
+      inactive: FILESYSTEM_ERRORS.ENTRY_NOT_ACTIVE,
+    });
   }
 
   private async requireActiveDirectory(id: string): Promise<FilesystemEntryRecord> {
-    const entry = await this.repository.findEntry(id);
-    if (!entry || entry.kind !== FILESYSTEM_ENTRY_KIND.DIRECTORY) {
-      throw new AppError(FILESYSTEM_ERRORS.DIRECTORY_NOT_FOUND);
-    }
-    if (!(await this.isWithinActiveRoot(id))) throw new AppError(FILESYSTEM_ERRORS.INVALID_PARENT);
-    return entry;
-  }
-
-  private async isWithinActiveRoot(id: string): Promise<boolean> {
-    const results = await Promise.all(
-      FILESYSTEM_ACTIVE_ROOT_IDS.map((rootId) => this.repository.isWithinRoot(id, rootId)),
-    );
-    return results.some(Boolean);
-  }
-
-  private async resolveAvailableName(parentId: string, requestedName: string, excludeId?: string): Promise<string> {
-    const normalized = normalizeFilesystemName(requestedName);
-    const occupied = new Set(await this.repository.listNameKeys(parentId, excludeId));
-    return availableFilesystemName(normalized, occupied);
+    return this.activeEntries.requireDirectory(id, {
+      notFound: FILESYSTEM_ERRORS.DIRECTORY_NOT_FOUND,
+      inactive: FILESYSTEM_ERRORS.INVALID_PARENT,
+    });
   }
 
   private assertMutableEntry(id: string): void {

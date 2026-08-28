@@ -1,15 +1,11 @@
 import {
-  FILESYSTEM_ACTIVE_ROOT_IDS,
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
   FILESYSTEM_ROOT_NAME,
 } from "@/constants/filesystem/filesystem";
 import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import { AppError } from "@/domain/shared/errors";
-import {
-  availableFilesystemName,
-  filesystemNameKey,
-} from "@/domain/filesystem/filesystem-name";
+import { filesystemNameKey } from "@/domain/filesystem/filesystem-name";
 import { thumbnailObjectKeys } from "@/domain/filesystem/thumbnail";
 import type {
   FilesystemEntry,
@@ -22,15 +18,25 @@ import type { RecycleBinUseCases } from "@/types/filesystem/filesystem-service";
 import type { RecycleBinDataRepository } from "@/types/filesystem/repository";
 import type { Clock } from "@/types/platform/runtime";
 import type { FileObjectStorage } from "@/types/filesystem/storage";
+import type {
+  ActiveFilesystemEntryResolver as ActiveFilesystemEntryResolverPort,
+  FilesystemNameAllocator as FilesystemNameAllocatorPort,
+} from "@/types/filesystem/policies/filesystem-policies";
 import { toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper";
 import { nextDesktopOrder } from "@/application/filesystem/desktop-placement";
 import { settleFilesystemOperations } from "@/application/filesystem/filesystem-batch";
+import { ActiveFilesystemEntryResolver } from "@/application/filesystem/policies/active-filesystem-entry-resolver";
+import { FilesystemNameAllocator } from "@/application/filesystem/policies/filesystem-name-allocator";
 
 export class RecycleBinService implements RecycleBinUseCases {
   constructor(
     private readonly repository: RecycleBinDataRepository,
     private readonly storage: FileObjectStorage,
     private readonly clock: Clock,
+    private readonly activeEntries: ActiveFilesystemEntryResolverPort =
+      new ActiveFilesystemEntryResolver(repository),
+    private readonly names: FilesystemNameAllocatorPort =
+      new FilesystemNameAllocator(repository),
   ) {}
 
   async listTrash(
@@ -58,8 +64,7 @@ export class RecycleBinService implements RecycleBinUseCases {
     const parentId = input.parentId
       ? await this.requireRestoreDestination(input.parentId)
       : await this.resolveRestoreParent(entry.restoreParentId);
-    const occupied = new Set(await this.repository.listNameKeys(parentId));
-    const name = availableFilesystemName(entry.name, occupied);
+    const name = await this.names.allocate(parentId, entry.name);
     const updatedAt = this.clock.now();
     const desktopOrder = await nextDesktopOrder(
       this.repository,
@@ -163,35 +168,19 @@ export class RecycleBinService implements RecycleBinUseCases {
     if (!restoreParentId) {
       return FILESYSTEM_ROOT_ID.DOCUMENTS;
     }
-    const parent = await this.repository.findEntry(restoreParentId);
-    if (
-      parent?.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY &&
-      (await this.isWithinActiveRoot(parent.id))
-    ) {
+    const parent = await this.activeEntries.find(restoreParentId);
+    if (parent?.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
       return parent.id;
     }
     return FILESYSTEM_ROOT_ID.DOCUMENTS;
   }
 
   private async requireRestoreDestination(id: string): Promise<string> {
-    const entry = await this.repository.findEntry(id);
-    if (
-      !entry ||
-      entry.kind !== FILESYSTEM_ENTRY_KIND.DIRECTORY ||
-      !(await this.isWithinActiveRoot(id))
-    ) {
-      throw new AppError(FILESYSTEM_ERRORS.INVALID_PARENT);
-    }
+    const entry = await this.activeEntries.requireDirectory(id, {
+      notFound: FILESYSTEM_ERRORS.INVALID_PARENT,
+      inactive: FILESYSTEM_ERRORS.INVALID_PARENT,
+    });
     return entry.id;
-  }
-
-  private async isWithinActiveRoot(id: string): Promise<boolean> {
-    const matches = await Promise.all(
-      FILESYSTEM_ACTIVE_ROOT_IDS.map((rootId) =>
-        this.repository.isWithinRoot(id, rootId),
-      ),
-    );
-    return matches.some(Boolean);
   }
 }
 
