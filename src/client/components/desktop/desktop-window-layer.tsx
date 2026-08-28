@@ -1,3 +1,4 @@
+import { lazy } from "react";
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import type { DashboardWidget, WidgetType } from "@/types/widgets/widget";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
@@ -19,7 +20,7 @@ import { DesktopWindow } from "@client/components/desktop/desktop-window";
 import { LazyFeatureBoundary } from "@client/components/shared/lazy-feature-boundary";
 
 const DocumentsWindow = lazy(() =>
-  import("@client/components/filesystem/documents-window").then((module) => ({
+  import("@client/components/filesystem/explorer/documents-window").then((module) => ({
     default: module.DocumentsWindow,
   })),
 );
@@ -29,7 +30,7 @@ const MyComputerWindow = lazy(() =>
   })),
 );
 const RecycleBinWindow = lazy(() =>
-  import("@client/components/filesystem/recycle-bin-window").then((module) => ({
+  import("@client/components/filesystem/recycle/recycle-bin-window").then((module) => ({
     default: module.RecycleBinWindow,
   })),
 );
@@ -243,4 +244,3 @@ function desktopWindowZIndex(
 ): number {
   return DESKTOP_LAYOUT.BASE_WINDOW_Z_INDEX + (zOrders[id] ?? fallback);
 }
-import { lazy } from "react";
