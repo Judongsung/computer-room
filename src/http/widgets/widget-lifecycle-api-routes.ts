@@ -8,6 +8,7 @@ import { readJsonBody } from "@/http/shared/request-body";
 import { emptyResponse, jsonResponse } from "@/http/shared/responses";
 import { assertMethod, decodeId, isRecord, methodNotAllowed, readRecordBody } from "@/http/widgets/widget-http";
 import type { WidgetLayoutUseCases } from "@/types/widgets/widget-service";
+import type { WidgetFileUseCases } from "@/types/widgets/widget-file-service";
 import type { WidgetType } from "@/types/widgets/widget";
 
 const WIDGET_FILE_PATH = new RegExp(`^${API_PATHS.WIDGETS}/([^/]+)/${API_PATH_SEGMENTS.FILE}$`);
@@ -16,7 +17,10 @@ const WIDGET_CLOSE_PATH = new RegExp(`^${API_PATHS.WIDGETS}/([^/]+)/${API_PATH_S
 const WIDGET_PATH = new RegExp(`^${API_PATHS.WIDGETS}/([^/]+)$`);
 
 export class WidgetLifecycleApiRoutes {
-  constructor(private readonly widgets: WidgetLayoutUseCases) {}
+  constructor(
+    private readonly widgets: WidgetLayoutUseCases,
+    private readonly widgetFiles: WidgetFileUseCases,
+  ) {}
 
   async handle(request: Request, url: URL): Promise<Response | null> {
     if (url.pathname === API_PATHS.WIDGETS) return this.handleCollection(request);
@@ -61,7 +65,7 @@ export class WidgetLifecycleApiRoutes {
     const body = await readRecordBody(request);
     if (typeof body.parentId !== "string" || typeof body.name !== "string") throw new AppError(HTTP_ERRORS.INVALID_JSON);
     const desktopPlacement = readDesktopPlacement(body);
-    return jsonResponse(await this.widgets.saveWidgetFile(decodeId(widgetId), {
+    return jsonResponse(await this.widgetFiles.save(decodeId(widgetId), {
       parentId: body.parentId,
       name: body.name,
       ...(desktopPlacement === undefined ? {} : { desktopPlacement }),

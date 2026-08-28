@@ -1,9 +1,4 @@
 import { EMPTY_MEMO_MARKDOWN } from "@/constants/widgets/memo";
-import {
-  FILESYSTEM_ACTIVE_ROOT_IDS,
-  FILESYSTEM_ENTRY_KIND,
-} from "@/constants/filesystem/filesystem";
-import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import { WIDGET_ERRORS } from "@/constants/widgets/errors/widget";
 import {
   MAX_OPEN_WIDGET_COUNT,
@@ -13,20 +8,10 @@ import {
   WINDOW_STATE,
 } from "@/constants/widgets/widget";
 import { AppError } from "@/domain/shared/errors";
-import {
-  availableFilesystemName,
-  filesystemNameKey,
-  normalizeFilesystemName,
-} from "@/domain/filesystem/filesystem-name";
 import { getKoreaDateContext } from "@/domain/shared/korea-date";
 import { validateWidgetLayout } from "@/domain/widgets/widget-layout-validation";
 import type { ChecklistRepository } from "@/types/widgets/checklist-repository";
-import type {
-  FilesystemWidgetEntry,
-  SaveWidgetFileInput,
-} from "@/types/filesystem/filesystem";
 import type { MemoRepository } from "@/types/widgets/memo-repository";
-import type { DirectoryRepository } from "@/types/filesystem/repository";
 import type { Clock, IdGenerator } from "@/types/platform/runtime";
 import type {
   CreateWidgetInput,
@@ -38,15 +23,12 @@ import type {
 } from "@/types/widgets/widget";
 import type { WidgetLayoutRepository } from "@/types/widgets/widget-repository";
 import type { WidgetLayoutUseCases } from "@/types/widgets/widget-service";
-import { nextDesktopOrder } from "@/application/filesystem/desktop-placement";
-import { toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper";
 
 export class WidgetLayoutService implements WidgetLayoutUseCases {
   constructor(
     private readonly layouts: WidgetLayoutRepository,
     private readonly memos: MemoRepository,
     private readonly checklists: ChecklistRepository,
-    private readonly filesystem: DirectoryRepository,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
   ) {}
@@ -138,54 +120,6 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     return {
       widget: await this.hydrateOne({ ...layout, isOpen: true, file: null }),
       created: true,
-    };
-  }
-
-  async saveWidgetFile(
-    widgetId: string,
-    input: SaveWidgetFileInput,
-  ): Promise<{ widget: DashboardWidget; entry: FilesystemWidgetEntry }> {
-    const widget = await this.requireWidget(widgetId);
-    if (!WIDGET_BEHAVIOR[widget.type].supportsFileStorage) {
-      throw new AppError(WIDGET_ERRORS.WIDGET_FILE_NOT_SUPPORTED);
-    }
-    if (widget.file) {
-      throw new AppError(WIDGET_ERRORS.WIDGET_ALREADY_SAVED);
-    }
-    await this.requireActiveDirectory(input.parentId);
-    const requestedName = normalizeFilesystemName(input.name);
-    const occupied = new Set(
-      await this.filesystem.listNameKeys(input.parentId),
-    );
-    const name = availableFilesystemName(requestedName, occupied);
-    const createdAt = this.clock.now();
-    const desktopOrder = await nextDesktopOrder(
-      this.filesystem,
-      input.parentId,
-      input.desktopPlacement,
-    );
-    const entryId = this.ids.generate();
-    await this.filesystem.insertWidget({
-      id: entryId,
-      widgetId,
-      widgetType: widget.type,
-      parentId: input.parentId,
-      name,
-      nameKey: filesystemNameKey(name),
-      createdAt,
-      ...(desktopOrder === undefined ? {} : { desktopOrder }),
-    });
-    const record = await this.filesystem.findEntry(entryId);
-    const entry = record ? toPublicEntry(record) : null;
-    if (!entry || entry.kind !== FILESYSTEM_ENTRY_KIND.WIDGET) {
-      throw new AppError(FILESYSTEM_ERRORS.INVALID_STORED_ENTRY);
-    }
-    return {
-      entry,
-      widget: await this.hydrateOne({
-        ...widget,
-        file: { entryId, parentId: input.parentId, name },
-      }),
     };
   }
 
@@ -317,21 +251,6 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
   private async assertOpenCapacity(): Promise<void> {
     if ((await this.layouts.countOpen()) >= MAX_OPEN_WIDGET_COUNT) {
       throw new AppError(WIDGET_ERRORS.TOO_MANY_WIDGETS);
-    }
-  }
-
-  private async requireActiveDirectory(id: string): Promise<void> {
-    const entry = await this.filesystem.findEntry(id);
-    if (!entry || entry.kind !== FILESYSTEM_ENTRY_KIND.DIRECTORY) {
-      throw new AppError(FILESYSTEM_ERRORS.INVALID_PARENT);
-    }
-    const matches = await Promise.all(
-      FILESYSTEM_ACTIVE_ROOT_IDS.map((rootId) =>
-        this.filesystem.isWithinRoot(id, rootId),
-      ),
-    );
-    if (!matches.some(Boolean)) {
-      throw new AppError(FILESYSTEM_ERRORS.INVALID_PARENT);
     }
   }
 }

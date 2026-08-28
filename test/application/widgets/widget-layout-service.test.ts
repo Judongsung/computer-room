@@ -7,7 +7,6 @@ import {
   WINDOW_STATE,
 } from "@/constants/widgets/widget";
 import { WIDGET_ERRORS } from "@/constants/widgets/errors/widget";
-import { MemoryFileRepository } from "@test/support/filesystem/memory-filesystem-repository";
 import { SequenceIdGenerator, StaticClock } from "@test/support/platform/runtime-fakes";
 import { MemoryChecklistRepository } from "@test/support/widgets/memory-checklist-repository";
 import {
@@ -25,7 +24,6 @@ describe("WidgetLayoutService", () => {
       repository,
       new MemoryMemoRepository(),
       new MemoryChecklistRepository(),
-      new MemoryFileRepository(),
       new SequenceIdGenerator([
         "00000000-0000-4000-8000-000000000010",
       ]),
@@ -74,7 +72,6 @@ describe("WidgetLayoutService", () => {
       repository,
       new MemoryMemoRepository(),
       new MemoryChecklistRepository(),
-      new MemoryFileRepository(),
       new SequenceIdGenerator([
         "00000000-0000-4000-8000-000000000020",
         "00000000-0000-4000-8000-000000000021",
@@ -105,12 +102,11 @@ describe("WidgetLayoutService", () => {
     expect(repository.records[0]?.isOpen).toBe(true);
   });
 
-  it("does not save or discard the built-in storage status widget as a file", async () => {
+  it("does not discard the built-in storage status widget", async () => {
     const service = new WidgetLayoutService(
       new MemoryWidgetLayoutRepository(),
       new MemoryMemoRepository(),
       new MemoryChecklistRepository(),
-      new MemoryFileRepository(),
       new SequenceIdGenerator([
         "00000000-0000-4000-8000-000000000030",
       ]),
@@ -125,13 +121,6 @@ describe("WidgetLayoutService", () => {
         height: policy.DEFAULT_HEIGHT,
       },
     });
-
-    await expect(
-      service.saveWidgetFile(widget.id, {
-        parentId: "system-desktop-root",
-        name: "storage",
-      }),
-    ).rejects.toMatchObject({ code: WIDGET_ERRORS.WIDGET_FILE_NOT_SUPPORTED.code });
     await expect(service.discardWidget(widget.id)).rejects.toMatchObject({
       code: WIDGET_ERRORS.BUILT_IN_WIDGET_DISCARD_NOT_ALLOWED.code,
     });

@@ -135,18 +135,20 @@ export default {
       layoutRepository,
       memoRepository,
       checklistRepository,
-      fileRepository,
       ids,
       clock,
     );
+    const widgetFileService = new WidgetFileService(
+      widgetService,
+      fileRepository,
+      new D1WidgetFileDraftRepository(env.DB),
+      ids,
+      clock,
+      activeFilesystemEntries,
+      filesystemNames,
+    );
     const widgetFileApiHandler = new WidgetFileApiHandler(
-      new WidgetFileService(
-        widgetService,
-        fileRepository,
-        new D1WidgetFileDraftRepository(env.DB),
-        ids,
-        clock,
-      ),
+      widgetFileService,
     );
     const memoService = new MemoService(layoutRepository, memoRepository, clock);
     const checklistService = new ChecklistService(
@@ -157,6 +159,7 @@ export default {
     );
     const widgetApiHandler = new WidgetApiHandler(
       widgetService,
+      widgetFileService,
       memoService,
       checklistService,
     );
