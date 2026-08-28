@@ -52,6 +52,7 @@ Cloudflare Access로 보호되는 1인용 가상 컴퓨터 홈입니다.
 - 한국 날짜를 기준으로 체크 상태가 매일 초기화되는 일일 체크리스트
 - 체크 항목 추가·수정·삭제와 체크 이력 조회
 - R2와 D1의 현재 사용 상태를 확인하는 저장소 상태 위젯
+- 저장 경로·파일명·허용 MIME을 관리하는 이미지 API 프로필 위젯
 - D1 기반 위젯 파일 저장, 닫기, 다시 열기, 휴지통 이동과 복원
 
 ### 파일 시스템
@@ -81,7 +82,7 @@ Cloudflare Access로 보호되는 1인용 가상 컴퓨터 홈입니다.
 - 업로드
 - 이름 변경과 이동
 - 휴지통 이동·복원·영구 삭제
-- 폴더 생성과 정렬 변경
+- 폴더 생성
 
 폴더와 휴지통은 한 번에 100개 항목을 불러옵니다. 데스크톱의 `Ctrl+A`는 현재까지 불러온 항목만 선택합니다.
 
@@ -93,7 +94,7 @@ Cloudflare Access로 보호되는 1인용 가상 컴퓨터 홈입니다.
 
 | 저장소 | 역할 |
 | --- | --- |
-| D1 | 폴더 계층, 파일 메타데이터, 위젯 내용·배치, 체크리스트 로그, 모바일 배경화면 설정 |
+| D1 | 폴더 계층, 파일 메타데이터, 위젯 내용·배치, 체크리스트 로그, 모바일 배경화면과 이미지 API 프로필 설정 |
 | R2 | 일반 파일 원본과 생성된 썸네일 바이트 |
 | 브라우저 `localStorage` | 모바일에서 작성 중인 위젯 초안 하나 |
 
@@ -114,19 +115,47 @@ Cloudflare Access로 보호되는 1인용 가상 컴퓨터 홈입니다.
 
 JPEG, PNG, GIF, WebP 이미지는 최대 96×96px 정적 WebP 썸네일로 변환합니다. GIF와 애니메이션 WebP는 첫 프레임만 사용합니다. 20MB를 초과한 이미지와 BMP·AVIF는 일반 파일 아이콘으로 표시될 수 있지만 원본 뷰어는 그대로 사용할 수 있습니다.
 
-## NovelAI 이미지 수신 API
+## 이미지 수신 API 프로필
 
-`POST /api/integrations/novelai/images`는 이미지 원본 한 장을 받아 `바탕 화면/NovelAI/YYYY-MM-DD`에 저장합니다. 경로와 파일명은 호출자가 지정할 수 없습니다.
+데스크톱의 시작 메뉴, 내 컴퓨터 또는 빈 바탕 화면 우클릭 메뉴에서 `이미지 API 프로필` 위젯을 열 수 있습니다. 프로필은 D1에 저장되며 Worker를 다시 배포하지 않고 다음 설정을 바꿀 수 있습니다.
 
-- 날짜 기준: 서버 수신 시각의 한국 날짜
-- 파일명: `HH-mm-ss-SSS_<UUID>.<확장자>`
-- 최대 크기: 100MB
-- 본문: multipart나 Base64가 아닌 이미지 원본 바이너리
-- 인증: 전용 Cloudflare Access Service Token
-- 성공 응답: `201 { "file": FilesystemFileEntry }`
+- 영문 소문자 slug 기반 프로필 ID와 표시 이름
+- 기준 위치: 바탕 화면 또는 내 문서
+- 상대 경로와 파일명 템플릿
+- JPEG, PNG, GIF, WebP, AVIF, BMP 중 허용할 MIME
+- 활성 또는 비활성 상태
+
+프로필 ID는 생성 후 변경할 수 없습니다. 프로필을 삭제해도 기존 파일과 폴더는 유지되며 해당 수신 URL만 `404`로 중단됩니다. 서비스 토큰, Client Secret과 Access audience는 프로필 위젯이나 D1에 저장하지 않습니다.
+
+관리 API는 사용자용 Cloudflare Access 인증을 사용합니다. 쓰기 요청에는 기존 same-origin 검사가 적용됩니다.
+
+| 메서드 | 경로 | 동작 |
+| --- | --- | --- |
+| `GET` | `/api/integrations/image-profiles` | 전체 프로필 조회 |
+| `POST` | `/api/integrations/image-profiles` | 프로필 생성 |
+| `PUT` | `/api/integrations/image-profiles/:id` | ID를 제외한 전체 설정 교체 |
+| `DELETE` | `/api/integrations/image-profiles/:id` | 프로필 삭제 |
+
+`POST` 요청은 다음 형태이며 `PUT`에서는 `id`만 제외합니다.
+
+```json
+{
+  "id": "camera",
+  "displayName": "Camera",
+  "rootId": "system-documents-root",
+  "pathTemplate": "Camera/{yyyy-MM-dd}",
+  "fileNameTemplate": "{HH-mm-ss-SSS}_{uuid}.{ext}",
+  "enabled": true,
+  "contentTypes": ["image/jpeg", "image/png"]
+}
+```
+
+경로 템플릿은 `{profileId}`, `{yyyy-MM-dd}`를 지원합니다. 파일명 템플릿은 여기에 `{HH-mm-ss-SSS}`, `{uuid}`, `{ext}`를 추가로 지원하며 `{uuid}`와 `{ext}`가 각각 정확히 한 번 필요합니다. 날짜와 시각은 서버가 이미지를 받은 한국 시각을 사용합니다.
+
+이미지 수신 경로는 `POST /api/integrations/:profileId/images`입니다. 본문에는 multipart나 Base64가 아닌 이미지 원본 한 장을 전송하며, `Content-Type`과 실제 바이트 크기인 `X-File-Size`가 필요합니다. 최대 크기는 100MB이고 성공 응답은 `201 { "file": FilesystemFileEntry }`입니다.
 
 ```sh
-curl --request POST "https://<computer-room-domain>/api/integrations/novelai/images" \
+curl --request POST "https://<computer-room-domain>/api/integrations/<profile-id>/images" \
   --header "CF-Access-Client-Id: <CLIENT_ID>" \
   --header "CF-Access-Client-Secret: <CLIENT_SECRET>" \
   --header "Content-Type: image/png" \
@@ -134,14 +163,24 @@ curl --request POST "https://<computer-room-domain>/api/integrations/novelai/ima
   --data-binary "@generated.png"
 ```
 
-Cloudflare Zero Trust 설정:
+마이그레이션은 기존 호환성을 위해 다음 NovelAI 프로필을 자동 생성합니다.
 
-1. 전용 [Access 서비스 토큰](https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/)을 생성합니다.
-2. 정확한 `/api/integrations/novelai/images` 경로에 별도 Self-hosted Access 애플리케이션을 만듭니다.
-3. 지정 서비스 토큰만 허용하는 `Service Auth` 정책을 연결합니다.
-4. 애플리케이션 AUD를 `npx wrangler secret put NOVELAI_UPLOAD_POLICY_AUD`로 등록합니다.
+- URL: `/api/integrations/novelai/images`
+- 저장 위치: `바탕 화면/NovelAI/{yyyy-MM-dd}`
+- 파일명: `{HH-mm-ss-SSS}_{uuid}.{ext}`
+- 허용 MIME: 지원 이미지 6종 전체
 
-서비스 토큰의 Client ID와 Secret은 저장소나 확장 프로그램 소스에 넣지 않습니다. 일반 웹 CORS도 허용하지 않습니다.
+### Cloudflare Access 전환 순서
+
+기존 NovelAI 정확 경로 Access 애플리케이션을 운영 중이라면 [Access application path 우선순위](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/app-paths/) 때문에 다음 순서로 전환합니다.
+
+1. 기존 `NOVELAI_UPLOAD_POLICY_AUD`와 새 `INTEGRATION_UPLOAD_POLICY_AUD`를 함께 허용하는 현재 Worker 코드를 먼저 배포합니다.
+2. `/api/integrations/*/images` 경로의 Self-hosted Access 애플리케이션을 만들고 지정 [Access 서비스 토큰](https://developers.cloudflare.com/cloudflare-one/access-controls/service-credentials/service-tokens/)만 허용하는 `Service Auth` 정책을 연결합니다.
+3. 새 애플리케이션 AUD를 `npx wrangler secret put INTEGRATION_UPLOAD_POLICY_AUD`로 등록한 뒤 Worker를 다시 배포합니다.
+4. NovelAI 기존 URL과 새 프로필 URL을 각각 테스트합니다.
+5. 정확 경로 애플리케이션을 제거한 뒤 기존 `NOVELAI_UPLOAD_POLICY_AUD`를 정리합니다.
+
+서비스 토큰의 Client ID와 Secret은 저장소나 배포 번들에 넣지 않습니다. 일반 웹 CORS도 허용하지 않습니다.
 
 ## 프로젝트 구조
 
@@ -185,7 +224,8 @@ npm run dev
 | 구분 | 이름 |
 | --- | --- |
 | 환경 변수 | `TEAM_DOMAIN`, `POLICY_AUD`, `OWNER_EMAIL` |
-| 비밀 값 | `NOVELAI_UPLOAD_POLICY_AUD` |
+| 비밀 값 | `INTEGRATION_UPLOAD_POLICY_AUD` |
+| 전환용 기존 비밀 값 | `NOVELAI_UPLOAD_POLICY_AUD` |
 | D1 바인딩 | `DB` |
 | R2 바인딩 | `FILES` |
 | Images 바인딩 | `IMAGES` |
