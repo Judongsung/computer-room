@@ -242,7 +242,7 @@ describe("mobile application", () => {
     expect(
       await screen.findByRole("heading", { name: MOBILE_COPY.WALLPAPER }),
     ).toBeInTheDocument();
-    fireEvent.load(screen.getByAltText(wallpaper.name));
+    fireEvent.load(await screen.findByAltText(wallpaper.name));
     await user.click(
       screen.getByRole("button", { name: MOBILE_COPY.USE_DEFAULT_WALLPAPER }),
     );

@@ -104,7 +104,9 @@ describe("App desktop widgets", () => {
     await user.click(
       screen.getByRole("button", { name: DASHBOARD_COPY.ADD_MEMO_WIDGET }),
     );
-    expect(screen.getByText(MEMO_WIDGET_COPY.EMPTY_CONTENT)).toBeInTheDocument();
+    expect(
+      await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT),
+    ).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: DASHBOARD_COPY.CLOSE }),
     ).toBeEnabled();

@@ -4,18 +4,25 @@ import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
 import type { SessionInfo } from "@/types/platform/auth";
 import type { FilesystemEntry, FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import type { WidgetFileDocument } from "@/types/widgets/widget-file";
-import { MobileDirectory } from "@client/components/mobile/filesystem/mobile-directory";
-import { MobileRecycleBin } from "@client/components/mobile/filesystem/mobile-recycle-bin";
 import { MobileHome } from "@client/components/mobile/launcher/mobile-home";
-import { MobileWallpaperPicker } from "@client/components/mobile/launcher/mobile-wallpaper-picker";
-import { MobileMediaViewer } from "@client/components/mobile/media/mobile-media-viewer";
 import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
+import { MobileLazyFeatureBoundary } from "@client/components/mobile/shared/mobile-lazy-feature-boundary";
 import { MobileMenu } from "@client/components/mobile/shared/mobile-menu";
 import { MobileNavigationBar } from "@client/components/mobile/shared/mobile-navigation-bar";
-import { MobileStorageStatus } from "@client/components/mobile/widgets/mobile-storage-status";
-import { MobileWidgetCatalog } from "@client/components/mobile/widgets/mobile-widget-catalog";
-import { MobileWidgetDraftScreen } from "@client/components/mobile/widgets/mobile-widget-draft-screen";
-import { MobileWidgetFileScreen } from "@client/components/mobile/widgets/mobile-widget-file-screen";
+import {
+  MobileDirectory,
+  MobileMediaViewer,
+  MobileRecycleBin,
+  MobileStorageStatus,
+  MobileWallpaperPicker,
+  MobileWidgetCatalog,
+  MobileWidgetDraftScreen,
+  MobileWidgetFileScreen,
+} from "@client/components/mobile/shell/mobile-lazy-activities";
+import {
+  mobileActivityKey,
+  mobileActivityTitle,
+} from "@client/components/mobile/shell/mobile-activity-presentation";
 import {
   MOBILE_ACTIVITY_KIND,
   MOBILE_ACTIVITY_MENU_AVAILABILITY,
@@ -145,7 +152,12 @@ export function MobileShell({
   return (
     <div className={MOBILE_CLASS_NAME.ROOT} style={MOBILE_LAYOUT_CSS_VARIABLES}>
       <div className={MOBILE_CLASS_NAME.SCREEN}>
-        {renderActivity()}
+        <MobileLazyFeatureBoundary
+          key={mobileActivityKey(navigation.current)}
+          title={mobileActivityTitle(navigation.current)}
+        >
+          {renderActivity()}
+        </MobileLazyFeatureBoundary>
       </div>
       <MobileNavigationBar
         canGoBack={navigation.canGoBack}

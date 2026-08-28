@@ -8,5 +8,6 @@ export default defineConfig({
   resolve: { alias: SOURCE_ALIASES },
   build: {
     cssMinify: "esbuild",
+    manifest: true,
   },
 });

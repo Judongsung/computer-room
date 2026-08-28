@@ -95,25 +95,51 @@ describe("App desktop filesystem", () => {
     render(<App api={api} filesystemApi={filesystem} />);
 
     await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
-    let documentsWindow = await waitFor(() => desktopWindowByTitle("내 문서"));
+    let documentsWindow = await waitFor(() => {
+      const window = desktopWindowByTitle("내 문서");
+      expect(within(window).getByRole("combobox", {
+        name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
+      })).toBeEnabled();
+      return window;
+    });
     const field = within(documentsWindow).getByRole("combobox", {
       name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
     });
-    await user.selectOptions(field, "createdAt");
-    await waitFor(() => expect(field).toHaveValue("createdAt"));
+    fireEvent.change(field, { target: { value: "createdAt" } });
+    await waitFor(() => {
+      documentsWindow = desktopWindowByTitle("내 문서");
+      const liveField = within(documentsWindow).getByRole("combobox", {
+        name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
+      });
+      expect(liveField).toHaveValue("createdAt");
+      expect(liveField).toBeEnabled();
+    });
     const direction = within(documentsWindow).getByRole("combobox", {
       name: FILESYSTEM_SORT_COPY.DIRECTION_LABEL,
     });
     expect(
       within(direction).getByRole("option", { name: "최신 항목부터" }),
     ).toBeInTheDocument();
-    await user.selectOptions(direction, "descending");
-    await waitFor(() => expect(direction).toHaveValue("descending"));
+    fireEvent.change(direction, { target: { value: "descending" } });
+    await waitFor(() => {
+      documentsWindow = desktopWindowByTitle("내 문서");
+      const liveDirection = within(documentsWindow).getByRole("combobox", {
+        name: FILESYSTEM_SORT_COPY.DIRECTION_LABEL,
+      });
+      expect(liveDirection).toHaveValue("descending");
+      expect(liveDirection).toBeEnabled();
+    });
 
     await user.dblClick(
       within(documentsWindow).getByRole("button", { name: "사진" }),
     );
-    documentsWindow = await waitFor(() => desktopWindowByTitle("사진"));
+    documentsWindow = await waitFor(() => {
+      const window = desktopWindowByTitle("사진");
+      within(window).getByRole("combobox", {
+        name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
+      });
+      return window;
+    });
     expect(
       within(documentsWindow).getByRole("combobox", {
         name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
@@ -123,7 +149,13 @@ describe("App desktop filesystem", () => {
     await user.click(
       within(documentsWindow).getByRole("button", { name: FILESYSTEM_COPY.BACK }),
     );
-    documentsWindow = await waitFor(() => desktopWindowByTitle("내 문서"));
+    documentsWindow = await waitFor(() => {
+      const window = desktopWindowByTitle("내 문서");
+      within(window).getByRole("combobox", {
+        name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
+      });
+      return window;
+    });
     await waitFor(() =>
       expect(
         within(documentsWindow).getByRole("combobox", {
