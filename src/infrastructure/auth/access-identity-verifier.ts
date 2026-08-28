@@ -21,7 +21,11 @@ import type {
 const jwksCache = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
 export class JoseAccessTokenVerifier implements AccessTokenVerifier {
-  async verify(token: string, issuer: string, audience: string): Promise<AccessTokenClaims> {
+  async verify(
+    token: string,
+    issuer: string,
+    audience: string | string[],
+  ): Promise<AccessTokenClaims> {
     const { payload } = await jwtVerify(token, getJwks(issuer), {
       issuer,
       audience,
@@ -145,8 +149,9 @@ function validatedApplicationConfig(
   config: AccessApplicationVerifierConfig,
   errorFactory: () => AppError,
 ): ValidatedAccessApplicationConfig {
-  const { teamDomain, audience } = config;
-  if (!teamDomain || !audience) {
+  const { teamDomain } = config;
+  const audience = validatedAudience(config.audience, errorFactory);
+  if (!teamDomain) {
     throw errorFactory();
   }
 
@@ -162,6 +167,24 @@ function validatedApplicationConfig(
   }
 
   return { issuer: issuer.origin, audience };
+}
+
+function validatedAudience(
+  audience: string | readonly string[] | undefined,
+  errorFactory: () => AppError,
+): string | string[] {
+  if (typeof audience === "string") {
+    const normalized = audience.trim();
+    if (!normalized) throw errorFactory();
+    return normalized;
+  }
+  const normalized = audience
+    ?.map((candidate) => candidate.trim())
+    .filter((candidate) => candidate.length > 0);
+  if (!normalized || normalized.length === 0) {
+    throw errorFactory();
+  }
+  return [...new Set(normalized)];
 }
 
 function assertLocalRequest(request: Request): void {

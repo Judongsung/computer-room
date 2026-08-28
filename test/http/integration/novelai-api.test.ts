@@ -5,6 +5,7 @@ import {
   API_PATH_SEGMENTS,
   API_QUERY_PARAMETERS,
   FILESYSTEM_API_PATHS,
+  IMAGE_UPLOAD_PROFILES_API_PATH,
   MOBILE_PREFERENCES_API_PATH,
   NOVELAI_IMAGE_UPLOAD_API_PATH,
 } from "@/constants/platform/api";
@@ -39,7 +40,10 @@ import {
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
 } from "@/constants/widgets/widget";
-import { NOVELAI_STORAGE_PATH } from "@/constants/integrations/novelai";
+import {
+  DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE,
+  IMAGE_UPLOAD_CONTENT_TYPE,
+} from "@/constants/integrations/image-upload-profile";
 import { THUMBNAIL_SPEC } from "@/constants/filesystem/thumbnail";
 import { filesystemNameKey } from "@/domain/filesystem/filesystem-name";
 import { thumbnailObjectKey } from "@/domain/filesystem/thumbnail";
@@ -65,6 +69,9 @@ import {
 } from "@test/support/http/worker-api-harness";
 
 beforeEach(resetWorkerState);
+
+const NOVELAI_DIRECTORY_NAME =
+  DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE.PATH_TEMPLATE.split("/")[0] ?? "";
 
 describe("computer-room NovelAI API", () => {
   it("stores concurrent NovelAI images in one Korea-date desktop path", async () => {
@@ -99,12 +106,12 @@ describe("computer-room NovelAI API", () => {
     )
       .bind(
         FILESYSTEM_ROOT_ID.DESKTOP,
-        filesystemNameKey(NOVELAI_STORAGE_PATH.DIRECTORY_NAME),
+        filesystemNameKey(NOVELAI_DIRECTORY_NAME),
       )
       .all<{ id: string; parent_id: string; name: string }>();
     expect(baseDirectories.results).toHaveLength(1);
     expect(baseDirectories.results[0]?.name).toBe(
-      NOVELAI_STORAGE_PATH.DIRECTORY_NAME,
+      NOVELAI_DIRECTORY_NAME,
     );
     const baseDirectoryId = baseDirectories.results[0]?.id;
     expect(baseDirectoryId).toBeTruthy();
@@ -135,6 +142,101 @@ describe("computer-room NovelAI API", () => {
     await expect(new Response(secondObject!.body).text()).resolves.toBe(
       "second-image",
     );
+  });
+
+  it("applies profile changes immediately and keeps uploaded files after deletion", async () => {
+    const profile = {
+      id: "capture",
+      displayName: "Capture",
+      rootId: FILESYSTEM_ROOT_ID.DESKTOP,
+      pathTemplate: "Capture/{yyyy-MM-dd}",
+      fileNameTemplate: "capture_{uuid}.{ext}",
+      enabled: true,
+      contentTypes: [IMAGE_UPLOAD_CONTENT_TYPE.PNG],
+    } as const;
+    expect(
+      (
+        await jsonRequest(
+          IMAGE_UPLOAD_PROFILES_API_PATH,
+          HTTP_METHOD.POST,
+          profile,
+        )
+      ).status,
+    ).toBe(HTTP_STATUS.CREATED);
+
+    const first = await uploadProfileImage(profile.id, "first");
+    expect(first.status).toBe(HTTP_STATUS.CREATED);
+    const firstFile = (await first.json()) as {
+      file: { id: string; name: string; parentId: string };
+    };
+    expect(firstFile.file.name).toMatch(/^capture_[0-9a-f-]+\.png$/u);
+
+    const update = await jsonRequest(
+      `${IMAGE_UPLOAD_PROFILES_API_PATH}/${profile.id}`,
+      HTTP_METHOD.PUT,
+      {
+        displayName: "Capture Updated",
+        rootId: FILESYSTEM_ROOT_ID.DOCUMENTS,
+        pathTemplate: "Updated/{yyyy-MM-dd}",
+        fileNameTemplate: "{profileId}_{uuid}.{ext}",
+        enabled: true,
+        contentTypes: profile.contentTypes,
+      },
+    );
+    expect(update.status).toBe(HTTP_STATUS.OK);
+
+    const second = await uploadProfileImage(profile.id, "second");
+    expect(second.status).toBe(HTTP_STATUS.CREATED);
+    const secondFile = (await second.json()) as {
+      file: { name: string; parentId: string };
+    };
+    expect(secondFile.file.name).toMatch(/^capture_[0-9a-f-]+\.png$/u);
+    const secondParent = await env.DB
+      .prepare("SELECT parent_id FROM filesystem_entries WHERE id = ?1")
+      .bind(secondFile.file.parentId)
+      .first<{ parent_id: string }>();
+    expect(secondParent?.parent_id).toBeTruthy();
+    const updatedBase = await env.DB
+      .prepare("SELECT parent_id, name FROM filesystem_entries WHERE id = ?1")
+      .bind(secondParent?.parent_id)
+      .first<{ parent_id: string; name: string }>();
+    expect(updatedBase).toEqual({
+      parent_id: FILESYSTEM_ROOT_ID.DOCUMENTS,
+      name: "Updated",
+    });
+
+    const disable = await jsonRequest(
+      `${IMAGE_UPLOAD_PROFILES_API_PATH}/${profile.id}`,
+      HTTP_METHOD.PUT,
+      {
+        displayName: profile.displayName,
+        rootId: profile.rootId,
+        pathTemplate: profile.pathTemplate,
+        fileNameTemplate: profile.fileNameTemplate,
+        enabled: false,
+        contentTypes: profile.contentTypes,
+      },
+    );
+    expect(disable.status).toBe(HTTP_STATUS.OK);
+    expect((await uploadProfileImage(profile.id, "disabled")).status).toBe(
+      HTTP_STATUS.NOT_FOUND,
+    );
+
+    const deletion = await SELF.fetch(
+      `${ORIGIN}${IMAGE_UPLOAD_PROFILES_API_PATH}/${profile.id}`,
+      {
+        method: HTTP_METHOD.DELETE,
+        headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN },
+      },
+    );
+    expect(deletion.status).toBe(HTTP_STATUS.NO_CONTENT);
+    expect((await uploadProfileImage(profile.id, "deleted")).status).toBe(
+      HTTP_STATUS.NOT_FOUND,
+    );
+    expect(
+      await env.DB.prepare("SELECT COUNT(*) AS count FROM files").first("count"),
+    ).toBe(2);
+    expect((await env.FILES.list()).objects).toHaveLength(2);
   });
 
   it("validates the NovelAI upload method, media type, size, and fixed path", async () => {
@@ -194,3 +296,18 @@ describe("computer-room NovelAI API", () => {
     expect((await env.FILES.list()).objects).toHaveLength(1);
   });
 });
+
+function uploadProfileImage(profileId: string, content: string): Promise<Response> {
+  const bytes = new TextEncoder().encode(content);
+  return SELF.fetch(
+    `${ORIGIN}${API_PATHS.INTEGRATIONS}/${profileId}/${API_PATH_SEGMENTS.IMAGES}`,
+    {
+      method: HTTP_METHOD.POST,
+      headers: {
+        [HTTP_HEADERS.CONTENT_TYPE]: IMAGE_UPLOAD_CONTENT_TYPE.PNG,
+        [HTTP_HEADERS.FILE_SIZE]: String(bytes.byteLength),
+      },
+      body: bytes,
+    },
+  );
+}

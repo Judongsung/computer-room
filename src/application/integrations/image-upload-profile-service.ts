@@ -76,7 +76,12 @@ export class ImageUploadProfileService
   }
 
   async requireEnabledProfile(requestedId: string): Promise<ImageUploadProfile> {
-    const id = normalizeImageUploadProfileId(requestedId);
+    let id: string;
+    try {
+      id = normalizeImageUploadProfileId(requestedId);
+    } catch {
+      throw new AppError(IMAGE_UPLOAD_PROFILE_ERRORS.NOT_FOUND);
+    }
     const profile = await this.profiles.find(id);
     if (!profile || !profile.enabled) {
       throw new AppError(IMAGE_UPLOAD_PROFILE_ERRORS.NOT_FOUND);

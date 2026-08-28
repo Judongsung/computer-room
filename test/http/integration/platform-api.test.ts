@@ -39,7 +39,6 @@ import {
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
 } from "@/constants/widgets/widget";
-import { NOVELAI_STORAGE_PATH } from "@/constants/integrations/novelai";
 import { THUMBNAIL_SPEC } from "@/constants/filesystem/thumbnail";
 import { filesystemNameKey } from "@/domain/filesystem/filesystem-name";
 import { thumbnailObjectKey } from "@/domain/filesystem/thumbnail";

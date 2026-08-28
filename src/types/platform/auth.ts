@@ -19,7 +19,7 @@ export interface RequestVerifier {
 
 export interface AccessApplicationVerifierConfig {
   teamDomain: string | undefined;
-  audience: string | undefined;
+  audience: string | readonly string[] | undefined;
 }
 
 export interface AccessVerifierConfig extends AccessApplicationVerifierConfig {
@@ -28,7 +28,7 @@ export interface AccessVerifierConfig extends AccessApplicationVerifierConfig {
 
 export interface ValidatedAccessApplicationConfig {
   issuer: string;
-  audience: string;
+  audience: string | string[];
 }
 
 export interface ValidatedAccessConfig
@@ -44,6 +44,6 @@ export interface AccessTokenVerifier {
   verify(
     token: string,
     issuer: string,
-    audience: string,
+    audience: string | string[],
   ): Promise<AccessTokenClaims>;
 }

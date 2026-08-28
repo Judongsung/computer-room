@@ -14,12 +14,19 @@ import {
 import type { AccessTokenVerifier } from "@/types/platform/auth";
 
 class StaticTokenVerifier implements AccessTokenVerifier {
+  audience: string | string[] | undefined;
+
   constructor(
     private readonly email: unknown,
     private readonly failure?: Error,
   ) {}
 
-  async verify(): Promise<{ email?: unknown }> {
+  async verify(
+    _token: string,
+    _issuer: string,
+    audience: string | string[],
+  ): Promise<{ email?: unknown }> {
+    this.audience = audience;
     if (this.failure) {
       throw this.failure;
     }
@@ -112,9 +119,13 @@ describe("CloudflareAccessApplicationVerifier", () => {
   };
 
   it("accepts a signed application token without an email claim", async () => {
+    const tokens = new StaticTokenVerifier(undefined);
     const verifier = new CloudflareAccessApplicationVerifier(
-      serviceConfig,
-      new StaticTokenVerifier(undefined),
+      {
+        ...serviceConfig,
+        audience: ["integration-upload-audience", "novelai-upload-audience"],
+      },
+      tokens,
     );
     const request = new Request(
       `${APPLICATION_ORIGIN}${NOVELAI_IMAGE_UPLOAD_API_PATH}`,
@@ -122,6 +133,10 @@ describe("CloudflareAccessApplicationVerifier", () => {
     );
 
     await expect(verifier.verify(request)).resolves.toBeUndefined();
+    expect(tokens.audience).toEqual([
+      "integration-upload-audience",
+      "novelai-upload-audience",
+    ]);
   });
 
   it("fails closed for missing configuration, token, or invalid signature", async () => {

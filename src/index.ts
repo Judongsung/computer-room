@@ -4,8 +4,8 @@ import { FilesystemPathService } from "@/application/filesystem/filesystem-path-
 import { FilesystemService } from "@/application/filesystem/filesystem-service";
 import { FilesystemDownloadManifestService } from "@/application/filesystem/filesystem-download-manifest-service";
 import { DirectoryDetailsService } from "@/application/filesystem/directory-details-service";
-import { NovelAiImageService } from "@/application/integrations/novelai-image-service";
 import { ImageUploadProfileService } from "@/application/integrations/image-upload-profile-service";
+import { ImageUploadService } from "@/application/integrations/image-upload-service";
 import { RecycleBinService } from "@/application/filesystem/recycle-bin-service";
 import { MemoService } from "@/application/widgets/memo-service";
 import { ThumbnailService } from "@/application/filesystem/thumbnail-service";
@@ -24,8 +24,8 @@ import {
 import { ApiRouter } from "@/http/shared/api-router";
 import { FileApiHandler } from "@/http/filesystem/file-api-handler";
 import { DirectoryDetailsApiHandler } from "@/http/filesystem/directory-details-api-handler";
-import { NovelAiImageApiHandler } from "@/http/integrations/novelai-image-api-handler";
 import { ImageUploadProfileApiHandler } from "@/http/integrations/image-upload-profile-api-handler";
+import { ImageUploadApiHandler } from "@/http/integrations/image-upload-api-handler";
 import { WidgetApiHandler } from "@/http/widgets/widget-api-handler";
 import { WidgetFileApiHandler } from "@/http/widgets/widget-file-api-handler";
 import { StorageStatusApiHandler } from "@/http/storage/storage-status-api-handler";
@@ -99,7 +99,12 @@ export default {
       clock,
       activeFilesystemEntries,
     );
-    const novelAiImageService = new NovelAiImageService(
+    const imageUploadProfileService = new ImageUploadProfileService(
+      new D1ImageUploadProfileRepository(env.DB),
+      clock,
+    );
+    const imageUploadService = new ImageUploadService(
+      imageUploadProfileService,
       filesystemPathService,
       fileService,
       ids,
@@ -128,14 +133,11 @@ export default {
         new D1DirectoryDetailsRepository(env.DB),
       ),
     );
-    const novelAiImageApiHandler = new NovelAiImageApiHandler(
-      novelAiImageService,
+    const imageUploadApiHandler = new ImageUploadApiHandler(
+      imageUploadService,
     );
     const imageUploadProfileApiHandler = new ImageUploadProfileApiHandler(
-      new ImageUploadProfileService(
-        new D1ImageUploadProfileRepository(env.DB),
-        clock,
-      ),
+      imageUploadProfileService,
     );
     const layoutRepository = new D1WidgetLayoutRepository(env.DB);
     const memoRepository = new D1MemoRepository(env.DB);
@@ -195,7 +197,7 @@ export default {
         mobilePreferencesApiHandler,
         imageUploadProfileApiHandler,
       ],
-      novelAiImageApiHandler,
+      [imageUploadApiHandler],
       createIdentityVerifier(env),
       createServiceRequestVerifier(env),
     );
@@ -222,7 +224,10 @@ function createServiceRequestVerifier(env: Env): RequestVerifier {
   }
   return new CloudflareAccessApplicationVerifier({
     teamDomain: env.TEAM_DOMAIN,
-    audience: env.NOVELAI_UPLOAD_POLICY_AUD,
+    audience: [
+      env.INTEGRATION_UPLOAD_POLICY_AUD,
+      env.NOVELAI_UPLOAD_POLICY_AUD,
+    ].filter((audience): audience is string => Boolean(audience)),
   });
 }
 

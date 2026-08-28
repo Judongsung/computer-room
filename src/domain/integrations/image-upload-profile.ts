@@ -8,7 +8,9 @@ import {
   IMAGE_UPLOAD_TEMPLATE_SAMPLE,
 } from "@/constants/integrations/image-upload-profile";
 import { IMAGE_UPLOAD_PROFILE_ERRORS } from "@/constants/integrations/errors/image-upload-profile";
+import { KOREA_UTC_OFFSET_MILLISECONDS } from "@/constants/platform/date";
 import { normalizeFilesystemName } from "@/domain/filesystem/filesystem-name";
+import { getKoreaDateContext } from "@/domain/shared/korea-date";
 import { AppError } from "@/domain/shared/errors";
 import type {
   ImageUploadContentType,
@@ -20,6 +22,9 @@ import type {
 const TEMPLATE_TOKEN_PATTERN = /\{[^{}]+\}/gu;
 const TEMPLATE_BRACE_PATTERN = /[{}]/u;
 const WHITESPACE_PATTERN = /\s+/gu;
+const KOREA_TIME_START_INDEX = 11;
+const KOREA_TIME_END_INDEX = 23;
+const TIME_SEPARATOR_PATTERN = /[:.]/gu;
 
 const PATH_TOKENS = new Set(Object.values(IMAGE_UPLOAD_PATH_TOKEN));
 const FILE_NAME_TOKENS = new Set(Object.values(IMAGE_UPLOAD_FILE_NAME_TOKEN));
@@ -99,6 +104,24 @@ export function renderImageUploadFileNameTemplate(
   context: ImageUploadTemplateContext,
 ): string {
   return renderTemplate(template, context);
+}
+
+export function createImageUploadTemplateContext(
+  timestamp: number,
+  profileId: string,
+  uuid: string,
+  extension: string,
+): ImageUploadTemplateContext {
+  return {
+    profileId,
+    businessDate: getKoreaDateContext(timestamp).businessDate,
+    koreaTime: new Date(timestamp + KOREA_UTC_OFFSET_MILLISECONDS)
+      .toISOString()
+      .slice(KOREA_TIME_START_INDEX, KOREA_TIME_END_INDEX)
+      .replace(TIME_SEPARATOR_PATTERN, "-"),
+    uuid,
+    extension,
+  };
 }
 
 function normalizePathTemplate(profileId: string, input: string): string {

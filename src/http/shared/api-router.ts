@@ -1,4 +1,4 @@
-import { API_PATHS, NOVELAI_IMAGE_UPLOAD_API_PATH } from "@/constants/platform/api";
+import { API_PATHS } from "@/constants/platform/api";
 import { ACCESS_LOGOUT_PATH } from "@/constants/platform/auth";
 import { HTTP_ERRORS } from "@/constants/platform/errors/http";
 import { MAX_FILE_SIZE_BYTES } from "@/constants/filesystem/file";
@@ -10,13 +10,13 @@ import type {
   RequestVerifier,
   SessionInfo,
 } from "@/types/platform/auth";
-import type { FeatureApiHandler } from "@/types/platform/http";
+import type { FeatureApiHandler, ServiceApiHandler } from "@/types/platform/http";
 import { errorResponse, jsonResponse } from "@/http/shared/responses";
 
 export class ApiRouter {
   constructor(
     private readonly ownerHandlers: readonly FeatureApiHandler[],
-    private readonly novelAiImages: FeatureApiHandler,
+    private readonly serviceHandlers: readonly ServiceApiHandler[],
     private readonly identities: IdentityVerifier,
     private readonly serviceRequests: RequestVerifier,
   ) {}
@@ -24,9 +24,12 @@ export class ApiRouter {
   async handle(request: Request): Promise<Response> {
     try {
       const url = new URL(request.url);
-      if (url.pathname === NOVELAI_IMAGE_UPLOAD_API_PATH) {
+      const serviceHandler = this.serviceHandlers.find((handler) =>
+        handler.matches(url),
+      );
+      if (serviceHandler) {
         await this.serviceRequests.verify(request);
-        const response = await this.novelAiImages.handle(request, url);
+        const response = await serviceHandler.handle(request, url);
         if (response !== null) {
           return response;
         }

@@ -15,6 +15,7 @@ export default defineConfig(async () => {
             ENVIRONMENT: "test",
             DEV_AUTH_BYPASS: "true",
             OWNER_EMAIL: "owner@example.com",
+            INTEGRATION_UPLOAD_POLICY_AUD: "integration-upload-audience",
             NOVELAI_UPLOAD_POLICY_AUD: "novelai-upload-audience",
             TEST_MIGRATIONS: migrations,
           },
