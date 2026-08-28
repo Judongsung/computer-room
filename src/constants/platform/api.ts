@@ -1,6 +1,5 @@
 export const API_PATHS = {
   SESSION: "/api/session",
-  FILES: "/api/files",
   FILESYSTEM: "/api/filesystem",
   INTEGRATIONS: "/api/integrations",
   WIDGETS: "/api/widgets",
@@ -16,6 +15,7 @@ export const API_PATH_SEGMENTS = {
   CHECK: "check",
   LOGS: "logs",
   ENTRIES: "entries",
+  FILES: "files",
   DIRECTORIES: "directories",
   TRASH: "trash",
   RESTORE: "restore",
@@ -29,6 +29,7 @@ export const API_PATH_SEGMENTS = {
   IMAGES: "images",
   BATCH: "batch",
   DOWNLOADS: "downloads",
+  DOWNLOAD: "download",
   MANIFEST: "manifest",
   DELETE: "delete",
   SORT: "sort",
@@ -38,6 +39,7 @@ export const API_PATH_SEGMENTS = {
 
 export const FILESYSTEM_API_PATHS = {
   ENTRIES: `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.ENTRIES}`,
+  FILES: `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.FILES}`,
   DIRECTORIES: `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.DIRECTORIES}`,
   TRASH: `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.TRASH}`,
   DOWNLOADS: `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.DOWNLOADS}`,

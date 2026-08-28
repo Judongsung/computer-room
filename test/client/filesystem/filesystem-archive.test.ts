@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
+import { API_PATH_SEGMENTS, FILESYSTEM_API_PATHS } from "@/constants/platform/api";
 import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
 import {
   createFilesystemArchiveStream,
@@ -38,7 +39,7 @@ describe("filesystem archive streaming", () => {
     expect(transferred).toBe(payload.byteLength);
     expect(completed).toBe(1);
     expect(fetchMock).toHaveBeenCalledWith(
-      "/api/files/file/download",
+      `${FILESYSTEM_API_PATHS.FILES}/file/${API_PATH_SEGMENTS.DOWNLOAD}`,
       expect.objectContaining({ credentials: "same-origin" }),
     );
   });
@@ -77,7 +78,7 @@ function manifest(): FilesystemDownloadManifest {
         path: "자료/한글.txt",
         size: 4,
         updatedAt: UPDATED_AT,
-        downloadUrl: "/api/files/file/download",
+        downloadUrl: `${FILESYSTEM_API_PATHS.FILES}/file/${API_PATH_SEGMENTS.DOWNLOAD}`,
       },
     ],
     totalFileCount: 1,

@@ -5,33 +5,33 @@ import type {
   LocalUploadSelection,
 } from "@client/types/filesystem/upload";
 
-interface LegacyFileSystemEntry {
+interface BrowserFileSystemEntry {
   readonly isFile: boolean;
   readonly isDirectory: boolean;
   readonly name: string;
 }
 
-interface LegacyFileSystemFileEntry extends LegacyFileSystemEntry {
+interface BrowserFileSystemFileEntry extends BrowserFileSystemEntry {
   file(
     success: (file: File) => void,
     failure?: (error: DOMException) => void,
   ): void;
 }
 
-interface LegacyFileSystemDirectoryReader {
+interface BrowserFileSystemDirectoryReader {
   readEntries(
-    success: (entries: readonly LegacyFileSystemEntry[]) => void,
+    success: (entries: readonly BrowserFileSystemEntry[]) => void,
     failure?: (error: DOMException) => void,
   ): void;
 }
 
-interface LegacyFileSystemDirectoryEntry extends LegacyFileSystemEntry {
-  createReader(): LegacyFileSystemDirectoryReader;
+interface BrowserFileSystemDirectoryEntry extends BrowserFileSystemEntry {
+  createReader(): BrowserFileSystemDirectoryReader;
 }
 
 type DataTransferItemWithEntry = DataTransferItem & {
-  webkitGetAsEntry?: () => LegacyFileSystemEntry | null;
-  getAsEntry?: () => LegacyFileSystemEntry | null;
+  webkitGetAsEntry?: () => BrowserFileSystemEntry | null;
+  getAsEntry?: () => BrowserFileSystemEntry | null;
 };
 
 type DirectoryPickerWindow = Window & {
@@ -140,13 +140,13 @@ export function collectSelectedUploadNodes(files: FileList): LocalUploadNode[] {
   return roots.children;
 }
 
-async function readEntry(entry: LegacyFileSystemEntry): Promise<LocalUploadNode> {
+async function readEntry(entry: BrowserFileSystemEntry): Promise<LocalUploadNode> {
   if (entry.isFile) {
-    const file = await readFile(entry as LegacyFileSystemFileEntry);
+    const file = await readFile(entry as BrowserFileSystemFileEntry);
     return { kind: FILESYSTEM_ENTRY_KIND.FILE, name: entry.name, file };
   }
   const children = await readDirectory(
-    entry as LegacyFileSystemDirectoryEntry,
+    entry as BrowserFileSystemDirectoryEntry,
   );
   return {
     kind: FILESYSTEM_ENTRY_KIND.DIRECTORY,
@@ -155,17 +155,17 @@ async function readEntry(entry: LegacyFileSystemEntry): Promise<LocalUploadNode>
   };
 }
 
-function readFile(entry: LegacyFileSystemFileEntry): Promise<File> {
+function readFile(entry: BrowserFileSystemFileEntry): Promise<File> {
   return new Promise((resolve, reject) => entry.file(resolve, reject));
 }
 
 async function readDirectory(
-  entry: LegacyFileSystemDirectoryEntry,
+  entry: BrowserFileSystemDirectoryEntry,
 ): Promise<LocalUploadNode[]> {
   const reader = entry.createReader();
-  const entries: LegacyFileSystemEntry[] = [];
+  const entries: BrowserFileSystemEntry[] = [];
   while (true) {
-    const batch = await new Promise<readonly LegacyFileSystemEntry[]>(
+    const batch = await new Promise<readonly BrowserFileSystemEntry[]>(
       (resolve, reject) => reader.readEntries(resolve, reject),
     );
     if (batch.length === 0) break;

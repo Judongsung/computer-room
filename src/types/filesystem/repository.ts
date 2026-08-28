@@ -25,10 +25,6 @@ export interface FilesystemQueryRepository {
     limit: number,
     sort: FilesystemDirectorySort,
   ): Promise<FilesystemEntryRecord[]>;
-  listActiveFiles(
-    offset: number,
-    limit: number,
-  ): Promise<FilesystemEntryRecord[]>;
   listBreadcrumbs(directoryId: string): Promise<FilesystemBreadcrumb[]>;
   listNameKeys(parentId: string, excludeId?: string): Promise<string[]>;
   isWithinRoot(entryId: string, rootId: string): Promise<boolean>;

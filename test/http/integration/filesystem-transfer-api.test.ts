@@ -80,14 +80,19 @@ describe("computer-room filesystem transfer API", () => {
       `${FILE_OBJECT_KEY_PREFIX}/${created.file.id}`,
     );
 
-    const list = await SELF.fetch(`${ORIGIN}${API_PATHS.FILES}`);
+    const directoryQuery = new URLSearchParams({
+      [API_QUERY_PARAMETERS.PARENT_ID]: FILESYSTEM_ROOT_ID.DOCUMENTS,
+    });
+    const list = await SELF.fetch(
+      `${ORIGIN}${FILESYSTEM_API_PATHS.ENTRIES}?${directoryQuery}`,
+    );
     const page = (await list.json()) as { items: Array<{ id: string; name: string }> };
     expect(page.items).toEqual([
       expect.objectContaining({ id: created.file.id, name: "한글 문서.txt" }),
     ]);
 
     const download = await SELF.fetch(
-      `${ORIGIN}${API_PATHS.FILES}/${created.file.id}/download`,
+      `${ORIGIN}${FILESYSTEM_API_PATHS.FILES}/${created.file.id}/${API_PATH_SEGMENTS.DOWNLOAD}`,
     );
     expect(download.status).toBe(HTTP_STATUS.OK);
     expect(download.headers.get(HTTP_HEADERS.CONTENT_DISPOSITION)).toContain(
@@ -95,11 +100,11 @@ describe("computer-room filesystem transfer API", () => {
     );
     await expect(download.text()).resolves.toBe(content);
 
-    const deletion = await SELF.fetch(`${ORIGIN}${API_PATHS.FILES}/${created.file.id}`, {
+    const deletion = await SELF.fetch(`${ORIGIN}${FILESYSTEM_API_PATHS.ENTRIES}/${created.file.id}`, {
       method: HTTP_METHOD.DELETE,
       headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN },
     });
-    expect(deletion.status).toBe(HTTP_STATUS.NO_CONTENT);
+    expect(deletion.status).toBe(HTTP_STATUS.OK);
     expect(await env.DB.prepare("SELECT COUNT(*) AS count FROM files").first("count")).toBe(1);
     expect((await env.FILES.list()).objects).toHaveLength(1);
 
@@ -113,7 +118,7 @@ describe("computer-room filesystem transfer API", () => {
       { method: HTTP_METHOD.POST, headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN } },
     );
     expect(restore.status).toBe(HTTP_STATUS.OK);
-    await SELF.fetch(`${ORIGIN}${API_PATHS.FILES}/${created.file.id}`, {
+    await SELF.fetch(`${ORIGIN}${FILESYSTEM_API_PATHS.ENTRIES}/${created.file.id}`, {
       method: HTTP_METHOD.DELETE,
       headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN },
     });
@@ -134,7 +139,12 @@ describe("computer-room filesystem transfer API", () => {
       HTTP_STATUS.CREATED,
     );
 
-    const list = await SELF.fetch(`${ORIGIN}${API_PATHS.FILES}`);
+    const query = new URLSearchParams({
+      [API_QUERY_PARAMETERS.PARENT_ID]: FILESYSTEM_ROOT_ID.DOCUMENTS,
+    });
+    const list = await SELF.fetch(
+      `${ORIGIN}${FILESYSTEM_API_PATHS.ENTRIES}?${query}`,
+    );
     const page = (await list.json()) as { items: Array<{ id: string; name: string }> };
     expect(page.items).toHaveLength(2);
     expect(page.items.map((file) => file.name).sort()).toEqual([
@@ -145,7 +155,7 @@ describe("computer-room filesystem transfer API", () => {
   });
 
   it("rejects oversized and cross-origin uploads before persistence", async () => {
-    const oversized = await SELF.fetch(`${ORIGIN}${API_PATHS.FILES}?name=large.bin`, {
+    const oversized = await SELF.fetch(`${ORIGIN}${FILESYSTEM_API_PATHS.FILES}?name=large.bin`, {
       method: HTTP_METHOD.POST,
       headers: {
         [HTTP_HEADERS.CONTENT_TYPE]: DEFAULT_CONTENT_TYPE,
@@ -156,7 +166,7 @@ describe("computer-room filesystem transfer API", () => {
     });
     expect(oversized.status).toBe(HTTP_STATUS.CONTENT_TOO_LARGE);
 
-    const crossOrigin = await SELF.fetch(`${ORIGIN}${API_PATHS.FILES}?name=file.txt`, {
+    const crossOrigin = await SELF.fetch(`${ORIGIN}${FILESYSTEM_API_PATHS.FILES}?name=file.txt`, {
       method: HTTP_METHOD.POST,
       headers: {
         [HTTP_HEADERS.CONTENT_TYPE]: TEST_MEDIA_TYPE.TEXT,
@@ -167,5 +177,27 @@ describe("computer-room filesystem transfer API", () => {
     });
     expect(crossOrigin.status).toBe(HTTP_STATUS.FORBIDDEN);
     expect(await env.DB.prepare("SELECT COUNT(*) AS count FROM files").first("count")).toBe(0);
+  });
+
+  it("returns route-not-found for every removed legacy file route", async () => {
+    const legacyPath = "/api/files";
+    const responses = await Promise.all([
+      SELF.fetch(`${ORIGIN}${legacyPath}`),
+      SELF.fetch(`${ORIGIN}${legacyPath}`, {
+        method: HTTP_METHOD.POST,
+        headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN },
+      }),
+      SELF.fetch(`${ORIGIN}${legacyPath}/file-id`, {
+        method: HTTP_METHOD.DELETE,
+        headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN },
+      }),
+      SELF.fetch(`${ORIGIN}${legacyPath}/file-id/download`),
+      SELF.fetch(`${ORIGIN}${legacyPath}/file-id/content`),
+      SELF.fetch(`${ORIGIN}${legacyPath}/file-id/thumbnail`),
+    ]);
+
+    expect(responses.map((response) => response.status)).toEqual(
+      Array.from({ length: responses.length }, () => HTTP_STATUS.NOT_FOUND),
+    );
   });
 });

@@ -198,7 +198,7 @@ describe("computer-room filesystem batch API", () => {
     );
     expect(manifestFile).toMatchObject({
       path: "첫 폴더/한글.txt",
-      downloadUrl: `${API_PATHS.FILES}/${file.file.id}/download`,
+      downloadUrl: `${FILESYSTEM_API_PATHS.FILES}/${file.file.id}/${API_PATH_SEGMENTS.DOWNLOAD}`,
     });
     expect(manifestFile).not.toHaveProperty("objectKey");
     const download = await SELF.fetch(
@@ -207,7 +207,7 @@ describe("computer-room filesystem batch API", () => {
     expect(await download.text()).toBe("archive-content");
   });
 
-  it("uses a shared 100-item limit only for directories and trash", async () => {
+  it("uses a shared 100-item limit for directories and trash", async () => {
     const filesystemQuery = new URLSearchParams({
       [API_QUERY_PARAMETERS.PARENT_ID]: FILESYSTEM_ROOT_ID.DOCUMENTS,
       [API_QUERY_PARAMETERS.LIMIT]: "100",
@@ -232,16 +232,6 @@ describe("computer-room filesystem batch API", () => {
     expect(
       (await SELF.fetch(
         `${ORIGIN}${FILESYSTEM_API_PATHS.TRASH}?${API_QUERY_PARAMETERS.LIMIT}=101`,
-      )).status,
-    ).toBe(HTTP_STATUS.BAD_REQUEST);
-    expect(
-      (await SELF.fetch(
-        `${ORIGIN}${API_PATHS.FILES}?${API_QUERY_PARAMETERS.LIMIT}=50`,
-      )).status,
-    ).toBe(HTTP_STATUS.OK);
-    expect(
-      (await SELF.fetch(
-        `${ORIGIN}${API_PATHS.FILES}?${API_QUERY_PARAMETERS.LIMIT}=51`,
       )).status,
     ).toBe(HTTP_STATUS.BAD_REQUEST);
   });

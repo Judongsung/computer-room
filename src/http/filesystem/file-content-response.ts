@@ -9,14 +9,14 @@ import {
   THUMBNAIL_RESPONSE_HEADERS,
 } from "@/constants/platform/http";
 import { FileRangeNotSatisfiableError } from "@/domain/filesystem/file-content-error";
-import type { FileUseCases } from "@/types/filesystem/file-service";
+import type { FileTransferUseCases } from "@/types/filesystem/file-transfer-service";
 import type { ThumbnailUseCases } from "@/types/filesystem/thumbnail";
 import { parseRangeHeader } from "./byte-range";
 import { assertMethod, contentDisposition } from "./filesystem-request";
 import { jsonResponse } from "@/http/shared/responses";
 
 export async function fileDownloadResponse(
-  files: FileUseCases,
+  files: FileTransferUseCases,
   request: Request,
   id: string,
 ): Promise<Response> {
@@ -34,7 +34,7 @@ export async function fileDownloadResponse(
 }
 
 export async function fileContentResponse(
-  files: FileUseCases,
+  files: FileTransferUseCases,
   request: Request,
   id: string,
 ): Promise<Response> {

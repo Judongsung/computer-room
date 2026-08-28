@@ -1,29 +1,19 @@
 import {
-  API_PATHS,
   API_PATH_SEGMENTS,
   API_QUERY_PARAMETERS,
   FILESYSTEM_API_PATHS,
 } from "@/constants/platform/api";
 import { HTTP_ERRORS } from "@/constants/platform/errors/http";
 import {
-  CONTENT_DISPOSITION_MODE,
-  FILE_CONTENT_RESPONSE_HEADERS,
-  FILE_DOWNLOAD_RESPONSE_HEADERS,
   HTTP_HEADERS,
   HTTP_METHOD,
-  HTTP_RANGE_UNIT,
   HTTP_STATUS,
-  THUMBNAIL_RESPONSE_HEADERS,
 } from "@/constants/platform/http";
-import {
-  FILESYSTEM_PAGE_LIMIT,
-  LEGACY_FILE_PAGE_LIMIT,
-} from "@/constants/filesystem/pagination";
+import { FILESYSTEM_PAGE_LIMIT } from "@/constants/filesystem/pagination";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { AppError } from "@/domain/shared/errors";
 import { requireFilesystemDirectorySort } from "@/domain/filesystem/filesystem-sort";
-import { FileRangeNotSatisfiableError } from "@/domain/filesystem/file-content-error";
-import type { FileUseCases } from "@/types/filesystem/file-service";
+import type { FileTransferUseCases } from "@/types/filesystem/file-transfer-service";
 import type {
   FilesystemUseCases,
   FilesystemDownloadManifestUseCases,
@@ -31,13 +21,11 @@ import type {
 } from "@/types/filesystem/filesystem-service";
 import type { FeatureApiHandler } from "@/types/platform/http";
 import type { ThumbnailUseCases } from "@/types/filesystem/thumbnail";
-import { parseRangeHeader } from "@/http/filesystem/byte-range";
 import { readJsonBody } from "@/http/shared/request-body";
 import { emptyResponse, jsonResponse } from "@/http/shared/responses";
 import { readDeclaredFileSize } from "@/http/filesystem/file-upload-request";
 import {
   assertMethod,
-  contentDisposition,
   isRecord,
   methodNotAllowed,
   readDesktopPlacement,
@@ -55,16 +43,9 @@ import {
   thumbnailResponse,
 } from "@/http/filesystem/file-content-response";
 
-const FILE_DOWNLOAD_PATH = new RegExp(`^${API_PATHS.FILES}/([^/]+)/download$`);
-const FILE_CONTENT_PATH = new RegExp(
-  `^${API_PATHS.FILES}/([^/]+)/${API_PATH_SEGMENTS.CONTENT}$`,
-);
-const FILE_THUMBNAIL_PATH = new RegExp(
-  `^${API_PATHS.FILES}/([^/]+)/${API_PATH_SEGMENTS.THUMBNAIL}$`,
-);
-const FILE_PATH = new RegExp(`^${API_PATHS.FILES}/([^/]+)$`);
 const {
   ENTRIES: FILESYSTEM_ENTRIES_PATH,
+  FILES: FILESYSTEM_FILES_PATH,
   DIRECTORIES: FILESYSTEM_DIRECTORIES_PATH,
   TRASH: FILESYSTEM_TRASH_PATH,
   BATCH_MOVE: FILESYSTEM_BATCH_MOVE_PATH,
@@ -73,6 +54,15 @@ const {
   BATCH_DELETE: FILESYSTEM_BATCH_DELETE_PATH,
   DOWNLOAD_MANIFEST: FILESYSTEM_DOWNLOAD_MANIFEST_PATH,
 } = FILESYSTEM_API_PATHS;
+const FILE_DOWNLOAD_PATH = new RegExp(
+  `^${FILESYSTEM_FILES_PATH}/([^/]+)/${API_PATH_SEGMENTS.DOWNLOAD}$`,
+);
+const FILE_CONTENT_PATH = new RegExp(
+  `^${FILESYSTEM_FILES_PATH}/([^/]+)/${API_PATH_SEGMENTS.CONTENT}$`,
+);
+const FILE_THUMBNAIL_PATH = new RegExp(
+  `^${FILESYSTEM_FILES_PATH}/([^/]+)/${API_PATH_SEGMENTS.THUMBNAIL}$`,
+);
 const FILESYSTEM_ENTRY_PATH = new RegExp(`^${FILESYSTEM_ENTRIES_PATH}/([^/]+)$`);
 const FILESYSTEM_MOVE_PATH = new RegExp(
   `^${FILESYSTEM_ENTRIES_PATH}/([^/]+)/${API_PATH_SEGMENTS.MOVE}$`,
@@ -87,7 +77,7 @@ const FILESYSTEM_DIRECTORY_SORT_PATH = new RegExp(
 
 export class FileApiHandler implements FeatureApiHandler {
   constructor(
-    private readonly files: FileUseCases,
+    private readonly files: FileTransferUseCases,
     private readonly thumbnails: ThumbnailUseCases,
     private readonly filesystem: FilesystemUseCases,
     private readonly recycleBin: RecycleBinUseCases,
@@ -95,8 +85,8 @@ export class FileApiHandler implements FeatureApiHandler {
   ) {}
 
   async handle(request: Request, url: URL): Promise<Response | null> {
-    if (url.pathname === API_PATHS.FILES) {
-      return this.handleFiles(request, url);
+    if (url.pathname === FILESYSTEM_FILES_PATH) {
+      return this.handleFileUpload(request, url);
     }
     if (url.pathname === FILESYSTEM_ENTRIES_PATH) {
       return this.handleEntries(request, url);
@@ -161,7 +151,7 @@ export class FileApiHandler implements FeatureApiHandler {
           entry.kind === FILESYSTEM_ENTRY_KIND.FILE
             ? {
                 ...entry,
-                downloadUrl: `${API_PATHS.FILES}/${encodeURIComponent(entry.id)}/download`,
+                downloadUrl: `${FILESYSTEM_FILES_PATH}/${encodeURIComponent(entry.id)}/${API_PATH_SEGMENTS.DOWNLOAD}`,
               }
             : entry,
         ),
@@ -213,12 +203,6 @@ export class FileApiHandler implements FeatureApiHandler {
     if (thumbnailMatch) {
       return thumbnailResponse(this.thumbnails, request, readRouteId(thumbnailMatch));
     }
-    const legacyFileMatch = FILE_PATH.exec(url.pathname);
-    if (legacyFileMatch) {
-      assertMethod(request, HTTP_METHOD.DELETE);
-      await this.filesystem.trashEntry(readRouteId(legacyFileMatch));
-      return emptyResponse();
-    }
     const entryMatch = FILESYSTEM_ENTRY_PATH.exec(url.pathname);
     if (entryMatch) {
       return this.handleEntry(request, readRouteId(entryMatch));
@@ -241,29 +225,19 @@ export class FileApiHandler implements FeatureApiHandler {
     return null;
   }
 
-  private async handleFiles(request: Request, url: URL): Promise<Response> {
-    if (request.method === HTTP_METHOD.GET) {
-      const { offset, limit } = readPageParameters(
-        url,
-        LEGACY_FILE_PAGE_LIMIT,
-        HTTP_ERRORS.INVALID_LIMIT,
-      );
-      return jsonResponse(await this.files.listFiles(offset, limit));
-    }
-    if (request.method === HTTP_METHOD.POST) {
-      const name = url.searchParams.get(API_QUERY_PARAMETERS.FILE_NAME) ?? "";
-      const declaredSize = readDeclaredFileSize(request);
-      const file = await this.files.uploadFile({
-        parentId: url.searchParams.get(API_QUERY_PARAMETERS.PARENT_ID),
-        originalName: name,
-        contentType: request.headers.get(HTTP_HEADERS.CONTENT_TYPE),
-        declaredSize,
-        body: request.body,
-        ...readDesktopPlacementFromQuery(url),
-      });
-      return jsonResponse({ file }, HTTP_STATUS.CREATED);
-    }
-    throw methodNotAllowed();
+  private async handleFileUpload(request: Request, url: URL): Promise<Response> {
+    assertMethod(request, HTTP_METHOD.POST);
+    const name = url.searchParams.get(API_QUERY_PARAMETERS.FILE_NAME) ?? "";
+    const declaredSize = readDeclaredFileSize(request);
+    const file = await this.files.uploadFile({
+      parentId: url.searchParams.get(API_QUERY_PARAMETERS.PARENT_ID),
+      originalName: name,
+      contentType: request.headers.get(HTTP_HEADERS.CONTENT_TYPE),
+      declaredSize,
+      body: request.body,
+      ...readDesktopPlacementFromQuery(url),
+    });
+    return jsonResponse({ file }, HTTP_STATUS.CREATED);
   }
 
   private async handleEntries(request: Request, url: URL): Promise<Response> {

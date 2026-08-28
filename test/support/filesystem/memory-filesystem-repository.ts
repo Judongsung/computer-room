@@ -77,22 +77,6 @@ export class MemoryFileRepository implements FilesystemRepository {
       .map((entry) => structuredClone(entry));
   }
 
-  async listActiveFiles(offset: number, limit: number): Promise<FilesystemEntryRecord[]> {
-    return [...this.records.values()]
-      .filter(
-        (entry) =>
-          entry.kind === FILESYSTEM_ENTRY_KIND.FILE &&
-          entry.fileStatus === FILE_STATUS.READY,
-      )
-      .filter((entry) => this.isInActiveRoot(entry.id))
-      .sort(
-        (left, right) =>
-          right.createdAt - left.createdAt || right.id.localeCompare(left.id),
-      )
-      .slice(offset, offset + limit)
-      .map((entry) => structuredClone(entry));
-  }
-
   async listBreadcrumbs(directoryId: string): Promise<FilesystemBreadcrumb[]> {
     const result: FilesystemBreadcrumb[] = [];
     let current = this.records.get(directoryId);

@@ -8,7 +8,7 @@ import {
   isNovelAiImageContentType,
   novelAiImageFileName,
 } from "@/domain/integrations/novelai-image";
-import type { FileUseCases } from "@/types/filesystem/file-service";
+import type { FileTransferUseCases } from "@/types/filesystem/file-transfer-service";
 import type { FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import type { FilesystemPathUseCases } from "@/types/filesystem/filesystem-service";
 import type {
@@ -20,7 +20,7 @@ import type { Clock, IdGenerator } from "@/types/platform/runtime";
 export class NovelAiImageService implements NovelAiImageUseCases {
   constructor(
     private readonly paths: FilesystemPathUseCases,
-    private readonly files: FileUseCases,
+    private readonly files: FileTransferUseCases,
     private readonly idGenerator: IdGenerator,
     private readonly clock: Clock,
   ) {}

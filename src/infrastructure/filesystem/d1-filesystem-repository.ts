@@ -196,28 +196,6 @@ export class D1FilesystemRepository implements FilesystemRepository {
     return result.results.map(mapEntryRow);
   }
 
-  async listActiveFiles(offset: number, limit: number): Promise<FilesystemEntryRecord[]> {
-    const result = await this.database
-      .prepare(
-        `WITH RECURSIVE active(id) AS (
-           SELECT id FROM filesystem_entries WHERE id IN (?1, ?2)
-           UNION ALL
-           SELECT child.id FROM filesystem_entries child
-           JOIN active parent ON child.parent_id = parent.id
-           WHERE child.trashed_at IS NULL
-         )
-         ${ENTRY_SELECT}
-         JOIN active ON active.id = e.id
-         WHERE e.kind = ?3 AND f.status = ?4
-         ORDER BY e.created_at DESC, e.id DESC
-         LIMIT ?5 OFFSET ?6`,
-      )
-      .bind(FILESYSTEM_ROOT_ID.DESKTOP, FILESYSTEM_ROOT_ID.DOCUMENTS,
-        FILESYSTEM_ENTRY_KIND.FILE, FILE_STATUS.READY, limit, offset)
-      .all<FilesystemEntryRow>();
-    return result.results.map(mapEntryRow);
-  }
-
   async listBreadcrumbs(directoryId: string): Promise<FilesystemBreadcrumb[]> {
     const result = await this.database
       .prepare(

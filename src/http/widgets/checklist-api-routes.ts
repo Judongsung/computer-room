@@ -1,5 +1,6 @@
 import { API_PATHS, API_PATH_SEGMENTS, API_QUERY_PARAMETERS } from "@/constants/platform/api";
 import { HTTP_ERRORS } from "@/constants/platform/errors/http";
+import { CHECKLIST_ERRORS } from "@/constants/widgets/errors/checklist";
 import { HTTP_METHOD, HTTP_STATUS } from "@/constants/platform/http";
 import { CHECKLIST_LOG_PAGE_LIMIT, DEFAULT_PAGE_OFFSET } from "@/constants/filesystem/pagination";
 import { AppError } from "@/domain/shared/errors";
@@ -65,7 +66,9 @@ export class ChecklistApiRoutes {
     assertMethod(request, HTTP_METHOD.GET);
     const offset = parseIntegerParameter(url.searchParams.get(API_QUERY_PARAMETERS.OFFSET), DEFAULT_PAGE_OFFSET);
     const limit = parseIntegerParameter(url.searchParams.get(API_QUERY_PARAMETERS.LIMIT), CHECKLIST_LOG_PAGE_LIMIT);
-    if (limit < 1 || limit > CHECKLIST_LOG_PAGE_LIMIT) throw new AppError(HTTP_ERRORS.INVALID_LIMIT);
+    if (limit < 1 || limit > CHECKLIST_LOG_PAGE_LIMIT) {
+      throw new AppError(CHECKLIST_ERRORS.INVALID_LOG_LIMIT);
+    }
     return jsonResponse(await this.checklists.listLogs(decodeId(widgetId), offset, limit));
   }
 }

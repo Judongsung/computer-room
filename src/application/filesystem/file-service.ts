@@ -19,7 +19,6 @@ import {
 } from "@/domain/filesystem/filesystem-name";
 import { normalizeContentType } from "@/domain/filesystem/file-name";
 import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
-import type { FilePage, PublicFile } from "@/types/filesystem/file";
 import type {
   FilesystemDownload,
   FilesystemContent,
@@ -27,7 +26,7 @@ import type {
   FilesystemFileEntry,
   UploadFilesystemFileInput,
 } from "@/types/filesystem/filesystem";
-import type { FileUseCases } from "@/types/filesystem/file-service";
+import type { FileTransferUseCases } from "@/types/filesystem/file-transfer-service";
 import type {
   DesktopEntryOrderRepository,
   FileRepository,
@@ -38,22 +37,13 @@ import type { FileObjectStorage } from "@/types/filesystem/storage";
 import { toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper";
 import { nextDesktopOrder } from "@/application/filesystem/desktop-placement";
 
-export class FileService implements FileUseCases {
+export class FileService implements FileTransferUseCases {
   constructor(
     private readonly repository: FileRepository & DesktopEntryOrderRepository,
     private readonly storage: FileObjectStorage,
     private readonly idGenerator: IdGenerator,
     private readonly clock: Clock,
   ) {}
-
-  async listFiles(offset: number, limit: number): Promise<FilePage> {
-    const files = await this.repository.listActiveFiles(offset, limit + 1);
-    const hasMore = files.length > limit;
-    return {
-      items: files.slice(0, limit).map(toLegacyPublicFile),
-      nextOffset: hasMore ? offset + limit : null,
-    };
-  }
 
   async uploadFile(
     input: UploadFilesystemFileInput,
@@ -201,18 +191,4 @@ export class FileService implements FileUseCases {
     );
     return matches.some(Boolean);
   }
-}
-
-function toLegacyPublicFile(entry: FilesystemEntryRecord): PublicFile {
-  const publicEntry = toPublicEntry(entry);
-  if (publicEntry.kind !== FILESYSTEM_ENTRY_KIND.FILE) {
-    throw new AppError(FILESYSTEM_ERRORS.INVALID_STORED_ENTRY);
-  }
-  return {
-    id: publicEntry.id,
-    name: publicEntry.name,
-    contentType: publicEntry.contentType,
-    size: publicEntry.size,
-    createdAt: publicEntry.createdAt,
-  };
 }

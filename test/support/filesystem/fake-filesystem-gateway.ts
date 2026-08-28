@@ -1,5 +1,6 @@
 import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { DEFAULT_FILESYSTEM_DIRECTORY_SORT } from "@/constants/filesystem/sort";
+import { API_PATH_SEGMENTS, FILESYSTEM_API_PATHS } from "@/constants/platform/api";
 import type { DashboardWidget } from "@/types/widgets/widget";
 import type { FilesystemDirectoryEntry, FilesystemDirectoryPage, FilesystemDirectorySort, FilesystemEntry, FilesystemFileEntry, FilesystemTrashPage, FilesystemWidgetEntry, MoveFilesystemEntryInput, UpdateFilesystemEntryInput } from "@/types/filesystem/filesystem";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
@@ -248,15 +249,15 @@ export class FakeFilesystemGateway implements FilesystemGateway {
   }
 
   downloadUrl(id: string): string {
-    return `/api/files/${id}/download`;
+    return `${FILESYSTEM_API_PATHS.FILES}/${id}/${API_PATH_SEGMENTS.DOWNLOAD}`;
   }
 
   contentUrl(id: string): string {
-    return `/api/files/${id}/content`;
+    return `${FILESYSTEM_API_PATHS.FILES}/${id}/${API_PATH_SEGMENTS.CONTENT}`;
   }
 
   thumbnailUrl(id: string): string {
-    return `/api/files/${id}/thumbnail`;
+    return `${FILESYSTEM_API_PATHS.FILES}/${id}/${API_PATH_SEGMENTS.THUMBNAIL}`;
   }
 
   async listTrash(): Promise<FilesystemTrashPage> {

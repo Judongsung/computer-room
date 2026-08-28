@@ -1,6 +1,6 @@
 import { env, SELF } from "cloudflare:test";
 import { expect } from "vitest";
-import { API_PATHS, API_PATH_SEGMENTS, API_QUERY_PARAMETERS, NOVELAI_IMAGE_UPLOAD_API_PATH } from "@/constants/platform/api";
+import { API_PATHS, API_PATH_SEGMENTS, API_QUERY_PARAMETERS, FILESYSTEM_API_PATHS, NOVELAI_IMAGE_UPLOAD_API_PATH } from "@/constants/platform/api";
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { HTTP_HEADERS, HTTP_MEDIA_TYPE, HTTP_METHOD, HTTP_STATUS } from "@/constants/platform/http";
 import { WIDGET_TYPE, WIDGET_WINDOW_POLICY } from "@/constants/widgets/widget";
@@ -51,7 +51,7 @@ export function uploadFile(
   if (parentId) {
     query.set(API_QUERY_PARAMETERS.PARENT_ID, parentId);
   }
-  return SELF.fetch(`${ORIGIN}${API_PATHS.FILES}?${query}`, {
+  return SELF.fetch(`${ORIGIN}${FILESYSTEM_API_PATHS.FILES}?${query}`, {
     method: HTTP_METHOD.POST,
     headers: {
       [HTTP_HEADERS.CONTENT_TYPE]: contentType,

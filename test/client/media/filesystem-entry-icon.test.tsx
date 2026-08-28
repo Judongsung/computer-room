@@ -6,6 +6,7 @@ import { ThumbnailLoadCoordinator } from "@client/domain/filesystem/thumbnail-lo
 import { ThumbnailLoadProvider } from "@client/state/filesystem/thumbnail-load-context";
 import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { THUMBNAIL_SPEC } from "@/constants/filesystem/thumbnail";
+import { API_PATH_SEGMENTS, FILESYSTEM_API_PATHS } from "@/constants/platform/api";
 import type { FilesystemFileEntry } from "@/types/filesystem/filesystem";
 
 const IMAGE_ENTRY: FilesystemFileEntry = {
@@ -28,7 +29,10 @@ describe("FilesystemEntryIcon", () => {
 
   it("requests a thumbnail only after the image enters the visible area", async () => {
     installIntersectionObserver();
-    const thumbnailUrl = vi.fn((id: string) => `/api/files/${id}/thumbnail`);
+    const thumbnailUrl = vi.fn(
+      (id: string) =>
+        `${FILESYSTEM_API_PATHS.FILES}/${id}/${API_PATH_SEGMENTS.THUMBNAIL}`,
+    );
     const { container } = render(
       <ThumbnailLoadProvider coordinator={new ThumbnailLoadCoordinator(4)}>
         <FilesystemEntryIcon entry={IMAGE_ENTRY} thumbnailUrl={thumbnailUrl} />
@@ -43,7 +47,10 @@ describe("FilesystemEntryIcon", () => {
     act(() => TestIntersectionObserver.instances[0]?.trigger(true));
     await waitFor(() => expect(thumbnailUrl).toHaveBeenCalledWith(IMAGE_ENTRY.id));
     const image = container.querySelector("img");
-    expect(image).toHaveAttribute("src", "/api/files/image-id/thumbnail");
+    expect(image).toHaveAttribute(
+      "src",
+      `${FILESYSTEM_API_PATHS.FILES}/image-id/${API_PATH_SEGMENTS.THUMBNAIL}`,
+    );
     expect(image).toHaveAttribute("loading", "lazy");
     expect(image).toHaveAttribute("decoding", "async");
     expect(image).toHaveClass("filesystem-entry-icon--thumbnail-loading");
@@ -68,7 +75,10 @@ describe("FilesystemEntryIcon", () => {
   });
 
   it("uses the generic icon without a request for unsupported or oversized images", () => {
-    const thumbnailUrl = vi.fn((id: string) => `/api/files/${id}/thumbnail`);
+    const thumbnailUrl = vi.fn(
+      (id: string) =>
+        `${FILESYSTEM_API_PATHS.FILES}/${id}/${API_PATH_SEGMENTS.THUMBNAIL}`,
+    );
     const { container, rerender } = render(
       <ThumbnailLoadProvider coordinator={new ThumbnailLoadCoordinator(4)}>
         <FilesystemEntryIcon
@@ -106,7 +116,10 @@ describe("FilesystemEntryIcon", () => {
     const coordinator = new ThumbnailLoadCoordinator(1);
     const secondEntry = { ...IMAGE_ENTRY, id: "image-2", name: "image-2.png" };
     const thirdEntry = { ...IMAGE_ENTRY, id: "image-3", name: "image-3.png" };
-    const thumbnailUrl = vi.fn((id: string) => `/api/files/${id}/thumbnail`);
+    const thumbnailUrl = vi.fn(
+      (id: string) =>
+        `${FILESYSTEM_API_PATHS.FILES}/${id}/${API_PATH_SEGMENTS.THUMBNAIL}`,
+    );
     const { container, rerender } = render(
       <ThumbnailLoadProvider coordinator={coordinator}>
         <FilesystemEntryIcon
@@ -148,7 +161,8 @@ describe("FilesystemEntryIcon", () => {
     act(() => TestIntersectionObserver.instances.at(-1)?.trigger(true));
     const activeImage = [...container.querySelectorAll("img")].find(
       (image) =>
-        image.getAttribute("src") === `/api/files/${IMAGE_ENTRY.id}/thumbnail`,
+        image.getAttribute("src") ===
+          `${FILESYSTEM_API_PATHS.FILES}/${IMAGE_ENTRY.id}/${API_PATH_SEGMENTS.THUMBNAIL}`,
     );
     fireEvent.load(activeImage!);
 

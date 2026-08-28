@@ -111,29 +111,6 @@ describe("FileService", () => {
     expect(second.name).toBe("PHOTO (2).PNG");
   });
 
-  it("keeps the legacy list endpoint compatible with files in nested folders", async () => {
-    const { repository, service } = createService();
-    await repository.insertDirectory({
-      id: "archive-directory",
-      parentId: FILESYSTEM_ROOT_ID.DOCUMENTS,
-      name: "보관함",
-      nameKey: "보관함",
-      createdAt: TEST_NOW_MS - 1,
-    });
-    await service.uploadFile({
-      parentId: "archive-directory",
-      originalName: TEST_FILE.NAME,
-      contentType: TEST_FILE.CONTENT_TYPE,
-      declaredSize: TEST_FILE.SIZE,
-      body: streamFromText(TEST_FILE.BODY),
-    });
-
-    await expect(service.listFiles(0, 20)).resolves.toMatchObject({
-      items: [{ id: TEST_FILE.ID, name: TEST_FILE.NAME }],
-      nextOffset: null,
-    });
-  });
-
   it("streams only the requested byte range for supported media", async () => {
     const { service } = createService();
     await service.uploadFile({

@@ -1,4 +1,3 @@
-import type { FilePage } from "@/types/filesystem/file";
 import type {
   FilesystemDownload,
   FilesystemContent,
@@ -7,8 +6,7 @@ import type {
 } from "@/types/filesystem/filesystem";
 import type { RequestedByteRange } from "@/types/filesystem/media";
 
-export interface FileUseCases {
-  listFiles(offset: number, limit: number): Promise<FilePage>;
+export interface FileTransferUseCases {
   uploadFile(input: UploadFilesystemFileInput): Promise<FilesystemFileEntry>;
   downloadFile(id: string): Promise<FilesystemDownload>;
   streamFile(

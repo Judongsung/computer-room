@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
+import { API_PATH_SEGMENTS, FILESYSTEM_API_PATHS } from "@/constants/platform/api";
 import type { FilesystemDirectoryEntry } from "@/types/filesystem/filesystem";
 import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
 import { FILESYSTEM_DOWNLOAD_STATUS } from "@client/constants/filesystem/download";
@@ -98,7 +99,8 @@ function downloadGateway(
 ): FilesystemDownloadGateway {
   return {
     createDownloadManifest,
-    downloadUrl: (id) => `/api/files/${id}/download`,
+    downloadUrl: (id) =>
+      `${FILESYSTEM_API_PATHS.FILES}/${id}/${API_PATH_SEGMENTS.DOWNLOAD}`,
   };
 }
 
@@ -112,7 +114,7 @@ function manifest(): FilesystemDownloadManifest {
         path: "자료/한글.txt",
         size: 4,
         updatedAt: UPDATED_AT,
-        downloadUrl: "/api/files/file/download",
+        downloadUrl: `${FILESYSTEM_API_PATHS.FILES}/file/${API_PATH_SEGMENTS.DOWNLOAD}`,
       },
     ],
     totalFileCount: 1,

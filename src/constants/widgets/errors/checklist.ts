@@ -3,9 +3,15 @@ import {
   CHECKLIST_ITEM_LABEL_MAX_LENGTH,
   MAX_ACTIVE_CHECKLIST_ITEMS,
 } from "@/constants/widgets/checklist";
+import { CHECKLIST_LOG_PAGE_LIMIT } from "@/constants/filesystem/pagination";
 import { HTTP_STATUS } from "@/constants/platform/http";
 
 export const CHECKLIST_ERRORS = {
+  INVALID_LOG_LIMIT: {
+    status: HTTP_STATUS.BAD_REQUEST,
+    code: "INVALID_CHECKLIST_LOG_LIMIT",
+    message: `체크리스트 로그 limit은 1부터 ${CHECKLIST_LOG_PAGE_LIMIT}까지 가능합니다.`,
+  },
   INVALID_LABEL: {
     status: HTTP_STATUS.BAD_REQUEST,
     code: "INVALID_CHECKLIST_LABEL",

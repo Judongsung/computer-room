@@ -1,4 +1,7 @@
-import { API_PATHS } from "@/constants/platform/api";
+import {
+  API_PATH_SEGMENTS,
+  FILESYSTEM_API_PATHS,
+} from "@/constants/platform/api";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { WIDGET_TYPE_VALUES } from "@/constants/widgets/widget";
 import { isFilesystemDirectorySort } from "@/domain/filesystem/filesystem-sort";
@@ -91,7 +94,8 @@ export function isDownloadManifest(value: unknown): value is FilesystemDownloadM
       return entry.kind === FILESYSTEM_ENTRY_KIND.FILE && typeof entry.id === "string" &&
         typeof entry.size === "number" && Number.isSafeInteger(entry.size) && entry.size >= 0 &&
         typeof entry.downloadUrl === "string" &&
-        entry.downloadUrl === `${API_PATHS.FILES}/${encodeURIComponent(entry.id)}/download`;
+        entry.downloadUrl ===
+          `${FILESYSTEM_API_PATHS.FILES}/${encodeURIComponent(entry.id)}/${API_PATH_SEGMENTS.DOWNLOAD}`;
     }) && isNonNegativeInteger(value.totalFileCount) && isNonNegativeInteger(value.totalBytes) &&
     Array.isArray(value.skippedWidgetIds) && value.skippedWidgetIds.every(isString);
 }

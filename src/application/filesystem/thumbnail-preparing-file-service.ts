@@ -1,7 +1,6 @@
 import { isThumbnailSourceSupported } from "@/domain/filesystem/thumbnail";
 import { BACKGROUND_TASK_FAILURE_CODE } from "@/constants/platform/background-task";
-import type { FilePage } from "@/types/filesystem/file";
-import type { FileUseCases } from "@/types/filesystem/file-service";
+import type { FileTransferUseCases } from "@/types/filesystem/file-transfer-service";
 import type {
   FilesystemContent,
   FilesystemDownload,
@@ -12,16 +11,12 @@ import type { RequestedByteRange } from "@/types/filesystem/media";
 import type { BackgroundTaskScheduler } from "@/types/platform/runtime";
 import type { ThumbnailPreparer } from "@/types/filesystem/thumbnail";
 
-export class ThumbnailPreparingFileService implements FileUseCases {
+export class ThumbnailPreparingFileService implements FileTransferUseCases {
   constructor(
-    private readonly files: FileUseCases,
+    private readonly files: FileTransferUseCases,
     private readonly thumbnails: ThumbnailPreparer,
     private readonly backgroundTasks: BackgroundTaskScheduler,
   ) {}
-
-  listFiles(offset: number, limit: number): Promise<FilePage> {
-    return this.files.listFiles(offset, limit);
-  }
 
   async uploadFile(
     input: UploadFilesystemFileInput,

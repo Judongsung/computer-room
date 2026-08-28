@@ -1,5 +1,4 @@
 import {
-  API_PATHS,
   API_PATH_SEGMENTS,
   API_QUERY_PARAMETERS,
   FILESYSTEM_API_PATHS,
@@ -50,6 +49,7 @@ import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
 const {
   ENTRIES: FILESYSTEM_ENTRIES_PATH,
+  FILES: FILESYSTEM_FILES_PATH,
   DIRECTORIES: FILESYSTEM_DIRECTORIES_PATH,
   TRASH: FILESYSTEM_TRASH_PATH,
   BATCH_MOVE: FILESYSTEM_BATCH_MOVE_PATH,
@@ -132,7 +132,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       [API_QUERY_PARAMETERS.FILE_NAME]: file.name,
     });
     appendPlacementQuery(query, desktopPlacement);
-    const value = await requestJson(`${API_PATHS.FILES}?${query}`, {
+    const value = await requestJson(`${FILESYSTEM_FILES_PATH}?${query}`, {
       method: HTTP_METHOD.POST,
       headers: {
         [HTTP_HEADERS.CONTENT_TYPE]: file.type || DEFAULT_CONTENT_TYPE,
@@ -223,15 +223,15 @@ export class FilesystemApiClient implements FilesystemGateway {
   }
 
   downloadUrl(id: string): string {
-    return `${API_PATHS.FILES}/${encodeURIComponent(id)}/download`;
+    return `${FILESYSTEM_FILES_PATH}/${encodeURIComponent(id)}/${API_PATH_SEGMENTS.DOWNLOAD}`;
   }
 
   contentUrl(id: string): string {
-    return `${API_PATHS.FILES}/${encodeURIComponent(id)}/${API_PATH_SEGMENTS.CONTENT}`;
+    return `${FILESYSTEM_FILES_PATH}/${encodeURIComponent(id)}/${API_PATH_SEGMENTS.CONTENT}`;
   }
 
   thumbnailUrl(id: string): string {
-    return `${API_PATHS.FILES}/${encodeURIComponent(id)}/${API_PATH_SEGMENTS.THUMBNAIL}`;
+    return `${FILESYSTEM_FILES_PATH}/${encodeURIComponent(id)}/${API_PATH_SEGMENTS.THUMBNAIL}`;
   }
 
   async listTrash(offset = 0): Promise<FilesystemTrashPage> {

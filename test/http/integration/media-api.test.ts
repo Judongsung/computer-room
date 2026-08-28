@@ -76,7 +76,7 @@ describe("computer-room media API", () => {
       TEST_MEDIA_TYPE.VIDEO,
     );
     const created = (await upload.json()) as { file: { id: string } };
-    const contentPath = `${ORIGIN}${API_PATHS.FILES}/${created.file.id}/${API_PATH_SEGMENTS.CONTENT}`;
+    const contentPath = `${ORIGIN}${FILESYSTEM_API_PATHS.FILES}/${created.file.id}/${API_PATH_SEGMENTS.CONTENT}`;
 
     const full = await SELF.fetch(contentPath);
     expect(full.status).toBe(HTTP_STATUS.OK);
@@ -111,7 +111,7 @@ describe("computer-room media API", () => {
     const upload = await uploadFile("notes.txt", "notes");
     const created = (await upload.json()) as { file: { id: string } };
     const response = await SELF.fetch(
-      `${ORIGIN}${API_PATHS.FILES}/${created.file.id}/${API_PATH_SEGMENTS.CONTENT}`,
+      `${ORIGIN}${FILESYSTEM_API_PATHS.FILES}/${created.file.id}/${API_PATH_SEGMENTS.CONTENT}`,
     );
     expect(response.status).toBe(HTTP_STATUS.UNSUPPORTED_MEDIA_TYPE);
   });
@@ -124,7 +124,7 @@ describe("computer-room media API", () => {
     const query = new URLSearchParams({
       [API_QUERY_PARAMETERS.FILE_NAME]: "pixel.png",
     });
-    const upload = await SELF.fetch(`${ORIGIN}${API_PATHS.FILES}?${query}`, {
+    const upload = await SELF.fetch(`${ORIGIN}${FILESYSTEM_API_PATHS.FILES}?${query}`, {
       method: HTTP_METHOD.POST,
       headers: {
         [HTTP_HEADERS.CONTENT_TYPE]: TEST_MEDIA_TYPE.IMAGE,
@@ -135,7 +135,7 @@ describe("computer-room media API", () => {
     });
     expect(upload.status).toBe(HTTP_STATUS.CREATED);
     const created = (await upload.json()) as { file: { id: string } };
-    const thumbnailPath = `${ORIGIN}${API_PATHS.FILES}/${created.file.id}/${API_PATH_SEGMENTS.THUMBNAIL}`;
+    const thumbnailPath = `${ORIGIN}${FILESYSTEM_API_PATHS.FILES}/${created.file.id}/${API_PATH_SEGMENTS.THUMBNAIL}`;
     const thumbnailKey = thumbnailObjectKey(created.file.id);
 
     const first = await SELF.fetch(thumbnailPath);
@@ -153,7 +153,7 @@ describe("computer-room media API", () => {
     expect(second.status).toBe(HTTP_STATUS.OK);
     expect((await env.FILES.list()).objects).toHaveLength(2);
 
-    await SELF.fetch(`${ORIGIN}${API_PATHS.FILES}/${created.file.id}`, {
+    await SELF.fetch(`${ORIGIN}${FILESYSTEM_API_PATHS.ENTRIES}/${created.file.id}`, {
       method: HTTP_METHOD.DELETE,
       headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN },
     });
@@ -210,7 +210,7 @@ describe("computer-room media API", () => {
     ]);
 
     const response = await SELF.fetch(
-      `${ORIGIN}${API_PATHS.FILES}/${entryId}/${API_PATH_SEGMENTS.THUMBNAIL}`,
+      `${ORIGIN}${FILESYSTEM_API_PATHS.FILES}/${entryId}/${API_PATH_SEGMENTS.THUMBNAIL}`,
     );
 
     expect(response.status).toBe(HTTP_STATUS.NOT_FOUND);
