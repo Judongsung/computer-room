@@ -15,7 +15,7 @@ import {
   SYSTEM_APP_ID,
 } from "@client/constants/desktop/system-app";
 import { DESKTOP_LAYOUT } from "@client/constants/desktop/desktop";
-import { DesktopWindow } from "./desktop-window";
+import { DesktopWindow } from "@client/components/desktop/desktop-window";
 import { LazyFeatureBoundary } from "@client/components/shared/lazy-feature-boundary";
 
 const DocumentsWindow = lazy(() =>

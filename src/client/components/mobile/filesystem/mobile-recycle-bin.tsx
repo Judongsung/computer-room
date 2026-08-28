@@ -3,6 +3,7 @@ import type { FilesystemTrashPage } from "@/types/filesystem/filesystem";
 import { MobileEntryIcon } from "@client/components/mobile/filesystem/mobile-entry-icon";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
 interface MobileRecycleBinProps {
@@ -24,7 +25,7 @@ export function MobileRecycleBin({ gateway, revision }: MobileRecycleBinProps) {
         setError(null);
       },
       (caught: unknown) => {
-        if (active) setError(errorMessage(caught));
+        if (active) setError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
       },
     );
     return () => {
@@ -39,7 +40,7 @@ export function MobileRecycleBin({ gateway, revision }: MobileRecycleBinProps) {
       const next = await gateway.listTrash(page.nextOffset);
       setPage({ ...next, items: [...page.items, ...next.items] });
     } catch (caught) {
-      setError(errorMessage(caught));
+      setError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
     } finally {
       setLoadingMore(false);
     }
@@ -79,8 +80,4 @@ export function MobileRecycleBin({ gateway, revision }: MobileRecycleBinProps) {
       ) : null}
     </MobileActivity>
   );
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error && error.message ? error.message : MOBILE_COPY.LOAD_FAILED;
 }

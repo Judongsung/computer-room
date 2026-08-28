@@ -11,8 +11,8 @@ import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { UNSAVED_WIDGET_TITLE_BY_TYPE } from "@client/constants/widgets/content";
 import type { TaskbarWindowItem } from "@client/types/desktop/desktop";
 import type { SystemAppId } from "@client/types/desktop/system-app";
-import type { useExplorerWindows } from "./use-explorer-windows";
-import type { useSystemWindows } from "./use-system-windows";
+import type { useExplorerWindows } from "@client/hooks/desktop/use-explorer-windows";
+import type { useSystemWindows } from "@client/hooks/desktop/use-system-windows";
 import type { useMediaWindows } from "@client/hooks/media/use-media-windows";
 
 interface DesktopWindowManagerOptions {

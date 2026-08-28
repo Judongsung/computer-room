@@ -8,6 +8,7 @@ import { MobileDirectoryMenu } from "@client/components/mobile/filesystem/mobile
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
 import { MobileEntryIcon } from "@client/components/mobile/filesystem/mobile-entry-icon";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { messageFromError } from "@client/errors/error-message";
 import { formatFileSize } from "@client/utils/format-file-size";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
@@ -57,7 +58,7 @@ export function MobileDirectory({
       },
       (caught: unknown) => {
         if (!active) return;
-        setError(errorMessage(caught, MOBILE_COPY.LOAD_FAILED));
+        setError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
         setLoading(false);
       },
     );
@@ -73,7 +74,7 @@ export function MobileDirectory({
       const next = await gateway.listDirectory(directoryId, page.nextOffset);
       setPage({ ...next, items: [...page.items, ...next.items] });
     } catch (caught) {
-      setError(errorMessage(caught, MOBILE_COPY.LOAD_FAILED));
+      setError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
     } finally {
       setLoadingMore(false);
     }
@@ -150,8 +151,4 @@ export function MobileDirectory({
       />
     </>
   );
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }

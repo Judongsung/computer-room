@@ -14,6 +14,7 @@ import {
   LOCAL_WIDGET_DRAFT_DEFAULT_NAME,
 } from "@client/constants/widgets/local-widget-draft";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { LocalWidgetDraft } from "@client/types/widgets/local-widget-draft";
 import type { WidgetFileGateway } from "@client/types/widgets/widget-file";
@@ -62,7 +63,7 @@ export function MobileWidgetFileSaveDialog({
       },
       (caught: unknown) => {
         if (!active) return;
-        setError(errorMessage(caught, MOBILE_COPY.LOAD_FAILED));
+        setError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
         setLoading(false);
       },
     );
@@ -94,7 +95,7 @@ export function MobileWidgetFileSaveDialog({
             };
       onSaved(await widgetFiles.createWidgetFile(input));
     } catch (caught) {
-      setError(errorMessage(caught, MOBILE_COPY.SAVE_FAILED));
+      setError(messageFromError(caught, MOBILE_COPY.SAVE_FAILED));
       setSaving(false);
     }
   };
@@ -183,8 +184,4 @@ async function listSaveDirectory(
     breadcrumbs: firstPage.breadcrumbs,
     children,
   };
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }

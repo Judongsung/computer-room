@@ -3,6 +3,7 @@ import type { ChecklistLogEvent } from "@/types/widgets/widget";
 import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
 import { CHECKLIST_WIDGET_COPY } from "@client/constants/widgets/content";
+import { messageFromError } from "@client/errors/error-message";
 import type { ChecklistGateway } from "@client/types/widgets/ports/checklist";
 
 interface MobileChecklistLogsProps {
@@ -27,7 +28,9 @@ export function MobileChecklistLogs({ widgetId, gateway, onClose }: MobileCheckl
       },
       (caught: unknown) => {
         if (!active) return;
-        setError(errorMessage(caught));
+        setError(
+          messageFromError(caught, CHECKLIST_WIDGET_COPY.LOG_LOAD_FAILED),
+        );
         setLoading(false);
       },
     );
@@ -44,7 +47,9 @@ export function MobileChecklistLogs({ widgetId, gateway, onClose }: MobileCheckl
       setEvents((current) => [...current, ...page.items]);
       setNextOffset(page.nextOffset);
     } catch (caught) {
-      setError(errorMessage(caught));
+      setError(
+        messageFromError(caught, CHECKLIST_WIDGET_COPY.LOG_LOAD_FAILED),
+      );
     } finally {
       setLoading(false);
     }
@@ -75,8 +80,4 @@ export function MobileChecklistLogs({ widgetId, gateway, onClose }: MobileCheckl
       {error ? <p className={MOBILE_CLASS_NAME.ERROR} role="alert">{error}</p> : null}
     </MobileDialog>
   );
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error && error.message ? error.message : CHECKLIST_WIDGET_COPY.LOG_LOAD_FAILED;
 }

@@ -28,6 +28,7 @@ import {
   storageUsageLevel,
   storageUsagePercent,
 } from "@client/domain/storage/storage-status";
+import { messageFromError } from "@client/errors/error-message";
 import type { WidgetComponentProps } from "@client/types/desktop/desktop";
 import { formatFileSize } from "@client/utils/format-file-size";
 import { XpWidgetToolbarButton } from "@client/components/shared/xp-widget-toolbar-button";
@@ -48,11 +49,7 @@ export function StorageStatusWidget({
     try {
       setStatus(await storageStatusGateway.getStatus());
     } catch (caught) {
-      setError(
-        caught instanceof Error && caught.message
-          ? caught.message
-          : STORAGE_STATUS_COPY.LOAD_FAILED,
-      );
+      setError(messageFromError(caught, STORAGE_STATUS_COPY.LOAD_FAILED));
     } finally {
       setLoading(false);
     }

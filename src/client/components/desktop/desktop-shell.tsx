@@ -15,6 +15,7 @@ import {
   WIDGET_TYPE,
 } from "@/constants/widgets/widget";
 import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
+import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import type { WidgetType } from "@/types/widgets/widget";
@@ -278,7 +279,7 @@ export function DesktopShell({
     onFilesystemChanged: notifyFilesystemChanged,
     onWindowClosed: windowManager.clearActive,
     onError: (error) =>
-      setDesktopError(errorMessage(error, FILESYSTEM_COPY.CHANGE_FAILED)),
+      setDesktopError(messageFromError(error, FILESYSTEM_COPY.CHANGE_FAILED)),
   });
 
   const runFilesystemChange = useCallback(
@@ -288,7 +289,7 @@ export function DesktopShell({
         await operation();
         notifyFilesystemChanged();
       } catch (error) {
-        setDesktopError(errorMessage(error, FILESYSTEM_COPY.CHANGE_FAILED));
+        setDesktopError(messageFromError(error, FILESYSTEM_COPY.CHANGE_FAILED));
       }
     },
     [notifyFilesystemChanged],
@@ -364,7 +365,7 @@ export function DesktopShell({
         });
       } else {
         void uploadDrop(event, parentId).catch((error: unknown) =>
-          setDesktopError(errorMessage(error, FILESYSTEM_COPY.CHANGE_FAILED)),
+          setDesktopError(messageFromError(error, FILESYSTEM_COPY.CHANGE_FAILED)),
         );
       }
     },
@@ -513,7 +514,7 @@ export function DesktopShell({
         setDesktopDialog(null);
         notifyFilesystemChanged();
       } catch (error) {
-        setDesktopError(errorMessage(error, FILESYSTEM_COPY.CHANGE_FAILED));
+        setDesktopError(messageFromError(error, FILESYSTEM_COPY.CHANGE_FAILED));
       } finally {
         setDesktopDialogBusy(false);
       }
@@ -893,8 +894,4 @@ export function DesktopShell({
 
 function isSystemAppId(id: string): id is SystemAppId {
   return (SYSTEM_APP_ID_VALUES as readonly string[]).includes(id);
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }

@@ -3,6 +3,7 @@ import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
 import { STORAGE_STATUS_COPY } from "@client/constants/storage/storage-status";
+import { messageFromError } from "@client/errors/error-message";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
 import { formatFileSize } from "@client/utils/format-file-size";
 
@@ -20,11 +21,7 @@ export function MobileStorageStatus({ gateway }: MobileStorageStatusProps) {
       setStatus(await gateway.getStatus());
       setError(null);
     } catch (caught) {
-      setError(
-        caught instanceof Error && caught.message
-          ? caught.message
-          : STORAGE_STATUS_COPY.LOAD_FAILED,
-      );
+      setError(messageFromError(caught, STORAGE_STATUS_COPY.LOAD_FAILED));
     } finally {
       setLoading(false);
     }

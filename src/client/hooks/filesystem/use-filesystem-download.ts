@@ -14,6 +14,7 @@ import {
   createFilesystemArchiveStream,
   FilesystemArchiveFileError,
 } from "@client/domain/filesystem/archive";
+import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemDownloadGateway } from "@client/types/filesystem/ports/transfer";
 import type {
   BrowserSaveFilePicker,
@@ -169,7 +170,5 @@ function downloadErrorMessage(error: unknown): string {
   if (error instanceof FilesystemArchiveFileError) {
     return FILESYSTEM_COPY.DOWNLOAD_FILE_FAILED(error.path);
   }
-  return error instanceof Error && error.message
-    ? error.message
-    : FILESYSTEM_COPY.DOWNLOAD_FAILED;
+  return messageFromError(error, FILESYSTEM_COPY.DOWNLOAD_FAILED);
 }

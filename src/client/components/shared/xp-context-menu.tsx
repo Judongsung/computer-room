@@ -10,6 +10,7 @@ import type {
   XpContextMenuItem,
   XpContextMenuRequest,
 } from "@client/types/context-menu/context-menu";
+import { messageFromError } from "@client/errors/error-message";
 
 interface XpContextMenuProps {
   readonly request: XpContextMenuRequest;
@@ -67,7 +68,7 @@ async function executeCommand(
   try {
     await item.onSelect();
   } catch (error) {
-    reportError(error instanceof Error && error.message ? error.message : XP_CONTEXT_MENU_COPY.COMMAND_FAILED);
+    reportError(messageFromError(error, XP_CONTEXT_MENU_COPY.COMMAND_FAILED));
   }
 }
 

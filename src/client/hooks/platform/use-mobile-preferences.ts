@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MobilePreferences } from "@/types/platform/mobile-preferences";
 import { MOBILE_COPY } from "@client/constants/shared/mobile";
+import { messageFromError } from "@client/errors/error-message";
 import type { MobilePreferencesGateway } from "@client/types/platform/mobile-preferences";
 
 const DEFAULT_PREFERENCES: MobilePreferences = { wallpaper: null };
@@ -22,7 +23,7 @@ export function useMobilePreferences(gateway: MobilePreferencesGateway) {
       setError(null);
     } catch (caught) {
       if (requestSequence.current !== requestId) return;
-      setError(errorMessage(caught, MOBILE_COPY.WALLPAPER_LOAD_FAILED));
+      setError(messageFromError(caught, MOBILE_COPY.WALLPAPER_LOAD_FAILED));
     } finally {
       if (requestSequence.current === requestId) setLoading(false);
     }
@@ -57,7 +58,7 @@ export function useMobilePreferences(gateway: MobilePreferencesGateway) {
         return true;
       } catch (caught) {
         if (requestSequence.current === requestId) {
-          setError(errorMessage(caught, MOBILE_COPY.WALLPAPER_SAVE_FAILED));
+          setError(messageFromError(caught, MOBILE_COPY.WALLPAPER_SAVE_FAILED));
         }
         return false;
       } finally {
@@ -75,8 +76,4 @@ export function useMobilePreferences(gateway: MobilePreferencesGateway) {
     refresh,
     updateWallpaper,
   };
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }

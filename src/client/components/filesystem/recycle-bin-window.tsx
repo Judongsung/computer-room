@@ -19,6 +19,7 @@ import {
   FILESYSTEM_SELECTION_DATA_ATTRIBUTE,
 } from "@client/constants/filesystem/filesystem";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
+import { messageFromError } from "@client/errors/error-message";
 import { SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
 import type {
   FilesystemGateway,
@@ -85,7 +86,9 @@ export function RecycleBinWindow({
         if (active) setPage(value);
       })
       .catch((reason: unknown) => {
-        if (active) setError(errorMessage(reason));
+        if (active) {
+          setError(messageFromError(reason, FILESYSTEM_COPY.CHANGE_FAILED));
+        }
       });
     return () => {
       active = false;
@@ -108,7 +111,7 @@ export function RecycleBinWindow({
       selection.clear();
       onFilesystemChanged();
     } catch (reason) {
-      setError(errorMessage(reason));
+      setError(messageFromError(reason, FILESYSTEM_COPY.CHANGE_FAILED));
     } finally {
       setBusy(false);
     }
@@ -124,7 +127,7 @@ export function RecycleBinWindow({
         selection.replace(result.failures.map((failure) => failure.id));
         onFilesystemChanged();
       } catch (reason) {
-        setError(errorMessage(reason));
+        setError(messageFromError(reason, FILESYSTEM_COPY.CHANGE_FAILED));
       } finally {
         setBusy(false);
       }
@@ -147,7 +150,9 @@ export function RecycleBinWindow({
             : current,
         );
       })
-      .catch((reason: unknown) => setError(errorMessage(reason)))
+      .catch((reason: unknown) =>
+        setError(messageFromError(reason, FILESYSTEM_COPY.CHANGE_FAILED)),
+      )
       .finally(() => setBusy(false));
   };
 
@@ -395,10 +400,4 @@ function RecycleRow({
       </time>
     </button>
   );
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error && error.message
-    ? error.message
-    : FILESYSTEM_COPY.CHANGE_FAILED;
 }

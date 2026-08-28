@@ -3,6 +3,7 @@ import { MAX_ACTIVE_CHECKLIST_ITEMS } from "@/constants/widgets/checklist";
 import type { ChecklistItem } from "@/types/widgets/widget";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
 import { CHECKLIST_WIDGET_COPY } from "@client/constants/widgets/content";
+import { messageFromError } from "@client/errors/error-message";
 
 interface MobileChecklistProps {
   readonly items: readonly ChecklistItem[];
@@ -37,7 +38,7 @@ export function MobileChecklist({
     try {
       await operation();
     } catch (caught) {
-      setError(errorMessage(caught));
+      setError(messageFromError(caught, CHECKLIST_WIDGET_COPY.CHANGE_FAILED));
     } finally {
       setBusy(false);
     }
@@ -162,10 +163,4 @@ export function MobileChecklist({
       {error ? <p className={MOBILE_CLASS_NAME.ERROR} role="alert">{error}</p> : null}
     </div>
   );
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error && error.message
-    ? error.message
-    : CHECKLIST_WIDGET_COPY.CHANGE_FAILED;
 }

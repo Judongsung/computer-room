@@ -21,17 +21,6 @@
   "include": [
     "src/client/**/*.ts",
     "src/client/**/*.tsx",
-    "src/constants/api.ts",
-    "src/constants/media.ts",
-    "src/constants/widget.ts",
-    "src/domain/media-type.ts",
-    "src/domain/widget-layout.ts",
-    "src/domain/widget-contract.ts",
-    "src/types/auth.ts",
-    "src/types/file.ts",
-    "src/types/filesystem.ts",
-    "src/types/media.ts",
-    "src/types/widget.ts",
     "test/client/**/*.ts",
     "test/client/**/*.tsx"
   ]

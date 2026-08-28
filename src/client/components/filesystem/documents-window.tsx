@@ -16,6 +16,7 @@ import {
   isPotentialMediaContentType,
   mediaKindFromContentType,
 } from "@/domain/filesystem/media-type";
+import { messageFromError } from "@client/errors/error-message";
 import {
   FILE_PICKER_ABORT_ERROR_NAME,
   FILESYSTEM_DRAG_SOURCE,
@@ -72,8 +73,8 @@ import { useXpContextMenu } from "@client/state/context-menu/context-menu-contex
 import { contextMenuCommand, contextMenuSeparator } from "@client/domain/context-menu/context-menu";
 import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
 import { FOLDER_PROPERTIES_COPY } from "@client/constants/filesystem/details";
-import { DirectorySortControls } from "./directory-sort-controls";
-import { DocumentsToolbar } from "./documents-toolbar";
+import { DirectorySortControls } from "@client/components/filesystem/directory-sort-controls";
+import { DocumentsToolbar } from "@client/components/filesystem/documents-toolbar";
 
 type DocumentsDialog = "create" | "rename" | "move" | null;
 const EMPTY_ENTRY_IDS: readonly string[] = [];
@@ -178,7 +179,9 @@ export function DocumentsWindow({
         }
       })
       .catch((reason: unknown) => {
-        if (active) setError(errorMessage(reason, FILESYSTEM_COPY.LOAD_FAILED));
+        if (active) {
+          setError(messageFromError(reason, FILESYSTEM_COPY.LOAD_FAILED));
+        }
       });
     return () => {
       active = false;
@@ -214,7 +217,7 @@ export function DocumentsWindow({
         selection.clear();
         onFilesystemChanged();
       } catch (reason) {
-        setError(errorMessage(reason, FILESYSTEM_COPY.CHANGE_FAILED));
+        setError(messageFromError(reason, FILESYSTEM_COPY.CHANGE_FAILED));
       } finally {
         setBusy(false);
       }
@@ -235,7 +238,7 @@ export function DocumentsWindow({
         selection.replace(result.failures.map((failure) => failure.id));
         onFilesystemChanged();
       } catch (reason) {
-        setError(errorMessage(reason, FILESYSTEM_COPY.CHANGE_FAILED));
+        setError(messageFromError(reason, FILESYSTEM_COPY.CHANGE_FAILED));
       } finally {
         setBusy(false);
       }
@@ -317,7 +320,7 @@ export function DocumentsWindow({
       })
       .catch((reason: unknown) => {
         if (!isPickerCancellation(reason)) {
-          setError(errorMessage(reason, FILESYSTEM_COPY.CHANGE_FAILED));
+          setError(messageFromError(reason, FILESYSTEM_COPY.CHANGE_FAILED));
         }
       });
   };
@@ -370,7 +373,7 @@ export function DocumentsWindow({
         ),
       )
       .catch((reason: unknown) =>
-        setError(errorMessage(reason, FILESYSTEM_COPY.CHANGE_FAILED)),
+        setError(messageFromError(reason, FILESYSTEM_COPY.CHANGE_FAILED)),
       );
   };
   const loadMore = (): void => {
@@ -388,7 +391,7 @@ export function DocumentsWindow({
         );
       })
       .catch((reason: unknown) => {
-        setError(errorMessage(reason, FILESYSTEM_COPY.LOAD_FAILED));
+        setError(messageFromError(reason, FILESYSTEM_COPY.LOAD_FAILED));
       })
       .finally(() => setBusy(false));
   };
@@ -759,10 +762,6 @@ export function DocumentsWindow({
       <FolderPropertiesDialog controller={folderProperties} />
     </DesktopAppWindow>
   );
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }
 
 function isPickerCancellation(error: unknown): boolean {

@@ -6,6 +6,7 @@ import {
 } from "@/constants/filesystem/filesystem";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
+import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
 interface NameDialogProps {
@@ -120,7 +121,9 @@ export function DirectoryPickerDialog({
         if (active) setPage(value);
       })
       .catch((reason: unknown) => {
-        if (active) setError(errorMessage(reason));
+        if (active) {
+          setError(messageFromError(reason, FILESYSTEM_COPY.LOAD_FAILED));
+        }
       });
     return () => {
       active = false;
@@ -140,7 +143,9 @@ export function DirectoryPickerDialog({
             : current,
         );
       })
-      .catch((reason: unknown) => setError(errorMessage(reason)))
+      .catch((reason: unknown) =>
+        setError(messageFromError(reason, FILESYSTEM_COPY.LOAD_FAILED)),
+      )
       .finally(() => setIsLoadingMore(false));
   };
 
@@ -219,10 +224,4 @@ export function DirectoryPickerDialog({
       </section>
     </div>
   );
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error && error.message
-    ? error.message
-    : FILESYSTEM_COPY.LOAD_FAILED;
 }

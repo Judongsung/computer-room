@@ -9,6 +9,7 @@ import type { WidgetType } from "@/types/widgets/widget";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import { CHECKLIST_WIDGET_COPY, MEMO_WIDGET_COPY } from "@client/constants/widgets/content";
 import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
+import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
 interface WidgetSaveDialogProps {
@@ -51,7 +52,9 @@ export function WidgetSaveDialog({
         if (active) setPage(value);
       })
       .catch((reason: unknown) => {
-        if (active) setError(errorMessage(reason));
+        if (active) {
+          setError(messageFromError(reason, FILESYSTEM_COPY.LOAD_FAILED));
+        }
       });
     return () => {
       active = false;
@@ -75,7 +78,9 @@ export function WidgetSaveDialog({
             : current,
         );
       })
-      .catch((reason: unknown) => setError(errorMessage(reason)))
+      .catch((reason: unknown) =>
+        setError(messageFromError(reason, FILESYSTEM_COPY.LOAD_FAILED)),
+      )
       .finally(() => setIsLoadingMore(false));
   };
   return (
@@ -209,10 +214,4 @@ export function UnsavedWidgetDialog({
       </section>
     </div>
   );
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error && error.message
-    ? error.message
-    : FILESYSTEM_COPY.LOAD_FAILED;
 }

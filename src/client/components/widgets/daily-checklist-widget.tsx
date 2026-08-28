@@ -13,6 +13,7 @@ import {
 import { CHECKLIST_WIDGET_COPY } from "@client/constants/widgets/content";
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { XP_WIDGET_TOOLBAR_ACTION } from "@client/constants/shared/xp";
+import { messageFromError } from "@client/errors/error-message";
 import { XpWidgetToolbarButton } from "@client/components/shared/xp-widget-toolbar-button";
 import { ChecklistLogDialog } from "@client/components/widgets/checklist-log-dialog";
 import { WidgetCard } from "@client/components/widgets/widget-card";
@@ -57,7 +58,7 @@ function DailyChecklistContent({
       publish(data);
       setError(null);
     } catch (loadError) {
-      setError(errorMessage(loadError, CHECKLIST_WIDGET_COPY.LOAD_FAILED));
+      setError(messageFromError(loadError, CHECKLIST_WIDGET_COPY.LOAD_FAILED));
     }
   }, [gateway, publish, widget.id]);
 
@@ -102,7 +103,7 @@ function DailyChecklistContent({
       publish({ ...widget.data, items: [...widget.data.items, item] });
       setNewLabel("");
     } catch (mutationError) {
-      setError(errorMessage(mutationError, CHECKLIST_WIDGET_COPY.CHANGE_FAILED));
+      setError(messageFromError(mutationError, CHECKLIST_WIDGET_COPY.CHANGE_FAILED));
     } finally {
       setIsMutating(false);
     }
@@ -124,7 +125,7 @@ function DailyChecklistContent({
       setEditingItemId(null);
       setEditingLabel("");
     } catch (mutationError) {
-      setError(errorMessage(mutationError, CHECKLIST_WIDGET_COPY.CHANGE_FAILED));
+      setError(messageFromError(mutationError, CHECKLIST_WIDGET_COPY.CHANGE_FAILED));
     } finally {
       setIsMutating(false);
     }
@@ -147,7 +148,7 @@ function DailyChecklistContent({
         items: widget.data.items.filter((candidate) => candidate.id !== item.id),
       });
     } catch (mutationError) {
-      setError(errorMessage(mutationError, CHECKLIST_WIDGET_COPY.CHANGE_FAILED));
+      setError(messageFromError(mutationError, CHECKLIST_WIDGET_COPY.CHANGE_FAILED));
     } finally {
       setIsMutating(false);
     }
@@ -174,7 +175,7 @@ function DailyChecklistContent({
       publish(replaceChecklistItem(optimistic, updated));
     } catch (mutationError) {
       publish(previous);
-      setError(errorMessage(mutationError, CHECKLIST_WIDGET_COPY.CHANGE_FAILED));
+      setError(messageFromError(mutationError, CHECKLIST_WIDGET_COPY.CHANGE_FAILED));
     } finally {
       setIsMutating(false);
     }
@@ -367,8 +368,4 @@ function replaceChecklistItem(
       item.id === replacement.id ? replacement : item,
     ),
   };
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }

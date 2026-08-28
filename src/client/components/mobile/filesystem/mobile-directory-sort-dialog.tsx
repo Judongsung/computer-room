@@ -15,6 +15,7 @@ import {
   FILESYSTEM_SORT_FIELD_OPTIONS,
 } from "@client/constants/filesystem/sort";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 
 interface MobileDirectorySortDialogProps {
@@ -45,7 +46,7 @@ export function MobileDirectorySortDialog({
       setSaving(false);
       onSaved();
     } catch (caught) {
-      setError(errorMessage(caught));
+      setError(messageFromError(caught, MOBILE_COPY.SORT_SAVE_FAILED));
       setSaving(false);
     }
   };
@@ -119,10 +120,4 @@ export function MobileDirectorySortDialog({
       </div>
     </MobileDialog>
   );
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error && error.message
-    ? error.message
-    : MOBILE_COPY.SORT_SAVE_FAILED;
 }

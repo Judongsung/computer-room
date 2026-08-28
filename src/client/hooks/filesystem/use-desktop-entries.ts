@@ -5,6 +5,7 @@ import {
   DESKTOP_ENTRY_UNORDERED_INDEX,
   FILESYSTEM_COPY,
 } from "@client/constants/filesystem/filesystem";
+import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
 export function useDesktopEntries(
@@ -24,11 +25,7 @@ export function useDesktopEntries(
       })
       .catch((reason: unknown) => {
         if (!active) return;
-        setError(
-          reason instanceof Error && reason.message
-            ? reason.message
-            : FILESYSTEM_COPY.LOAD_FAILED,
-        );
+        setError(messageFromError(reason, FILESYSTEM_COPY.LOAD_FAILED));
       });
     return () => {
       active = false;

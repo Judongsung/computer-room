@@ -7,6 +7,7 @@ import { CHECKLIST_WIDGET_COPY } from "@client/constants/widgets/content";
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import { XP_WINDOW_CONTROL_ACTION } from "@client/constants/shared/xp";
+import { messageFromError } from "@client/errors/error-message";
 import type { ChecklistGateway } from "@client/types/widgets/ports/checklist";
 import { XpWindowFrame } from "@client/components/desktop/xp-window-frame";
 import { XpWindowControlButton } from "@client/components/shared/xp-window-control-button";
@@ -58,7 +59,7 @@ export function ChecklistLogDialog({
       .catch((loadError: unknown) => {
         if (active) {
           setError(
-            errorMessage(loadError, CHECKLIST_WIDGET_COPY.LOG_LOAD_FAILED),
+            messageFromError(loadError, CHECKLIST_WIDGET_COPY.LOG_LOAD_FAILED),
           );
         }
       })
@@ -95,7 +96,7 @@ export function ChecklistLogDialog({
       setEvents((current) => [...current, ...page.items]);
       setNextOffset(page.nextOffset);
     } catch (loadError) {
-      setError(errorMessage(loadError, CHECKLIST_WIDGET_COPY.LOG_LOAD_FAILED));
+      setError(messageFromError(loadError, CHECKLIST_WIDGET_COPY.LOG_LOAD_FAILED));
     } finally {
       setIsLoading(false);
     }
@@ -182,8 +183,4 @@ function groupEventsByDate(
     groups.set(event.businessDate, group);
   }
   return [...groups.entries()];
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }

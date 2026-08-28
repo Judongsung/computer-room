@@ -33,6 +33,7 @@ import {
   toggleMaximizeWindow as toggleMaximizeWindowState,
 } from "@client/domain/desktop/window-layout";
 import type { DashboardGateway } from "@client/types/widgets/api";
+import { messageFromError } from "@client/errors/error-message";
 import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/desktop";
 import { useUnsavedChangesWarning } from "@client/hooks/shared/use-unsaved-changes-warning";
 import { useWidgetLayoutAutoSave } from "@client/hooks/widgets/use-widget-layout-auto-save";
@@ -106,7 +107,7 @@ export function useDashboard(api: DashboardGateway) {
       type: DASHBOARD_ACTION_TYPE.MESSAGE_SET,
       message: {
         kind: MESSAGE_KIND.ERROR,
-        text: errorMessage(error, fallback),
+        text: messageFromError(error, fallback),
       },
     });
   }, []);
@@ -160,7 +161,7 @@ export function useDashboard(api: DashboardGateway) {
           type: DASHBOARD_ACTION_TYPE.MESSAGE_SET,
           message: {
             kind: MESSAGE_KIND.ERROR,
-            text: errorMessage(error, UI_MESSAGES.SAVE_FAILED),
+            text: messageFromError(error, UI_MESSAGES.SAVE_FAILED),
           },
         });
       }
@@ -360,8 +361,4 @@ export function useDashboard(api: DashboardGateway) {
     retry,
     dismissMessage,
   };
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }

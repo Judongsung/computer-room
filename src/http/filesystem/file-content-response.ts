@@ -11,8 +11,11 @@ import {
 import { FileRangeNotSatisfiableError } from "@/domain/filesystem/file-content-error";
 import type { FileTransferUseCases } from "@/types/filesystem/file-transfer-service";
 import type { ThumbnailUseCases } from "@/types/filesystem/thumbnail";
-import { parseRangeHeader } from "./byte-range";
-import { assertMethod, contentDisposition } from "./filesystem-request";
+import { parseRangeHeader } from "@/http/filesystem/byte-range";
+import {
+  assertMethod,
+  contentDisposition,
+} from "@/http/filesystem/filesystem-request";
 import { jsonResponse } from "@/http/shared/responses";
 
 export async function fileDownloadResponse(

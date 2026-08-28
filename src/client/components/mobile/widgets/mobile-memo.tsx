@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { MarkdownContent } from "@client/components/widgets/markdown-content";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
 import { MEMO_WIDGET_COPY } from "@client/constants/widgets/content";
+import { messageFromError } from "@client/errors/error-message";
 import { useUnsavedChangesWarning } from "@client/hooks/shared/use-unsaved-changes-warning";
 
 interface MobileMemoProps {
@@ -42,7 +43,7 @@ export function MobileMemo({
       setEditing(false);
       setPreview(false);
     } catch (caught) {
-      setError(errorMessage(caught, MEMO_WIDGET_COPY.SAVE_FAILED));
+      setError(messageFromError(caught, MEMO_WIDGET_COPY.SAVE_FAILED));
     } finally {
       setSaving(false);
     }
@@ -101,8 +102,4 @@ export function MobileMemo({
       {error ? <p className={MOBILE_CLASS_NAME.ERROR} role="alert">{error}</p> : null}
     </div>
   );
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }

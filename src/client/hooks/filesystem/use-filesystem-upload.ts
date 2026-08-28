@@ -5,6 +5,7 @@ import {
   FILESYSTEM_COPY,
   FILESYSTEM_UPLOAD_POLICY,
 } from "@client/constants/filesystem/filesystem";
+import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type {
   LocalUploadNode,
@@ -93,11 +94,21 @@ export function useFilesystemUpload(
             recordSuccess();
             await prepare(node.children, directory.id, path);
           } catch (error) {
-            recordFailure({ path, message: errorMessage(error), skipped: false });
+            recordFailure({
+              path,
+              message: messageFromError(
+                error,
+                FILESYSTEM_COPY.TRANSFER_FAILED,
+              ),
+              skipped: false,
+            });
             for (const skipped of flattenPaths(node.children, path)) {
               recordFailure({
                 path: skipped,
-                message: errorMessage(error),
+                message: messageFromError(
+                  error,
+                  FILESYSTEM_COPY.TRANSFER_FAILED,
+                ),
                 skipped: true,
               });
             }
@@ -123,7 +134,10 @@ export function useFilesystemUpload(
         } catch (error) {
           recordFailure({
             path: job.path,
-            message: errorMessage(error),
+            message: messageFromError(
+              error,
+              FILESYSTEM_COPY.TRANSFER_FAILED,
+            ),
             skipped: false,
           });
         }
@@ -204,10 +218,4 @@ function flattenPaths(
         : []),
     ];
   });
-}
-
-function errorMessage(error: unknown): string {
-  return error instanceof Error && error.message
-    ? error.message
-    : FILESYSTEM_COPY.TRANSFER_FAILED;
 }

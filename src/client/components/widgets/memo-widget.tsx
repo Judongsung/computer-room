@@ -11,6 +11,7 @@ import { MEMO_WIDGET_COPY } from "@client/constants/widgets/content";
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import { MEMO_EDITOR_MODE } from "@client/constants/widgets/memo";
+import { messageFromError } from "@client/errors/error-message";
 import { XP_WIDGET_TOOLBAR_ACTION } from "@client/constants/shared/xp";
 import { useUnsavedChangesWarning } from "@client/hooks/shared/use-unsaved-changes-warning";
 import type { WidgetComponentProps } from "@client/types/desktop/desktop";
@@ -68,7 +69,7 @@ function MemoWidgetContent({
       onWidgetChange({ ...widget, data });
       setIsEditingContent(false);
     } catch (saveError) {
-      setError(errorMessage(saveError, MEMO_WIDGET_COPY.SAVE_FAILED));
+      setError(messageFromError(saveError, MEMO_WIDGET_COPY.SAVE_FAILED));
     } finally {
       setIsSaving(false);
     }
@@ -213,8 +214,4 @@ function MemoWidgetContent({
       )}
     </WidgetCard>
   );
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }

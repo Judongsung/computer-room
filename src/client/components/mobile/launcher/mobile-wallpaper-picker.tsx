@@ -14,6 +14,7 @@ import type {
 import { MobileEntryIcon } from "@client/components/mobile/filesystem/mobile-entry-icon";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
 interface MobileWallpaperPickerProps {
@@ -85,7 +86,7 @@ export function MobileWallpaperPicker({
       },
       (caught: unknown) => {
         if (!active) return;
-        setDirectoryError(errorMessage(caught, MOBILE_COPY.LOAD_FAILED));
+        setDirectoryError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
         setLoadingDirectory(false);
       },
     );
@@ -120,7 +121,7 @@ export function MobileWallpaperPicker({
       });
       setDirectoryError(null);
     } catch (caught) {
-      setDirectoryError(errorMessage(caught, MOBILE_COPY.LOAD_FAILED));
+      setDirectoryError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
     } finally {
       setLoadingMore(false);
     }
@@ -312,8 +313,4 @@ function isWallpaperBrowserEntry(
     (entry.kind === FILESYSTEM_ENTRY_KIND.FILE &&
       mediaKindFromContentType(entry.contentType) === MEDIA_KIND.IMAGE)
   );
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }

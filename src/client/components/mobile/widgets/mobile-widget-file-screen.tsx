@@ -6,6 +6,7 @@ import { MobileChecklist } from "@client/components/mobile/widgets/mobile-checkl
 import { MobileChecklistLogs } from "@client/components/mobile/widgets/mobile-checklist-logs";
 import { MobileMemo } from "@client/components/mobile/widgets/mobile-memo";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { messageFromError } from "@client/errors/error-message";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { WidgetFileGateway } from "@client/types/widgets/widget-file";
 
@@ -34,7 +35,7 @@ export function MobileWidgetFileScreen({
       setWidget((await widgetFiles.getWidgetFile(entryId)).widget);
       setError(null);
     } catch (caught) {
-      setError(errorMessage(caught, MOBILE_COPY.LOAD_FAILED));
+      setError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
     } finally {
       setLoading(false);
     }
@@ -95,8 +96,4 @@ export function MobileWidgetFileScreen({
       ) : null}
     </MobileActivity>
   );
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error && error.message ? error.message : fallback;
 }

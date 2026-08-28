@@ -12,6 +12,7 @@ import {
   MOBILE_COPY,
   MOBILE_LAYOUT_CSS_VARIABLES,
 } from "@client/constants/shared/mobile";
+import { messageFromError } from "@client/errors/error-message";
 import { ThumbnailLoadProvider } from "@client/state/filesystem/thumbnail-load-context";
 import type { AppProps } from "@client/types/app/app";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
@@ -42,7 +43,7 @@ export function MobileApplication({
       setSession(await dashboard.getSession());
       setError(null);
     } catch (caught) {
-      setError(caught instanceof Error && caught.message ? caught.message : MOBILE_COPY.LOAD_FAILED);
+      setError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
     }
   }, [dashboard]);
   useEffect(() => void load(), [load, revision]);
