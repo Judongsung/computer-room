@@ -2,12 +2,14 @@ export const WIDGET_TYPE = {
   MEMO: "memo",
   DAILY_CHECKLIST: "daily-checklist",
   STORAGE_STATUS: "storage-status",
+  IMAGE_UPLOAD_PROFILES: "image-upload-profiles",
 } as const;
 
 export const WIDGET_TYPE_VALUES = [
   WIDGET_TYPE.MEMO,
   WIDGET_TYPE.DAILY_CHECKLIST,
   WIDGET_TYPE.STORAGE_STATUS,
+  WIDGET_TYPE.IMAGE_UPLOAD_PROFILES,
 ] as const;
 
 export const WIDGET_BEHAVIOR = {
@@ -22,6 +24,11 @@ export const WIDGET_BEHAVIOR = {
     persistsWithoutFile: false,
   },
   [WIDGET_TYPE.STORAGE_STATUS]: {
+    singleton: true,
+    supportsFileStorage: false,
+    persistsWithoutFile: true,
+  },
+  [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]: {
     singleton: true,
     supportsFileStorage: false,
     persistsWithoutFile: true,
@@ -85,6 +92,13 @@ export const WIDGET_WINDOW_POLICY = {
     DEFAULT_HEIGHT: 500,
     MIN_WIDTH: 480,
     MIN_HEIGHT: 400,
+    ...WINDOW_SIZE_LIMITS,
+  },
+  [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]: {
+    DEFAULT_WIDTH: 720,
+    DEFAULT_HEIGHT: 560,
+    MIN_WIDTH: 600,
+    MIN_HEIGHT: 460,
     ...WINDOW_SIZE_LIMITS,
   },
 } as const;

@@ -3,7 +3,7 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "@/constants/filesystem/filesystem";
-import { WIDGET_TYPE } from "@/constants/widgets/widget";
+import { WIDGET_BEHAVIOR, WIDGET_TYPE } from "@/constants/widgets/widget";
 import type {
   DesktopPlacement,
   FilesystemEntry,
@@ -101,7 +101,14 @@ export function useDesktopFilesystemController({
     (entry: FilesystemEntry): void => {
       if (entry.kind !== FILESYSTEM_ENTRY_KIND.WIDGET) return;
       const widget = widgets.find((candidate) => candidate.id === entry.widgetId);
-      if (!widget || widget.type === WIDGET_TYPE.STORAGE_STATUS) return;
+      if (
+        !widget ||
+        !WIDGET_BEHAVIOR[widget.type].supportsFileStorage ||
+        (widget.type !== WIDGET_TYPE.MEMO &&
+          widget.type !== WIDGET_TYPE.DAILY_CHECKLIST)
+      ) {
+        return;
+      }
       onWidgetChange({
         ...widget,
         file: { entryId: entry.id, parentId: entry.parentId, name: entry.name },

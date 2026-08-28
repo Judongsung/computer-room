@@ -69,10 +69,13 @@ export function cloneDashboardWidgets(
         data: { ...widget.data },
       };
     }
-    if (widget.type === WIDGET_TYPE.STORAGE_STATUS) {
+    if (
+      widget.type === WIDGET_TYPE.STORAGE_STATUS ||
+      widget.type === WIDGET_TYPE.IMAGE_UPLOAD_PROFILES
+    ) {
       return {
         ...layout,
-        type: WIDGET_TYPE.STORAGE_STATUS,
+        type: widget.type,
         file: null,
         data: null,
       };
@@ -116,8 +119,10 @@ export function replaceDashboardWidgetData(
       };
     }
     if (
-      widget.type === WIDGET_TYPE.STORAGE_STATUS &&
-      replacement.type === WIDGET_TYPE.STORAGE_STATUS
+      (widget.type === WIDGET_TYPE.STORAGE_STATUS &&
+        replacement.type === WIDGET_TYPE.STORAGE_STATUS) ||
+      (widget.type === WIDGET_TYPE.IMAGE_UPLOAD_PROFILES &&
+        replacement.type === WIDGET_TYPE.IMAGE_UPLOAD_PROFILES)
     ) {
       return replacement;
     }

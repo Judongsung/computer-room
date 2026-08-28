@@ -45,6 +45,11 @@ export function buildDesktopBlankContextMenu(
       DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET,
       () => actions.addWidget(WIDGET_TYPE.STORAGE_STATUS),
     ),
+    contextMenuCommand(
+      XP_CONTEXT_MENU_COMMAND_ID.ADD_IMAGE_UPLOAD_PROFILES,
+      DASHBOARD_COPY.ADD_IMAGE_UPLOAD_PROFILES_WIDGET,
+      () => actions.addWidget(WIDGET_TYPE.IMAGE_UPLOAD_PROFILES),
+    ),
     contextMenuSeparator("desktop-blank-separator-2"),
     contextMenuCommand(
       XP_CONTEXT_MENU_COMMAND_ID.REFRESH,

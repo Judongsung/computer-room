@@ -12,6 +12,7 @@ import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { SaveWidgetFileInput } from "@/types/filesystem/filesystem";
 import type { LayoutSaveStatus, StatusMessage } from "@client/types/widgets/dashboard";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
+import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
 
 export interface DesktopDimensions {
   readonly width: number;
@@ -81,6 +82,7 @@ export interface WidgetComponentProps {
   readonly windowControls: WidgetWindowControls;
   readonly gateway: DashboardGateway;
   readonly storageStatusGateway: StorageStatusGateway;
+  readonly imageUploadProfileGateway: ImageUploadProfileGateway;
   readonly onWidgetChange: (widget: DashboardWidget) => void;
 }
 
@@ -99,6 +101,7 @@ export interface DesktopShellProps {
   readonly gateway: DashboardGateway;
   readonly filesystemGateway: FilesystemGateway;
   readonly storageStatusGateway: StorageStatusGateway;
+  readonly imageUploadProfileGateway: ImageUploadProfileGateway;
   readonly layoutSaveStatus: LayoutSaveStatus;
   readonly layoutSaveError: string | null;
   readonly message: StatusMessage | null;
@@ -134,6 +137,7 @@ export interface DesktopWindowProps {
   readonly zIndex: number;
   readonly gateway: DashboardGateway;
   readonly storageStatusGateway: StorageStatusGateway;
+  readonly imageUploadProfileGateway: ImageUploadProfileGateway;
   readonly onFocus: () => void;
   readonly onMinimize: () => void;
   readonly onToggleMaximize: () => void;
@@ -151,6 +155,7 @@ export interface StartMenuProps {
   readonly onAddMemo: () => void;
   readonly onAddChecklist: () => void;
   readonly onAddStorageStatus: () => void;
+  readonly onAddImageUploadProfiles: () => void;
 }
 
 export interface TaskbarProps {

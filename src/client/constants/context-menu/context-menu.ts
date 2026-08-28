@@ -45,6 +45,7 @@ export const XP_CONTEXT_MENU_COMMAND_ID = {
   ADD_MEMO: "add-memo",
   ADD_CHECKLIST: "add-checklist",
   ADD_STORAGE_STATUS: "add-storage-status",
+  ADD_IMAGE_UPLOAD_PROFILES: "add-image-upload-profiles",
   REFRESH: "refresh",
   DOWNLOAD: "download",
   RENAME: "rename",

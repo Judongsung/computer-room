@@ -19,6 +19,7 @@ export function StartMenu({
   onAddMemo,
   onAddChecklist,
   onAddStorageStatus,
+  onAddImageUploadProfiles,
 }: StartMenuProps) {
   const contextMenu = useXpContextMenu();
   const menuRef = useRef<HTMLElement>(null);
@@ -128,6 +129,28 @@ export function StartMenu({
               alt=""
             />
             <span>{DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET}</span>
+          </button>
+          <button
+            type="button"
+            className="start-menu__item"
+            onClick={onAddImageUploadProfiles}
+            onContextMenu={(event) =>
+              contextMenu.openFromEvent(event, [
+                contextMenuCommand(
+                  XP_CONTEXT_MENU_COMMAND_ID.ADD_IMAGE_UPLOAD_PROFILES,
+                  DASHBOARD_COPY.ADD_IMAGE_UPLOAD_PROFILES_WIDGET,
+                  onAddImageUploadProfiles,
+                ),
+              ])
+            }
+          >
+            <img
+              src={
+                WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]
+              }
+              alt=""
+            />
+            <span>{DASHBOARD_COPY.ADD_IMAGE_UPLOAD_PROFILES_WIDGET}</span>
           </button>
         </section>
         <section

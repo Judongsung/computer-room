@@ -111,7 +111,8 @@ export function isDashboardWidget(value: unknown): value is DashboardWidget {
     return true;
   }
   return (
-    value.type === WIDGET_TYPE.STORAGE_STATUS &&
+    (value.type === WIDGET_TYPE.STORAGE_STATUS ||
+      value.type === WIDGET_TYPE.IMAGE_UPLOAD_PROFILES) &&
     value.file === null &&
     value.data === null
   );

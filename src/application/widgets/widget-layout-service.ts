@@ -222,6 +222,14 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
         file: null,
         data: null,
       }),
+      [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]: (
+        layout: StoredWidgetLayout,
+      ): DashboardWidget => ({
+        ...toPublicLayout(layout),
+        type: WIDGET_TYPE.IMAGE_UPLOAD_PROFILES,
+        file: null,
+        data: null,
+      }),
     } satisfies Record<
       WidgetType,
       (layout: StoredWidgetLayout) => DashboardWidget

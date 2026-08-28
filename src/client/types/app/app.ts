@@ -4,6 +4,7 @@ import type { StorageStatusGateway } from "@client/types/storage/storage-status"
 import type { WidgetFileGateway } from "@client/types/widgets/widget-file";
 import type { CLIENT_INTERFACE_MODE } from "@client/constants/shared/interface-mode";
 import type { MobilePreferencesGateway } from "@client/types/platform/mobile-preferences";
+import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
 
 export type ClientInterfaceMode =
   (typeof CLIENT_INTERFACE_MODE)[keyof typeof CLIENT_INTERFACE_MODE];
@@ -14,5 +15,6 @@ export interface AppProps {
   readonly storageStatusApi?: StorageStatusGateway;
   readonly widgetFileApi?: WidgetFileGateway;
   readonly mobilePreferencesApi?: MobilePreferencesGateway;
+  readonly imageUploadProfileApi?: ImageUploadProfileGateway;
   readonly interfaceMode?: ClientInterfaceMode;
 }

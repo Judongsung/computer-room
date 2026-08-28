@@ -17,6 +17,7 @@ const WIDGET_CATALOG = [
   WIDGET_TYPE.MEMO,
   WIDGET_TYPE.DAILY_CHECKLIST,
   WIDGET_TYPE.STORAGE_STATUS,
+  WIDGET_TYPE.IMAGE_UPLOAD_PROFILES,
 ] as const;
 
 interface MyComputerWindowProps extends SystemWindowChromeProps {

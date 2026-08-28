@@ -16,6 +16,7 @@ export function DesktopWindow({
   zIndex,
   gateway,
   storageStatusGateway,
+  imageUploadProfileGateway,
   onFocus,
   onMinimize,
   onToggleMaximize,
@@ -66,6 +67,7 @@ export function DesktopWindow({
         }}
         gateway={gateway}
         storageStatusGateway={storageStatusGateway}
+        imageUploadProfileGateway={imageUploadProfileGateway}
         onWidgetChange={onWidgetChange}
       />
     </MovableDesktopWindow>

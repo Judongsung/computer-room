@@ -11,6 +11,7 @@ import {
 import { ACCESS_LOGOUT_PATH } from "@/constants/platform/auth";
 import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
 import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
+import { WIDGET_ERRORS } from "@/constants/widgets/errors/widget";
 import { MOBILE_PREFERENCES_ERRORS } from "@/constants/platform/errors/mobile-preferences";
 import {
   DEFAULT_CONTENT_TYPE,
@@ -93,6 +94,93 @@ describe("computer-room widget API", () => {
     ).toBe(2);
     await discardWidget(first.id);
     await discardWidget(second.id);
+  });
+
+  it("keeps the image upload profile manager as one persistent non-file widget", async () => {
+    const type = WIDGET_TYPE.IMAGE_UPLOAD_PROFILES;
+    const policy = WIDGET_WINDOW_POLICY[type];
+    const input = {
+      type,
+      position: { x: 80, y: 72 },
+      size: { width: policy.DEFAULT_WIDTH, height: policy.DEFAULT_HEIGHT },
+    };
+    const firstResponse = await jsonRequest(
+      API_PATHS.WIDGETS,
+      HTTP_METHOD.POST,
+      input,
+    );
+    expect(firstResponse.status).toBe(HTTP_STATUS.CREATED);
+    const first = (await firstResponse.json()) as { widget: DashboardWidget };
+    expect(first.widget).toMatchObject({ type, file: null, data: null });
+
+    const duplicateResponse = await jsonRequest(
+      API_PATHS.WIDGETS,
+      HTTP_METHOD.POST,
+      input,
+    );
+    expect(duplicateResponse.status).toBe(HTTP_STATUS.OK);
+    await expect(duplicateResponse.json()).resolves.toMatchObject({
+      widget: { id: first.widget.id, type },
+    });
+
+    const fileResponse = await jsonRequest(
+      `${widgetPath(first.widget.id)}/${API_PATH_SEGMENTS.FILE}`,
+      HTTP_METHOD.POST,
+      { parentId: FILESYSTEM_ROOT_ID.DOCUMENTS, name: "API 프로필" },
+    );
+    expect(fileResponse.status).toBe(WIDGET_ERRORS.WIDGET_FILE_NOT_SUPPORTED.status);
+    await expect(fileResponse.json()).resolves.toEqual({
+      error: {
+        code: WIDGET_ERRORS.WIDGET_FILE_NOT_SUPPORTED.code,
+        message: WIDGET_ERRORS.WIDGET_FILE_NOT_SUPPORTED.message,
+      },
+    });
+
+    const movedLayout = {
+      ...toLayout(first.widget),
+      position: { x: 240, y: 180 },
+    };
+    expect((await saveWidgets([movedLayout])).status).toBe(HTTP_STATUS.OK);
+    expect(
+      (
+        await jsonRequest(
+          `${widgetPath(first.widget.id)}/${API_PATH_SEGMENTS.CLOSE}`,
+          HTTP_METHOD.POST,
+          {},
+        )
+      ).status,
+    ).toBe(HTTP_STATUS.NO_CONTENT);
+    await expect(
+      (await SELF.fetch(`${ORIGIN}${API_PATHS.WIDGETS}`)).json(),
+    ).resolves.toEqual({ items: [] });
+
+    const reopenResponse = await jsonRequest(
+      API_PATHS.WIDGETS,
+      HTTP_METHOD.POST,
+      input,
+    );
+    expect(reopenResponse.status).toBe(HTTP_STATUS.OK);
+    await expect(reopenResponse.json()).resolves.toMatchObject({
+      widget: {
+        id: first.widget.id,
+        type,
+        position: movedLayout.position,
+        file: null,
+        data: null,
+      },
+    });
+
+    const discardResponse = await discardWidget(first.widget.id);
+    expect(discardResponse.status).toBe(
+      WIDGET_ERRORS.BUILT_IN_WIDGET_DISCARD_NOT_ALLOWED.status,
+    );
+    expect(
+      await env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM dashboard_widgets WHERE type = ?1",
+      )
+        .bind(type)
+        .first("count"),
+    ).toBe(1);
   });
 
   it("stores widgets as D1-only files across close, reopen, trash, and purge", async () => {

@@ -20,8 +20,8 @@ const MEMO_ENTRY_ID = "migration-memo-entry";
 const CHECKLIST_ENTRY_ID = "migration-checklist-entry";
 const TIMESTAMP = 1_777_777_777_000;
 
-describe("storage status widget migration", () => {
-  it("preserves widget content, checklist history, files, order, and foreign keys", async () => {
+describe("singleton widget migrations", () => {
+  it("preserves widget content, checklist history, files, order, preferences, profiles, and foreign keys", async () => {
     const testEnvironment = env as typeof env & MigrationTestEnvironment;
     const migrations = testEnvironment.TEST_MIGRATIONS;
     const storageStatusIndex = migrations.findIndex((migration) =>
@@ -37,6 +37,12 @@ describe("storage status widget migration", () => {
     ];
     const mobilePreferencesMigration = [
       migrationByName(migrations, "0009_mobile_preferences"),
+    ];
+    const imageProfileMigration = [
+      migrationByName(migrations, "0010_clumsy_groot"),
+    ];
+    const imageProfileWidgetMigration = [
+      migrationByName(migrations, "0011_magical_mister_sinister"),
     ];
     const database = testEnvironment.MIGRATION_REGRESSION_DB;
 
@@ -179,6 +185,70 @@ describe("storage status widget migration", () => {
         .run(),
     ).rejects.toThrow();
     await expect(rows(database, "PRAGMA foreign_key_check")).resolves.toEqual([]);
+
+    await database.batch([
+      widgetEntryStatement(
+        database,
+        MEMO_ENTRY_ID,
+        FILESYSTEM_ROOT_ID.DESKTOP,
+        "memo file",
+        MEMO_WIDGET_ID,
+      ),
+      database
+        .prepare("INSERT INTO desktop_entry_order(entry_id, sort_order) VALUES (?1, 0)")
+        .bind(MEMO_ENTRY_ID),
+    ]);
+    await applyD1Migrations(database, imageProfileMigration);
+    await database.batch([
+      database
+        .prepare(
+          `INSERT INTO integration_image_profiles(
+            id, display_name, root_id, path_template, file_name_template,
+            enabled, created_at, updated_at
+          ) VALUES ('custom', 'Custom', ?1, '', '{uuid}.{ext}', 1, ?2, ?2)`,
+        )
+        .bind(FILESYSTEM_ROOT_ID.DOCUMENTS, TIMESTAMP),
+      database.prepare(
+        `INSERT INTO integration_image_profile_content_types(profile_id, content_type)
+         VALUES ('custom', 'image/png')`,
+      ),
+    ]);
+    await applyD1Migrations(database, imageProfileWidgetMigration);
+
+    await expect(
+      rows(database, "SELECT widget_id, markdown FROM memo_widgets"),
+    ).resolves.toEqual([
+      { widget_id: MEMO_WIDGET_ID, markdown: "# preserved memo" },
+    ]);
+    await expect(
+      rows(database, "SELECT id, widget_id FROM checklist_events"),
+    ).resolves.toEqual([
+      { id: CHECKLIST_EVENT_ID, widget_id: CHECKLIST_WIDGET_ID },
+    ]);
+    await expect(
+      rows(
+        database,
+        "SELECT id, widget_id FROM filesystem_entries WHERE widget_id IS NOT NULL ORDER BY id",
+      ),
+    ).resolves.toEqual([
+      { id: CHECKLIST_ENTRY_ID, widget_id: CHECKLIST_WIDGET_ID },
+      { id: MEMO_ENTRY_ID, widget_id: MEMO_WIDGET_ID },
+    ]);
+    await expect(rows(database, "SELECT * FROM desktop_entry_order")).resolves.toEqual([
+      { entry_id: MEMO_ENTRY_ID, sort_order: 0 },
+    ]);
+    await expect(
+      rows(database, "SELECT id FROM integration_image_profiles ORDER BY id"),
+    ).resolves.toEqual([{ id: "custom" }, { id: "novelai" }]);
+    await expect(
+      rows(database, "SELECT * FROM mobile_preferences"),
+    ).resolves.toEqual([{ singleton_id: 1, wallpaper_entry_id: null }]);
+    await expect(rows(database, "PRAGMA foreign_key_check")).resolves.toEqual([]);
+
+    await insertImageUploadProfilesWidget(database, "image-profile-widget-one");
+    await expect(
+      insertImageUploadProfilesWidget(database, "image-profile-widget-two"),
+    ).rejects.toThrow();
   });
 });
 
@@ -288,6 +358,19 @@ async function insertStorageWidget(database: D1Database, id: string): Promise<vo
     id,
     WIDGET_TYPE.STORAGE_STATUS,
     2,
+    1,
+  ).run();
+}
+
+async function insertImageUploadProfilesWidget(
+  database: D1Database,
+  id: string,
+): Promise<void> {
+  await widgetStatement(
+    database,
+    id,
+    WIDGET_TYPE.IMAGE_UPLOAD_PROFILES,
+    3,
     1,
   ).run();
 }

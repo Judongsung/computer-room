@@ -21,11 +21,17 @@ const StorageStatusWidget = lazy(() =>
     default: module.StorageStatusWidget,
   })),
 );
+const ImageUploadProfilesWidget = lazy(() =>
+  import("@client/components/widgets/image-upload-profiles-widget").then(
+    (module) => ({ default: module.ImageUploadProfilesWidget }),
+  ),
+);
 
 const WIDGET_COMPONENTS = {
   [WIDGET_TYPE.MEMO]: MemoWidget,
   [WIDGET_TYPE.DAILY_CHECKLIST]: DailyChecklistWidget,
   [WIDGET_TYPE.STORAGE_STATUS]: StorageStatusWidget,
+  [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]: ImageUploadProfilesWidget,
 } satisfies Record<WidgetType, ComponentType<WidgetComponentProps>>;
 
 export function WidgetRenderer(props: WidgetComponentProps) {

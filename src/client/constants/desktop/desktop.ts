@@ -55,12 +55,16 @@ export const DESKTOP_ASSET_PATHS = {
   PICTURE_VIEWER_ICON: "/assets/computer-room/picture-viewer.svg",
   MEDIA_PLAYER_ICON: "/assets/computer-room/media-player.svg",
   STORAGE_STATUS_ICON: "/assets/computer-room/storage-status.svg",
+  IMAGE_UPLOAD_PROFILES_ICON:
+    "/assets/computer-room/image-upload-profiles.svg",
 } as const;
 
 export const WIDGET_ICON_PATH_BY_TYPE = {
   [WIDGET_TYPE.MEMO]: DESKTOP_ASSET_PATHS.MEMO_ICON,
   [WIDGET_TYPE.DAILY_CHECKLIST]: DESKTOP_ASSET_PATHS.CHECKLIST_ICON,
   [WIDGET_TYPE.STORAGE_STATUS]: DESKTOP_ASSET_PATHS.STORAGE_STATUS_ICON,
+  [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]:
+    DESKTOP_ASSET_PATHS.IMAGE_UPLOAD_PROFILES_ICON,
 } as const;
 
 export const DESKTOP_DRAG_DATA_TYPE =

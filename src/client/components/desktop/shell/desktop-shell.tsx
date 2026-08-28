@@ -68,6 +68,7 @@ export function DesktopShell(props: DesktopShellProps) {
     gateway,
     filesystemGateway,
     storageStatusGateway,
+    imageUploadProfileGateway,
     layoutSaveStatus,
     layoutSaveError,
     message,
@@ -259,6 +260,7 @@ export function DesktopShell(props: DesktopShellProps) {
           gateway={gateway}
           filesystemGateway={filesystemGateway}
           storageStatusGateway={storageStatusGateway}
+          imageUploadProfileGateway={imageUploadProfileGateway}
           explorer={explorer}
           system={system}
           media={media}
@@ -342,6 +344,9 @@ export function DesktopShell(props: DesktopShellProps) {
         onAddMemo={() => launcher.addWidget(WIDGET_TYPE.MEMO)}
         onAddChecklist={() => launcher.addWidget(WIDGET_TYPE.DAILY_CHECKLIST)}
         onAddStorageStatus={() => launcher.addWidget(WIDGET_TYPE.STORAGE_STATUS)}
+        onAddImageUploadProfiles={() =>
+          launcher.addWidget(WIDGET_TYPE.IMAGE_UPLOAD_PROFILES)
+        }
       />
       <Taskbar
         windows={windowManager.taskbarWindows}

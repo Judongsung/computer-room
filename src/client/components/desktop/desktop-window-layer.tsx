@@ -4,6 +4,7 @@ import type { DashboardWidget, WidgetType } from "@/types/widgets/widget";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
+import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/desktop";
 import type { MediaViewerOpenRequest } from "@client/types/media/media";
@@ -48,6 +49,7 @@ interface DesktopWindowLayerProps {
   readonly gateway: DashboardGateway;
   readonly filesystemGateway: FilesystemGateway;
   readonly storageStatusGateway: StorageStatusGateway;
+  readonly imageUploadProfileGateway: ImageUploadProfileGateway;
   readonly explorer: ReturnType<typeof useExplorerWindows>;
   readonly system: ReturnType<typeof useSystemWindows>;
   readonly media: ReturnType<typeof useMediaWindows>;
@@ -83,6 +85,7 @@ export function DesktopWindowLayer({
   gateway,
   filesystemGateway,
   storageStatusGateway,
+  imageUploadProfileGateway,
   explorer,
   system,
   media,
@@ -137,6 +140,7 @@ export function DesktopWindowLayer({
           zIndex={desktopWindowZIndex(widget.id, zOrders, widget.stackOrder)}
           gateway={gateway}
           storageStatusGateway={storageStatusGateway}
+          imageUploadProfileGateway={imageUploadProfileGateway}
           onFocus={() => onFocusWindow(widget.id, () => onFocusWidget(widget.id))}
           onMinimize={() => {
             onMinimizeWidget(widget.id);

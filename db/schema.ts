@@ -291,6 +291,11 @@ export const dashboardWidgets = sqliteTable(
     uniqueIndex("uq_dashboard_widgets_storage_status")
       .on(table.type)
       .where(sql`${table.type} = ${sql.raw(`'${WIDGET_TYPE.STORAGE_STATUS}'`)}`),
+    uniqueIndex("uq_dashboard_widgets_image_upload_profiles")
+      .on(table.type)
+      .where(
+        sql`${table.type} = ${sql.raw(`'${WIDGET_TYPE.IMAGE_UPLOAD_PROFILES}'`)}`,
+      ),
   ],
 );
 

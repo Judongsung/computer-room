@@ -94,10 +94,17 @@ export type StorageStatusWidget = WidgetLayout & {
   readonly data: null;
 };
 
+export type ImageUploadProfilesWidget = WidgetLayout & {
+  readonly type: typeof WIDGET_TYPE.IMAGE_UPLOAD_PROFILES;
+  readonly file: null;
+  readonly data: null;
+};
+
 export type DashboardWidget =
   | MemoWidget
   | DailyChecklistWidget
-  | StorageStatusWidget;
+  | StorageStatusWidget
+  | ImageUploadProfilesWidget;
 
 export interface DashboardWidgetCollection {
   readonly items: readonly DashboardWidget[];

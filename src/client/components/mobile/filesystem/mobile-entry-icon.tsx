@@ -27,7 +27,15 @@ function mobileFallbackPath(entry: FilesystemEntry): string {
     return MOBILE_ASSET_PATHS.FOLDER;
   }
   if (entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET) {
-    return MOBILE_WIDGET_ICON_PATH[entry.widgetType];
+    return isMobileWidgetIconType(entry.widgetType)
+      ? MOBILE_WIDGET_ICON_PATH[entry.widgetType]
+      : MOBILE_ASSET_PATHS.FILE;
   }
   return MOBILE_ASSET_PATHS.FILE;
+}
+
+function isMobileWidgetIconType(
+  type: string,
+): type is keyof typeof MOBILE_WIDGET_ICON_PATH {
+  return Object.hasOwn(MOBILE_WIDGET_ICON_PATH, type);
 }

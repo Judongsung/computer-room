@@ -40,7 +40,10 @@ export const MOBILE_WIDGET_ICON_PATH = {
   [WIDGET_TYPE.MEMO]: MOBILE_ASSET_PATHS.MEMO,
   [WIDGET_TYPE.DAILY_CHECKLIST]: MOBILE_ASSET_PATHS.CHECKLIST,
   [WIDGET_TYPE.STORAGE_STATUS]: MOBILE_ASSET_PATHS.STORAGE_STATUS,
-} as const;
+} as const satisfies Partial<Record<
+  (typeof WIDGET_TYPE)[keyof typeof WIDGET_TYPE],
+  string
+>>;
 
 export const MOBILE_ACTIVITY_KIND = {
   HOME: "home",

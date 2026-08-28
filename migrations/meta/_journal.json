@@ -78,6 +78,13 @@
       "when": 1787919624942,
       "tag": "0010_clumsy_groot",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1787933928748,
+      "tag": "0011_magical_mister_sinister",
+      "breakpoints": true
     }
   ]
 }

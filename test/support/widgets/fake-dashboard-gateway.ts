@@ -1,6 +1,11 @@
 import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
-import { WIDGET_TYPE, WINDOW_RESTORE_STATE, WINDOW_STATE } from "@/constants/widgets/widget";
+import {
+  WIDGET_BEHAVIOR,
+  WIDGET_TYPE,
+  WINDOW_RESTORE_STATE,
+  WINDOW_STATE,
+} from "@/constants/widgets/widget";
 import { cloneDashboardWidgets } from "@/domain/widgets/widget-layout";
 import type { SessionInfo } from "@/types/platform/auth";
 import type { ChecklistItem, ChecklistLogEvent, ChecklistLogPage, DailyChecklistData, DashboardWidget, CreateWidgetInput, MemoData, WidgetLayout } from "@/types/widgets/widget";
@@ -81,7 +86,11 @@ export class FakeDashboardGateway implements DashboardGateway {
   ): Promise<{ widget: DashboardWidget; entry: FilesystemWidgetEntry }> {
     const widget = this.savedWidgets.find((candidate) => candidate.id === widgetId);
     if (!widget) throw new Error("Widget not found");
-    if (widget.type === WIDGET_TYPE.STORAGE_STATUS) {
+    if (
+      !WIDGET_BEHAVIOR[widget.type].supportsFileStorage ||
+      (widget.type !== WIDGET_TYPE.MEMO &&
+        widget.type !== WIDGET_TYPE.DAILY_CHECKLIST)
+    ) {
       throw new Error("Widget file storage is not supported");
     }
     const entry: FilesystemWidgetEntry = {
@@ -233,6 +242,14 @@ export function fakeWidgetFromLayout(layout: WidgetLayout): DashboardWidget {
       data: null,
     };
   }
+  if (layout.type === WIDGET_TYPE.IMAGE_UPLOAD_PROFILES) {
+    return {
+      ...layout,
+      type: WIDGET_TYPE.IMAGE_UPLOAD_PROFILES,
+      file: null,
+      data: null,
+    };
+  }
   return {
     ...layout,
     type: WIDGET_TYPE.DAILY_CHECKLIST,
@@ -257,6 +274,15 @@ export function mergeFakeWidgetLayout(
       ...existing,
       ...layout,
       type: WIDGET_TYPE.STORAGE_STATUS,
+      file: null,
+      data: null,
+    };
+  }
+  if (existing.type === WIDGET_TYPE.IMAGE_UPLOAD_PROFILES) {
+    return {
+      ...existing,
+      ...layout,
+      type: WIDGET_TYPE.IMAGE_UPLOAD_PROFILES,
       file: null,
       data: null,
     };

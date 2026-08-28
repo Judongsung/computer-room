@@ -1,0 +1,108 @@
+.image-upload-profiles-widget {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  min-height: 100%;
+  gap: 8px;
+}
+
+.image-upload-profiles-widget__sidebar,
+.image-upload-profiles-widget__editor {
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid #919b9c;
+  background: #fff;
+}
+
+.image-upload-profiles-widget__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.image-upload-profiles-widget__list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+  gap: 3px;
+}
+
+.image-upload-profiles-widget__list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 5px 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #111;
+  text-align: left;
+}
+
+.image-upload-profiles-widget__list-item--selected {
+  border-color: #0a246a;
+  background: #316ac5;
+  color: #fff;
+}
+
+.image-upload-profiles-widget__list-item small {
+  color: inherit;
+}
+
+.image-upload-profiles-widget__form {
+  display: grid;
+  gap: 8px;
+}
+
+.image-upload-profiles-widget__field {
+  display: grid;
+  gap: 3px;
+}
+
+.image-upload-profiles-widget__field input,
+.image-upload-profiles-widget__field select {
+  width: 100%;
+}
+
+.image-upload-profiles-widget__help,
+.image-upload-profiles-widget__notice {
+  color: #555;
+}
+
+.image-upload-profiles-widget__mime-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px 8px;
+}
+
+.image-upload-profiles-widget__preview,
+.image-upload-profiles-widget__url {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  padding: 7px;
+  border: 1px solid #7f9db9;
+  background: #f4f8ff;
+  gap: 4px 8px;
+}
+
+.image-upload-profiles-widget__preview strong,
+.image-upload-profiles-widget__url strong {
+  grid-column: 1 / -1;
+}
+
+.image-upload-profiles-widget__preview output,
+.image-upload-profiles-widget__url output {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.image-upload-profiles-widget__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.image-upload-profiles-widget__notice {
+  margin: 0;
+}
