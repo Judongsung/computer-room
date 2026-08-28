@@ -1,7 +1,7 @@
 import { useState, type CSSProperties } from "react";
 import "xp.css/dist/XP.css";
 import "@client/styles/desktop.css";
-import { DesktopShell } from "@client/components/desktop/desktop-shell";
+import { DesktopShell } from "@client/components/desktop/shell/desktop-shell";
 import { XpWindowFrame } from "@client/components/desktop/xp-window-frame";
 import { DASHBOARD_COPY, SITE_COPY } from "@client/constants/widgets/content";
 import { LOAD_STATUS, UI_MESSAGES } from "@client/constants/widgets/dashboard";
