@@ -21,10 +21,17 @@ export function jsonResponse(
   });
 }
 
-export function emptyResponse(status: number = HTTP_STATUS.NO_CONTENT): Response {
+export function emptyResponse(
+  status: number = HTTP_STATUS.NO_CONTENT,
+  additionalHeaders?: HeadersInit,
+): Response {
+  const headers = new Headers(EMPTY_RESPONSE_HEADERS);
+  if (additionalHeaders) {
+    new Headers(additionalHeaders).forEach((value, name) => headers.set(name, value));
+  }
   return new Response(null, {
     status,
-    headers: EMPTY_RESPONSE_HEADERS,
+    headers,
   });
 }
 

@@ -5,6 +5,7 @@ import { FilesystemService } from "@/application/filesystem/filesystem-service";
 import { FilesystemDownloadManifestService } from "@/application/filesystem/filesystem-download-manifest-service";
 import { DirectoryDetailsService } from "@/application/filesystem/directory-details-service";
 import { NovelAiImageService } from "@/application/integrations/novelai-image-service";
+import { ImageUploadProfileService } from "@/application/integrations/image-upload-profile-service";
 import { RecycleBinService } from "@/application/filesystem/recycle-bin-service";
 import { MemoService } from "@/application/widgets/memo-service";
 import { ThumbnailService } from "@/application/filesystem/thumbnail-service";
@@ -24,6 +25,7 @@ import { ApiRouter } from "@/http/shared/api-router";
 import { FileApiHandler } from "@/http/filesystem/file-api-handler";
 import { DirectoryDetailsApiHandler } from "@/http/filesystem/directory-details-api-handler";
 import { NovelAiImageApiHandler } from "@/http/integrations/novelai-image-api-handler";
+import { ImageUploadProfileApiHandler } from "@/http/integrations/image-upload-profile-api-handler";
 import { WidgetApiHandler } from "@/http/widgets/widget-api-handler";
 import { WidgetFileApiHandler } from "@/http/widgets/widget-file-api-handler";
 import { StorageStatusApiHandler } from "@/http/storage/storage-status-api-handler";
@@ -47,6 +49,7 @@ import { R2ObjectStorageUsageReader } from "@/infrastructure/storage/r2-object-s
 import { CloudflareImageThumbnailGenerator } from "@/infrastructure/filesystem/cloudflare-image-thumbnail-generator";
 import { CloudflareBackgroundTaskScheduler } from "@/infrastructure/platform/cloudflare-background-task-scheduler";
 import { D1MobilePreferencesRepository } from "@/infrastructure/platform/d1-mobile-preferences-repository";
+import { D1ImageUploadProfileRepository } from "@/infrastructure/integrations/d1-image-upload-profile-repository";
 import { CryptoIdGenerator, SystemClock } from "@/infrastructure/platform/runtime";
 import type { IdentityVerifier, RequestVerifier } from "@/types/platform/auth";
 
@@ -128,6 +131,12 @@ export default {
     const novelAiImageApiHandler = new NovelAiImageApiHandler(
       novelAiImageService,
     );
+    const imageUploadProfileApiHandler = new ImageUploadProfileApiHandler(
+      new ImageUploadProfileService(
+        new D1ImageUploadProfileRepository(env.DB),
+        clock,
+      ),
+    );
     const layoutRepository = new D1WidgetLayoutRepository(env.DB);
     const memoRepository = new D1MemoRepository(env.DB);
     const checklistRepository = new D1ChecklistRepository(env.DB);
@@ -184,6 +193,7 @@ export default {
         widgetApiHandler,
         storageStatusApiHandler,
         mobilePreferencesApiHandler,
+        imageUploadProfileApiHandler,
       ],
       novelAiImageApiHandler,
       createIdentityVerifier(env),

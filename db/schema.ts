@@ -29,6 +29,10 @@ import {
 import { EMPTY_MEMO_MARKDOWN } from "@/constants/widgets/memo";
 import { MOBILE_PREFERENCES_SINGLETON_ID } from "@/constants/platform/mobile-preferences";
 import {
+  IMAGE_UPLOAD_CONTENT_TYPE_VALUES,
+  IMAGE_UPLOAD_PROFILE_ROOT_IDS,
+} from "@/constants/integrations/image-upload-profile";
+import {
   WIDGET_TYPE,
   WIDGET_TYPE_VALUES,
   WINDOW_POSITION_LIMITS,
@@ -56,6 +60,12 @@ const WINDOW_RESTORE_STATE_SQL = WINDOW_RESTORE_STATE_VALUES.map(
 ).join(", ");
 const CHECKLIST_EVENT_ACTION_SQL = CHECKLIST_EVENT_ACTION_VALUES.map(
   (action) => `'${action}'`,
+).join(", ");
+const IMAGE_UPLOAD_PROFILE_ROOT_SQL = IMAGE_UPLOAD_PROFILE_ROOT_IDS.map(
+  (rootId) => `'${rootId}'`,
+).join(", ");
+const IMAGE_UPLOAD_CONTENT_TYPE_SQL = IMAGE_UPLOAD_CONTENT_TYPE_VALUES.map(
+  (contentType) => `'${contentType}'`,
 ).join(", ");
 
 export const files = sqliteTable(
@@ -176,6 +186,50 @@ export const mobilePreferences = sqliteTable(
     check(
       "mobile_preferences_singleton_check",
       sql`${table.singletonId} = ${sql.raw(String(MOBILE_PREFERENCES_SINGLETON_ID))}`,
+    ),
+  ],
+);
+
+export const integrationImageProfiles = sqliteTable(
+  "integration_image_profiles",
+  {
+    id: text("id").primaryKey(),
+    displayName: text("display_name").notNull(),
+    rootId: text("root_id", { enum: IMAGE_UPLOAD_PROFILE_ROOT_IDS }).notNull(),
+    pathTemplate: text("path_template").notNull(),
+    fileNameTemplate: text("file_name_template").notNull(),
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+    createdAt: integer("created_at").notNull(),
+    updatedAt: integer("updated_at").notNull(),
+  },
+  (table) => [
+    check(
+      "integration_image_profiles_root_check",
+      sql`${table.rootId} IN (${sql.raw(IMAGE_UPLOAD_PROFILE_ROOT_SQL)})`,
+    ),
+    check(
+      "integration_image_profiles_enabled_check",
+      sql`${table.enabled} IN (0, 1)`,
+    ),
+    index("idx_integration_image_profiles_enabled").on(table.enabled),
+  ],
+);
+
+export const integrationImageProfileContentTypes = sqliteTable(
+  "integration_image_profile_content_types",
+  {
+    profileId: text("profile_id")
+      .notNull()
+      .references(() => integrationImageProfiles.id, { onDelete: "cascade" }),
+    contentType: text("content_type", {
+      enum: IMAGE_UPLOAD_CONTENT_TYPE_VALUES,
+    }).notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.profileId, table.contentType] }),
+    check(
+      "integration_image_profile_content_types_value_check",
+      sql`${table.contentType} IN (${sql.raw(IMAGE_UPLOAD_CONTENT_TYPE_SQL)})`,
     ),
   ],
 );

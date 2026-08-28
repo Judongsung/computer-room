@@ -1,0 +1,73 @@
+import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
+
+export const IMAGE_UPLOAD_PROFILE_LIMITS = {
+  ID_MIN_LENGTH: 1,
+  ID_MAX_LENGTH: 32,
+  DISPLAY_NAME_MIN_LENGTH: 1,
+  DISPLAY_NAME_MAX_LENGTH: 64,
+  MAX_PATH_SEGMENTS: 8,
+} as const;
+
+export const IMAGE_UPLOAD_PROFILE_ID_PATTERN =
+  /^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/u;
+
+export const IMAGE_UPLOAD_PROFILE_ROOT_IDS = [
+  FILESYSTEM_ROOT_ID.DESKTOP,
+  FILESYSTEM_ROOT_ID.DOCUMENTS,
+] as const;
+
+export const IMAGE_UPLOAD_CONTENT_TYPE = {
+  JPEG: "image/jpeg",
+  PNG: "image/png",
+  GIF: "image/gif",
+  WEBP: "image/webp",
+  AVIF: "image/avif",
+  BMP: "image/bmp",
+} as const;
+
+export const IMAGE_UPLOAD_CONTENT_TYPE_VALUES = [
+  IMAGE_UPLOAD_CONTENT_TYPE.JPEG,
+  IMAGE_UPLOAD_CONTENT_TYPE.PNG,
+  IMAGE_UPLOAD_CONTENT_TYPE.GIF,
+  IMAGE_UPLOAD_CONTENT_TYPE.WEBP,
+  IMAGE_UPLOAD_CONTENT_TYPE.AVIF,
+  IMAGE_UPLOAD_CONTENT_TYPE.BMP,
+] as const;
+
+export const IMAGE_UPLOAD_EXTENSION_BY_CONTENT_TYPE = {
+  [IMAGE_UPLOAD_CONTENT_TYPE.JPEG]: "jpg",
+  [IMAGE_UPLOAD_CONTENT_TYPE.PNG]: "png",
+  [IMAGE_UPLOAD_CONTENT_TYPE.GIF]: "gif",
+  [IMAGE_UPLOAD_CONTENT_TYPE.WEBP]: "webp",
+  [IMAGE_UPLOAD_CONTENT_TYPE.AVIF]: "avif",
+  [IMAGE_UPLOAD_CONTENT_TYPE.BMP]: "bmp",
+} as const;
+
+export const IMAGE_UPLOAD_PATH_TOKEN = {
+  PROFILE_ID: "{profileId}",
+  DATE: "{yyyy-MM-dd}",
+} as const;
+
+export const IMAGE_UPLOAD_FILE_NAME_TOKEN = {
+  ...IMAGE_UPLOAD_PATH_TOKEN,
+  TIME: "{HH-mm-ss-SSS}",
+  UUID: "{uuid}",
+  EXTENSION: "{ext}",
+} as const;
+
+export const IMAGE_UPLOAD_TEMPLATE_SAMPLE = {
+  BUSINESS_DATE: "2026-08-28",
+  KOREA_TIME: "21-34-56-789",
+  UUID: "00000000-0000-4000-8000-000000000000",
+  EXTENSION: "png",
+} as const;
+
+export const DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE = {
+  ID: "novelai",
+  DISPLAY_NAME: "NovelAI",
+  ROOT_ID: FILESYSTEM_ROOT_ID.DESKTOP,
+  PATH_TEMPLATE: "NovelAI/{yyyy-MM-dd}",
+  FILE_NAME_TEMPLATE: "{HH-mm-ss-SSS}_{uuid}.{ext}",
+  ENABLED: true,
+  CONTENT_TYPES: IMAGE_UPLOAD_CONTENT_TYPE_VALUES,
+} as const;

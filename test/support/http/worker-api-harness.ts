@@ -4,6 +4,7 @@ import { API_PATHS, API_PATH_SEGMENTS, API_QUERY_PARAMETERS, FILESYSTEM_API_PATH
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { HTTP_HEADERS, HTTP_MEDIA_TYPE, HTTP_METHOD, HTTP_STATUS } from "@/constants/platform/http";
 import { WIDGET_TYPE, WIDGET_WINDOW_POLICY } from "@/constants/widgets/widget";
+import { DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE } from "@/constants/integrations/image-upload-profile";
 import type { DashboardWidget, WidgetLayout, WidgetType } from "@/types/widgets/widget";
 
 export const ORIGIN = "http://localhost";
@@ -17,6 +18,32 @@ export const ONE_PIXEL_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
 export async function resetWorkerState(): Promise<void> {
+  await env.DB.prepare("DELETE FROM integration_image_profiles").run();
+  await env.DB.batch([
+    env.DB
+      .prepare(
+        `INSERT INTO integration_image_profiles (
+           id, display_name, root_id, path_template, file_name_template,
+           enabled, created_at, updated_at
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, 0, 0)`,
+      )
+      .bind(
+        DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE.ID,
+        DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE.DISPLAY_NAME,
+        DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE.ROOT_ID,
+        DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE.PATH_TEMPLATE,
+        DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE.FILE_NAME_TEMPLATE,
+        DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE.ENABLED ? 1 : 0,
+      ),
+    ...DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE.CONTENT_TYPES.map((contentType) =>
+      env.DB
+        .prepare(
+          `INSERT INTO integration_image_profile_content_types
+             (profile_id, content_type) VALUES (?1, ?2)`,
+        )
+        .bind(DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE.ID, contentType),
+    ),
+  ]);
   await env.DB
     .prepare(
       "UPDATE mobile_preferences SET wallpaper_entry_id = NULL WHERE singleton_id = 1",
