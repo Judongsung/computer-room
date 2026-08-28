@@ -1,14 +1,10 @@
-import { useEffect, useState } from "react";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
-import type {
-  FilesystemDirectoryPage,
-  FilesystemEntry,
-} from "@/types/filesystem/filesystem";
+import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import { MobileDirectoryMenu } from "@client/components/mobile/filesystem/mobile-directory-menu";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
 import { MobileEntryIcon } from "@client/components/mobile/filesystem/mobile-entry-icon";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
-import { messageFromError } from "@client/errors/error-message";
+import { usePaginatedDirectory } from "@client/hooks/filesystem/directory/use-paginated-directory";
 import { formatFileSize } from "@client/utils/format-file-size";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
@@ -39,46 +35,18 @@ export function MobileDirectory({
   onOpenDirectory,
   onOpenEntry,
 }: MobileDirectoryProps) {
-  const [page, setPage] = useState<FilesystemDirectoryPage | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    setPage(null);
-    setLoading(true);
-    setError(null);
-    void gateway.listDirectory(directoryId).then(
-      (next) => {
-        if (!active) return;
-        setPage(next);
-        setError(null);
-        setLoading(false);
-      },
-      (caught: unknown) => {
-        if (!active) return;
-        setError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
-        setLoading(false);
-      },
-    );
-    return () => {
-      active = false;
-    };
-  }, [directoryId, gateway, revision]);
-
-  const loadMore = async (): Promise<void> => {
-    if (!page || page.nextOffset === null || loadingMore) return;
-    setLoadingMore(true);
-    try {
-      const next = await gateway.listDirectory(directoryId, page.nextOffset);
-      setPage({ ...next, items: [...page.items, ...next.items] });
-    } catch (caught) {
-      setError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
-    } finally {
-      setLoadingMore(false);
-    }
-  };
+  const {
+    page,
+    isInitialLoading: loading,
+    isLoadingMore: loadingMore,
+    error,
+    loadMore,
+  } = usePaginatedDirectory({
+    gateway,
+    directoryId,
+    revision,
+    errorFallback: MOBILE_COPY.LOAD_FAILED,
+  });
 
   return (
     <>

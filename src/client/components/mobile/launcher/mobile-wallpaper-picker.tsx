@@ -6,7 +6,6 @@ import {
 import { MEDIA_KIND } from "@/constants/filesystem/media";
 import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
 import type {
-  FilesystemBreadcrumb,
   FilesystemDirectoryEntry,
   FilesystemEntry,
   FilesystemFileEntry,
@@ -14,7 +13,7 @@ import type {
 import { MobileEntryIcon } from "@client/components/mobile/filesystem/mobile-entry-icon";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
 import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
-import { messageFromError } from "@client/errors/error-message";
+import { usePaginatedDirectory } from "@client/hooks/filesystem/directory/use-paginated-directory";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
 interface MobileWallpaperPickerProps {
@@ -26,13 +25,6 @@ interface MobileWallpaperPickerProps {
   readonly onApply: (entryId: string | null) => Promise<boolean>;
   readonly onApplied: () => void;
   readonly onRetryPreferences: () => Promise<void>;
-}
-
-interface WallpaperDirectory {
-  readonly directory: FilesystemDirectoryEntry;
-  readonly breadcrumbs: readonly FilesystemBreadcrumb[];
-  readonly items: readonly (FilesystemDirectoryEntry | FilesystemFileEntry)[];
-  readonly nextOffset: number | null;
 }
 
 export function MobileWallpaperPicker({
@@ -49,13 +41,9 @@ export function MobileWallpaperPicker({
   const [directoryId, setDirectoryId] = useState(
     currentWallpaper?.parentId ?? FILESYSTEM_ROOT_ID.DESKTOP,
   );
-  const [directory, setDirectory] = useState<WallpaperDirectory | null>(null);
   const [selected, setSelected] = useState<FilesystemFileEntry | null>(
     currentWallpaper,
   );
-  const [loadingDirectory, setLoadingDirectory] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [directoryError, setDirectoryError] = useState<string | null>(null);
   const [previewReady, setPreviewReady] = useState(currentWallpaper === null);
   const [previewError, setPreviewError] = useState<string | null>(null);
 
@@ -69,62 +57,24 @@ export function MobileWallpaperPicker({
     setPreviewError(null);
   }, [currentWallpaper, loadingPreferences]);
 
-  useEffect(() => {
-    let active = true;
-    setLoadingDirectory(true);
-    void filesystem.listDirectory(directoryId).then(
-      (page) => {
-        if (!active) return;
-        setDirectory({
-          directory: page.directory,
-          breadcrumbs: page.breadcrumbs,
-          items: page.items.filter(isWallpaperBrowserEntry),
-          nextOffset: page.nextOffset,
-        });
-        setDirectoryError(null);
-        setLoadingDirectory(false);
-      },
-      (caught: unknown) => {
-        if (!active) return;
-        setDirectoryError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
-        setLoadingDirectory(false);
-      },
-    );
-    return () => {
-      active = false;
-    };
-  }, [directoryId, filesystem]);
+  const {
+    page: directory,
+    isInitialLoading: loadingDirectory,
+    isLoadingMore: loadingMore,
+    error: directoryError,
+    loadMore,
+  } = usePaginatedDirectory({
+    gateway: filesystem,
+    directoryId,
+    errorFallback: MOBILE_COPY.LOAD_FAILED,
+    includeEntry: isWallpaperBrowserEntry,
+  });
 
   const chooseWallpaper = (entry: FilesystemFileEntry | null): void => {
     selectionChanged.current = true;
     setSelected(entry);
     setPreviewReady(entry === null);
     setPreviewError(null);
-  };
-
-  const loadMore = async (): Promise<void> => {
-    if (!directory || directory.nextOffset === null || loadingMore) return;
-    setLoadingMore(true);
-    try {
-      const page = await filesystem.listDirectory(
-        directoryId,
-        directory.nextOffset,
-      );
-      setDirectory({
-        directory: page.directory,
-        breadcrumbs: page.breadcrumbs,
-        items: [
-          ...directory.items,
-          ...page.items.filter(isWallpaperBrowserEntry),
-        ],
-        nextOffset: page.nextOffset,
-      });
-      setDirectoryError(null);
-    } catch (caught) {
-      setDirectoryError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
-    } finally {
-      setLoadingMore(false);
-    }
   };
 
   const apply = async (): Promise<void> => {
