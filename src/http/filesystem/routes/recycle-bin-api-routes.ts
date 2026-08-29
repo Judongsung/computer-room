@@ -5,7 +5,7 @@ import {
 } from "@/constants/platform/api";
 import { HTTP_ERRORS } from "@/constants/platform/errors/http";
 import { HTTP_METHOD } from "@/constants/platform/http";
-import type { RecycleBinUseCases } from "@/types/filesystem/filesystem-service";
+import type { RecycleBinUseCases } from "@/types/filesystem/services/recycle-bin-service";
 import type { FeatureApiHandler } from "@/types/platform/http";
 import {
   assertMethod,

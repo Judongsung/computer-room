@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { FilesystemDirectoryService } from "@/application/filesystem/directory/filesystem-directory-service";
 import { FileService } from "@/application/filesystem/file-service";
 import { FilesystemDownloadManifestService } from "@/application/filesystem/filesystem-download-manifest-service";
-import { FilesystemService } from "@/application/filesystem/filesystem-service";
+import { RecycleBinService } from "@/application/filesystem/recycle/recycle-bin-service";
 import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import {
   FILESYSTEM_ENTRY_KIND,
@@ -32,7 +33,7 @@ describe("FilesystemDownloadManifestService", () => {
       "file-b",
     ]);
     const clock = new StaticClock(Date.parse("2026-08-23T01:00:00.000Z"));
-    const filesystem = new FilesystemService(
+    const directories = new FilesystemDirectoryService(
       repository,
       new MemoryDirectorySortRepository(),
       ids,
@@ -47,12 +48,12 @@ describe("FilesystemDownloadManifestService", () => {
     );
     const manifests = new FilesystemDownloadManifestService(repository);
 
-    const folder = await filesystem.createDirectory(
+    const folder = await directories.createDirectory(
       FILESYSTEM_ROOT_ID.DOCUMENTS,
       "자료",
     );
-    const nested = await filesystem.createDirectory(folder.id, "하위");
-    await filesystem.createDirectory(folder.id, "빈 폴더");
+    const nested = await directories.createDirectory(folder.id, "하위");
+    await directories.createDirectory(folder.id, "빈 폴더");
     const text = await files.uploadFile({
       parentId: folder.id,
       originalName: "한글.txt",
@@ -111,18 +112,20 @@ describe("FilesystemDownloadManifestService", () => {
     const repository = new MemoryFileRepository();
     const ids = new SequenceIdGenerator(["folder"]);
     const clock = new StaticClock(Date.parse("2026-08-23T01:00:00.000Z"));
-    const filesystem = new FilesystemService(
+    const storage = new MemoryObjectStorage();
+    const directories = new FilesystemDirectoryService(
       repository,
       new MemoryDirectorySortRepository(),
       ids,
       clock,
     );
+    const recycleBin = new RecycleBinService(repository, storage, clock);
     const manifests = new FilesystemDownloadManifestService(repository);
-    const folder = await filesystem.createDirectory(
+    const folder = await directories.createDirectory(
       FILESYSTEM_ROOT_ID.DOCUMENTS,
       "삭제 예정",
     );
-    await filesystem.trashEntry(folder.id);
+    await recycleBin.trashEntry(folder.id);
 
     await expect(manifests.createManifest([folder.id])).rejects.toMatchObject({
       code: FILESYSTEM_ERRORS.ENTRY_NOT_ACTIVE.code,

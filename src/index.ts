@@ -1,7 +1,8 @@
 import { ChecklistService } from "@/application/widgets/checklist-service";
 import { FileService } from "@/application/filesystem/file-service";
+import { FilesystemDirectoryService } from "@/application/filesystem/directory/filesystem-directory-service";
+import { FilesystemEntryService } from "@/application/filesystem/entries/filesystem-entry-service";
 import { FilesystemPathService } from "@/application/filesystem/filesystem-path-service";
-import { FilesystemService } from "@/application/filesystem/filesystem-service";
 import { FilesystemDownloadManifestService } from "@/application/filesystem/filesystem-download-manifest-service";
 import { DirectoryDetailsService } from "@/application/filesystem/directory-details-service";
 import { ImageUploadProfileService } from "@/application/integrations/image-upload-profile-service";
@@ -87,10 +88,16 @@ export default {
       thumbnailService,
       new CloudflareBackgroundTaskScheduler(context),
     );
-    const filesystemService = new FilesystemService(
+    const directoryService = new FilesystemDirectoryService(
       fileRepository,
       new D1DirectorySortRepository(env.DB),
       ids,
+      clock,
+      activeFilesystemEntries,
+      filesystemNames,
+    );
+    const entryService = new FilesystemEntryService(
+      fileRepository,
       clock,
       activeFilesystemEntries,
       filesystemNames,
@@ -125,7 +132,9 @@ export default {
     const fileApiHandler = new FileApiHandler(
       fileService,
       thumbnailService,
-      filesystemService,
+      directoryService,
+      entryService,
+      recycleBinService,
       recycleBinService,
       downloadManifestService,
     );

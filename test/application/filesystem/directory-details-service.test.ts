@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { DirectoryDetailsService } from "@/application/filesystem/directory-details-service";
-import { FilesystemService } from "@/application/filesystem/filesystem-service";
+import { FilesystemDirectoryService } from "@/application/filesystem/directory/filesystem-directory-service";
 import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import {
   FILESYSTEM_ENTRY_KIND,
@@ -18,13 +18,13 @@ const NOW = Date.parse("2026-08-25T01:02:03.000Z");
 describe("DirectoryDetailsService", () => {
   it("returns recursive statistics and breadcrumbs for an active directory", async () => {
     const entries = new MemoryFileRepository();
-    const filesystem = new FilesystemService(
+    const directories = new FilesystemDirectoryService(
       entries,
       new MemoryDirectorySortRepository(),
       new SequenceIdGenerator(["photos"]),
       new StaticClock(NOW),
     );
-    const directory = await filesystem.createDirectory(null, "사진");
+    const directory = await directories.createDirectory(null, "사진");
     const readStatistics = vi
       .fn<DirectoryDetailsRepository["readStatistics"]>()
       .mockResolvedValue({

@@ -17,8 +17,8 @@ import type {
   RestoreFilesystemEntryInput,
 } from "@/types/filesystem/filesystem";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
-import type { RecycleBinUseCases } from "@/types/filesystem/filesystem-service";
 import type { RecycleBinDataRepository } from "@/types/filesystem/repository";
+import type { RecycleBinUseCases } from "@/types/filesystem/services/recycle-bin-service";
 import type { FilesystemTrashUseCases } from "@/types/filesystem/services/trash-service";
 import type { Clock } from "@/types/platform/runtime";
 import type { FileObjectStorage } from "@/types/filesystem/storage";

@@ -4,7 +4,7 @@ import {
   FILESYSTEM_API_PATHS,
 } from "@/constants/platform/api";
 import { HTTP_METHOD } from "@/constants/platform/http";
-import type { FilesystemDownloadManifestUseCases } from "@/types/filesystem/filesystem-service";
+import type { FilesystemDownloadManifestUseCases } from "@/types/filesystem/services/download-manifest-service";
 import type { FeatureApiHandler } from "@/types/platform/http";
 import {
   assertMethod,

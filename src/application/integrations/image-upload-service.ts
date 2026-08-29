@@ -13,7 +13,7 @@ import {
 } from "@/domain/integrations/image-upload-profile";
 import { AppError } from "@/domain/shared/errors";
 import type { FileTransferUseCases } from "@/types/filesystem/file-transfer-service";
-import type { FilesystemPathUseCases } from "@/types/filesystem/filesystem-service";
+import type { FilesystemPathUseCases } from "@/types/filesystem/services/path-service";
 import type {
   ImageUploadContentType,
   ImageUploadProfileReader,

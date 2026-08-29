@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { FileService } from "@/application/filesystem/file-service";
+import { FilesystemEntryService } from "@/application/filesystem/entries/filesystem-entry-service";
 import { FilesystemPathService } from "@/application/filesystem/filesystem-path-service";
-import { FilesystemService } from "@/application/filesystem/filesystem-service";
+import { RecycleBinService } from "@/application/filesystem/recycle/recycle-bin-service";
 import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import {
   FILESYSTEM_ENTRY_KIND,
@@ -9,10 +10,7 @@ import {
 } from "@/constants/filesystem/filesystem";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import { filesystemNameKey } from "@/domain/filesystem/filesystem-name";
-import {
-  MemoryDirectorySortRepository,
-  MemoryFileRepository,
-} from "@test/support/filesystem/memory-filesystem-repository";
+import { MemoryFileRepository } from "@test/support/filesystem/memory-filesystem-repository";
 import { MemoryObjectStorage } from "@test/support/filesystem/memory-object-storage";
 import { NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER } from "@test/support/filesystem/file-upload-compensation-observer";
 import {
@@ -61,18 +59,13 @@ describe("FilesystemPathService", () => {
       new SequenceIdGenerator(["original", "replacement"]),
       clock,
     );
-    const filesystem = new FilesystemService(
-      repository,
-      new MemoryDirectorySortRepository(),
-      new SequenceIdGenerator(["unused"]),
-      clock,
-    );
+    const entries = new FilesystemEntryService(repository, clock);
     const original = await paths.ensureDirectory(
       FILESYSTEM_ROOT_ID.DESKTOP,
       "NovelAI",
     );
 
-    await filesystem.moveEntry(original.id, {
+    await entries.moveEntry(original.id, {
       parentId: FILESYSTEM_ROOT_ID.DOCUMENTS,
     });
     const replacement = await paths.ensureDirectory(
@@ -95,10 +88,9 @@ describe("FilesystemPathService", () => {
       new SequenceIdGenerator(["original", "replacement"]),
       clock,
     );
-    const filesystem = new FilesystemService(
+    const recycleBin = new RecycleBinService(
       repository,
-      new MemoryDirectorySortRepository(),
-      new SequenceIdGenerator(["unused"]),
+      new MemoryObjectStorage(),
       clock,
     );
     const original = await paths.ensureDirectory(
@@ -106,7 +98,7 @@ describe("FilesystemPathService", () => {
       "NovelAI",
     );
 
-    await filesystem.trashEntry(original.id);
+    await recycleBin.trashEntry(original.id);
     const replacement = await paths.ensureDirectory(
       FILESYSTEM_ROOT_ID.DESKTOP,
       "NovelAI",

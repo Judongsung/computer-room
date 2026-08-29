@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { FileService } from "@/application/filesystem/file-service";
-import { FilesystemService } from "@/application/filesystem/filesystem-service";
+import { RecycleBinService } from "@/application/filesystem/recycle/recycle-bin-service";
 import { ThumbnailService } from "@/application/filesystem/thumbnail-service";
 import { THUMBNAIL_ERRORS } from "@/constants/filesystem/errors/thumbnail";
 import { FILE_ERRORS } from "@/constants/filesystem/errors/file";
@@ -12,10 +12,7 @@ import type {
   GeneratedThumbnail,
   ImageThumbnailGenerator,
 } from "@/types/filesystem/thumbnail";
-import {
-  MemoryDirectorySortRepository,
-  MemoryFileRepository,
-} from "@test/support/filesystem/memory-filesystem-repository";
+import { MemoryFileRepository } from "@test/support/filesystem/memory-filesystem-repository";
 import { MemoryObjectStorage } from "@test/support/filesystem/memory-object-storage";
 import { NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER } from "@test/support/filesystem/file-upload-compensation-observer";
 import {
@@ -63,12 +60,7 @@ function createServices() {
       clock,
       NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER,
     ),
-    filesystem: new FilesystemService(
-      repository,
-      new MemoryDirectorySortRepository(),
-      ids,
-      clock,
-    ),
+    recycleBin: new RecycleBinService(repository, storage, clock),
     thumbnails: new ThumbnailService(repository, storage, generator),
   };
 }
@@ -131,7 +123,7 @@ describe("ThumbnailService", () => {
   it("keeps thumbnails readable while a file is in the recycle bin", async () => {
     const services = createServices();
     const file = await uploadImage(services);
-    await services.filesystem.trashEntry(file.id);
+    await services.recycleBin.trashEntry(file.id);
 
     const thumbnail = await services.thumbnails.getThumbnail(file.id);
 

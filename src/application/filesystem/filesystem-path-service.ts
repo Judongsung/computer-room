@@ -6,7 +6,7 @@ import {
   normalizeFilesystemName,
 } from "@/domain/filesystem/filesystem-name";
 import type { FilesystemDirectoryEntry } from "@/types/filesystem/filesystem";
-import type { FilesystemPathUseCases } from "@/types/filesystem/filesystem-service";
+import type { FilesystemPathUseCases } from "@/types/filesystem/services/path-service";
 import type { DirectoryRepository } from "@/types/filesystem/repository";
 import type { Clock, IdGenerator } from "@/types/platform/runtime";
 import type { ActiveFilesystemEntryResolver as ActiveFilesystemEntryResolverPort } from "@/types/filesystem/policies/filesystem-policies";
