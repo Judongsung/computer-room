@@ -67,6 +67,8 @@ Treat API contracts, database schemas, storage conventions, and shared constants
 * Use `as const` for immutable constant maps.
 * Do not create catch-all constant files.
 * Truly immutable implementation details used by only one file may remain near their usage.
+* Put static Korean UI copy in feature-specific modules under `src/client/content/ko`; client constants must not import the content layer.
+* Keep server API errors, operational log messages, database seed names, and other stable server contracts in their existing contract or constant modules.
 
 ## Errors
 
