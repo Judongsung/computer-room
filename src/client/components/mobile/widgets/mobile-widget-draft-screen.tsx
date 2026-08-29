@@ -11,6 +11,10 @@ import { MobileChecklist } from "@client/components/mobile/widgets/mobile-checkl
 import { MobileMemo } from "@client/components/mobile/widgets/mobile-memo";
 import { MobileWidgetFileSaveDialog } from "@client/components/mobile/widgets/mobile-widget-file-save-dialog";
 import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
+import {
+  removeChecklistItem,
+  replaceChecklistItem,
+} from "@client/domain/widgets/checklist-items";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { LocalWidgetDraft } from "@client/types/widgets/local-widget-draft";
 import type { WidgetFileGateway } from "@client/types/widgets/widget-file";
@@ -46,7 +50,7 @@ export function MobileWidgetDraftScreen({
     if (draft.type !== WIDGET_TYPE.DAILY_CHECKLIST) return;
     persist({
       ...draft,
-      items: draft.items.map((item) => item.id === replacement.id ? replacement : item),
+      items: replaceChecklistItem(draft.items, replacement),
     });
   };
 
@@ -80,7 +84,10 @@ export function MobileWidgetDraftScreen({
             replaceItem({ ...item, label: normalizeChecklistLabel(label) })
           }
           onDelete={async (item) =>
-            persist({ ...draft, items: draft.items.filter((candidate) => candidate.id !== item.id) })
+            persist({
+              ...draft,
+              items: removeChecklistItem(draft.items, item.id),
+            })
           }
           onToggle={async (item, checked) => replaceItem({ ...item, checked })}
           onRequestFileSave={() => setFileDraft(draft)}

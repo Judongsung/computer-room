@@ -7,6 +7,10 @@ import { MobileChecklist } from "@client/components/mobile/widgets/mobile-checkl
 import { MobileChecklistLogs } from "@client/components/mobile/widgets/mobile-checklist-logs";
 import { MobileMemo } from "@client/components/mobile/widgets/mobile-memo";
 import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
+import {
+  removeChecklistItem,
+  replaceChecklistItem,
+} from "@client/domain/widgets/checklist-items";
 import { messageFromError } from "@client/errors/error-message";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { WidgetFileGateway } from "@client/types/widgets/widget-file";
@@ -50,7 +54,7 @@ export function MobileWidgetFileScreen({
             ...current,
             data: {
               ...current.data,
-              items: current.data.items.map((candidate) => candidate.id === item.id ? item : candidate),
+              items: replaceChecklistItem(current.data.items, item),
             },
           }
         : current,
@@ -86,7 +90,13 @@ export function MobileWidgetFileScreen({
           onRename={async (item, label) => replaceItem(await dashboard.updateChecklistItem(widget.id, item.id, label))}
           onDelete={async (item) => {
             await dashboard.deleteChecklistItem(widget.id, item.id);
-            setWidget({ ...widget, data: { ...widget.data, items: widget.data.items.filter((candidate) => candidate.id !== item.id) } });
+            setWidget({
+              ...widget,
+              data: {
+                ...widget.data,
+                items: removeChecklistItem(widget.data.items, item.id),
+              },
+            });
           }}
           onToggle={async (item, checked) => replaceItem(await dashboard.setChecklistItemChecked(widget.id, item.id, checked))}
           onShowLogs={() => setShowLogs(true)}

@@ -333,7 +333,7 @@ describe("App desktop widgets", () => {
       }),
     ).not.toBeInTheDocument();
     await user.click(
-      screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.EDIT }),
+      await screen.findByRole("button", { name: CHECKLIST_WIDGET_COPY.EDIT }),
     );
     await user.type(
       screen.getByRole("textbox", {
