@@ -1,5 +1,9 @@
 import { FileService } from "@/application/filesystem/file-service";
+import { FilesystemDirectoryService } from "@/application/filesystem/directory/filesystem-directory-service";
+import { FilesystemEntryService } from "@/application/filesystem/entries/filesystem-entry-service";
 import { FilesystemService } from "@/application/filesystem/filesystem-service";
+import { ActiveFilesystemEntryResolver } from "@/application/filesystem/policies/active-filesystem-entry-resolver";
+import { FilesystemNameAllocator } from "@/application/filesystem/policies/filesystem-name-allocator";
 import { RecycleBinService } from "@/application/filesystem/recycle-bin-service";
 import { NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER } from "@test/support/filesystem/file-upload-compensation-observer";
 import {
@@ -30,16 +34,34 @@ export function createFilesystemApplicationFixture(
   const ids = new SequenceIdGenerator(options.ids ?? DEFAULT_ENTRY_IDS);
   const clock = new StaticClock(options.timestamp ?? 1_700_000_000_000);
   const directorySorts = new MemoryDirectorySortRepository();
+  const activeEntries = new ActiveFilesystemEntryResolver(repository);
+  const names = new FilesystemNameAllocator(repository);
   return {
     repository,
     storage,
     clock,
     directorySorts,
+    directories: new FilesystemDirectoryService(
+      repository,
+      directorySorts,
+      ids,
+      clock,
+      activeEntries,
+      names,
+    ),
+    entries: new FilesystemEntryService(
+      repository,
+      clock,
+      activeEntries,
+      names,
+    ),
     filesystem: new FilesystemService(
       repository,
       directorySorts,
       ids,
       clock,
+      activeEntries,
+      names,
     ),
     files: new FileService(
       repository,

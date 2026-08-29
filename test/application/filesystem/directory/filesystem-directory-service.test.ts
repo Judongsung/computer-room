@@ -15,12 +15,12 @@ import { streamFromText } from "@test/support/platform/runtime-fakes";
 
 describe("filesystem directory use cases", () => {
   it("lists nested folders with breadcrumbs and rejects a missing parent", async () => {
-    const { filesystem } = createFilesystemApplicationFixture();
-    const parent = await filesystem.createDirectory(null, "사진");
-    await filesystem.createDirectory(parent.id, "여행");
+    const { directories } = createFilesystemApplicationFixture();
+    const parent = await directories.createDirectory(null, "사진");
+    await directories.createDirectory(parent.id, "여행");
 
-    const root = await filesystem.listDirectory(null, 0, 50);
-    const nested = await filesystem.listDirectory(parent.id, 0, 50);
+    const root = await directories.listDirectory(null, 0, 50);
+    const nested = await directories.listDirectory(parent.id, 0, 50);
 
     expect(root.items.map((entry) => entry.name)).toContain("사진");
     expect(nested.breadcrumbs.map((entry) => entry.name)).toEqual([
@@ -29,26 +29,26 @@ describe("filesystem directory use cases", () => {
     ]);
     expect(nested.items.map((entry) => entry.name)).toEqual(["여행"]);
     await expect(
-      filesystem.createDirectory("missing-parent", "고아 폴더"),
+      directories.createDirectory("missing-parent", "고아 폴더"),
     ).rejects.toMatchObject({
       code: FILESYSTEM_ERRORS.DIRECTORY_NOT_FOUND.code,
     });
   });
 
   it("numbers directory names without case", async () => {
-    const { filesystem } = createFilesystemApplicationFixture();
+    const { directories } = createFilesystemApplicationFixture();
 
-    const first = await filesystem.createDirectory(null, "Archive");
-    const second = await filesystem.createDirectory(null, "archive");
+    const first = await directories.createDirectory(null, "Archive");
+    const second = await directories.createDirectory(null, "archive");
 
     expect(first.name).toBe("Archive");
     expect(second.name).toBe("archive (2)");
   });
 
   it("paginates folders before files in the stored sort order", async () => {
-    const { filesystem, files } = createFilesystemApplicationFixture();
-    await filesystem.createDirectory(null, "나 폴더");
-    await filesystem.createDirectory(null, "가 폴더");
+    const { directories, files } = createFilesystemApplicationFixture();
+    await directories.createDirectory(null, "나 폴더");
+    await directories.createDirectory(null, "가 폴더");
     await files.uploadFile({
       originalName: "가 파일.txt",
       contentType: "text/plain",
@@ -56,8 +56,8 @@ describe("filesystem directory use cases", () => {
       body: streamFromText("1"),
     });
 
-    const first = await filesystem.listDirectory(null, 0, 2);
-    const second = await filesystem.listDirectory(
+    const first = await directories.listDirectory(null, 0, 2);
+    const second = await directories.listDirectory(
       null,
       first.nextOffset ?? 0,
       2,
@@ -73,7 +73,7 @@ describe("filesystem directory use cases", () => {
   });
 
   it("persists one folder sort and keeps ordering stable across pages", async () => {
-    const { filesystem, repository } = createFilesystemApplicationFixture({
+    const { directories, repository } = createFilesystemApplicationFixture({
       ids: [],
     });
     for (let size = 1; size <= 105; size += 1) {
@@ -92,14 +92,14 @@ describe("filesystem directory use cases", () => {
     } as const;
 
     await expect(
-      filesystem.updateDirectorySort(FILESYSTEM_ROOT_ID.DOCUMENTS, sort),
+      directories.updateDirectorySort(FILESYSTEM_ROOT_ID.DOCUMENTS, sort),
     ).resolves.toEqual(sort);
-    const first = await filesystem.listDirectory(
+    const first = await directories.listDirectory(
       FILESYSTEM_ROOT_ID.DOCUMENTS,
       0,
       100,
     );
-    const second = await filesystem.listDirectory(
+    const second = await directories.listDirectory(
       FILESYSTEM_ROOT_ID.DOCUMENTS,
       first.nextOffset ?? 0,
       100,
@@ -115,23 +115,23 @@ describe("filesystem directory use cases", () => {
       ),
     );
     await expect(
-      filesystem.listDirectory(FILESYSTEM_ROOT_ID.DESKTOP, 0, 100),
+      directories.listDirectory(FILESYSTEM_ROOT_ID.DESKTOP, 0, 100),
     ).resolves.toMatchObject({ sort: DEFAULT_FILESYSTEM_DIRECTORY_SORT });
   });
 
   it("rejects a new desktop directory when every slot is occupied", async () => {
-    const { filesystem } = createFilesystemApplicationFixture();
-    await filesystem.createDirectory(FILESYSTEM_ROOT_ID.DESKTOP, "첫 번째", {
+    const { directories } = createFilesystemApplicationFixture();
+    await directories.createDirectory(FILESYSTEM_ROOT_ID.DESKTOP, "첫 번째", {
       targetIndex: 0,
       capacity: 2,
     });
-    await filesystem.createDirectory(FILESYSTEM_ROOT_ID.DESKTOP, "두 번째", {
+    await directories.createDirectory(FILESYSTEM_ROOT_ID.DESKTOP, "두 번째", {
       targetIndex: 1,
       capacity: 2,
     });
 
     await expect(
-      filesystem.createDirectory(FILESYSTEM_ROOT_ID.DESKTOP, "세 번째", {
+      directories.createDirectory(FILESYSTEM_ROOT_ID.DESKTOP, "세 번째", {
         targetIndex: 2,
         capacity: 2,
       }),
