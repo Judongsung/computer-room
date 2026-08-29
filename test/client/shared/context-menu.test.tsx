@@ -92,6 +92,21 @@ describe("XpContextMenuProvider", () => {
     expect(screen.getByText("selected:second")).toBeInTheDocument();
   });
 
+  it("reports a rejected custom command after closing the menu", async () => {
+    const user = userEvent.setup();
+    render(
+      <XpContextMenuProvider>
+        <FailingCommandHarness />
+      </XpContextMenuProvider>,
+    );
+
+    fireEvent.contextMenu(screen.getByRole("button", { name: "failing target" }));
+    await user.click(screen.getByRole("menuitem", { name: "failing command" }));
+
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(await screen.findByRole("alert")).toHaveTextContent("command failed");
+  });
+
   it("dispatches Shift+F10 to the focused app surface", async () => {
     const user = userEvent.setup();
     render(
@@ -254,5 +269,23 @@ function SemanticPriorityHarness() {
     >
       <input aria-label="nested editor" defaultValue="alpha" />
     </div>
+  );
+}
+
+function FailingCommandHarness() {
+  const contextMenu = useXpContextMenu();
+  return (
+    <button
+      type="button"
+      onContextMenu={(event) =>
+        contextMenu.openFromEvent(event, [
+          contextMenuCommand("failing", "failing command", async () => {
+            throw new Error("command failed");
+          }),
+        ])
+      }
+    >
+      failing target
+    </button>
   );
 }

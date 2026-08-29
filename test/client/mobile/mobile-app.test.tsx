@@ -122,6 +122,41 @@ describe("mobile application", () => {
     expect(openWidget).not.toHaveBeenCalled();
   });
 
+  it("keeps an edited widget open until leaving is confirmed", async () => {
+    const entry = widgetEntry();
+    const confirm = vi
+      .spyOn(window, "confirm")
+      .mockReturnValueOnce(false)
+      .mockReturnValueOnce(true);
+    const user = userEvent.setup();
+
+    renderMobile({
+      dashboard: dashboardGateway(),
+      filesystem: filesystemGateway([entry]),
+      widgetFileApi: {
+        getWidgetFile: vi.fn(async () => widgetDocument(entry)),
+        createWidgetFile: vi.fn(async () => {
+          throw new Error("Unexpected widget file creation.");
+        }),
+      },
+    });
+
+    await user.click(await screen.findByRole("button", { name: entry.name }));
+    await user.click(await screen.findByRole("button", { name: MOBILE_COPY.EDIT }));
+    await user.type(screen.getByRole("textbox"), " changed");
+
+    await user.click(screen.getByRole("button", { name: MOBILE_COPY.HOME }));
+    expect(confirm).toHaveBeenCalledWith(MOBILE_COPY.UNSAVED_CHANGES);
+    expect(
+      screen.getByRole("heading", { name: entry.name }),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: MOBILE_COPY.HOME }));
+    expect(
+      await screen.findByRole("main", { name: MOBILE_COPY.HOME_SCREEN }),
+    ).toBeInTheDocument();
+  });
+
   it("replaces the current image while swiping without adding history", async () => {
     const first = pictureEntry();
     const second = fileEntry("picture-file-2", "두 번째 사진", "image/webp");
