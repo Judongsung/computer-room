@@ -1,7 +1,9 @@
 import {
   FILESYSTEM_ENTRY_KIND,
+  FILESYSTEM_PATH_SEPARATOR,
   FILESYSTEM_ROOT_ID,
   FILESYSTEM_ROOT_NAME,
+  FILESYSTEM_SYSTEM_ROOT_IDS,
 } from "@/constants/filesystem/filesystem";
 import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import { AppError } from "@/domain/shared/errors";
@@ -10,12 +12,14 @@ import { thumbnailObjectKeys } from "@/domain/filesystem/thumbnail";
 import type {
   FilesystemEntry,
   FilesystemEntryRecord,
+  FilesystemMutationResult,
   FilesystemTrashPage,
   RestoreFilesystemEntryInput,
 } from "@/types/filesystem/filesystem";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import type { RecycleBinUseCases } from "@/types/filesystem/filesystem-service";
 import type { RecycleBinDataRepository } from "@/types/filesystem/repository";
+import type { FilesystemTrashUseCases } from "@/types/filesystem/services/trash-service";
 import type { Clock } from "@/types/platform/runtime";
 import type { FileObjectStorage } from "@/types/filesystem/storage";
 import type {
@@ -28,7 +32,9 @@ import { settleFilesystemOperations } from "@/application/filesystem/filesystem-
 import { ActiveFilesystemEntryResolver } from "@/application/filesystem/policies/active-filesystem-entry-resolver";
 import { FilesystemNameAllocator } from "@/application/filesystem/policies/filesystem-name-allocator";
 
-export class RecycleBinService implements RecycleBinUseCases {
+export class RecycleBinService
+  implements RecycleBinUseCases, FilesystemTrashUseCases
+{
   constructor(
     private readonly repository: RecycleBinDataRepository,
     private readonly storage: FileObjectStorage,
@@ -53,6 +59,47 @@ export class RecycleBinService implements RecycleBinUseCases {
         originalLocation: entry.restorePath ?? FILESYSTEM_ROOT_NAME.DOCUMENTS,
       })),
       nextOffset: hasMore ? offset + limit : null,
+    };
+  }
+
+  async trashEntry(id: string): Promise<FilesystemMutationResult> {
+    const entry = await this.requireActiveTrashSource(id);
+    if (!entry.parentId) {
+      throw new AppError(FILESYSTEM_ERRORS.INVALID_PARENT);
+    }
+    const breadcrumbs = await this.repository.listBreadcrumbs(entry.parentId);
+    const restorePath = breadcrumbs
+      .map((item) => item.name)
+      .join(FILESYSTEM_PATH_SEPARATOR);
+    const desktopIds =
+      entry.parentId === FILESYSTEM_ROOT_ID.DESKTOP
+        ? (await this.repository.listDesktopEntryIds()).filter(
+            (entryId) => entryId !== entry.id,
+          )
+        : undefined;
+    const closedWidgetIds = await this.repository.moveToTrash(
+      entry.id,
+      entry.parentId,
+      restorePath,
+      this.clock.now(),
+      desktopIds,
+    );
+    return { entry: null, closedWidgetIds };
+  }
+
+  async trashEntries(ids: readonly string[]): Promise<FilesystemBatchResult> {
+    const settled = await settleFilesystemOperations(ids, (id) =>
+      this.trashEntry(id),
+    );
+    return {
+      succeededIds: settled.succeeded.map(({ id }) => id),
+      entries: [],
+      failures: settled.failures,
+      closedWidgetIds: [
+        ...new Set(
+          settled.succeeded.flatMap(({ value }) => value.closedWidgetIds),
+        ),
+      ],
     };
   }
 
@@ -150,6 +197,16 @@ export class RecycleBinService implements RecycleBinUseCases {
     }
   }
 
+  private async requireActiveTrashSource(
+    id: string,
+  ): Promise<FilesystemEntryRecord> {
+    this.assertMutableEntry(id);
+    return this.activeEntries.requireEntry(id, {
+      notFound: FILESYSTEM_ERRORS.ENTRY_NOT_FOUND,
+      inactive: FILESYSTEM_ERRORS.ENTRY_NOT_ACTIVE,
+    });
+  }
+
   private async requireTrashRoot(id: string): Promise<FilesystemEntryRecord> {
     const entry = await this.repository.findEntry(id);
     if (
@@ -181,6 +238,12 @@ export class RecycleBinService implements RecycleBinUseCases {
       inactive: FILESYSTEM_ERRORS.INVALID_PARENT,
     });
     return entry.id;
+  }
+
+  private assertMutableEntry(id: string): void {
+    if ((FILESYSTEM_SYSTEM_ROOT_IDS as readonly string[]).includes(id)) {
+      throw new AppError(FILESYSTEM_ERRORS.SYSTEM_ENTRY_PROTECTED);
+    }
   }
 }
 

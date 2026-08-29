@@ -1,10 +1,9 @@
 import { FileService } from "@/application/filesystem/file-service";
 import { FilesystemDirectoryService } from "@/application/filesystem/directory/filesystem-directory-service";
 import { FilesystemEntryService } from "@/application/filesystem/entries/filesystem-entry-service";
-import { FilesystemService } from "@/application/filesystem/filesystem-service";
 import { ActiveFilesystemEntryResolver } from "@/application/filesystem/policies/active-filesystem-entry-resolver";
 import { FilesystemNameAllocator } from "@/application/filesystem/policies/filesystem-name-allocator";
-import { RecycleBinService } from "@/application/filesystem/recycle-bin-service";
+import { RecycleBinService } from "@/application/filesystem/recycle/recycle-bin-service";
 import { NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER } from "@test/support/filesystem/file-upload-compensation-observer";
 import {
   MemoryDirectorySortRepository,
@@ -55,14 +54,6 @@ export function createFilesystemApplicationFixture(
       activeEntries,
       names,
     ),
-    filesystem: new FilesystemService(
-      repository,
-      directorySorts,
-      ids,
-      clock,
-      activeEntries,
-      names,
-    ),
     files: new FileService(
       repository,
       storage,
@@ -70,6 +61,12 @@ export function createFilesystemApplicationFixture(
       clock,
       NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER,
     ),
-    recycleBin: new RecycleBinService(repository, storage, clock),
+    recycleBin: new RecycleBinService(
+      repository,
+      storage,
+      clock,
+      activeEntries,
+      names,
+    ),
   };
 }

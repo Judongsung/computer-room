@@ -6,7 +6,7 @@ import { FilesystemDownloadManifestService } from "@/application/filesystem/file
 import { DirectoryDetailsService } from "@/application/filesystem/directory-details-service";
 import { ImageUploadProfileService } from "@/application/integrations/image-upload-profile-service";
 import { ImageUploadService } from "@/application/integrations/image-upload-service";
-import { RecycleBinService } from "@/application/filesystem/recycle-bin-service";
+import { RecycleBinService } from "@/application/filesystem/recycle/recycle-bin-service";
 import { MemoService } from "@/application/widgets/memo-service";
 import { ThumbnailService } from "@/application/filesystem/thumbnail-service";
 import { ThumbnailPreparingFileService } from "@/application/filesystem/thumbnail-preparing-file-service";

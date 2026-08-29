@@ -10,19 +10,19 @@ import { streamFromText } from "@test/support/platform/runtime-fakes";
 
 describe("recycle bin use cases", () => {
   it("protects system roots from trash moves", async () => {
-    const { filesystem } = createFilesystemApplicationFixture();
+    const { recycleBin } = createFilesystemApplicationFixture();
 
     await expect(
-      filesystem.trashEntry(FILESYSTEM_ROOT_ID.RECYCLE_BIN),
+      recycleBin.trashEntry(FILESYSTEM_ROOT_ID.RECYCLE_BIN),
     ).rejects.toMatchObject({
       code: FILESYSTEM_ERRORS.SYSTEM_ENTRY_PROTECTED.code,
     });
   });
 
   it("moves a subtree to trash, restores with a numbered name, and purges R2 files", async () => {
-    const { filesystem, files, recycleBin, repository, storage, clock } =
+    const { directories, files, recycleBin, repository, storage, clock } =
       createFilesystemApplicationFixture();
-    const folder = await filesystem.createDirectory(null, "보관함");
+    const folder = await directories.createDirectory(null, "보관함");
     const file = await files.uploadFile({
       parentId: folder.id,
       originalName: "기록.txt",
@@ -34,15 +34,15 @@ describe("recycle bin use cases", () => {
     const thumbnailKey = thumbnailObjectKey(file.id);
     await storage.put(thumbnailKey, streamFromText("thumb"), "image/webp");
 
-    await filesystem.trashEntry(folder.id);
+    await recycleBin.trashEntry(folder.id);
     expect(storage.objects.has(objectKey)).toBe(true);
     expect(storage.objects.has(thumbnailKey)).toBe(true);
     clock.timestamp += 1;
-    await filesystem.createDirectory(FILESYSTEM_ROOT_ID.DOCUMENTS, "보관함");
+    await directories.createDirectory(FILESYSTEM_ROOT_ID.DOCUMENTS, "보관함");
     const restored = await recycleBin.restoreEntry(folder.id);
     expect(restored.name).toBe("보관함 (2)");
 
-    await filesystem.trashEntry(folder.id);
+    await recycleBin.trashEntry(folder.id);
     await recycleBin.permanentlyDeleteEntry(folder.id);
     expect(storage.objects.has(objectKey)).toBe(false);
     expect(storage.objects.has(thumbnailKey)).toBe(false);
@@ -51,7 +51,7 @@ describe("recycle bin use cases", () => {
   });
 
   it("keeps trash metadata when R2 deletion fails", async () => {
-    const { filesystem, files, recycleBin, repository, storage } =
+    const { files, recycleBin, repository, storage } =
       createFilesystemApplicationFixture();
     const file = await files.uploadFile({
       originalName: "keep.txt",
@@ -59,7 +59,7 @@ describe("recycle bin use cases", () => {
       declaredSize: 4,
       body: streamFromText("test"),
     });
-    await filesystem.trashEntry(file.id);
+    await recycleBin.trashEntry(file.id);
     storage.failOnDelete = true;
 
     await expect(recycleBin.permanentlyDeleteEntry(file.id)).rejects.toThrow(
@@ -69,19 +69,19 @@ describe("recycle bin use cases", () => {
   });
 
   it("restores to My Documents when the original parent remains in trash", async () => {
-    const { filesystem, recycleBin } = createFilesystemApplicationFixture();
-    const parent = await filesystem.createDirectory(null, "부모");
-    const child = await filesystem.createDirectory(parent.id, "자식");
+    const { directories, recycleBin } = createFilesystemApplicationFixture();
+    const parent = await directories.createDirectory(null, "부모");
+    const child = await directories.createDirectory(parent.id, "자식");
 
-    await filesystem.trashEntry(child.id);
-    await filesystem.trashEntry(parent.id);
+    await recycleBin.trashEntry(child.id);
+    await recycleBin.trashEntry(parent.id);
     const restored = await recycleBin.restoreEntry(child.id);
 
     expect(restored.parentId).toBe(FILESYSTEM_ROOT_ID.DOCUMENTS);
   });
 
   it("empties every trash root and its R2 objects", async () => {
-    const { files, filesystem, recycleBin, repository, storage } =
+    const { files, recycleBin, repository, storage } =
       createFilesystemApplicationFixture();
     const first = await files.uploadFile({
       originalName: "first.txt",
@@ -95,8 +95,8 @@ describe("recycle bin use cases", () => {
       declaredSize: 1,
       body: streamFromText("2"),
     });
-    await filesystem.trashEntry(first.id);
-    await filesystem.trashEntry(second.id);
+    await recycleBin.trashEntry(first.id);
+    await recycleBin.trashEntry(second.id);
 
     await recycleBin.emptyTrash();
 
@@ -106,14 +106,14 @@ describe("recycle bin use cases", () => {
   });
 
   it("returns per-entry failures while preserving successful trash and restore changes", async () => {
-    const { filesystem, recycleBin, repository } =
+    const { directories, recycleBin, repository } =
       createFilesystemApplicationFixture();
-    const folder = await filesystem.createDirectory(
+    const folder = await directories.createDirectory(
       FILESYSTEM_ROOT_ID.DOCUMENTS,
       "묶음 작업",
     );
 
-    const trashed = await filesystem.trashEntries([folder.id, "missing"]);
+    const trashed = await recycleBin.trashEntries([folder.id, "missing"]);
     expect(trashed.succeededIds).toEqual([folder.id]);
     expect(trashed.failures).toEqual([
       expect.objectContaining({
@@ -135,9 +135,9 @@ describe("recycle bin use cases", () => {
   });
 
   it("returns every widget closed by a subtree trash move", async () => {
-    const { filesystem, repository, clock } =
+    const { directories, recycleBin, repository, clock } =
       createFilesystemApplicationFixture();
-    const folder = await filesystem.createDirectory(null, "위젯 폴더");
+    const folder = await directories.createDirectory(null, "위젯 폴더");
     await repository.insertWidget({
       id: "widget-entry",
       widgetId: "widget-id",
@@ -148,7 +148,7 @@ describe("recycle bin use cases", () => {
       createdAt: clock.now(),
     });
 
-    const result = await filesystem.trashEntry(folder.id);
+    const result = await recycleBin.trashEntry(folder.id);
 
     expect(result.closedWidgetIds).toEqual(["widget-id"]);
     expect(repository.records.get(folder.id)).toMatchObject({
@@ -158,15 +158,15 @@ describe("recycle bin use cases", () => {
   });
 
   it("keeps a desktop item in trash when its original slot is occupied", async () => {
-    const { filesystem, recycleBin, repository } =
+    const { directories, recycleBin, repository } =
       createFilesystemApplicationFixture();
-    const trashed = await filesystem.createDirectory(
+    const trashed = await directories.createDirectory(
       FILESYSTEM_ROOT_ID.DESKTOP,
       "복원할 폴더",
       { targetIndex: 0, capacity: 1 },
     );
-    await filesystem.trashEntry(trashed.id);
-    await filesystem.createDirectory(
+    await recycleBin.trashEntry(trashed.id);
+    await directories.createDirectory(
       FILESYSTEM_ROOT_ID.DESKTOP,
       "새 폴더",
       { targetIndex: 0, capacity: 1 },
