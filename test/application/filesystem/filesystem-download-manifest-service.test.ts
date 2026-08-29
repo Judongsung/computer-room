@@ -13,6 +13,7 @@ import {
   MemoryFileRepository,
 } from "@test/support/filesystem/memory-filesystem-repository";
 import { MemoryObjectStorage } from "@test/support/filesystem/memory-object-storage";
+import { NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER } from "@test/support/filesystem/file-upload-compensation-observer";
 import {
   SequenceIdGenerator,
   StaticClock,
@@ -37,7 +38,13 @@ describe("FilesystemDownloadManifestService", () => {
       ids,
       clock,
     );
-    const files = new FileService(repository, storage, ids, clock);
+    const files = new FileService(
+      repository,
+      storage,
+      ids,
+      clock,
+      NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER,
+    );
     const manifests = new FilesystemDownloadManifestService(repository);
 
     const folder = await filesystem.createDirectory(

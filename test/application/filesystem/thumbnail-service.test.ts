@@ -17,6 +17,7 @@ import {
   MemoryFileRepository,
 } from "@test/support/filesystem/memory-filesystem-repository";
 import { MemoryObjectStorage } from "@test/support/filesystem/memory-object-storage";
+import { NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER } from "@test/support/filesystem/file-upload-compensation-observer";
 import {
   SequenceIdGenerator,
   StaticClock,
@@ -55,7 +56,13 @@ function createServices() {
     repository,
     storage,
     generator,
-    files: new FileService(repository, storage, ids, clock),
+    files: new FileService(
+      repository,
+      storage,
+      ids,
+      clock,
+      NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER,
+    ),
     filesystem: new FilesystemService(
       repository,
       new MemoryDirectorySortRepository(),

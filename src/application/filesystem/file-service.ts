@@ -37,6 +37,11 @@ import { toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper"
 import { nextDesktopOrder } from "@/application/filesystem/desktop-placement";
 import { ActiveFilesystemEntryResolver } from "@/application/filesystem/policies/active-filesystem-entry-resolver";
 import { FilesystemNameAllocator } from "@/application/filesystem/policies/filesystem-name-allocator";
+import { FILE_UPLOAD_COMPENSATION_STEP } from "@/constants/filesystem/observability";
+import type {
+  FileUploadCompensationFailure,
+  FileUploadCompensationObserver,
+} from "@/types/filesystem/observability/file-upload-compensation";
 
 export class FileService implements FileTransferUseCases {
   constructor(
@@ -44,6 +49,7 @@ export class FileService implements FileTransferUseCases {
     private readonly storage: FileObjectStorage,
     private readonly idGenerator: IdGenerator,
     private readonly clock: Clock,
+    private readonly compensationObserver: FileUploadCompensationObserver,
     private readonly activeEntries: ActiveFilesystemEntryResolverPort =
       new ActiveFilesystemEntryResolver(repository),
     private readonly names: FilesystemNameAllocatorPort =
@@ -111,10 +117,14 @@ export class FileService implements FileTransferUseCases {
       }
       return entry;
     } catch (error) {
-      await Promise.allSettled([
+      const cleanupResults = await Promise.allSettled([
         this.storage.delete(objectKey),
         this.repository.deleteFileMetadata(id),
       ]);
+      const failures = compensationFailures(cleanupResults);
+      if (failures.length > 0) {
+        this.compensationObserver.report({ entryId: id, failures });
+      }
       throw error;
     }
   }
@@ -180,4 +190,31 @@ export class FileService implements FileTransferUseCases {
       throw new AppError(FILE_ERRORS.FILE_TOO_LARGE);
     }
   }
+}
+
+function compensationFailures(
+  results: readonly [
+    PromiseSettledResult<void>,
+    PromiseSettledResult<void>,
+  ],
+): FileUploadCompensationFailure[] {
+  const [objectCleanup, metadataCleanup] = results;
+  return [
+    ...(objectCleanup.status === "rejected"
+      ? [
+          {
+            step: FILE_UPLOAD_COMPENSATION_STEP.OBJECT_STORAGE_DELETE,
+            cause: objectCleanup.reason,
+          },
+        ]
+      : []),
+    ...(metadataCleanup.status === "rejected"
+      ? [
+          {
+            step: FILE_UPLOAD_COMPENSATION_STEP.FILE_METADATA_DELETE,
+            cause: metadataCleanup.reason,
+          },
+        ]
+      : []),
+  ];
 }

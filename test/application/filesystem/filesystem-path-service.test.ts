@@ -14,6 +14,7 @@ import {
   MemoryFileRepository,
 } from "@test/support/filesystem/memory-filesystem-repository";
 import { MemoryObjectStorage } from "@test/support/filesystem/memory-object-storage";
+import { NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER } from "@test/support/filesystem/file-upload-compensation-observer";
 import {
   SequenceIdGenerator,
   StaticClock,
@@ -127,6 +128,7 @@ describe("FilesystemPathService", () => {
       new MemoryObjectStorage(),
       new SequenceIdGenerator(["file-id"]),
       clock,
+      NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER,
     );
     await files.uploadFile({
       parentId: FILESYSTEM_ROOT_ID.DESKTOP,

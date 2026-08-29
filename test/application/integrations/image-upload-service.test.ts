@@ -19,6 +19,7 @@ import type {
 } from "@/types/integrations/image-upload-profile";
 import { MemoryFileRepository } from "@test/support/filesystem/memory-filesystem-repository";
 import { MemoryObjectStorage } from "@test/support/filesystem/memory-object-storage";
+import { NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER } from "@test/support/filesystem/file-upload-compensation-observer";
 import {
   SequenceIdGenerator,
   StaticClock,
@@ -36,7 +37,13 @@ function createService(
   const storage = new MemoryObjectStorage();
   const idGenerator = new SequenceIdGenerator(ids);
   const clock = new StaticClock(KOREA_MIDNIGHT);
-  const files = new FileService(repository, storage, idGenerator, clock);
+  const files = new FileService(
+    repository,
+    storage,
+    idGenerator,
+    clock,
+    NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER,
+  );
   const paths = new FilesystemPathService(repository, idGenerator, clock);
   const profiles: ImageUploadProfileReader = {
     async requireEnabledProfile(id) {

@@ -47,6 +47,7 @@ import { D1StorageUsageReader } from "@/infrastructure/storage/d1-storage-usage-
 import { R2FileObjectStorage } from "@/infrastructure/filesystem/r2-file-object-storage";
 import { R2ObjectStorageUsageReader } from "@/infrastructure/storage/r2-object-storage-usage-reader";
 import { CloudflareImageThumbnailGenerator } from "@/infrastructure/filesystem/cloudflare-image-thumbnail-generator";
+import { ConsoleFileUploadCompensationObserver } from "@/infrastructure/filesystem/console-file-upload-compensation-observer";
 import { CloudflareBackgroundTaskScheduler } from "@/infrastructure/platform/cloudflare-background-task-scheduler";
 import { D1MobilePreferencesRepository } from "@/infrastructure/platform/d1-mobile-preferences-repository";
 import { D1ImageUploadProfileRepository } from "@/infrastructure/integrations/d1-image-upload-profile-repository";
@@ -77,6 +78,7 @@ export default {
       storage,
       ids,
       clock,
+      new ConsoleFileUploadCompensationObserver(),
       activeFilesystemEntries,
       filesystemNames,
     );

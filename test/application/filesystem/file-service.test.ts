@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FileService } from "@/application/filesystem/file-service";
 import { FILE_ERRORS } from "@/constants/filesystem/errors/file";
 import { BYTE_RANGE_KIND } from "@/constants/filesystem/media";
+import { FILE_UPLOAD_COMPENSATION_STEP } from "@/constants/filesystem/observability";
 import {
   DEFAULT_CONTENT_TYPE,
   FILE_OBJECT_KEY_PREFIX,
@@ -14,6 +15,7 @@ import {
 } from "@/constants/filesystem/filesystem";
 import { MemoryFileRepository } from "@test/support/filesystem/memory-filesystem-repository";
 import { MemoryObjectStorage } from "@test/support/filesystem/memory-object-storage";
+import { RecordingFileUploadCompensationObserver } from "@test/support/filesystem/file-upload-compensation-observer";
 import { streamFromText } from "@test/support/platform/runtime-fakes";
 
 const TEST_FILE = {
@@ -28,14 +30,16 @@ const TEST_NOW_MS = 1_700_000_000_000;
 function createService(ids: readonly string[] = [TEST_FILE.ID]) {
   const repository = new MemoryFileRepository();
   const storage = new MemoryObjectStorage();
+  const compensationObserver = new RecordingFileUploadCompensationObserver();
   let index = 0;
   const service = new FileService(
     repository,
     storage,
     { generate: () => ids[index++] ?? "missing-id" },
     { now: () => TEST_NOW_MS + index },
+    compensationObserver,
   );
-  return { repository, storage, service };
+  return { compensationObserver, repository, storage, service };
 }
 
 describe("FileService", () => {
@@ -61,7 +65,8 @@ describe("FileService", () => {
   });
 
   it("removes pending metadata and object when stored size differs", async () => {
-    const { repository, storage, service } = createService();
+    const { compensationObserver, repository, storage, service } =
+      createService();
     storage.reportedSizeOffset = 1;
 
     await expect(
@@ -74,7 +79,65 @@ describe("FileService", () => {
     ).rejects.toMatchObject({ code: FILE_ERRORS.FILE_SIZE_MISMATCH.code });
     expect(repository.records.has(TEST_FILE.ID)).toBe(false);
     expect(storage.objects.size).toBe(0);
+    expect(compensationObserver.events).toEqual([]);
   });
+
+  it.each([
+    {
+      name: "R2 object cleanup",
+      failObjectDelete: true,
+      failMetadataDelete: false,
+      expectedSteps: [
+        FILE_UPLOAD_COMPENSATION_STEP.OBJECT_STORAGE_DELETE,
+      ],
+    },
+    {
+      name: "D1 metadata cleanup",
+      failObjectDelete: false,
+      failMetadataDelete: true,
+      expectedSteps: [
+        FILE_UPLOAD_COMPENSATION_STEP.FILE_METADATA_DELETE,
+      ],
+    },
+    {
+      name: "both cleanup operations",
+      failObjectDelete: true,
+      failMetadataDelete: true,
+      expectedSteps: [
+        FILE_UPLOAD_COMPENSATION_STEP.OBJECT_STORAGE_DELETE,
+        FILE_UPLOAD_COMPENSATION_STEP.FILE_METADATA_DELETE,
+      ],
+    },
+  ])(
+    "reports $name failure without replacing the upload error",
+    async ({ failObjectDelete, failMetadataDelete, expectedSteps }) => {
+      const { compensationObserver, repository, storage, service } =
+        createService();
+      storage.reportedSizeOffset = 1;
+      storage.failOnDelete = failObjectDelete;
+      repository.failOnDeleteFileMetadata = failMetadataDelete;
+
+      await expect(
+        service.uploadFile({
+          originalName: "file.txt",
+          contentType: TEST_FILE.CONTENT_TYPE,
+          declaredSize: TEST_FILE.SIZE,
+          body: streamFromText(TEST_FILE.BODY),
+        }),
+      ).rejects.toMatchObject({ code: FILE_ERRORS.FILE_SIZE_MISMATCH.code });
+
+      expect(compensationObserver.events).toHaveLength(1);
+      expect(compensationObserver.events[0]?.entryId).toBe(TEST_FILE.ID);
+      expect(
+        compensationObserver.events[0]?.failures.map(({ step }) => step),
+      ).toEqual(expectedSteps);
+      expect(
+        compensationObserver.events[0]?.failures.every(
+          ({ cause }) => cause instanceof Error,
+        ),
+      ).toBe(true);
+    },
+  );
 
   it("rejects oversized files before persistence", async () => {
     const { repository, storage, service } = createService();

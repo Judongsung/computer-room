@@ -23,6 +23,7 @@ export class MemoryDirectorySortRepository implements DirectorySortRepository {
 
 export class MemoryFileRepository implements FilesystemRepository {
   readonly records = new Map<string, FilesystemEntryRecord>();
+  failOnDeleteFileMetadata = false;
 
   constructor() {
     this.seedRoot(FILESYSTEM_ROOT_ID.DESKTOP, FILESYSTEM_ROOT_NAME.DESKTOP);
@@ -252,6 +253,9 @@ export class MemoryFileRepository implements FilesystemRepository {
   }
 
   async deleteFileMetadata(id: string): Promise<void> {
+    if (this.failOnDeleteFileMetadata) {
+      throw new Error("File metadata delete failure");
+    }
     this.records.delete(id);
   }
 

@@ -7,6 +7,7 @@ import type { BackgroundTaskScheduler } from "@/types/platform/runtime";
 import type { ThumbnailPreparer } from "@/types/filesystem/thumbnail";
 import { MemoryFileRepository } from "@test/support/filesystem/memory-filesystem-repository";
 import { MemoryObjectStorage } from "@test/support/filesystem/memory-object-storage";
+import { NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER } from "@test/support/filesystem/file-upload-compensation-observer";
 import {
   SequenceIdGenerator,
   StaticClock,
@@ -32,6 +33,7 @@ function createService(preparer: ThumbnailPreparer) {
     new MemoryObjectStorage(),
     new SequenceIdGenerator(["uploaded-file"]),
     new StaticClock(NOW),
+    NOOP_FILE_UPLOAD_COMPENSATION_OBSERVER,
   );
   return {
     scheduler,
