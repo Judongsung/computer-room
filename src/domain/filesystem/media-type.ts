@@ -1,7 +1,7 @@
 import {
   MEDIA_CONTENT_TYPES,
-  MEDIA_KIND,
-  MEDIA_TYPE_PREFIX,
+  MEDIA_KIND_VALUES,
+  MEDIA_TYPE_PREFIX_BY_KIND,
 } from "@/constants/filesystem/media";
 import type { MediaKind } from "@/types/filesystem/media";
 
@@ -9,20 +9,17 @@ export function mediaKindFromContentType(
   contentType: string,
 ): MediaKind | null {
   const baseType = mediaContentTypeBase(contentType);
-  if ((MEDIA_CONTENT_TYPES[MEDIA_KIND.IMAGE] as readonly string[]).includes(baseType)) {
-    return MEDIA_KIND.IMAGE;
-  }
-  if ((MEDIA_CONTENT_TYPES[MEDIA_KIND.VIDEO] as readonly string[]).includes(baseType)) {
-    return MEDIA_KIND.VIDEO;
-  }
-  return null;
+  return (
+    MEDIA_KIND_VALUES.find((kind) =>
+      (MEDIA_CONTENT_TYPES[kind] as readonly string[]).includes(baseType),
+    ) ?? null
+  );
 }
 
 export function isPotentialMediaContentType(contentType: string): boolean {
   const baseType = mediaContentTypeBase(contentType);
-  return (
-    baseType.startsWith(MEDIA_TYPE_PREFIX.IMAGE) ||
-    baseType.startsWith(MEDIA_TYPE_PREFIX.VIDEO)
+  return MEDIA_KIND_VALUES.some((kind) =>
+    baseType.startsWith(MEDIA_TYPE_PREFIX_BY_KIND[kind]),
   );
 }
 

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { FILE_ERRORS } from "@/constants/filesystem/errors/file";
-import { BYTE_RANGE_KIND, MEDIA_KIND } from "@/constants/filesystem/media";
+import {
+  BYTE_RANGE_KIND,
+  MEDIA_CONTENT_TYPES,
+  MEDIA_KIND,
+  MEDIA_KIND_VALUES,
+} from "@/constants/filesystem/media";
 import { normalizeByteRange } from "@/domain/filesystem/byte-range";
 import {
   isPotentialMediaContentType,
@@ -10,10 +15,12 @@ import { parseRangeHeader } from "@/http/filesystem/byte-range";
 
 describe("media type", () => {
   it("classifies only supported image and video media types", () => {
-    expect(mediaKindFromContentType("IMAGE/PNG; charset=binary")).toBe(
-      MEDIA_KIND.IMAGE,
-    );
-    expect(mediaKindFromContentType("video/mp4")).toBe(MEDIA_KIND.VIDEO);
+    for (const kind of MEDIA_KIND_VALUES) {
+      for (const contentType of MEDIA_CONTENT_TYPES[kind]) {
+        expect(mediaKindFromContentType(contentType.toUpperCase())).toBe(kind);
+      }
+    }
+    expect(mediaKindFromContentType("IMAGE/PNG; charset=binary")).toBe(MEDIA_KIND.IMAGE);
     expect(mediaKindFromContentType("image/svg+xml")).toBeNull();
     expect(isPotentialMediaContentType("video/x-matroska")).toBe(true);
     expect(isPotentialMediaContentType("application/pdf")).toBe(false);

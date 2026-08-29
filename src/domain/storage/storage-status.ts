@@ -1,10 +1,9 @@
 import {
-  ARCHIVE_CONTENT_TYPES,
-  DOCUMENT_CONTENT_TYPES,
   STORAGE_MIME_CATEGORY,
+  STORAGE_MIME_CLASSIFICATION_RULES,
   STORAGE_MIME_CATEGORY_VALUES,
-  STORAGE_OBJECT_PREFIX_BY_PURPOSE,
   STORAGE_OBJECT_PURPOSE,
+  STORAGE_OBJECT_PURPOSE_RULES,
   STORAGE_OBJECT_PURPOSE_VALUES,
 } from "@/constants/storage/storage-status";
 import type {
@@ -22,29 +21,20 @@ export function storageMimeCategory(
   contentType: string | undefined,
 ): StorageMimeCategory {
   const normalized = normalizeContentType(contentType);
-  if (normalized.startsWith("image/")) return STORAGE_MIME_CATEGORY.IMAGE;
-  if (normalized.startsWith("video/")) return STORAGE_MIME_CATEGORY.VIDEO;
-  if (normalized.startsWith("audio/")) return STORAGE_MIME_CATEGORY.AUDIO;
-  if (
-    normalized.startsWith("text/") ||
-    DOCUMENT_CONTENT_TYPES.some((candidate) => candidate === normalized)
-  ) {
-    return STORAGE_MIME_CATEGORY.DOCUMENT;
-  }
-  if (ARCHIVE_CONTENT_TYPES.some((candidate) => candidate === normalized)) {
-    return STORAGE_MIME_CATEGORY.ARCHIVE;
-  }
-  return STORAGE_MIME_CATEGORY.OTHER;
+  return (
+    STORAGE_MIME_CLASSIFICATION_RULES.find(
+      (rule) =>
+        rule.prefixes.some((prefix) => normalized.startsWith(prefix)) ||
+        (rule.contentTypes as readonly string[]).includes(normalized),
+    )?.category ?? STORAGE_MIME_CATEGORY.OTHER
+  );
 }
 
 export function storageObjectPurpose(key: string): StorageObjectPurpose {
-  if (key.startsWith(STORAGE_OBJECT_PREFIX_BY_PURPOSE.original)) {
-    return STORAGE_OBJECT_PURPOSE.ORIGINAL;
-  }
-  if (key.startsWith(STORAGE_OBJECT_PREFIX_BY_PURPOSE.thumbnail)) {
-    return STORAGE_OBJECT_PURPOSE.THUMBNAIL;
-  }
-  return STORAGE_OBJECT_PURPOSE.OTHER;
+  return (
+    STORAGE_OBJECT_PURPOSE_RULES.find((rule) => key.startsWith(rule.prefix))
+      ?.purpose ?? STORAGE_OBJECT_PURPOSE.OTHER
+  );
 }
 
 export function addStorageUsage(

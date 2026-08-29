@@ -20,14 +20,20 @@ import { StaticClock } from "@test/support/platform/runtime-fakes";
 const NOW = Date.parse("2026-08-23T12:34:56.789Z");
 
 describe("storage status domain", () => {
-  it("normalizes MIME parameters and classifies object purposes", () => {
-    expect(storageMimeCategory(" IMAGE/PNG ; charset=binary ")).toBe(
-      STORAGE_MIME_CATEGORY.IMAGE,
-    );
-    expect(storageMimeCategory("application/zip")).toBe(
-      STORAGE_MIME_CATEGORY.ARCHIVE,
-    );
-    expect(storageMimeCategory(undefined)).toBe(STORAGE_MIME_CATEGORY.OTHER);
+  it.each([
+    [" IMAGE/PNG ; charset=binary ", STORAGE_MIME_CATEGORY.IMAGE],
+    ["video/mp4", STORAGE_MIME_CATEGORY.VIDEO],
+    ["audio/mpeg", STORAGE_MIME_CATEGORY.AUDIO],
+    ["text/plain", STORAGE_MIME_CATEGORY.DOCUMENT],
+    ["application/pdf", STORAGE_MIME_CATEGORY.DOCUMENT],
+    ["application/zip", STORAGE_MIME_CATEGORY.ARCHIVE],
+    ["application/octet-stream", STORAGE_MIME_CATEGORY.OTHER],
+    [undefined, STORAGE_MIME_CATEGORY.OTHER],
+  ])("classifies normalized MIME %s as %s", (contentType, expected) => {
+    expect(storageMimeCategory(contentType)).toBe(expected);
+  });
+
+  it("classifies object purposes by ordered prefix with an other fallback", () => {
     expect(storageObjectPurpose("files/source.png")).toBe(
       STORAGE_OBJECT_PURPOSE.ORIGINAL,
     );

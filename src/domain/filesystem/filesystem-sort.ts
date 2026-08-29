@@ -14,6 +14,36 @@ import type {
 } from "@/types/filesystem/filesystem";
 import { AppError } from "@/domain/shared/errors";
 
+interface FilesystemSortStrategy {
+  readonly compare: (
+    left: FilesystemEntryRecord,
+    right: FilesystemEntryRecord,
+  ) => number;
+  readonly comparePresence?: (
+    left: FilesystemEntryRecord,
+    right: FilesystemEntryRecord,
+  ) => number;
+}
+
+const FILESYSTEM_SORT_STRATEGIES = {
+  [FILESYSTEM_SORT_FIELD.NAME]: {
+    compare: (left, right) => compareText(left.nameKey, right.nameKey),
+  },
+  [FILESYSTEM_SORT_FIELD.CREATED_AT]: {
+    compare: (left, right) => left.createdAt - right.createdAt,
+  },
+  [FILESYSTEM_SORT_FIELD.UPDATED_AT]: {
+    compare: (left, right) => left.updatedAt - right.updatedAt,
+  },
+  [FILESYSTEM_SORT_FIELD.TYPE]: {
+    compare: (left, right) => compareText(entryTypeKey(left), entryTypeKey(right)),
+  },
+  [FILESYSTEM_SORT_FIELD.SIZE]: {
+    compare: compareSize,
+    comparePresence: compareSizePresence,
+  },
+} satisfies Record<FilesystemSortField, FilesystemSortStrategy>;
+
 export function isFilesystemSortField(
   value: unknown,
 ): value is FilesystemSortField {
@@ -56,38 +86,18 @@ export function compareFilesystemEntries(
   const directoryRank = entryDirectoryRank(left) - entryDirectoryRank(right);
   if (directoryRank !== 0) return directoryRank;
 
-  if (sort.field === FILESYSTEM_SORT_FIELD.SIZE) {
-    const sizePresence = compareSizePresence(left, right);
-    if (sizePresence !== 0) return sizePresence;
-  }
+  const strategy: FilesystemSortStrategy =
+    FILESYSTEM_SORT_STRATEGIES[sort.field];
+  const presence = strategy.comparePresence?.(left, right) ?? 0;
+  if (presence !== 0) return presence;
 
   const direction =
     sort.direction === FILESYSTEM_SORT_DIRECTION.ASCENDING ? 1 : -1;
-  const primary = comparePrimary(left, right, sort.field) * direction;
+  const primary = strategy.compare(left, right) * direction;
   if (primary !== 0) return primary;
 
   const nameTie = compareText(left.nameKey, right.nameKey);
   return nameTie !== 0 ? nameTie : compareText(left.id, right.id);
-}
-
-function comparePrimary(
-  left: FilesystemEntryRecord,
-  right: FilesystemEntryRecord,
-  field: FilesystemSortField,
-): number {
-  if (field === FILESYSTEM_SORT_FIELD.NAME) {
-    return compareText(left.nameKey, right.nameKey);
-  }
-  if (field === FILESYSTEM_SORT_FIELD.CREATED_AT) {
-    return left.createdAt - right.createdAt;
-  }
-  if (field === FILESYSTEM_SORT_FIELD.UPDATED_AT) {
-    return left.updatedAt - right.updatedAt;
-  }
-  if (field === FILESYSTEM_SORT_FIELD.TYPE) {
-    return compareText(entryTypeKey(left), entryTypeKey(right));
-  }
-  return compareSize(left, right);
 }
 
 function entryDirectoryRank(entry: FilesystemEntryRecord): number {

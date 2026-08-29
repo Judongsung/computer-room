@@ -77,3 +77,42 @@ export const ARCHIVE_CONTENT_TYPES = [
   "application/zip",
   "application/zstd",
 ] as const;
+
+export const STORAGE_MIME_CLASSIFICATION_RULES = [
+  {
+    category: STORAGE_MIME_CATEGORY.IMAGE,
+    prefixes: ["image/"],
+    contentTypes: [],
+  },
+  {
+    category: STORAGE_MIME_CATEGORY.VIDEO,
+    prefixes: ["video/"],
+    contentTypes: [],
+  },
+  {
+    category: STORAGE_MIME_CATEGORY.AUDIO,
+    prefixes: ["audio/"],
+    contentTypes: [],
+  },
+  {
+    category: STORAGE_MIME_CATEGORY.DOCUMENT,
+    prefixes: ["text/"],
+    contentTypes: DOCUMENT_CONTENT_TYPES,
+  },
+  {
+    category: STORAGE_MIME_CATEGORY.ARCHIVE,
+    prefixes: [],
+    contentTypes: ARCHIVE_CONTENT_TYPES,
+  },
+] as const;
+
+export const STORAGE_OBJECT_PURPOSE_RULES = [
+  {
+    purpose: STORAGE_OBJECT_PURPOSE.ORIGINAL,
+    prefix: STORAGE_OBJECT_PREFIX_BY_PURPOSE[STORAGE_OBJECT_PURPOSE.ORIGINAL],
+  },
+  {
+    purpose: STORAGE_OBJECT_PURPOSE.THUMBNAIL,
+    prefix: STORAGE_OBJECT_PREFIX_BY_PURPOSE[STORAGE_OBJECT_PURPOSE.THUMBNAIL],
+  },
+] as const;

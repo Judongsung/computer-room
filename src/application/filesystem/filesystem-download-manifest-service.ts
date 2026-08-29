@@ -2,6 +2,7 @@ import { FILESYSTEM_ARCHIVE } from "@/constants/filesystem/download";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import { AppError } from "@/domain/shared/errors";
+import { assertNever } from "@/domain/shared/assert-never";
 import type {
   FilesystemEntryRecord,
   RootedFilesystemEntryRecord,
@@ -49,25 +50,29 @@ export class FilesystemDownloadManifestService
       for (const record of sorted) {
         const entry = toPublicEntry(record);
         const path = resolveArchivePath(record, root, subtree, paths);
-        if (entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET) {
-          skippedWidgetIds.push(entry.id);
-          continue;
+        switch (entry.kind) {
+          case FILESYSTEM_ENTRY_KIND.WIDGET:
+            skippedWidgetIds.push(entry.id);
+            break;
+          case FILESYSTEM_ENTRY_KIND.DIRECTORY:
+            entries.push({
+              kind: FILESYSTEM_ENTRY_KIND.DIRECTORY,
+              path: `${path}${FILESYSTEM_ARCHIVE.DIRECTORY_PATH_SUFFIX}`,
+              updatedAt: entry.updatedAt,
+            });
+            break;
+          case FILESYSTEM_ENTRY_KIND.FILE:
+            entries.push({
+              kind: FILESYSTEM_ENTRY_KIND.FILE,
+              id: entry.id,
+              path,
+              size: entry.size,
+              updatedAt: entry.updatedAt,
+            });
+            break;
+          default:
+            assertNever(entry);
         }
-        if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
-          entries.push({
-            kind: FILESYSTEM_ENTRY_KIND.DIRECTORY,
-            path: `${path}${FILESYSTEM_ARCHIVE.DIRECTORY_PATH_SUFFIX}`,
-            updatedAt: entry.updatedAt,
-          });
-          continue;
-        }
-        entries.push({
-          kind: FILESYSTEM_ENTRY_KIND.FILE,
-          id: entry.id,
-          path,
-          size: entry.size,
-          updatedAt: entry.updatedAt,
-        });
       }
     }
 

@@ -3,6 +3,11 @@ export const MEDIA_KIND = {
   VIDEO: "video",
 } as const;
 
+export const MEDIA_KIND_VALUES = [
+  MEDIA_KIND.IMAGE,
+  MEDIA_KIND.VIDEO,
+] as const;
+
 export const BYTE_RANGE_KIND = {
   CLOSED: "closed",
   OPEN: "open",
@@ -26,7 +31,7 @@ export const MEDIA_CONTENT_TYPES = {
   ],
 } as const;
 
-export const MEDIA_TYPE_PREFIX = {
-  IMAGE: `${MEDIA_KIND.IMAGE}/`,
-  VIDEO: `${MEDIA_KIND.VIDEO}/`,
+export const MEDIA_TYPE_PREFIX_BY_KIND = {
+  [MEDIA_KIND.IMAGE]: `${MEDIA_KIND.IMAGE}/`,
+  [MEDIA_KIND.VIDEO]: `${MEDIA_KIND.VIDEO}/`,
 } as const;
