@@ -1,14 +1,11 @@
 import {
-  WIDGET_TYPE,
   WIDGET_TYPE_VALUES,
   WINDOW_RESTORE_STATE_VALUES,
   WINDOW_STATE_VALUES,
 } from "@/constants/widgets/widget";
-import type {
-  DashboardWidget,
-  WidgetLayout,
-  WidgetLayoutCollection,
-} from "@/types/widgets/widget";
+import type { WidgetLayout, WidgetLayoutCollection } from "@/types/widgets/widget";
+
+export { cloneDashboardWidgets } from "@/domain/widgets/widget-data";
 
 export function isWidgetLayoutCollection(
   value: unknown,
@@ -54,80 +51,6 @@ export function toWidgetLayout(widget: WidgetLayout): WidgetLayout {
     restoreState: widget.restoreState,
     stackOrder: widget.stackOrder,
   };
-}
-
-export function cloneDashboardWidgets(
-  widgets: readonly DashboardWidget[],
-): DashboardWidget[] {
-  return widgets.map((widget) => {
-    const layout = toWidgetLayout(widget);
-    if (widget.type === WIDGET_TYPE.MEMO) {
-      return {
-        ...layout,
-        type: WIDGET_TYPE.MEMO,
-        file: widget.file ? { ...widget.file } : null,
-        data: { ...widget.data },
-      };
-    }
-    if (
-      widget.type === WIDGET_TYPE.STORAGE_STATUS ||
-      widget.type === WIDGET_TYPE.IMAGE_UPLOAD_PROFILES
-    ) {
-      return {
-        ...layout,
-        type: widget.type,
-        file: null,
-        data: null,
-      };
-    }
-    return {
-      ...layout,
-      type: WIDGET_TYPE.DAILY_CHECKLIST,
-      file: widget.file ? { ...widget.file } : null,
-      data: {
-        ...widget.data,
-        items: widget.data.items.map((item) => ({ ...item })),
-      },
-    };
-  });
-}
-
-export function replaceDashboardWidgetData(
-  widgets: readonly DashboardWidget[],
-  replacement: DashboardWidget,
-): DashboardWidget[] {
-  return widgets.map((widget) => {
-    if (widget.id !== replacement.id || widget.type !== replacement.type) {
-      return widget;
-    }
-    if (
-      widget.type === WIDGET_TYPE.MEMO &&
-      replacement.type === WIDGET_TYPE.MEMO
-    ) {
-      return { ...widget, data: { ...replacement.data } };
-    }
-    if (
-      widget.type === WIDGET_TYPE.DAILY_CHECKLIST &&
-      replacement.type === WIDGET_TYPE.DAILY_CHECKLIST
-    ) {
-      return {
-        ...widget,
-        data: {
-          ...replacement.data,
-          items: replacement.data.items.map((item) => ({ ...item })),
-        },
-      };
-    }
-    if (
-      (widget.type === WIDGET_TYPE.STORAGE_STATUS &&
-        replacement.type === WIDGET_TYPE.STORAGE_STATUS) ||
-      (widget.type === WIDGET_TYPE.IMAGE_UPLOAD_PROFILES &&
-        replacement.type === WIDGET_TYPE.IMAGE_UPLOAD_PROFILES)
-    ) {
-      return replacement;
-    }
-    return widget;
-  });
 }
 
 export function widgetLayoutsEqual(

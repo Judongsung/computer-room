@@ -1,6 +1,10 @@
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
-import type { NewWidgetFileDraft } from "@/types/widgets/widget-file";
+import type {
+  NewWidgetFileDraft,
+  WidgetFileDraftContentByType,
+  WidgetFileType,
+} from "@/types/widgets/widget-file";
 import type { WidgetFileDraftRepository } from "@/types/widgets/widget-file-repository";
 
 export class D1WidgetFileDraftRepository
@@ -59,19 +63,49 @@ export class D1WidgetFileDraftRepository
   }
 
   private contentStatements(draft: NewWidgetFileDraft): D1PreparedStatement[] {
-    if (draft.content.type === WIDGET_TYPE.MEMO) {
-      return [
-        this.database
-          .prepare(
-            `INSERT INTO memo_widgets (widget_id, markdown, updated_at)
-             VALUES (?1, ?2, ?3)`,
-          )
-          .bind(draft.widget.id, draft.content.markdown, draft.createdAt),
-      ];
-    }
-    const items = JSON.stringify(draft.content.items);
+    return buildWidgetFileContentStatements(
+      this.database,
+      draft.widget.id,
+      draft.createdAt,
+      draft.content,
+    );
+  }
+}
+
+type WidgetFileStatementBuilderMap = {
+  readonly [T in WidgetFileType]: (
+    database: D1Database,
+    widgetId: string,
+    createdAt: number,
+    content: WidgetFileDraftContentByType<T>,
+  ) => D1PreparedStatement[];
+};
+
+const WIDGET_FILE_STATEMENT_BUILDERS = {
+  [WIDGET_TYPE.MEMO]: (
+    database: D1Database,
+    widgetId: string,
+    createdAt: number,
+    content: WidgetFileDraftContentByType<typeof WIDGET_TYPE.MEMO>,
+  ) => [
+    database
+      .prepare(
+        `INSERT INTO memo_widgets (widget_id, markdown, updated_at)
+         VALUES (?1, ?2, ?3)`,
+      )
+      .bind(widgetId, content.markdown, createdAt),
+  ],
+  [WIDGET_TYPE.DAILY_CHECKLIST]: (
+    database: D1Database,
+    widgetId: string,
+    createdAt: number,
+    content: WidgetFileDraftContentByType<
+      typeof WIDGET_TYPE.DAILY_CHECKLIST
+    >,
+  ) => {
+    const items = JSON.stringify(content.items);
     return [
-      this.database
+      database
         .prepare(
           `INSERT INTO checklist_items (
              id, widget_id, label, sort_order, created_at, updated_at
@@ -80,8 +114,8 @@ export class D1WidgetFileDraftRepository
              json_extract(value, '$.label'), CAST(key AS INTEGER), ?2, ?2
            FROM json_each(?3)`,
         )
-        .bind(draft.widget.id, draft.createdAt, items),
-      this.database
+        .bind(widgetId, createdAt, items),
+      database
         .prepare(
           `INSERT INTO checklist_daily_states (
              item_id, business_date, checked, updated_at
@@ -90,7 +124,24 @@ export class D1WidgetFileDraftRepository
            FROM json_each(?3)
            WHERE json_extract(value, '$.checked') = 1`,
         )
-        .bind(draft.content.businessDate, draft.createdAt, items),
+        .bind(content.businessDate, createdAt, items),
     ];
-  }
+  },
+} satisfies WidgetFileStatementBuilderMap;
+
+function buildWidgetFileContentStatements<T extends WidgetFileType>(
+  database: D1Database,
+  widgetId: string,
+  createdAt: number,
+  content: WidgetFileDraftContentByType<T>,
+): D1PreparedStatement[] {
+  const builder = WIDGET_FILE_STATEMENT_BUILDERS[
+    content.type
+  ] as unknown as (
+    target: D1Database,
+    id: string,
+    timestamp: number,
+    candidate: WidgetFileDraftContentByType<T>,
+  ) => D1PreparedStatement[];
+  return builder(database, widgetId, createdAt, content);
 }

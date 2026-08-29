@@ -1,5 +1,20 @@
+import { WIDGET_FILE_TYPE_VALUES } from "@/constants/widgets/widget-file";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
-import type { CreateWidgetFileInput } from "@/types/widgets/widget-file";
+import type { CreateWidgetFileInput, WidgetFileType } from "@/types/widgets/widget-file";
+
+const WIDGET_FILE_INPUT_DATA_VALIDATORS = {
+  [WIDGET_TYPE.MEMO]: (value: unknown): boolean =>
+    isRecord(value) && typeof value.markdown === "string",
+  [WIDGET_TYPE.DAILY_CHECKLIST]: (value: unknown): boolean =>
+    isRecord(value) &&
+    Array.isArray(value.items) &&
+    value.items.every(
+      (item) =>
+        isRecord(item) &&
+        typeof item.label === "string" &&
+        typeof item.checked === "boolean",
+    ),
+} satisfies Record<WidgetFileType, (value: unknown) => boolean>;
 
 export function isCreateWidgetFileInput(
   value: unknown,
@@ -12,18 +27,11 @@ export function isCreateWidgetFileInput(
   ) {
     return false;
   }
-  if (value.type === WIDGET_TYPE.MEMO) {
-    return typeof value.data.markdown === "string";
-  }
+  const type = WIDGET_FILE_TYPE_VALUES.find(
+    (candidate) => candidate === value.type,
+  );
   return (
-    value.type === WIDGET_TYPE.DAILY_CHECKLIST &&
-    Array.isArray(value.data.items) &&
-    value.data.items.every(
-      (item) =>
-        isRecord(item) &&
-        typeof item.label === "string" &&
-        typeof item.checked === "boolean",
-    )
+    type !== undefined && WIDGET_FILE_INPUT_DATA_VALIDATORS[type](value.data)
   );
 }
 

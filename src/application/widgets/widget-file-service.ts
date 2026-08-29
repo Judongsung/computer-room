@@ -35,8 +35,11 @@ import type {
 import type { Clock, IdGenerator } from "@/types/platform/runtime";
 import type {
   CreateWidgetFileInput,
+  CreateWidgetFileInputByType,
   NewWidgetFileDraft,
+  WidgetFileDraftContentByType,
   WidgetFileDocument,
+  WidgetFileType,
 } from "@/types/widgets/widget-file";
 import type { WidgetFileDraftRepository } from "@/types/widgets/widget-file-repository";
 import type { WidgetFileUseCases } from "@/types/widgets/widget-file-service";
@@ -171,24 +174,10 @@ export class WidgetFileService implements WidgetFileUseCases {
     input: CreateWidgetFileInput,
     createdAt: number,
   ): NewWidgetFileDraft["content"] {
-    if (input.type === WIDGET_TYPE.MEMO) {
-      return {
-        type: WIDGET_TYPE.MEMO,
-        markdown: validateMemoMarkdown(input.data.markdown),
-      };
-    }
-    if (input.data.items.length > MAX_ACTIVE_CHECKLIST_ITEMS) {
-      throw new AppError(CHECKLIST_ERRORS.TOO_MANY_ITEMS);
-    }
-    return {
-      type: WIDGET_TYPE.DAILY_CHECKLIST,
-      businessDate: getKoreaDateContext(createdAt).businessDate,
-      items: input.data.items.map((item) => ({
-        id: this.ids.generate(),
-        label: normalizeChecklistLabel(item.label),
-        checked: item.checked,
-      })),
-    };
+    return createWidgetFileDraftContent(input, {
+      createdAt,
+      generateId: () => this.ids.generate(),
+    });
   }
 
   private async requireActiveDirectory(id: string): Promise<void> {
@@ -197,4 +186,53 @@ export class WidgetFileService implements WidgetFileUseCases {
       inactive: FILESYSTEM_ERRORS.INVALID_PARENT,
     });
   }
+}
+
+interface WidgetFileDraftFactoryContext {
+  readonly createdAt: number;
+  readonly generateId: () => string;
+}
+
+type WidgetFileDraftFactoryMap = {
+  readonly [T in WidgetFileType]: (
+    input: CreateWidgetFileInputByType<T>,
+    context: WidgetFileDraftFactoryContext,
+  ) => WidgetFileDraftContentByType<T>;
+};
+
+const WIDGET_FILE_DRAFT_FACTORIES = {
+  [WIDGET_TYPE.MEMO]: (
+    input: CreateWidgetFileInputByType<typeof WIDGET_TYPE.MEMO>,
+  ) => ({
+    type: WIDGET_TYPE.MEMO,
+    markdown: validateMemoMarkdown(input.data.markdown),
+  }),
+  [WIDGET_TYPE.DAILY_CHECKLIST]: (
+    input: CreateWidgetFileInputByType<typeof WIDGET_TYPE.DAILY_CHECKLIST>,
+    context: WidgetFileDraftFactoryContext,
+  ) => {
+    if (input.data.items.length > MAX_ACTIVE_CHECKLIST_ITEMS) {
+      throw new AppError(CHECKLIST_ERRORS.TOO_MANY_ITEMS);
+    }
+    return {
+      type: WIDGET_TYPE.DAILY_CHECKLIST,
+      businessDate: getKoreaDateContext(context.createdAt).businessDate,
+      items: input.data.items.map((item) => ({
+        id: context.generateId(),
+        label: normalizeChecklistLabel(item.label),
+        checked: item.checked,
+      })),
+    };
+  },
+} satisfies WidgetFileDraftFactoryMap;
+
+function createWidgetFileDraftContent<T extends WidgetFileType>(
+  input: CreateWidgetFileInputByType<T>,
+  context: WidgetFileDraftFactoryContext,
+): WidgetFileDraftContentByType<T> {
+  const factory = WIDGET_FILE_DRAFT_FACTORIES[input.type] as unknown as (
+    candidate: CreateWidgetFileInputByType<T>,
+    factoryContext: WidgetFileDraftFactoryContext,
+  ) => WidgetFileDraftContentByType<T>;
+  return factory(input, context);
 }

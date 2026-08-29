@@ -1,23 +1,27 @@
 import { CHECKLIST_EVENT_ACTION_VALUES } from "@/constants/widgets/checklist";
 import {
-  WIDGET_TYPE,
+  WIDGET_TYPE_VALUES,
   WINDOW_RESTORE_STATE_VALUES,
   WINDOW_STATE_VALUES,
 } from "@/constants/widgets/widget";
+import { isWidgetDataForType, widgetTypeSupportsFileReference } from "@/domain/widgets/widget-data";
 import type {
   ChecklistCheckInput,
   ChecklistLabelInput,
 } from "@/types/widgets/checklist";
 import type { MemoUpdateInput } from "@/types/widgets/memo";
 import type {
-  ChecklistItem,
   ChecklistLogEvent,
   ChecklistLogPage,
-  DailyChecklistData,
   DashboardWidget,
   DashboardWidgetCollection,
-  MemoData,
 } from "@/types/widgets/widget";
+
+export {
+  isChecklistItem,
+  isDailyChecklistData,
+  isMemoData,
+} from "@/domain/widgets/widget-data";
 
 export function isDashboardWidgetCollection(
   value: unknown,
@@ -26,35 +30,6 @@ export function isDashboardWidgetCollection(
     isRecord(value) &&
     Array.isArray(value.items) &&
     value.items.every(isDashboardWidget)
-  );
-}
-
-export function isMemoData(value: unknown): value is MemoData {
-  return (
-    isRecord(value) &&
-    typeof value.markdown === "string" &&
-    (value.updatedAt === null || typeof value.updatedAt === "string")
-  );
-}
-
-export function isDailyChecklistData(
-  value: unknown,
-): value is DailyChecklistData {
-  return (
-    isRecord(value) &&
-    typeof value.businessDate === "string" &&
-    typeof value.nextResetAt === "string" &&
-    Array.isArray(value.items) &&
-    value.items.every(isChecklistItem)
-  );
-}
-
-export function isChecklistItem(value: unknown): value is ChecklistItem {
-  return (
-    isRecord(value) &&
-    typeof value.id === "string" &&
-    typeof value.label === "string" &&
-    typeof value.checked === "boolean"
   );
 }
 
@@ -101,20 +76,11 @@ export function isDashboardWidget(value: unknown): value is DashboardWidget {
     return false;
   }
 
-  if (value.type === WIDGET_TYPE.MEMO) {
-    return isMemoData(value.data);
-  }
-  if (
-    value.type === WIDGET_TYPE.DAILY_CHECKLIST &&
-    isDailyChecklistData(value.data)
-  ) {
-    return true;
-  }
+  const type = WIDGET_TYPE_VALUES.find((candidate) => candidate === value.type);
   return (
-    (value.type === WIDGET_TYPE.STORAGE_STATUS ||
-      value.type === WIDGET_TYPE.IMAGE_UPLOAD_PROFILES) &&
-    value.file === null &&
-    value.data === null
+    type !== undefined &&
+    isWidgetDataForType(type, value.data) &&
+    (widgetTypeSupportsFileReference(type) || value.file === null)
   );
 }
 

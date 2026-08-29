@@ -106,6 +106,11 @@ export type DashboardWidget =
   | StorageStatusWidget
   | ImageUploadProfilesWidget;
 
+export type WidgetByType<T extends WidgetType> = Extract<
+  DashboardWidget,
+  { readonly type: T }
+>;
+
 export interface DashboardWidgetCollection {
   readonly items: readonly DashboardWidget[];
 }

@@ -1,5 +1,6 @@
 import type { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { ChecklistItem } from "@/types/widgets/widget";
+import type { WidgetFileType } from "@/types/widgets/widget-file";
 import type { LOCAL_WIDGET_DRAFT_VERSION } from "@client/constants/widgets/local-widget-draft";
 
 interface LocalWidgetDraftBase {
@@ -23,6 +24,11 @@ export interface LocalChecklistWidgetDraft extends LocalWidgetDraftBase {
 export type LocalWidgetDraft =
   | LocalMemoWidgetDraft
   | LocalChecklistWidgetDraft;
+
+export type LocalWidgetDraftByType<T extends WidgetFileType> = Extract<
+  LocalWidgetDraft,
+  { readonly type: T }
+>;
 
 export interface LocalWidgetDraftState {
   readonly draft: LocalWidgetDraft | null;

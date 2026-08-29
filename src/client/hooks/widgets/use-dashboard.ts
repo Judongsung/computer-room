@@ -1,3 +1,4 @@
+import { UI_MESSAGES } from "@client/content/ko/widgets/dashboard";
 import {
   useCallback,
   useMemo,
@@ -9,20 +10,13 @@ import {
   WIDGET_WINDOW_POLICY,
   WINDOW_STATE,
 } from "@/constants/widgets/widget";
-import {
-  cloneDashboardWidgets,
-  replaceDashboardWidgetData,
-} from "@/domain/widgets/widget-layout";
+import { cloneDashboardWidgets } from "@/domain/widgets/widget-data";
 import type {
   DashboardWidget,
   WidgetType,
 } from "@/types/widgets/widget";
 import type { SaveWidgetFileInput } from "@/types/filesystem/filesystem";
-import {
-  DASHBOARD_ACTION_TYPE,
-  MESSAGE_KIND,
-  UI_MESSAGES,
-} from "@client/constants/widgets/dashboard";
+import { DASHBOARD_ACTION_TYPE, MESSAGE_KIND } from "@client/constants/widgets/dashboard";
 import {
   activeWidgetId,
   bringWidgetToFront,
@@ -95,8 +89,10 @@ export function useDashboard(api: DashboardGateway) {
   );
 
   const updateWidgetState = useCallback((widget: DashboardWidget): void => {
-    const widgets = replaceDashboardWidgetData(widgetsRef.current, widget).map(
-      (candidate) => (candidate.id === widget.id ? widget : candidate),
+    const widgets = cloneDashboardWidgets(
+      widgetsRef.current.map((candidate) =>
+        candidate.id === widget.id ? widget : candidate,
+      ),
     );
     widgetsRef.current = widgets;
     dispatch({ type: DASHBOARD_ACTION_TYPE.WIDGETS_REPLACED, widgets });

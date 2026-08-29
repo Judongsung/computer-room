@@ -38,6 +38,13 @@ export type CreateWidgetFileInput = CreateWidgetFileBaseInput &
       }
   );
 
+export type WidgetFileType = CreateWidgetFileInput["type"];
+
+export type CreateWidgetFileInputByType<T extends WidgetFileType> = Extract<
+  CreateWidgetFileInput,
+  { readonly type: T }
+>;
+
 export interface WidgetFileDocument {
   readonly widget: DashboardWidget;
   readonly entry: FilesystemWidgetEntry;
@@ -58,6 +65,11 @@ export type WidgetFileDraftContent =
       readonly businessDate: string;
       readonly items: readonly StoredChecklistWidgetFileDraftItem[];
     };
+
+export type WidgetFileDraftContentByType<T extends WidgetFileType> = Extract<
+  WidgetFileDraftContent,
+  { readonly type: T }
+>;
 
 export interface NewWidgetFileDraft {
   readonly widget: WidgetLayout;
