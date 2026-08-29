@@ -1,3 +1,5 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
+import { FILESYSTEM_ARCHIVE_PICKER_DESCRIPTION } from "@client/content/ko/filesystem/download";
 import { useCallback, useRef, useState } from "react";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { FILESYSTEM_ARCHIVE } from "@/constants/filesystem/download";
@@ -6,10 +8,7 @@ import {
   FILESYSTEM_ARCHIVE_PICKER,
   FILESYSTEM_DOWNLOAD_STATUS,
 } from "@client/constants/filesystem/download";
-import {
-  FILE_PICKER_ABORT_ERROR_NAME,
-  FILESYSTEM_COPY,
-} from "@client/constants/filesystem/filesystem";
+import { FILE_PICKER_ABORT_ERROR_NAME } from "@client/constants/filesystem/filesystem";
 import {
   createFilesystemArchiveStream,
   FilesystemArchiveFileError,
@@ -72,7 +71,7 @@ export function useFilesystemDownload(gateway: FilesystemDownloadGateway) {
           suggestedName: suggestedArchiveName(entries),
           types: [
             {
-              description: FILESYSTEM_ARCHIVE_PICKER.DESCRIPTION,
+              description: FILESYSTEM_ARCHIVE_PICKER_DESCRIPTION,
               accept: {
                 [FILESYSTEM_ARCHIVE_PICKER.MIME_TYPE]:
                   FILESYSTEM_ARCHIVE_PICKER.EXTENSIONS,

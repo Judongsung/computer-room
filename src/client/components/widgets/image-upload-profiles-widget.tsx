@@ -1,8 +1,8 @@
+import { IMAGE_UPLOAD_PROFILE_COPY } from "@client/content/ko/integrations/image-upload-profile";
 import { useState } from "react";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import {
   IMAGE_UPLOAD_PROFILE_CLASS_NAME,
-  IMAGE_UPLOAD_PROFILE_COPY,
 } from "@client/constants/integrations/image-upload-profile";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import { XP_WIDGET_TOOLBAR_ACTION } from "@client/constants/shared/xp";

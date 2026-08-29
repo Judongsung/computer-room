@@ -1,8 +1,9 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useEffect, useState } from "react";
 import type { ChecklistLogEvent } from "@/types/widgets/widget";
 import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
-import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
-import { CHECKLIST_WIDGET_COPY } from "@client/constants/widgets/content";
+import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
+import { CHECKLIST_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { messageFromError } from "@client/errors/error-message";
 import type { ChecklistGateway } from "@client/types/widgets/ports/checklist";
 

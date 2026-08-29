@@ -1,8 +1,8 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { DashboardWidget } from "@/types/widgets/widget";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
 import type { FilesystemGateway, DesktopFilesystemDialog } from "@client/types/filesystem/filesystem";
 import type { useFilesystemDownload } from "@client/hooks/filesystem/use-filesystem-download";
 import type { useFilesystemUpload } from "@client/hooks/filesystem/use-filesystem-upload";

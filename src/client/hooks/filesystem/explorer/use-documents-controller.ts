@@ -1,3 +1,4 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import {
   useCallback,
   useMemo,
@@ -21,7 +22,6 @@ import type {
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import {
   FILE_PICKER_ABORT_ERROR_NAME,
-  FILESYSTEM_COPY,
   FILESYSTEM_DRAG_SOURCE,
 } from "@client/constants/filesystem/filesystem";
 import {

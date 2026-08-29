@@ -1,4 +1,4 @@
-import { DASHBOARD_COPY } from "@client/constants/widgets/content";
+import { DASHBOARD_COPY } from "@client/content/ko/widgets/content";
 import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
 import type { XpContextMenuItem } from "@client/types/context-menu/context-menu";
 import { contextMenuCommand } from "@client/domain/context-menu/context-menu";

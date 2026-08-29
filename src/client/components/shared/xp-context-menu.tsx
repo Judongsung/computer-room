@@ -1,7 +1,7 @@
+import { XP_CONTEXT_MENU_COPY } from "@client/content/ko/context-menu/context-menu";
 import type { KeyboardEvent, RefObject } from "react";
 import {
   XP_CONTEXT_MENU_CLASS_NAME,
-  XP_CONTEXT_MENU_COPY,
   XP_CONTEXT_MENU_ITEM_KIND,
   XP_CONTEXT_MENU_LAYOUT,
 } from "@client/constants/context-menu/context-menu";

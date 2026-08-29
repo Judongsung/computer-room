@@ -11,6 +11,7 @@ import {
   SYSTEM_APP_CONFIG,
   SYSTEM_APP_ID,
 } from "@client/constants/desktop/system-app";
+import { SYSTEM_APP_TITLE_BY_ID } from "@client/content/ko/desktop/system-app";
 import type { useExplorerWindows } from "@client/hooks/desktop/use-explorer-windows";
 import type { useSystemWindows } from "@client/hooks/desktop/use-system-windows";
 import type { useMediaWindows } from "@client/hooks/media/use-media-windows";
@@ -72,7 +73,7 @@ export function useDesktopLauncher({
         const config = SYSTEM_APP_CONFIG[SYSTEM_APP_ID.DOCUMENTS];
         openDocumentsDirectory(
           FILESYSTEM_ROOT_ID.DOCUMENTS,
-          config.title,
+          SYSTEM_APP_TITLE_BY_ID[SYSTEM_APP_ID.DOCUMENTS],
           config.iconPath,
         );
       } else {

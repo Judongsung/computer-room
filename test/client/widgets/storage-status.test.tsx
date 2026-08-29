@@ -1,11 +1,9 @@
+import { STORAGE_STATUS_COPY } from "@client/content/ko/storage/storage-status";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { StorageStatusWidget } from "@client/components/widgets/storage-status-widget";
-import {
-  STORAGE_STATUS_COPY,
-  STORAGE_USAGE_LEVEL,
-} from "@client/constants/storage/storage-status";
+import { STORAGE_USAGE_LEVEL } from "@client/constants/storage/storage-status";
 import {
   storageGraphPercent,
   storageUsageLevel,

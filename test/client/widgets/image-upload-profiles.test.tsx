@@ -1,3 +1,4 @@
+import { IMAGE_UPLOAD_PROFILE_COPY } from "@client/content/ko/integrations/image-upload-profile";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -18,7 +19,6 @@ import type {
   ImageUploadProfileConfigurationInput,
 } from "@/types/integrations/image-upload-profile";
 import { ImageUploadProfilesWidget } from "@client/components/widgets/image-upload-profiles-widget";
-import { IMAGE_UPLOAD_PROFILE_COPY } from "@client/constants/integrations/image-upload-profile";
 import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
 
 const NOVELAI_PROFILE: ImageUploadProfile = {

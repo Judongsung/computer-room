@@ -1,3 +1,5 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
+import { SYSTEM_APP_TITLE_BY_ID } from "@client/content/ko/desktop/system-app";
 import {
   useState,
   type DragEvent,
@@ -7,7 +9,6 @@ import {
 } from "react";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import {
   SYSTEM_APP_CONFIG,
@@ -87,7 +88,7 @@ export function DesktopShortcuts({
         return (
           <ShortcutButton
             key={id}
-            title={app.title}
+            title={SYSTEM_APP_TITLE_BY_ID[id]}
             icon={<img src={app.iconPath} alt="" draggable={false} />}
             selected={selectedSystemId === id}
             dropTarget={dropTargetId === id}

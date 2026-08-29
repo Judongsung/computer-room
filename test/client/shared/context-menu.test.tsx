@@ -1,11 +1,9 @@
+import { XP_CONTEXT_MENU_COPY } from "@client/content/ko/context-menu/context-menu";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  XP_CONTEXT_MENU_COPY,
-  XP_CONTEXT_MENU_ITEM_KIND,
-} from "@client/constants/context-menu/context-menu";
+import { XP_CONTEXT_MENU_ITEM_KIND } from "@client/constants/context-menu/context-menu";
 import { contextMenuCommand } from "@client/domain/context-menu/context-menu";
 import {
   XpContextMenuProvider,

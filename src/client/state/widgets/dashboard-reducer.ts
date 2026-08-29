@@ -3,7 +3,7 @@ import {
   LOAD_STATUS,
   MESSAGE_KIND,
 } from "@client/constants/widgets/dashboard";
-import { cloneDashboardWidgets } from "@/domain/widgets/widget-layout";
+import { cloneDashboardWidgets } from "@/domain/widgets/widget-data";
 import type { SessionInfo } from "@/types/platform/auth";
 import type { DashboardWidget } from "@/types/widgets/widget";
 import type { DashboardState, StatusMessage } from "@client/types/widgets/dashboard";

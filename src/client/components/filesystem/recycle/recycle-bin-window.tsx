@@ -1,8 +1,8 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
+import { UI_LOCALE } from "@client/content/ko/shared/format";
 import type { DragEvent, MouseEvent } from "react";
-import { KOREA_LOCALE } from "@/constants/platform/date";
 import type { TrashedFilesystemEntry } from "@/types/filesystem/filesystem";
 import {
-  FILESYSTEM_COPY,
   FILESYSTEM_DRAG_SOURCE,
   FILESYSTEM_SELECTION_DATA_ATTRIBUTE,
 } from "@client/constants/filesystem/filesystem";
@@ -189,7 +189,7 @@ function RecycleRow({
         {item.entry.name}
       </span>
       <span>{item.originalLocation}</span>
-      <time dateTime={item.deletedAt}>{new Date(item.deletedAt).toLocaleString(KOREA_LOCALE)}</time>
+      <time dateTime={item.deletedAt}>{new Date(item.deletedAt).toLocaleString(UI_LOCALE)}</time>
     </button>
   );
 }

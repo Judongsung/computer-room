@@ -1,8 +1,10 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
+import { UI_LOCALE } from "@client/content/ko/shared/format";
 import { useEffect, useState } from "react";
 import type { FilesystemTrashPage } from "@/types/filesystem/filesystem";
 import { MobileEntryIcon } from "@client/components/mobile/filesystem/mobile-entry-icon";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
-import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
@@ -66,7 +68,7 @@ export function MobileRecycleBin({ gateway, revision }: MobileRecycleBinProps) {
                   {MOBILE_COPY.ORIGINAL_LOCATION}: {originalLocation}
                 </small>
                 <small className={MOBILE_CLASS_NAME.LIST_META}>
-                  {MOBILE_COPY.DELETED_AT}: {new Date(deletedAt).toLocaleString("ko-KR")}
+                  {MOBILE_COPY.DELETED_AT}: {new Date(deletedAt).toLocaleString(UI_LOCALE)}
                 </small>
               </span>
             </li>

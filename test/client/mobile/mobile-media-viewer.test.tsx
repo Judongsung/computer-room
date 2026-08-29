@@ -1,3 +1,4 @@
+import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
 import { useState } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
@@ -13,7 +14,6 @@ import type {
   FilesystemFileEntry,
 } from "@/types/filesystem/filesystem";
 import { MobileMediaViewer } from "@client/components/mobile/media/mobile-media-viewer";
-import { MEDIA_VIEWER_COPY } from "@client/constants/media/media";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
 

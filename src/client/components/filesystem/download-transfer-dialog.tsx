@@ -1,5 +1,5 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { FILESYSTEM_DOWNLOAD_STATUS } from "@client/constants/filesystem/download";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
 import type { FilesystemDownloadState } from "@client/types/filesystem/download";
 import { formatFileSize } from "@client/utils/format-file-size";
 

@@ -1,10 +1,8 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { useState } from "react";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { WidgetType } from "@/types/widgets/widget";
-import {
-  WIDGET_TITLE_BY_TYPE,
-} from "@client/constants/widgets/content";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
+import { WIDGET_TITLE_BY_TYPE } from "@client/content/ko/widgets/content";
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
 import type { SystemWindowChromeProps } from "@client/types/desktop/system-app";

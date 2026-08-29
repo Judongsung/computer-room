@@ -1,10 +1,11 @@
+import { UI_MESSAGES } from "@client/content/ko/widgets/dashboard";
 import { useState, type CSSProperties } from "react";
 import "xp.css/dist/XP.css";
 import "@client/styles/desktop.css";
 import { DesktopShell } from "@client/components/desktop/shell/desktop-shell";
 import { XpWindowFrame } from "@client/components/desktop/xp-window-frame";
-import { DASHBOARD_COPY, SITE_COPY } from "@client/constants/widgets/content";
-import { LOAD_STATUS, UI_MESSAGES } from "@client/constants/widgets/dashboard";
+import { DASHBOARD_COPY, SITE_COPY } from "@client/content/ko/widgets/content";
+import { LOAD_STATUS } from "@client/constants/widgets/dashboard";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import { useDashboard } from "@client/hooks/widgets/use-dashboard";
 import { DashboardApiClient } from "@client/api/widgets/dashboard-api-client";

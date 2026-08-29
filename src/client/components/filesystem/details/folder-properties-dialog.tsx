@@ -1,19 +1,19 @@
-import {
-  FILESYSTEM_PATH_SEPARATOR,
-} from "@/constants/filesystem/filesystem";
-import { KOREA_LOCALE } from "@/constants/platform/date";
-import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
+import { UI_LOCALE } from "@client/content/ko/shared/format";
 import {
   FOLDER_PROPERTIES_COPY,
   FOLDER_PROPERTIES_DATE_TIME_FORMAT_OPTIONS,
-  FOLDER_PROPERTIES_STATUS,
-} from "@client/constants/filesystem/details";
+} from "@client/content/ko/filesystem/details";
+import {
+  FILESYSTEM_PATH_SEPARATOR,
+} from "@/constants/filesystem/filesystem";
+import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
+import { FOLDER_PROPERTIES_STATUS } from "@client/constants/filesystem/details";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import type { FolderPropertiesController } from "@client/types/filesystem/folder-properties";
 import { formatFileSize } from "@client/utils/format-file-size";
 
 const DATE_TIME_FORMATTER = new Intl.DateTimeFormat(
-  KOREA_LOCALE,
+  UI_LOCALE,
   FOLDER_PROPERTIES_DATE_TIME_FORMAT_OPTIONS,
 );
 
@@ -89,15 +89,15 @@ function FolderPropertiesDetails({
         label={FOLDER_PROPERTIES_COPY.SIZE}
         value={FOLDER_PROPERTIES_COPY.SIZE_VALUE(
           formatFileSize(details.totalBytes),
-          details.totalBytes.toLocaleString(KOREA_LOCALE),
+          details.totalBytes.toLocaleString(UI_LOCALE),
         )}
       />
       <PropertyRow
         label={FOLDER_PROPERTIES_COPY.CONTAINS}
         value={FOLDER_PROPERTIES_COPY.CONTAINS_VALUE(
-          details.fileCount.toLocaleString(KOREA_LOCALE),
-          details.directoryCount.toLocaleString(KOREA_LOCALE),
-          details.widgetCount.toLocaleString(KOREA_LOCALE),
+          details.fileCount.toLocaleString(UI_LOCALE),
+          details.directoryCount.toLocaleString(UI_LOCALE),
+          details.widgetCount.toLocaleString(UI_LOCALE),
         )}
       />
       <PropertyRow

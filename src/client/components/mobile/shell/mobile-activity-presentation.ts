@@ -1,4 +1,5 @@
-import { MOBILE_ACTIVITY_KIND, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
+import { MOBILE_ACTIVITY_KIND } from "@client/constants/shared/mobile";
 import type { MobileActivity } from "@client/types/app/mobile-navigation";
 
 export function mobileActivityKey(activity: MobileActivity): string {

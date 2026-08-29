@@ -1,3 +1,10 @@
+import { UI_LOCALE } from "@client/content/ko/shared/format";
+import {
+  STORAGE_MIME_CATEGORY_LABEL,
+  STORAGE_OBJECT_PURPOSE_LABEL,
+  STORAGE_STATUS_COPY,
+  STORAGE_STATUS_DATE_TIME_FORMAT_OPTIONS,
+} from "@client/content/ko/storage/storage-status";
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import {
   STORAGE_FREE_REFERENCE_BYTES,
@@ -5,7 +12,6 @@ import {
   STORAGE_OBJECT_PURPOSE_VALUES,
   STORAGE_USAGE_LIMIT_PERCENT,
 } from "@/constants/storage/storage-status";
-import { KOREA_LOCALE } from "@/constants/platform/date";
 import type {
   StorageStatusSnapshot,
   StorageUsageValue,
@@ -13,11 +19,7 @@ import type {
 import { WIDGET_TYPE as DASHBOARD_WIDGET_TYPE } from "@/constants/widgets/widget";
 import {
   STORAGE_MIME_CATEGORY_COLOR,
-  STORAGE_MIME_CATEGORY_LABEL,
-  STORAGE_OBJECT_PURPOSE_LABEL,
   STORAGE_STATUS_CLASS_NAME,
-  STORAGE_STATUS_COPY,
-  STORAGE_STATUS_DATE_TIME_FORMAT_OPTIONS,
   STORAGE_STATUS_STYLE_PROPERTY,
   STORAGE_USAGE_LEVEL,
 } from "@client/constants/storage/storage-status";
@@ -109,7 +111,7 @@ function StorageStatusContent({ status }: { readonly status: StorageStatusSnapsh
             <div>
               <dt>{STORAGE_STATUS_COPY.TOTAL_USAGE}</dt>
               <dd>
-                {formatFileSize(status.r2.total.bytes)} · {status.r2.total.objectCount.toLocaleString()}
+                {formatFileSize(status.r2.total.bytes)} · {status.r2.total.objectCount.toLocaleString(UI_LOCALE)}
                 {STORAGE_STATUS_COPY.COUNT_SUFFIX}
               </dd>
             </div>
@@ -167,7 +169,7 @@ function StorageStatusContent({ status }: { readonly status: StorageStatusSnapsh
         dateTime={status.measuredAt}
       >
         {STORAGE_STATUS_COPY.MEASURED_AT}: {new Intl.DateTimeFormat(
-          KOREA_LOCALE,
+          UI_LOCALE,
           STORAGE_STATUS_DATE_TIME_FORMAT_OPTIONS,
         ).format(new Date(status.measuredAt))}
       </time>
@@ -263,7 +265,7 @@ function UsageRow({ label, usage }: { readonly label: string; readonly usage: St
   return (
     <div>
       <dt>{label}</dt>
-      <dd>{formatFileSize(usage.bytes)} · {usage.objectCount.toLocaleString()}{STORAGE_STATUS_COPY.COUNT_SUFFIX}</dd>
+      <dd>{formatFileSize(usage.bytes)} · {usage.objectCount.toLocaleString(UI_LOCALE)}{STORAGE_STATUS_COPY.COUNT_SUFFIX}</dd>
     </div>
   );
 }
@@ -272,7 +274,7 @@ function CountRow({ label, value }: { readonly label: string; readonly value: nu
   return (
     <div>
       <dt>{label}</dt>
-      <dd>{value.toLocaleString()}{STORAGE_STATUS_COPY.COUNT_SUFFIX}</dd>
+      <dd>{value.toLocaleString(UI_LOCALE)}{STORAGE_STATUS_COPY.COUNT_SUFFIX}</dd>
     </div>
   );
 }

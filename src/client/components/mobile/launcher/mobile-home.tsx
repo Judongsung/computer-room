@@ -1,10 +1,10 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useMemo, useRef, useState, type CSSProperties, type UIEvent } from "react";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import { MobileEntryIcon } from "@client/components/mobile/filesystem/mobile-entry-icon";
 import {
   MOBILE_ASSET_PATHS,
   MOBILE_CLASS_NAME,
-  MOBILE_COPY,
   MOBILE_CSS_VARIABLE,
   MOBILE_LAYOUT,
   MOBILE_SYSTEM_ITEM_ID,

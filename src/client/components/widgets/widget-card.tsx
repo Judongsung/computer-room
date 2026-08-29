@@ -1,4 +1,4 @@
-import { DASHBOARD_COPY } from "@client/constants/widgets/content";
+import { DASHBOARD_COPY } from "@client/content/ko/widgets/content";
 import {
   XP_WIDGET_TOOLBAR_ACTION,
   XP_WINDOW_CONTROL_ACTION,

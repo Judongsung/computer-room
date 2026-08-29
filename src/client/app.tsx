@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { CLIENT_INTERFACE_MODE } from "@client/constants/shared/interface-mode";
+import { APP_COPY } from "@client/content/ko/shared/app";
 import { useInterfaceMode } from "@client/hooks/shared/use-interface-mode";
 import type { AppProps } from "@client/types/app/app";
 
@@ -26,7 +27,7 @@ export function App(props: AppProps) {
     <Suspense
       fallback={
         <main className={`interface-loading interface-loading--${mode}`} role="status">
-          연결 중…
+          {APP_COPY.CONNECTING}
         </main>
       }
     >

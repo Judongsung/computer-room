@@ -3,12 +3,14 @@ import { WINDOW_STATE } from "@/constants/widgets/widget";
 import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
 import type { DashboardWidget } from "@/types/widgets/widget";
 import { MEDIA_WINDOW_CONFIG } from "@client/constants/media/media";
+import { MEDIA_VIEWER_TITLE_BY_KIND } from "@client/content/ko/media/media";
 import {
   SYSTEM_APP_CONFIG,
   SYSTEM_APP_ID_VALUES,
 } from "@client/constants/desktop/system-app";
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
-import { UNSAVED_WIDGET_TITLE_BY_TYPE } from "@client/constants/widgets/content";
+import { UNSAVED_WIDGET_TITLE_BY_TYPE } from "@client/content/ko/widgets/content";
+import { SYSTEM_APP_TITLE_BY_ID } from "@client/content/ko/desktop/system-app";
 import type { TaskbarWindowItem } from "@client/types/desktop/desktop";
 import type { SystemAppId } from "@client/types/desktop/system-app";
 import type { useExplorerWindows } from "@client/hooks/desktop/use-explorer-windows";
@@ -161,7 +163,7 @@ export function useDesktopWindowManager({
     })),
     ...SYSTEM_APP_ID_VALUES.filter((id) => system.windows[id].isOpen).map((id) => ({
       id,
-      title: SYSTEM_APP_CONFIG[id].title,
+      title: SYSTEM_APP_TITLE_BY_ID[id],
       iconPath: SYSTEM_APP_CONFIG[id].iconPath,
       isActive: activeWindowId === id,
       isMinimized: system.windows[id].windowState === WINDOW_STATE.MINIMIZED,
@@ -181,7 +183,7 @@ export function useDesktopWindowManager({
       const config = MEDIA_WINDOW_CONFIG[kind];
       return [{
         id: window.id,
-        title: `${window.currentFile.name} - ${config.titleSuffix}`,
+        title: `${window.currentFile.name} - ${MEDIA_VIEWER_TITLE_BY_KIND[kind]}`,
         iconPath: config.iconPath,
         isActive: activeWindowId === window.id,
         isMinimized: window.windowState === WINDOW_STATE.MINIMIZED,

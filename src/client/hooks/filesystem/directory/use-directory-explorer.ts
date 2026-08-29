@@ -1,6 +1,6 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { useCallback, useEffect, useState } from "react";
 import type { FilesystemDirectorySort } from "@/types/filesystem/filesystem";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
 import { usePaginatedDirectory } from "@client/hooks/filesystem/directory/use-paginated-directory";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 

@@ -1,3 +1,4 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useCallback, useEffect, useState } from "react";
 import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
@@ -27,7 +28,6 @@ import {
   MOBILE_ACTIVITY_KIND,
   MOBILE_ACTIVITY_MENU_AVAILABILITY,
   MOBILE_CLASS_NAME,
-  MOBILE_COPY,
   MOBILE_LAYOUT_CSS_VARIABLES,
 } from "@client/constants/shared/mobile";
 import { useDesktopEntries } from "@client/hooks/filesystem/use-desktop-entries";

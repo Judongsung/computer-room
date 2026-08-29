@@ -1,9 +1,10 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import { MobileDirectoryMenu } from "@client/components/mobile/filesystem/mobile-directory-menu";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
 import { MobileEntryIcon } from "@client/components/mobile/filesystem/mobile-entry-icon";
-import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
 import { usePaginatedDirectory } from "@client/hooks/filesystem/directory/use-paginated-directory";
 import { formatFileSize } from "@client/utils/format-file-size";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";

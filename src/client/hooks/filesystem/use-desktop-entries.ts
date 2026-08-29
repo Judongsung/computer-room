@@ -1,10 +1,8 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { useEffect, useState } from "react";
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
-import {
-  DESKTOP_ENTRY_UNORDERED_INDEX,
-  FILESYSTEM_COPY,
-} from "@client/constants/filesystem/filesystem";
+import { DESKTOP_ENTRY_UNORDERED_INDEX } from "@client/constants/filesystem/filesystem";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 

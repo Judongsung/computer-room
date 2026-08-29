@@ -1,6 +1,7 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useEffect, type ReactNode } from "react";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
-import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
 
 interface MobileMenuProps {
   readonly open: boolean;

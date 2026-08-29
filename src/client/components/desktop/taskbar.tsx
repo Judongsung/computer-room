@@ -1,7 +1,4 @@
-import {
-  DASHBOARD_COPY,
-  LAYOUT_SAVE_COPY_BY_STATUS,
-} from "@client/constants/widgets/content";
+import { DASHBOARD_COPY, LAYOUT_SAVE_COPY_BY_STATUS } from "@client/content/ko/widgets/content";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import { LAYOUT_SAVE_STATUS } from "@client/constants/desktop/layout-save";
 import { useKoreaClock } from "@client/hooks/shared/use-korea-clock";

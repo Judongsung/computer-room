@@ -1,7 +1,8 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useEffect, useState } from "react";
 import { MarkdownContent } from "@client/components/widgets/markdown-content";
-import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
-import { MEMO_WIDGET_COPY } from "@client/constants/widgets/content";
+import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
+import { MEMO_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { messageFromError } from "@client/errors/error-message";
 import { useUnsavedChangesWarning } from "@client/hooks/shared/use-unsaved-changes-warning";
 

@@ -1,7 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
-import { MEMO_WIDGET_COPY } from "@client/constants/widgets/content";
+import { MEMO_WIDGET_COPY } from "@client/content/ko/widgets/content";
 
 const MARKDOWN_PLUGINS = [remarkGfm, remarkBreaks];
 

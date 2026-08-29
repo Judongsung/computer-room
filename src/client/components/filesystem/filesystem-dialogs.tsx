@@ -1,3 +1,4 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   FILESYSTEM_ENTRY_KIND,
@@ -5,7 +6,6 @@ import {
   FILESYSTEM_ROOT_NAME,
 } from "@/constants/filesystem/filesystem";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 

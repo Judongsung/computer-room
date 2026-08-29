@@ -1,6 +1,7 @@
 import { HTTP_HEADERS, HTTP_MEDIA_TYPE } from "@/constants/platform/http";
 import { API_REQUEST_OPTIONS } from "@client/constants/shared/api";
-import { CLIENT_ERRORS } from "@client/constants/shared/errors";
+import { CLIENT_ERROR_CODE } from "@client/constants/shared/errors";
+import { clientErrorDefinition } from "@client/errors/client-error";
 import { ApiError } from "@client/errors/api-error";
 import { isRecord } from "@client/api/shared/api-contract";
 
@@ -41,5 +42,5 @@ function readApiError(value: unknown): { code: string; message: string } {
   ) {
     return { code: value.error.code, message: value.error.message };
   }
-  return CLIENT_ERRORS.REQUEST_FAILED;
+  return clientErrorDefinition(CLIENT_ERROR_CODE.REQUEST_FAILED);
 }

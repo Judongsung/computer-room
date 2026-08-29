@@ -1,3 +1,4 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { useCallback } from "react";
 import {
   FILESYSTEM_ENTRY_KIND,
@@ -7,7 +8,6 @@ import {
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import type { WidgetType } from "@/types/widgets/widget";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
 import {
   buildDesktopBlankContextMenu,
   buildDesktopRootContextMenu,

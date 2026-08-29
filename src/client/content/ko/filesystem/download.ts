@@ -1,0 +1,1 @@
+export const FILESYSTEM_ARCHIVE_PICKER_DESCRIPTION = "ZIP 압축 파일";

@@ -6,7 +6,7 @@ import {
 } from "@client/api/filesystem/filesystem-api-contract";
 import { isRecord } from "@client/api/shared/api-contract";
 import { jsonRequest, requestJson } from "@client/api/shared/api-request";
-import { CLIENT_ERRORS } from "@client/constants/shared/errors";
+import { CLIENT_ERROR_CODE } from "@client/constants/shared/errors";
 import { ClientError } from "@client/errors/client-error";
 import type { MobilePreferencesGateway } from "@client/types/platform/mobile-preferences";
 
@@ -24,7 +24,7 @@ export class MobilePreferencesApiClient implements MobilePreferencesGateway {
   private async request(options: RequestInit = {}): Promise<MobilePreferences> {
     const payload = await requestJson(MOBILE_PREFERENCES_API_PATH, options);
     if (!isPreferencesEnvelope(payload)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return payload.preferences;
   }

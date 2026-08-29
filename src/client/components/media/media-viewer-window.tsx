@@ -1,11 +1,9 @@
+import { MEDIA_VIEWER_COPY, MEDIA_VIEWER_TITLE_BY_KIND } from "@client/content/ko/media/media";
 import { useEffect } from "react";
 import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
 import { MEDIA_KIND } from "@/constants/filesystem/media";
 import { WINDOW_STATE } from "@/constants/widgets/widget";
-import {
-  MEDIA_VIEWER_COPY,
-  MEDIA_WINDOW_CONFIG,
-} from "@client/constants/media/media";
+import { MEDIA_WINDOW_CONFIG } from "@client/constants/media/media";
 import { useMediaDirectory } from "@client/hooks/media/use-media-directory";
 import type { MediaViewerWindowProps } from "@client/types/media/media";
 import { downloadFile } from "@client/utils/download-file";
@@ -96,7 +94,7 @@ export function MediaViewerWindow({
 
   return (
     <DesktopAppWindow
-      title={`${window.currentFile.name} - ${config.titleSuffix}`}
+      title={`${window.currentFile.name} - ${MEDIA_VIEWER_TITLE_BY_KIND[kind]}`}
       iconPath={config.iconPath}
       window={window}
       desktop={desktop}

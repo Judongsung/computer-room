@@ -1,3 +1,9 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
+import {
+  FILESYSTEM_SORT_COPY,
+  FILESYSTEM_SORT_DIRECTION_LABELS,
+  FILESYSTEM_SORT_FIELD_OPTIONS,
+} from "@client/content/ko/filesystem/sort";
 import { useState } from "react";
 import { FILESYSTEM_SORT_DIRECTION_VALUES } from "@/constants/filesystem/sort";
 import {
@@ -9,12 +15,7 @@ import type {
   FilesystemDirectorySort,
 } from "@/types/filesystem/filesystem";
 import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
-import {
-  FILESYSTEM_SORT_COPY,
-  FILESYSTEM_SORT_DIRECTION_LABELS,
-  FILESYSTEM_SORT_FIELD_OPTIONS,
-} from "@client/constants/filesystem/sort";
-import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 

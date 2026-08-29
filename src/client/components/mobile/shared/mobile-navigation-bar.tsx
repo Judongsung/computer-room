@@ -1,13 +1,10 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import {
   useRef,
   type MouseEventHandler,
   type PointerEventHandler,
 } from "react";
-import {
-  MOBILE_CLASS_NAME,
-  MOBILE_COPY,
-  MOBILE_NAVIGATION_GLYPH,
-} from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME, MOBILE_NAVIGATION_GLYPH } from "@client/constants/shared/mobile";
 import { POINTER_TYPE } from "@client/constants/shared/pointer";
 
 interface MobileNavigationBarProps {

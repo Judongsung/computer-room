@@ -1,10 +1,10 @@
+import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import {
   SYSTEM_APP_CONFIG,
   SYSTEM_APP_ID,
 } from "@client/constants/desktop/system-app";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
-import { MEDIA_VIEWER_COPY } from "@client/constants/media/media";
 import { DesktopAppWindow } from "@client/components/desktop/desktop-app-window";
 import { DocumentsToolbar } from "@client/components/filesystem/documents-toolbar";
 import { DocumentsDirectoryView } from "@client/components/filesystem/explorer/documents-directory-view";

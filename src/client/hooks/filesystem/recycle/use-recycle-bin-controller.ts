@@ -1,7 +1,7 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { TrashedFilesystemEntry } from "@/types/filesystem/filesystem";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
 import {
   buildRecycleContextMenu,
   buildRecycleItemContextMenu,

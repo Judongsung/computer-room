@@ -1,7 +1,7 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import {
   XP_CONTEXT_MENU_COMMAND_ID,
 } from "@client/constants/context-menu/context-menu";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
 import {
   contextMenuCommand,
   contextMenuSeparator,

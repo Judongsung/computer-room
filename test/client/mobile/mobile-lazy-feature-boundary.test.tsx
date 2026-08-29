@@ -1,8 +1,8 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { lazy } from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MobileLazyFeatureBoundary } from "@client/components/mobile/shared/mobile-lazy-feature-boundary";
-import { MOBILE_COPY } from "@client/constants/shared/mobile";
 
 describe("MobileLazyFeatureBoundary", () => {
   it("shows an Android activity while a feature chunk is pending", () => {

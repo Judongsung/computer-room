@@ -1,3 +1,4 @@
+import { XP_CONTEXT_MENU_COPY } from "@client/content/ko/context-menu/context-menu";
 import {
   createContext,
   useCallback,
@@ -11,7 +12,6 @@ import {
 import {
   XP_CONTEXT_MENU_CLASS_NAME,
   XP_CONTEXT_MENU_COMMAND_ID,
-  XP_CONTEXT_MENU_COPY,
   XP_CONTEXT_MENU_EDITABLE_SELECTOR,
   XP_CONTEXT_MENU_LAYOUT,
 } from "@client/constants/context-menu/context-menu";

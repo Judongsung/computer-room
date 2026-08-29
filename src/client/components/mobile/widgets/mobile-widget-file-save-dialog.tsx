@@ -1,3 +1,5 @@
+import { LOCAL_WIDGET_DRAFT_DEFAULT_NAME } from "@client/content/ko/widgets/local-widget-draft";
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useEffect, useState } from "react";
 import {
   FILESYSTEM_ENTRY_KIND,
@@ -10,10 +12,7 @@ import type {
 } from "@/types/filesystem/filesystem";
 import type { WidgetFileDocument } from "@/types/widgets/widget-file";
 import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
-import {
-  LOCAL_WIDGET_DRAFT_DEFAULT_NAME,
-} from "@client/constants/widgets/local-widget-draft";
-import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { LocalWidgetDraft } from "@client/types/widgets/local-widget-draft";

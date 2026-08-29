@@ -1,3 +1,8 @@
+import {
+  FILESYSTEM_SORT_COPY,
+  FILESYSTEM_SORT_DIRECTION_LABELS,
+  FILESYSTEM_SORT_FIELD_OPTIONS,
+} from "@client/content/ko/filesystem/sort";
 import { FILESYSTEM_SORT_DIRECTION_VALUES } from "@/constants/filesystem/sort";
 import {
   isFilesystemSortDirection,
@@ -7,12 +12,7 @@ import type {
   FilesystemDirectorySort,
   FilesystemDirectoryPage,
 } from "@/types/filesystem/filesystem";
-import {
-  FILESYSTEM_SORT_CLASS_NAME,
-  FILESYSTEM_SORT_COPY,
-  FILESYSTEM_SORT_DIRECTION_LABELS,
-  FILESYSTEM_SORT_FIELD_OPTIONS,
-} from "@client/constants/filesystem/sort";
+import { FILESYSTEM_SORT_CLASS_NAME } from "@client/constants/filesystem/sort";
 
 interface DirectorySortControlsProps {
   readonly page: FilesystemDirectoryPage | null;

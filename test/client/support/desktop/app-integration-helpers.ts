@@ -1,6 +1,10 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CHECKLIST_WIDGET_COPY, DASHBOARD_COPY, MEMO_WIDGET_COPY } from "@client/constants/widgets/content";
+import {
+  CHECKLIST_WIDGET_COPY,
+  DASHBOARD_COPY,
+  MEMO_WIDGET_COPY,
+} from "@client/content/ko/widgets/content";
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { WIDGET_TYPE, WIDGET_WINDOW_POLICY, WINDOW_RESTORE_STATE, WINDOW_STATE } from "@/constants/widgets/widget";
 import type { DashboardWidget } from "@/types/widgets/widget";

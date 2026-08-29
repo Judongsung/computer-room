@@ -1,10 +1,7 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
-import {
-  MOBILE_ASSET_PATHS,
-  MOBILE_CLASS_NAME,
-  MOBILE_COPY,
-} from "@client/constants/shared/mobile";
+import { MOBILE_ASSET_PATHS, MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
 
 interface MobileWidgetCatalogProps {
   readonly onCreate: (

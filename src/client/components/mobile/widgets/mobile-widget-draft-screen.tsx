@@ -1,3 +1,5 @@
+import { LOCAL_WIDGET_DRAFT_DEFAULT_NAME } from "@client/content/ko/widgets/local-widget-draft";
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useState } from "react";
 import { MAX_ACTIVE_CHECKLIST_ITEMS } from "@/constants/widgets/checklist";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
@@ -8,8 +10,7 @@ import { MobileActivity } from "@client/components/mobile/shared/mobile-activity
 import { MobileChecklist } from "@client/components/mobile/widgets/mobile-checklist";
 import { MobileMemo } from "@client/components/mobile/widgets/mobile-memo";
 import { MobileWidgetFileSaveDialog } from "@client/components/mobile/widgets/mobile-widget-file-save-dialog";
-import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
-import { LOCAL_WIDGET_DRAFT_DEFAULT_NAME } from "@client/constants/widgets/local-widget-draft";
+import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { LocalWidgetDraft } from "@client/types/widgets/local-widget-draft";
 import type { WidgetFileGateway } from "@client/types/widgets/widget-file";

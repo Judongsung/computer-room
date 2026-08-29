@@ -1,3 +1,4 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { useEffect, useState, type FormEvent } from "react";
 import {
   FILESYSTEM_ENTRY_KIND,
@@ -7,8 +8,7 @@ import {
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { WidgetType } from "@/types/widgets/widget";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
-import { CHECKLIST_WIDGET_COPY, MEMO_WIDGET_COPY } from "@client/constants/widgets/content";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
+import { CHECKLIST_WIDGET_COPY, MEMO_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 

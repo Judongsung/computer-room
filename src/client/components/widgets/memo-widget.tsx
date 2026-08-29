@@ -7,7 +7,7 @@ import {
 } from "react";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { MemoWidget as MemoWidgetData } from "@/types/widgets/widget";
-import { MEMO_WIDGET_COPY } from "@client/constants/widgets/content";
+import { MEMO_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import { MEMO_EDITOR_MODE } from "@client/constants/widgets/memo";

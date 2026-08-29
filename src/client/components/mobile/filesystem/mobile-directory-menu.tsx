@@ -1,9 +1,9 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useEffect, useState } from "react";
 import type { FilesystemDirectoryPage } from "@/types/filesystem/filesystem";
 import { MobileDirectorySortDialog } from "@client/components/mobile/filesystem/mobile-directory-sort-dialog";
 import { MobileFolderPropertiesDialog } from "@client/components/mobile/filesystem/mobile-folder-properties-dialog";
 import { MobileMenu } from "@client/components/mobile/shared/mobile-menu";
-import { MOBILE_COPY } from "@client/constants/shared/mobile";
 import { useFolderProperties } from "@client/hooks/filesystem/use-folder-properties";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 

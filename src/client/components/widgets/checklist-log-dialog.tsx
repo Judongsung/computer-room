@@ -1,9 +1,12 @@
+import { UI_LOCALE } from "@client/content/ko/shared/format";
 import { useEffect, useId, useMemo, useState } from "react";
 import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
-import { KOREA_LOCALE, KOREA_TIME_ZONE } from "@/constants/platform/date";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { ChecklistLogEvent } from "@/types/widgets/widget";
-import { CHECKLIST_WIDGET_COPY } from "@client/constants/widgets/content";
+import {
+  CHECKLIST_LOG_TIME_FORMAT_OPTIONS,
+  CHECKLIST_WIDGET_COPY,
+} from "@client/content/ko/widgets/content";
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import { XP_WINDOW_CONTROL_ACTION } from "@client/constants/shared/xp";
@@ -12,12 +15,10 @@ import type { ChecklistGateway } from "@client/types/widgets/ports/checklist";
 import { XpWindowFrame } from "@client/components/desktop/xp-window-frame";
 import { XpWindowControlButton } from "@client/components/shared/xp-window-control-button";
 
-const LOG_TIME_FORMATTER = new Intl.DateTimeFormat(KOREA_LOCALE, {
-  timeZone: KOREA_TIME_ZONE,
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-});
+const LOG_TIME_FORMATTER = new Intl.DateTimeFormat(
+  UI_LOCALE,
+  CHECKLIST_LOG_TIME_FORMAT_OPTIONS,
+);
 
 const CHECKLIST_EVENT_LABEL_BY_ACTION = {
   [CHECKLIST_EVENT_ACTION.ADDED]: CHECKLIST_WIDGET_COPY.ADDED,

@@ -1,3 +1,4 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { useCallback, useMemo, useState, type DragEvent, type RefObject } from "react";
 import {
   FILESYSTEM_ENTRY_KIND,
@@ -10,10 +11,7 @@ import type {
 } from "@/types/filesystem/filesystem";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import type { DashboardWidget } from "@/types/widgets/widget";
-import {
-  FILESYSTEM_COPY,
-  FILESYSTEM_DRAG_SOURCE,
-} from "@client/constants/filesystem/filesystem";
+import { FILESYSTEM_DRAG_SOURCE } from "@client/constants/filesystem/filesystem";
 import { SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
 import { desktopIconLayout } from "@client/domain/desktop/desktop-icon-layout";
 import { readFilesystemDragPayload } from "@client/domain/filesystem/drag";

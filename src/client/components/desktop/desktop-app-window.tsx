@@ -1,5 +1,5 @@
 import { WINDOW_STATE } from "@/constants/widgets/widget";
-import { DASHBOARD_COPY } from "@client/constants/widgets/content";
+import { DASHBOARD_COPY } from "@client/content/ko/widgets/content";
 import { XP_WINDOW_CONTROL_ACTION } from "@client/constants/shared/xp";
 import type { DesktopAppWindowProps } from "@client/types/desktop/desktop";
 import { XpWindowControlButton } from "@client/components/shared/xp-window-control-button";

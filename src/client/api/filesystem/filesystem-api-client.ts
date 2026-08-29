@@ -43,7 +43,7 @@ import {
 } from "@client/api/filesystem/filesystem-api-request";
 import { isRecord } from "@client/api/shared/api-contract";
 import { jsonRequest, requestJson } from "@client/api/shared/api-request";
-import { CLIENT_ERRORS } from "@client/constants/shared/errors";
+import { CLIENT_ERROR_CODE } from "@client/constants/shared/errors";
 import { ClientError } from "@client/errors/client-error";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
@@ -72,7 +72,7 @@ export class FilesystemApiClient implements FilesystemGateway {
     }
     const value = await requestJson(`${FILESYSTEM_ENTRIES_PATH}?${query}`);
     if (!isDirectoryPage(value)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value;
   }
@@ -91,7 +91,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       }),
     );
     if (!isRecord(value) || !isDirectoryEntry(value.directory)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value.directory;
   }
@@ -103,7 +103,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       `${FILESYSTEM_DIRECTORIES_PATH}/${encodeURIComponent(directoryId)}/${API_PATH_SEGMENTS.DETAILS}`,
     );
     if (!isRecord(value) || !isDirectoryDetails(value.details)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value.details;
   }
@@ -117,7 +117,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       jsonRequest(HTTP_METHOD.PUT, sort),
     );
     if (!isRecord(value) || !isFilesystemDirectorySort(value.sort)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value.sort;
   }
@@ -141,7 +141,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       body: file,
     });
     if (!isRecord(value) || !isFileEntry(value.file)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value.file;
   }
@@ -155,7 +155,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       jsonRequest(HTTP_METHOD.PATCH, input),
     );
     if (!isRecord(value) || !isFilesystemEntry(value.entry)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value.entry;
   }
@@ -172,7 +172,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       }),
     );
     if (!isRecord(value) || !isFilesystemEntry(value.entry)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value.entry;
   }
@@ -190,7 +190,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       }),
     );
     if (!isBatchResult(value)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value;
   }
@@ -200,7 +200,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       method: HTTP_METHOD.DELETE,
     });
     if (!isMutationResult(value)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value;
   }
@@ -217,7 +217,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       jsonRequest(HTTP_METHOD.POST, { entryIds: ids }),
     );
     if (!isDownloadManifest(value)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value;
   }
@@ -240,7 +240,7 @@ export class FilesystemApiClient implements FilesystemGateway {
     });
     const value = await requestJson(`${FILESYSTEM_TRASH_PATH}?${query}`);
     if (!isTrashPage(value)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value;
   }
@@ -257,7 +257,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       }),
     );
     if (!isRecord(value) || !isFilesystemEntry(value.entry)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value.entry;
   }
@@ -275,7 +275,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       }),
     );
     if (!isBatchResult(value)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value;
   }
@@ -307,7 +307,7 @@ export class FilesystemApiClient implements FilesystemGateway {
       jsonRequest(HTTP_METHOD.POST, { entryIds: ids }),
     );
     if (!isBatchResult(value)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value;
   }

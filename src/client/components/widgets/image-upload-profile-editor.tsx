@@ -1,3 +1,8 @@
+import {
+  IMAGE_UPLOAD_CONTENT_TYPE_LABEL,
+  IMAGE_UPLOAD_PROFILE_COPY,
+  IMAGE_UPLOAD_ROOT_LABEL,
+} from "@client/content/ko/integrations/image-upload-profile";
 import { useMemo, useState, type FormEvent } from "react";
 import {
   IMAGE_UPLOAD_CONTENT_TYPE_VALUES,
@@ -6,11 +11,8 @@ import {
 import { isImageUploadProfileRootId } from "@/domain/integrations/image-upload-profile";
 import type { ImageUploadContentType } from "@/types/integrations/image-upload-profile";
 import {
-  IMAGE_UPLOAD_CONTENT_TYPE_LABEL,
   IMAGE_UPLOAD_PROFILE_CLASS_NAME,
-  IMAGE_UPLOAD_PROFILE_COPY,
   IMAGE_UPLOAD_PROFILE_FIELD_ID,
-  IMAGE_UPLOAD_ROOT_LABEL,
 } from "@client/constants/integrations/image-upload-profile";
 import {
   imageUploadProfilePreview,

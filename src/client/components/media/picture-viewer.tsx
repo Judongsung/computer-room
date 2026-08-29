@@ -1,3 +1,4 @@
+import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
 import {
   useEffect,
   useMemo,
@@ -13,7 +14,6 @@ import {
   IMAGE_VIEWER_ZOOM_MODE,
   MEDIA_KEYBOARD_KEY,
   MEDIA_TOOLBAR_GLYPH,
-  MEDIA_VIEWER_COPY,
   PERCENT_MULTIPLIER,
   PICTURE_VIEWER_CANVAS_PADDING_PX,
 } from "@client/constants/media/media";

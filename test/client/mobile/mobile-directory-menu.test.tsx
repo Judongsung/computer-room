@@ -1,3 +1,6 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
+import { FILESYSTEM_SORT_COPY } from "@client/content/ko/filesystem/sort";
+import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
 import { useState } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -17,9 +20,6 @@ import type {
 } from "@/types/filesystem/filesystem";
 import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
 import { MobileDirectory } from "@client/components/mobile/filesystem/mobile-directory";
-import { FOLDER_PROPERTIES_COPY } from "@client/constants/filesystem/details";
-import { FILESYSTEM_SORT_COPY } from "@client/constants/filesystem/sort";
-import { MOBILE_COPY } from "@client/constants/shared/mobile";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
 

@@ -16,6 +16,7 @@ import {
   SYSTEM_APP_CONFIG,
   SYSTEM_APP_ID,
 } from "@client/constants/desktop/system-app";
+import { SYSTEM_APP_TITLE_BY_ID } from "@client/content/ko/desktop/system-app";
 import { DESKTOP_LAYOUT } from "@client/constants/desktop/desktop";
 import { DesktopWindow } from "@client/components/desktop/desktop-window";
 import { LazyFeatureBoundary } from "@client/components/shared/lazy-feature-boundary";
@@ -195,12 +196,12 @@ export function DesktopWindowLayer({
         </LazyFeatureBoundary>
       ))}
       {system.windows[SYSTEM_APP_ID.MY_COMPUTER].isOpen ? (
-        <LazyFeatureBoundary title={SYSTEM_APP_CONFIG[SYSTEM_APP_ID.MY_COMPUTER].title}>
+        <LazyFeatureBoundary title={SYSTEM_APP_TITLE_BY_ID[SYSTEM_APP_ID.MY_COMPUTER]}>
           <MyComputerWindow {...systemChrome(SYSTEM_APP_ID.MY_COMPUTER)} onAddWidget={onAddWidget} />
         </LazyFeatureBoundary>
       ) : null}
       {system.windows[SYSTEM_APP_ID.RECYCLE_BIN].isOpen ? (
-        <LazyFeatureBoundary title={SYSTEM_APP_CONFIG[SYSTEM_APP_ID.RECYCLE_BIN].title}>
+        <LazyFeatureBoundary title={SYSTEM_APP_TITLE_BY_ID[SYSTEM_APP_ID.RECYCLE_BIN]}>
           <RecycleBinWindow
             {...systemChrome(SYSTEM_APP_ID.RECYCLE_BIN)}
             gateway={filesystemGateway}

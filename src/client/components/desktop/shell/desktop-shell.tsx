@@ -1,3 +1,4 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import {
   useCallback,
   useEffect,
@@ -13,10 +14,7 @@ import {
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { SystemAppId } from "@client/types/desktop/system-app";
 import type { DesktopShellProps } from "@client/types/desktop/desktop";
-import {
-  DASHBOARD_COPY,
-  SITE_COPY,
-} from "@client/constants/widgets/content";
+import { DASHBOARD_COPY, SITE_COPY } from "@client/content/ko/widgets/content";
 import {
   DESKTOP_ASSET_PATHS,
   DESKTOP_LAYOUT,
@@ -26,7 +24,7 @@ import {
   SYSTEM_APP_ID,
   SYSTEM_APP_ID_VALUES,
 } from "@client/constants/desktop/system-app";
-import { FILESYSTEM_COPY, FILESYSTEM_DRAG_SOURCE } from "@client/constants/filesystem/filesystem";
+import { FILESYSTEM_DRAG_SOURCE } from "@client/constants/filesystem/filesystem";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import { writeFilesystemDragPayload } from "@client/domain/filesystem/drag";
 import { useDesktopDimensions } from "@client/hooks/desktop/use-desktop-dimensions";

@@ -1,8 +1,6 @@
+import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  FOLDER_PROPERTIES_COPY,
-  FOLDER_PROPERTIES_STATUS,
-} from "@client/constants/filesystem/details";
+import { FOLDER_PROPERTIES_STATUS } from "@client/constants/filesystem/details";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 import { messageFromError } from "@client/errors/error-message";
 import type {

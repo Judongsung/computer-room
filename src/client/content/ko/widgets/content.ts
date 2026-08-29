@@ -1,10 +1,18 @@
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
+import { KOREA_TIME_ZONE } from "@/constants/platform/date";
 import { LAYOUT_SAVE_STATUS } from "@client/constants/desktop/layout-save";
-import { STORAGE_STATUS_COPY } from "@client/constants/storage/storage-status";
+import { STORAGE_STATUS_COPY } from "@client/content/ko/storage/storage-status";
 
 export const SITE_COPY = {
   TITLE: "computer-room",
 } as const;
+
+export const CHECKLIST_LOG_TIME_FORMAT_OPTIONS = {
+  timeZone: KOREA_TIME_ZONE,
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+} as const satisfies Intl.DateTimeFormatOptions;
 
 export const DASHBOARD_COPY = {
   RETRY: "다시 시도",
@@ -82,14 +90,16 @@ export const WIDGET_TITLE_BY_TYPE = {
   [WIDGET_TYPE.MEMO]: MEMO_WIDGET_COPY.TITLE,
   [WIDGET_TYPE.DAILY_CHECKLIST]: CHECKLIST_WIDGET_COPY.TITLE,
   [WIDGET_TYPE.STORAGE_STATUS]: STORAGE_STATUS_COPY.TITLE,
-  [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]: DASHBOARD_COPY.ADD_IMAGE_UPLOAD_PROFILES_WIDGET,
+  [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]:
+    DASHBOARD_COPY.ADD_IMAGE_UPLOAD_PROFILES_WIDGET,
 } as const;
 
 export const UNSAVED_WIDGET_TITLE_BY_TYPE = {
   [WIDGET_TYPE.MEMO]: MEMO_WIDGET_COPY.UNSAVED_TITLE,
   [WIDGET_TYPE.DAILY_CHECKLIST]: CHECKLIST_WIDGET_COPY.UNSAVED_TITLE,
   [WIDGET_TYPE.STORAGE_STATUS]: STORAGE_STATUS_COPY.TITLE,
-  [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]: DASHBOARD_COPY.ADD_IMAGE_UPLOAD_PROFILES_WIDGET,
+  [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]:
+    DASHBOARD_COPY.ADD_IMAGE_UPLOAD_PROFILES_WIDGET,
 } as const;
 
 export const LAYOUT_SAVE_COPY_BY_STATUS = {

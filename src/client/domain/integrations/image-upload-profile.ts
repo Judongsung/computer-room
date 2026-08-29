@@ -1,3 +1,4 @@
+import { IMAGE_UPLOAD_ROOT_LABEL } from "@client/content/ko/integrations/image-upload-profile";
 import {
   IMAGE_UPLOAD_EXTENSION_BY_CONTENT_TYPE,
   IMAGE_UPLOAD_TEMPLATE_SAMPLE,
@@ -10,7 +11,6 @@ import {
   type ImageUploadTemplateContext,
 } from "@/domain/integrations/image-upload-profile";
 import type { ImageUploadProfileDraft } from "@client/types/integrations/image-upload-profile";
-import { IMAGE_UPLOAD_ROOT_LABEL } from "@client/constants/integrations/image-upload-profile";
 
 export function imageUploadProfilePreview(draft: ImageUploadProfileDraft): string {
   const configuration = normalizeImageUploadProfileConfiguration(

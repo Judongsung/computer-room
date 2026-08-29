@@ -1,10 +1,10 @@
+import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import {
   XP_CONTEXT_MENU_COMMAND_ID,
 } from "@client/constants/context-menu/context-menu";
-import { FOLDER_PROPERTIES_COPY } from "@client/constants/filesystem/details";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
 import {
   contextMenuCommand,
   contextMenuSeparator,

@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "@client/app";
-import { SITE_COPY } from "@client/constants/widgets/content";
+import { SITE_COPY } from "@client/content/ko/widgets/content";
 import { DESKTOP_LAYOUT } from "@client/constants/desktop/desktop";
 import { detectClientInterfaceMode } from "@client/domain/platform/interface-mode";
 import "./styles/global.css";

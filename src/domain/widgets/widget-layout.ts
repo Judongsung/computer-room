@@ -5,8 +5,6 @@ import {
 } from "@/constants/widgets/widget";
 import type { WidgetLayout, WidgetLayoutCollection } from "@/types/widgets/widget";
 
-export { cloneDashboardWidgets } from "@/domain/widgets/widget-data";
-
 export function isWidgetLayoutCollection(
   value: unknown,
 ): value is WidgetLayoutCollection {

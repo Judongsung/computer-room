@@ -1,8 +1,8 @@
+import { LAZY_FEATURE_LABEL } from "@client/content/ko/shared/lazy-feature";
 import { lazy } from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { LazyFeatureBoundary } from "@client/components/shared/lazy-feature-boundary";
-import { LAZY_FEATURE_LABEL } from "@client/constants/shared/lazy-feature";
 
 describe("LazyFeatureBoundary", () => {
   it("keeps an XP loading frame visible while a feature chunk is pending", () => {

@@ -4,7 +4,7 @@ import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { WidgetType } from "@/types/widgets/widget";
 import type { WidgetComponentProps } from "@client/types/desktop/desktop";
 import { LazyFeatureBoundary } from "@client/components/shared/lazy-feature-boundary";
-import { WIDGET_TITLE_BY_TYPE } from "@client/constants/widgets/content";
+import { WIDGET_TITLE_BY_TYPE } from "@client/content/ko/widgets/content";
 
 const MemoWidget = lazy(() =>
   import("@client/components/widgets/memo-widget").then((module) => ({

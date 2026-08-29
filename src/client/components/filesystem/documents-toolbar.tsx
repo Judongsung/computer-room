@@ -1,6 +1,6 @@
+import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import type { ChangeEvent, RefObject } from "react";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
-import { FOLDER_PROPERTIES_COPY } from "@client/constants/filesystem/details";
 
 interface DocumentsToolbarProps {
   readonly busy: boolean;

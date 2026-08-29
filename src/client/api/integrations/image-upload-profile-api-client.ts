@@ -11,7 +11,7 @@ import type {
 } from "@/types/integrations/image-upload-profile";
 import { jsonRequest, requestJson } from "@client/api/shared/api-request";
 import { isRecord } from "@client/api/shared/api-contract";
-import { CLIENT_ERRORS } from "@client/constants/shared/errors";
+import { CLIENT_ERROR_CODE } from "@client/constants/shared/errors";
 import { ClientError } from "@client/errors/client-error";
 import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
 
@@ -21,7 +21,7 @@ export class ImageUploadProfileApiClient
   async listProfiles(): Promise<readonly ImageUploadProfile[]> {
     const payload = await requestJson(IMAGE_UPLOAD_PROFILES_API_PATH);
     if (!isImageUploadProfileCollection(payload)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return payload.items;
   }
@@ -55,7 +55,7 @@ export class ImageUploadProfileApiClient
   ): Promise<ImageUploadProfile> {
     const payload = await requestJson(path, options);
     if (!isRecord(payload) || !isImageUploadProfile(payload.profile)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return payload.profile;
   }

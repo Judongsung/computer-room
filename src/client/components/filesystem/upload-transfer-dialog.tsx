@@ -1,4 +1,4 @@
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import type { UploadTransferState } from "@client/types/filesystem/upload";
 
 interface UploadTransferDialogProps {

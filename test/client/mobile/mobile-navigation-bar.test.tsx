@@ -1,7 +1,7 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MobileNavigationBar } from "@client/components/mobile/shared/mobile-navigation-bar";
-import { MOBILE_COPY } from "@client/constants/shared/mobile";
 import { POINTER_TYPE } from "@client/constants/shared/pointer";
 
 describe("MobileNavigationBar", () => {

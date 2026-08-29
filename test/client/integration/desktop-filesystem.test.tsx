@@ -1,3 +1,8 @@
+import { STORAGE_STATUS_COPY } from "@client/content/ko/storage/storage-status";
+import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
+import { FILESYSTEM_SORT_COPY } from "@client/content/ko/filesystem/sort";
+import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import type { ReactNode } from "react";
 import {
   fireEvent,
@@ -13,14 +18,9 @@ import {
   CHECKLIST_WIDGET_COPY,
   DASHBOARD_COPY,
   MEMO_WIDGET_COPY,
-} from "@client/constants/widgets/content";
-import { STORAGE_STATUS_COPY } from "@client/constants/storage/storage-status";
+} from "@client/content/ko/widgets/content";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
-import { FILESYSTEM_COPY } from "@client/constants/filesystem/filesystem";
-import { FILESYSTEM_SORT_COPY } from "@client/constants/filesystem/sort";
-import { FOLDER_PROPERTIES_COPY } from "@client/constants/filesystem/details";
-import { MEDIA_VIEWER_COPY } from "@client/constants/media/media";
 import { ACCESS_LOGOUT_PATH } from "@/constants/platform/auth";
 import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
 import { MAX_FILE_SIZE_BYTES } from "@/constants/filesystem/file";
@@ -35,7 +35,7 @@ import {
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
 } from "@/constants/widgets/widget";
-import { cloneDashboardWidgets } from "@/domain/widgets/widget-layout";
+import { cloneDashboardWidgets } from "@/domain/widgets/widget-data";
 import type { SessionInfo } from "@/types/platform/auth";
 import type {
   ChecklistItem,

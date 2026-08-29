@@ -1,6 +1,7 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { Component, Suspense } from "react";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
-import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
 import type {
   LazyFeatureBoundaryProps,
   LazyFeatureBoundaryState,

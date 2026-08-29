@@ -1,4 +1,5 @@
 import { SYSTEM_APP_CONFIG } from "@client/constants/desktop/system-app";
+import { SYSTEM_APP_TITLE_BY_ID } from "@client/content/ko/desktop/system-app";
 import type { SystemAppWindowProps } from "@client/types/desktop/system-app";
 import { DesktopAppWindow } from "@client/components/desktop/desktop-app-window";
 
@@ -10,7 +11,7 @@ export function SystemAppWindow({
   return (
     <DesktopAppWindow
       {...props}
-      title={config.title}
+      title={SYSTEM_APP_TITLE_BY_ID[appId]}
       iconPath={config.iconPath}
       minWidth={config.minWidth}
       minHeight={config.minHeight}

@@ -1,3 +1,4 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import type { DragEvent, KeyboardEvent, MouseEvent, RefObject } from "react";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import type {
@@ -6,7 +7,6 @@ import type {
   FilesystemEntry,
 } from "@/types/filesystem/filesystem";
 import {
-  FILESYSTEM_COPY,
   FILESYSTEM_DRAG_SOURCE,
   FILESYSTEM_SELECTION_DATA_ATTRIBUTE,
 } from "@client/constants/filesystem/filesystem";

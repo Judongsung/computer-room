@@ -1,8 +1,6 @@
+import { LAZY_FEATURE_LABEL } from "@client/content/ko/shared/lazy-feature";
 import { Component, Suspense } from "react";
-import {
-  LAZY_FEATURE_CLASS_NAME,
-  LAZY_FEATURE_LABEL,
-} from "@client/constants/shared/lazy-feature";
+import { LAZY_FEATURE_CLASS_NAME } from "@client/constants/shared/lazy-feature";
 import { XpWindowFrame } from "@client/components/desktop/xp-window-frame";
 import type {
   LazyFeatureBoundaryProps,

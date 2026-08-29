@@ -1,10 +1,8 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { useCallback, useState } from "react";
 import type { DesktopPlacement } from "@/types/filesystem/filesystem";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
-import {
-  FILESYSTEM_COPY,
-  FILESYSTEM_UPLOAD_POLICY,
-} from "@client/constants/filesystem/filesystem";
+import { FILESYSTEM_UPLOAD_POLICY } from "@client/constants/filesystem/filesystem";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type {

@@ -1,12 +1,10 @@
+import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
 import { useEffect, useState } from "react";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
 import type { FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import type { MediaKind } from "@/types/filesystem/media";
-import {
-  MEDIA_NAVIGATION_INITIAL_OFFSET,
-  MEDIA_VIEWER_COPY,
-} from "@client/constants/media/media";
+import { MEDIA_NAVIGATION_INITIAL_OFFSET } from "@client/constants/media/media";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 import { messageFromError } from "@client/errors/error-message";
 

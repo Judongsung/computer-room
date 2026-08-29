@@ -1,7 +1,8 @@
+import { UI_MESSAGES } from "@client/content/ko/widgets/dashboard";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { cloneDashboardWidgets } from "@/domain/widgets/widget-layout";
+import { cloneDashboardWidgets } from "@/domain/widgets/widget-data";
 import type { DashboardWidget } from "@/types/widgets/widget";
-import { DASHBOARD_ACTION_TYPE, UI_MESSAGES } from "@client/constants/widgets/dashboard";
+import { DASHBOARD_ACTION_TYPE } from "@client/constants/widgets/dashboard";
 import { dashboardReducer, INITIAL_DASHBOARD_STATE } from "@client/state/widgets/dashboard-reducer";
 import type { WidgetLayoutGateway } from "@client/types/widgets/ports/layout";
 import type { SessionGateway } from "@client/types/widgets/ports/session";

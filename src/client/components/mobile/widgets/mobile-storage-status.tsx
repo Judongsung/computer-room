@@ -1,8 +1,10 @@
+import { STORAGE_STATUS_COPY } from "@client/content/ko/storage/storage-status";
+import { UI_LOCALE } from "@client/content/ko/shared/format";
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useCallback, useEffect, useState } from "react";
 import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
-import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
-import { STORAGE_STATUS_COPY } from "@client/constants/storage/storage-status";
+import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
 import { messageFromError } from "@client/errors/error-message";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
 import { formatFileSize } from "@client/utils/format-file-size";
@@ -46,19 +48,19 @@ export function MobileStorageStatus({ gateway }: MobileStorageStatusProps) {
               <h2>{STORAGE_STATUS_COPY.R2_TITLE}</h2>
               <dl>
                 <div><dt>{STORAGE_STATUS_COPY.TOTAL_USAGE}</dt><dd>{formatFileSize(status.r2.total.bytes)}</dd></div>
-                <div><dt>{STORAGE_STATUS_COPY.REGISTERED_FILES}</dt><dd>{status.r2.total.objectCount.toLocaleString()}개</dd></div>
+                <div><dt>{STORAGE_STATUS_COPY.REGISTERED_FILES}</dt><dd>{status.r2.total.objectCount.toLocaleString(UI_LOCALE)}{STORAGE_STATUS_COPY.COUNT_SUFFIX}</dd></div>
               </dl>
             </section>
             <section className={MOBILE_CLASS_NAME.WIDGET_PANEL}>
               <h2>{STORAGE_STATUS_COPY.D1_TITLE}</h2>
               <dl>
                 <div><dt>{STORAGE_STATUS_COPY.DATABASE_USAGE}</dt><dd>{formatFileSize(status.d1.databaseBytes)}</dd></div>
-                <div><dt>{STORAGE_STATUS_COPY.DIRECTORIES}</dt><dd>{status.d1.directoryCount.toLocaleString()}개</dd></div>
-                <div><dt>{STORAGE_STATUS_COPY.WIDGETS}</dt><dd>{status.d1.widgetCount.toLocaleString()}개</dd></div>
-                <div><dt>{STORAGE_STATUS_COPY.TRASH_ITEMS}</dt><dd>{status.d1.trashItemCount.toLocaleString()}개</dd></div>
+                <div><dt>{STORAGE_STATUS_COPY.DIRECTORIES}</dt><dd>{status.d1.directoryCount.toLocaleString(UI_LOCALE)}{STORAGE_STATUS_COPY.COUNT_SUFFIX}</dd></div>
+                <div><dt>{STORAGE_STATUS_COPY.WIDGETS}</dt><dd>{status.d1.widgetCount.toLocaleString(UI_LOCALE)}{STORAGE_STATUS_COPY.COUNT_SUFFIX}</dd></div>
+                <div><dt>{STORAGE_STATUS_COPY.TRASH_ITEMS}</dt><dd>{status.d1.trashItemCount.toLocaleString(UI_LOCALE)}{STORAGE_STATUS_COPY.COUNT_SUFFIX}</dd></div>
               </dl>
             </section>
-            <small>{STORAGE_STATUS_COPY.MEASURED_AT}: {new Date(status.measuredAt).toLocaleString("ko-KR")}</small>
+            <small>{STORAGE_STATUS_COPY.MEASURED_AT}: {new Date(status.measuredAt).toLocaleString(UI_LOCALE)}</small>
           </>
         ) : null}
       </div>

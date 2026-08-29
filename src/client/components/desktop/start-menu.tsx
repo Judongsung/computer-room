@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { DASHBOARD_COPY } from "@client/constants/widgets/content";
+import { DASHBOARD_COPY } from "@client/content/ko/widgets/content";
 import {
   DESKTOP_ASSET_PATHS,
   WIDGET_ICON_PATH_BY_TYPE,

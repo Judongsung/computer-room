@@ -1,3 +1,4 @@
+import { IMAGE_UPLOAD_PROFILE_COPY } from "@client/content/ko/integrations/image-upload-profile";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type {
   ImageUploadProfile,
@@ -5,7 +6,6 @@ import type {
 } from "@/types/integrations/image-upload-profile";
 import {
   EMPTY_IMAGE_UPLOAD_PROFILE_DRAFT,
-  IMAGE_UPLOAD_PROFILE_COPY,
 } from "@client/constants/integrations/image-upload-profile";
 import { messageFromError } from "@client/errors/error-message";
 import type {

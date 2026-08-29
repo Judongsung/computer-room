@@ -1,8 +1,9 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { MEDIA_KIND } from "@/constants/filesystem/media";
 import type { FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import type { MediaKind } from "@/types/filesystem/media";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
-import { MOBILE_CLASS_NAME, MOBILE_COPY } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
 import { useHorizontalImageSwipe } from "@client/hooks/media/use-horizontal-image-swipe";
 import { useMediaDirectory } from "@client/hooks/media/use-media-directory";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";

@@ -1,6 +1,6 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MobilePreferences } from "@/types/platform/mobile-preferences";
-import { MOBILE_COPY } from "@client/constants/shared/mobile";
 import { messageFromError } from "@client/errors/error-message";
 import type { MobilePreferencesGateway } from "@client/types/platform/mobile-preferences";
 

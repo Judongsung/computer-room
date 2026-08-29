@@ -26,7 +26,7 @@ import type {
   FilesystemWidgetEntry,
   SaveWidgetFileInput,
 } from "@/types/filesystem/filesystem";
-import { CLIENT_ERRORS } from "@client/constants/shared/errors";
+import { CLIENT_ERROR_CODE } from "@client/constants/shared/errors";
 import { ClientError } from "@client/errors/client-error";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import { isWidgetEntry } from "@client/api/filesystem/filesystem-api-contract";
@@ -37,7 +37,7 @@ export class DashboardApiClient implements DashboardGateway {
   async getSession(): Promise<SessionInfo> {
     const value = await requestJson(API_PATHS.SESSION);
     if (!isSessionInfo(value)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value;
   }
@@ -45,7 +45,7 @@ export class DashboardApiClient implements DashboardGateway {
   async listWidgets(): Promise<DashboardWidget[]> {
     const value = await requestJson(API_PATHS.WIDGETS);
     if (!isDashboardWidgetCollection(value)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return [...value.items];
   }
@@ -58,7 +58,7 @@ export class DashboardApiClient implements DashboardGateway {
       jsonRequest(HTTP_METHOD.PUT, { items: widgets }),
     );
     if (!isDashboardWidgetCollection(value)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return [...value.items];
   }
@@ -93,7 +93,7 @@ export class DashboardApiClient implements DashboardGateway {
       !isDashboardWidget(value.widget) ||
       !isWidgetEntry(value.entry)
     ) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return { widget: value.widget, entry: value.entry };
   }
@@ -124,7 +124,7 @@ export class DashboardApiClient implements DashboardGateway {
       jsonRequest(HTTP_METHOD.PUT, { markdown }),
     );
     if (!isMemoData(value)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value;
   }
@@ -132,7 +132,7 @@ export class DashboardApiClient implements DashboardGateway {
   async getChecklist(widgetId: string): Promise<DailyChecklistData> {
     const value = await requestJson(checklistPath(widgetId));
     if (!isDailyChecklistData(value)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value;
   }
@@ -192,7 +192,7 @@ export class DashboardApiClient implements DashboardGateway {
       `${checklistPath(widgetId)}/${API_PATH_SEGMENTS.LOGS}?${query}`,
     );
     if (!isChecklistLogPage(value)) {
-      throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value;
   }
@@ -221,14 +221,14 @@ function widgetPath(widgetId: string): string {
 
 function readChecklistItemEnvelope(value: unknown): ChecklistItem {
   if (!isRecord(value) || !isChecklistItem(value.item)) {
-    throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
   }
   return value.item;
 }
 
 function readWidgetEnvelope(value: unknown): DashboardWidget {
   if (!isRecord(value) || !isDashboardWidget(value.widget)) {
-    throw new ClientError(CLIENT_ERRORS.INVALID_RESPONSE);
+    throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
   }
   return value.widget;
 }

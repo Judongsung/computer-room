@@ -6,7 +6,7 @@ import {
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
 } from "@/constants/widgets/widget";
-import { cloneDashboardWidgets } from "@/domain/widgets/widget-layout";
+import { cloneDashboardWidgets } from "@/domain/widgets/widget-data";
 import type { SessionInfo } from "@/types/platform/auth";
 import type { ChecklistItem, ChecklistLogEvent, ChecklistLogPage, DailyChecklistData, DashboardWidget, CreateWidgetInput, MemoData, WidgetLayout } from "@/types/widgets/widget";
 import type { FilesystemWidgetEntry, SaveWidgetFileInput } from "@/types/filesystem/filesystem";

@@ -1,13 +1,12 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useCallback, useEffect, useState } from "react";
-import { WIDGET_TYPE } from "@/constants/widgets/widget";
-import { getKoreaDateContext } from "@/domain/shared/korea-date";
 import {
   LOCAL_WIDGET_DRAFT_ID_PREFIX,
   LOCAL_WIDGET_DRAFT_STORAGE_KEY,
   LOCAL_WIDGET_DRAFT_VERSION,
 } from "@client/constants/widgets/local-widget-draft";
-import { MOBILE_COPY } from "@client/constants/shared/mobile";
 import {
+  createLocalWidgetDraft,
   parseLocalWidgetDraft,
   resetLocalChecklistForKoreaDate,
 } from "@client/domain/widgets/local-widget-draft";
@@ -15,10 +14,7 @@ import type {
   LocalWidgetDraft,
   LocalWidgetDraftState,
 } from "@client/types/widgets/local-widget-draft";
-
-type DraftWidgetType =
-  | typeof WIDGET_TYPE.MEMO
-  | typeof WIDGET_TYPE.DAILY_CHECKLIST;
+import type { WidgetFileType } from "@/types/widgets/widget-file";
 
 export function useLocalWidgetDraft() {
   const [state, setState] = useState<LocalWidgetDraftState>(readDraft);
@@ -38,25 +34,14 @@ export function useLocalWidgetDraft() {
     };
   }, [state.draft]);
 
-  const create = useCallback((type: DraftWidgetType): boolean => {
+  const create = useCallback((type: WidgetFileType): boolean => {
     if (state.draft) return false;
     const now = Date.now();
-    const timestamp = new Date(now).toISOString();
-    const base = {
-      version: LOCAL_WIDGET_DRAFT_VERSION,
-      id: `${LOCAL_WIDGET_DRAFT_ID_PREFIX}-${crypto.randomUUID()}`,
-      createdAt: timestamp,
-      updatedAt: timestamp,
-    } as const;
-    const draft: LocalWidgetDraft =
-      type === WIDGET_TYPE.MEMO
-        ? { ...base, type, markdown: "" }
-        : {
-            ...base,
-            type,
-            businessDate: getKoreaDateContext(now).businessDate,
-            items: [],
-          };
+    const draft = createLocalWidgetDraft(
+      type,
+      `${LOCAL_WIDGET_DRAFT_ID_PREFIX}-${crypto.randomUUID()}`,
+      now,
+    );
     const created = writeDraft(draft);
     setState(
       created

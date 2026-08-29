@@ -10,7 +10,7 @@ import {
   CHECKLIST_RESET_BUFFER_MILLISECONDS,
   MAX_BROWSER_TIMER_DELAY_MILLISECONDS,
 } from "@client/constants/widgets/checklist";
-import { CHECKLIST_WIDGET_COPY } from "@client/constants/widgets/content";
+import { CHECKLIST_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { XP_WIDGET_TOOLBAR_ACTION } from "@client/constants/shared/xp";
 import { messageFromError } from "@client/errors/error-message";

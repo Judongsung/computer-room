@@ -1,3 +1,4 @@
+import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,10 +15,7 @@ import type { FilesystemDirectoryPage, FilesystemEntry } from "@/types/filesyste
 import type { WidgetFileDocument } from "@/types/widgets/widget-file";
 import { App } from "@client/app";
 import { CLIENT_INTERFACE_MODE } from "@client/constants/shared/interface-mode";
-import {
-  MOBILE_COPY,
-  MOBILE_CSS_VARIABLE,
-} from "@client/constants/shared/mobile";
+import { MOBILE_CSS_VARIABLE } from "@client/constants/shared/mobile";
 import { POINTER_TYPE } from "@client/constants/shared/pointer";
 import { LOCAL_WIDGET_DRAFT_STORAGE_KEY, LOCAL_WIDGET_DRAFT_VERSION } from "@client/constants/widgets/local-widget-draft";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";

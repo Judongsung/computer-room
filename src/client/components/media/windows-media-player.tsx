@@ -1,3 +1,4 @@
+import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
   MEDIA_SEEK_STEP_SECONDS,
@@ -6,7 +7,6 @@ import {
   MEDIA_TIME_PAD_CHARACTER,
   MEDIA_TIME_PAD_LENGTH,
   MEDIA_TOOLBAR_GLYPH,
-  MEDIA_VIEWER_COPY,
   MEDIA_VOLUME_RANGE,
 } from "@client/constants/media/media";
 import type { MediaRendererProps } from "@client/types/media/media";
