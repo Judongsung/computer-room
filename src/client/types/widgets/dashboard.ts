@@ -4,6 +4,8 @@ import type { SessionInfo } from "@/types/platform/auth";
 import type { DashboardWidget, WidgetLayout } from "@/types/widgets/widget";
 import type { SaveWidgetFileInput } from "@/types/filesystem/filesystem";
 import type { DesktopDimensions } from "@client/types/desktop/desktop";
+import type { WindowBounds } from "@client/types/desktop/desktop";
+import type { DashboardGateway } from "@client/types/widgets/api";
 
 export type LoadStatus = (typeof LOAD_STATUS)[keyof typeof LOAD_STATUS];
 export type MessageKind = (typeof MESSAGE_KIND)[keyof typeof MESSAGE_KIND];
@@ -55,4 +57,23 @@ export interface WidgetLifecycleCommands {
   discardWidget(widgetId: string): Promise<void>;
   removeWidgets(widgetIds: readonly string[]): void;
   updateWidget(widget: DashboardWidget): void;
+}
+
+export interface WidgetWindowCommands {
+  readonly activeWidgetId: string | null;
+  focusWindow(widgetId: string): void;
+  minimizeWindow(widgetId: string): void;
+  toggleMaximizeWindow(widgetId: string): void;
+  activateTaskbarWindow(widgetId: string): void;
+  commitWindowBounds(widgetId: string, bounds: WindowBounds): void;
+}
+
+export interface DashboardController
+  extends WidgetLifecycleCommands,
+    WidgetWindowCommands {
+  readonly state: DashboardState;
+  readonly layoutSave: WidgetLayoutAutoSaveController;
+  readonly gateway: DashboardGateway;
+  retry(): void;
+  dismissMessage(): void;
 }
