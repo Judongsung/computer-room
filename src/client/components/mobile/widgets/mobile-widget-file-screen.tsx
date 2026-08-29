@@ -6,7 +6,7 @@ import { MobileActivity } from "@client/components/mobile/shared/mobile-activity
 import { MobileChecklist } from "@client/components/mobile/widgets/mobile-checklist";
 import { MobileChecklistLogs } from "@client/components/mobile/widgets/mobile-checklist-logs";
 import { MobileMemo } from "@client/components/mobile/widgets/mobile-memo";
-import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
 import { messageFromError } from "@client/errors/error-message";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { WidgetFileGateway } from "@client/types/widgets/widget-file";

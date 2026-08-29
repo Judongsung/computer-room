@@ -4,7 +4,7 @@ import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useCallback, useEffect, useState } from "react";
 import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
-import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
 import { messageFromError } from "@client/errors/error-message";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
 import { formatFileSize } from "@client/utils/format-file-size";

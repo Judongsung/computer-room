@@ -4,7 +4,8 @@ import {
   type MouseEventHandler,
   type PointerEventHandler,
 } from "react";
-import { MOBILE_CLASS_NAME, MOBILE_NAVIGATION_GLYPH } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
+import { MOBILE_NAVIGATION_GLYPH } from "@client/constants/mobile/navigation";
 import { POINTER_TYPE } from "@client/constants/shared/pointer";
 
 interface MobileNavigationBarProps {

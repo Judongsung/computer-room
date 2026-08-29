@@ -27,9 +27,9 @@ import {
 import {
   MOBILE_ACTIVITY_KIND,
   MOBILE_ACTIVITY_MENU_AVAILABILITY,
-  MOBILE_CLASS_NAME,
-  MOBILE_LAYOUT_CSS_VARIABLES,
-} from "@client/constants/shared/mobile";
+} from "@client/constants/mobile/activity";
+import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
+import { MOBILE_LAYOUT_CSS_VARIABLES } from "@client/constants/mobile/layout";
 import { useDesktopEntries } from "@client/hooks/filesystem/use-desktop-entries";
 import { useMobilePreferences } from "@client/hooks/platform/use-mobile-preferences";
 import { useMobileNavigation } from "@client/hooks/shared/use-mobile-navigation";

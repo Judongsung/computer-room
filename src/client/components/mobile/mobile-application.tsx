@@ -8,7 +8,8 @@ import { StorageStatusApiClient } from "@client/api/storage/storage-status-api-c
 import { WidgetFileApiClient } from "@client/api/widgets/widget-file-api-client";
 import { MobilePreferencesApiClient } from "@client/api/platform/mobile-preferences-api-client";
 import { MobileShell } from "@client/components/mobile/shell/mobile-shell";
-import { MOBILE_CLASS_NAME, MOBILE_LAYOUT_CSS_VARIABLES } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
+import { MOBILE_LAYOUT_CSS_VARIABLES } from "@client/constants/mobile/layout";
 import { messageFromError } from "@client/errors/error-message";
 import { ThumbnailLoadProvider } from "@client/state/filesystem/thumbnail-load-context";
 import type { AppProps } from "@client/types/app/app";

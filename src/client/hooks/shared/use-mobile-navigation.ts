@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { MOBILE_ACTIVITY_KIND } from "@client/constants/shared/mobile";
+import { MOBILE_ACTIVITY_KIND } from "@client/constants/mobile/activity";
 import type {
   MobileActivity,
   MobileNavigationController,

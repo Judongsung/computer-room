@@ -7,7 +7,7 @@ import { FILESYSTEM_PATH_SEPARATOR } from "@/constants/filesystem/filesystem";
 import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
 import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
 import { FOLDER_PROPERTIES_STATUS } from "@client/constants/filesystem/details";
-import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
 import type { FolderPropertiesController } from "@client/types/filesystem/folder-properties";
 import { formatFileSize } from "@client/utils/format-file-size";
 

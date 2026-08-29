@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import type { FilesystemTrashPage } from "@/types/filesystem/filesystem";
 import { MobileEntryIcon } from "@client/components/mobile/filesystem/mobile-entry-icon";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
-import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 

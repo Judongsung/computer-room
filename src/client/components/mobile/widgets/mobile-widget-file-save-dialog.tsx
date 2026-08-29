@@ -12,7 +12,7 @@ import type {
 } from "@/types/filesystem/filesystem";
 import type { WidgetFileDocument } from "@/types/widgets/widget-file";
 import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
-import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { LocalWidgetDraft } from "@client/types/widgets/local-widget-draft";

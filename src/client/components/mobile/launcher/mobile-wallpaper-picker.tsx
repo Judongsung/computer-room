@@ -13,7 +13,7 @@ import type {
 } from "@/types/filesystem/filesystem";
 import { MobileEntryIcon } from "@client/components/mobile/filesystem/mobile-entry-icon";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
-import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
 import { usePaginatedDirectory } from "@client/hooks/filesystem/directory/use-paginated-directory";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 

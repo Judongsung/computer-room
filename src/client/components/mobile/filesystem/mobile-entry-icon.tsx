@@ -4,7 +4,7 @@ import { FilesystemEntryIcon } from "@client/components/filesystem/filesystem-en
 import {
   MOBILE_ASSET_PATHS,
   MOBILE_WIDGET_ICON_PATH,
-} from "@client/constants/shared/mobile";
+} from "@client/constants/mobile/assets";
 import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
 
 interface MobileEntryIconProps {

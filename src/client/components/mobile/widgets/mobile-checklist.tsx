@@ -2,7 +2,7 @@ import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useState } from "react";
 import { MAX_ACTIVE_CHECKLIST_ITEMS } from "@/constants/widgets/checklist";
 import type { ChecklistItem } from "@/types/widgets/widget";
-import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
 import { CHECKLIST_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { messageFromError } from "@client/errors/error-message";
 

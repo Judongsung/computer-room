@@ -1,4 +1,4 @@
-import type { MOBILE_ACTIVITY_KIND } from "@client/constants/shared/mobile";
+import type { MOBILE_ACTIVITY_KIND } from "@client/constants/mobile/activity";
 import type { FilesystemFileEntry } from "@/types/filesystem/filesystem";
 
 export type MobileActivityKind =

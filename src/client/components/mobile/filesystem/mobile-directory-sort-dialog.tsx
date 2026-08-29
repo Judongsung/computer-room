@@ -15,7 +15,7 @@ import type {
   FilesystemDirectorySort,
 } from "@/types/filesystem/filesystem";
 import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
-import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 

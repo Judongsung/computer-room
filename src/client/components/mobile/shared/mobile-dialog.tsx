@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { MOBILE_CLASS_NAME } from "@client/constants/shared/mobile";
+import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
 
 interface MobileDialogProps {
   readonly title: string;

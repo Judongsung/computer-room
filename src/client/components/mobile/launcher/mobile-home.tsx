@@ -4,11 +4,13 @@ import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import { MobileEntryIcon } from "@client/components/mobile/filesystem/mobile-entry-icon";
 import {
   MOBILE_ASSET_PATHS,
-  MOBILE_CLASS_NAME,
+} from "@client/constants/mobile/assets";
+import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
+import {
   MOBILE_CSS_VARIABLE,
-  MOBILE_LAYOUT,
   MOBILE_SYSTEM_ITEM_ID,
-} from "@client/constants/shared/mobile";
+} from "@client/constants/mobile/launcher";
+import { MOBILE_LAYOUT } from "@client/constants/mobile/layout";
 import { useElementSize } from "@client/hooks/shared/use-element-size";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
