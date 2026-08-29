@@ -1,0 +1,130 @@
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import {
+  MAX_OPEN_WIDGET_COUNT,
+  WIDGET_TYPE,
+  WINDOW_RESTORE_STATE,
+  WINDOW_STATE,
+} from "@/constants/widgets/widget";
+import type { WidgetLayout } from "@/types/widgets/widget";
+import { UI_MESSAGES } from "@client/content/ko/widgets/dashboard";
+import { useDashboard } from "@client/hooks/widgets/use-dashboard";
+import {
+  checklistWidget,
+  memoWidget,
+} from "@test/client/support/desktop/app-integration-helpers";
+import {
+  FakeDashboardGateway,
+  fakeWidgetFromLayout,
+} from "@test/support/widgets/fake-dashboard-gateway";
+
+const DESKTOP = { width: 1_280, height: 720 } as const;
+
+describe("useDashboard", () => {
+  it("focuses an existing singleton instead of creating another widget", async () => {
+    const api = new FakeDashboardGateway();
+    const storage = fakeWidgetFromLayout(
+      layout("storage", WIDGET_TYPE.STORAGE_STATUS, 0),
+    );
+    api.savedWidgets = [storage, { ...memoWidget("memo"), stackOrder: 1 }];
+    const createWidget = vi.spyOn(api, "createWidget");
+    const { result } = renderHook(() => useDashboard(api));
+    await waitFor(() => expect(result.current.state.session).not.toBeNull());
+
+    await act(() =>
+      result.current.addWidget(WIDGET_TYPE.STORAGE_STATUS, DESKTOP),
+    );
+
+    expect(createWidget).not.toHaveBeenCalled();
+    expect(result.current.activeWidgetId).toBe(storage.id);
+    expect(result.current.state.widgets).toHaveLength(2);
+  });
+
+  it("reports the open-widget limit without calling the create API", async () => {
+    const api = new FakeDashboardGateway();
+    api.savedWidgets = Array.from({ length: MAX_OPEN_WIDGET_COUNT }, (_, index) => ({
+      ...memoWidget(`memo-${index}`),
+      stackOrder: index,
+    }));
+    const createWidget = vi.spyOn(api, "createWidget");
+    const { result } = renderHook(() => useDashboard(api));
+    await waitFor(() =>
+      expect(result.current.state.widgets).toHaveLength(MAX_OPEN_WIDGET_COUNT),
+    );
+
+    await act(() => result.current.addWidget(WIDGET_TYPE.MEMO, DESKTOP));
+
+    expect(createWidget).not.toHaveBeenCalled();
+    expect(result.current.state.message?.text).toBe(UI_MESSAGES.MAX_WIDGETS);
+  });
+
+  it("merges checklist reset metadata returned by layout auto-save", async () => {
+    const api = new FakeDashboardGateway();
+    const checklist = checklistWidget("checklist", 0);
+    api.savedWidgets = [checklist];
+    const replaceWidgets = api.replaceWidgets.bind(api);
+    vi.spyOn(api, "replaceWidgets").mockImplementation(async (widgets) =>
+      (await replaceWidgets(widgets)).map((widget) =>
+        widget.type === WIDGET_TYPE.DAILY_CHECKLIST
+          ? {
+              ...widget,
+              data: {
+                ...widget.data,
+                businessDate: "2026-08-21",
+                nextResetAt: "2026-08-21T15:00:00.000Z",
+              },
+            }
+          : widget,
+      ),
+    );
+    const { result } = renderHook(() => useDashboard(api));
+    await waitFor(() => expect(result.current.state.widgets).toHaveLength(1));
+
+    act(() => result.current.toggleMaximizeWindow(checklist.id));
+    act(() => result.current.layoutSave.retry());
+
+    await waitFor(() => {
+      const saved = result.current.state.widgets[0];
+      expect(saved?.type).toBe(WIDGET_TYPE.DAILY_CHECKLIST);
+      if (saved?.type === WIDGET_TYPE.DAILY_CHECKLIST) {
+        expect(saved.data.businessDate).toBe("2026-08-21");
+        expect(saved.data.nextResetAt).toBe("2026-08-21T15:00:00.000Z");
+      }
+    });
+  });
+
+  it("minimizes and restores the active taskbar widget", async () => {
+    const api = new FakeDashboardGateway();
+    const memo = memoWidget("memo");
+    api.savedWidgets = [memo];
+    const { result } = renderHook(() => useDashboard(api));
+    await waitFor(() => expect(result.current.activeWidgetId).toBe(memo.id));
+
+    act(() => result.current.activateTaskbarWindow(memo.id));
+    expect(result.current.state.widgets[0]?.windowState).toBe(
+      WINDOW_STATE.MINIMIZED,
+    );
+
+    act(() => result.current.activateTaskbarWindow(memo.id));
+    expect(result.current.state.widgets[0]?.windowState).toBe(
+      WINDOW_STATE.NORMAL,
+    );
+    expect(result.current.activeWidgetId).toBe(memo.id);
+  });
+});
+
+function layout(
+  id: string,
+  type: WidgetLayout["type"],
+  stackOrder: number,
+): WidgetLayout {
+  return {
+    id,
+    type,
+    position: { x: 32, y: 32 },
+    size: { width: 360, height: 240 },
+    windowState: WINDOW_STATE.NORMAL,
+    restoreState: WINDOW_RESTORE_STATE.NORMAL,
+    stackOrder,
+  };
+}
