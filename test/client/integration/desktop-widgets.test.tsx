@@ -1,6 +1,6 @@
 import { STORAGE_STATUS_COPY } from "@client/content/ko/storage/storage-status";
 import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
-import { FILESYSTEM_SORT_COPY } from "@client/content/ko/filesystem/sort";
+import { XP_EXPLORER_HEADER_COPY } from "@client/content/ko/filesystem/explorer-header";
 import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import type { ReactNode } from "react";
@@ -186,9 +186,12 @@ describe("App desktop widgets", () => {
       }),
     );
     await user.click(
-      within(documentsWindow).getByRole("button", {
-        name: FILESYSTEM_COPY.RENAME,
+      within(documentsWindow).getByRole("menuitem", {
+        name: XP_EXPLORER_HEADER_COPY.FILE_MENU,
       }),
+    );
+    await user.click(
+      screen.getByRole("menuitem", { name: FILESYSTEM_COPY.RENAME }),
     );
     const renameDialog = screen.getByRole("dialog", {
       name: FILESYSTEM_COPY.RENAME_TITLE,

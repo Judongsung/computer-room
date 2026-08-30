@@ -19,6 +19,23 @@ export function contextMenuCommand(
   };
 }
 
+export function contextMenuRadioCommand(
+  id: string,
+  label: string,
+  onSelect: () => void | Promise<unknown>,
+  checked: boolean,
+  disabled = false,
+): XpContextMenuCommand {
+  return {
+    kind: XP_CONTEXT_MENU_ITEM_KIND.COMMAND,
+    id,
+    label,
+    onSelect,
+    checked,
+    disabled,
+  };
+}
+
 export function contextMenuSeparator(id: string): XpContextMenuItem {
   return { kind: XP_CONTEXT_MENU_ITEM_KIND.SEPARATOR, id };
 }

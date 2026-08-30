@@ -39,7 +39,14 @@ export function XpContextMenu({
         width: XP_CONTEXT_MENU_LAYOUT.WIDTH_PX,
       }}
       onContextMenu={(event) => event.preventDefault()}
-      onKeyDown={handleXpContextMenuKeyDown}
+      onKeyDown={(event) =>
+        handleXpContextMenuKeyDown(event, {
+          ...(request.onNavigatePrevious
+            ? { previous: request.onNavigatePrevious }
+            : {}),
+          ...(request.onNavigateNext ? { next: request.onNavigateNext } : {}),
+        })
+      }
     >
       {request.items.map((item) =>
         item.kind === XP_CONTEXT_MENU_ITEM_KIND.SEPARATOR ? (
@@ -49,20 +56,50 @@ export function XpContextMenu({
             role="separator"
           />
         ) : (
-          <button
+          <XpContextMenuCommandButton
             key={item.id}
-            type="button"
-            className={XP_CONTEXT_MENU_CLASS_NAME.ITEM}
-            role="menuitem"
-            tabIndex={-1}
-            disabled={item.disabled}
-            onClick={() => void executeCommand(item, onClose, onError)}
-          >
-            {item.label}
-          </button>
+            item={item}
+            onClose={onClose}
+            onError={onError}
+          />
         ),
       )}
     </div>
+  );
+}
+
+function XpContextMenuCommandButton({
+  item,
+  onClose,
+  onError,
+}: {
+  readonly item: Extract<XpContextMenuItem, { readonly kind: "command" }>;
+  readonly onClose: () => void;
+  readonly onError: (message: string) => void;
+}) {
+  const isRadio = Object.hasOwn(item, "checked");
+  return (
+    <button
+      type="button"
+      className={
+        isRadio
+          ? `${XP_CONTEXT_MENU_CLASS_NAME.ITEM} ${XP_CONTEXT_MENU_CLASS_NAME.RADIO_ITEM}`
+          : XP_CONTEXT_MENU_CLASS_NAME.ITEM
+      }
+      role={isRadio ? "menuitemradio" : "menuitem"}
+      {...(isRadio ? { "aria-checked": item.checked } : {})}
+      aria-disabled={item.disabled}
+      tabIndex={-1}
+      disabled={item.disabled}
+      onClick={() => void executeCommand(item, onClose, onError)}
+    >
+      {isRadio ? (
+        <span className={XP_CONTEXT_MENU_CLASS_NAME.CHECK} aria-hidden="true">
+          {item.checked ? "✓" : ""}
+        </span>
+      ) : null}
+      {item.label}
+    </button>
   );
 }
 

@@ -44,6 +44,7 @@ export interface DesktopAppWindowProps {
   readonly minHeight: number;
   readonly className?: string;
   readonly toolbar?: ReactNode;
+  readonly toolbarClassName?: string;
   readonly footer?: ReactNode;
   readonly bodyClassName?: string;
   readonly onFocus: () => void;

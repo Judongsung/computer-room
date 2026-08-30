@@ -40,6 +40,27 @@ export function useXpContextMenuRuntime(): XpContextMenuRuntime {
     setPosition({ x: next.x, y: next.y });
     setRequest(next);
   }, []);
+  const openAnchored = useCallback<XpContextMenuController["openAnchored"]>(
+    (next) => {
+      const rect = next.anchor.getBoundingClientRect();
+      open({
+        x: rect.left,
+        y: rect.bottom,
+        items: next.items,
+        sourceId: next.sourceId,
+        anchor: next.anchor,
+        ...(next.boundary ? { boundary: next.boundary } : {}),
+        ...(next.label ? { label: next.label } : {}),
+        ...(next.onNavigatePrevious
+          ? { onNavigatePrevious: next.onNavigatePrevious }
+          : {}),
+        ...(next.onNavigateNext
+          ? { onNavigateNext: next.onNavigateNext }
+          : {}),
+      });
+    },
+    [open],
+  );
   const openFromEvent = useCallback<XpContextMenuController["openFromEvent"]>(
     (event, items, label) => {
       event.preventDefault();
@@ -60,8 +81,15 @@ export function useXpContextMenuRuntime(): XpContextMenuRuntime {
   );
 
   const controller = useMemo<XpContextMenuController>(
-    () => ({ open, openFromEvent, close, reportError }),
-    [close, open, openFromEvent, reportError],
+    () => ({
+      activeSourceId: request?.sourceId ?? null,
+      open,
+      openAnchored,
+      openFromEvent,
+      close,
+      reportError,
+    }),
+    [close, open, openAnchored, openFromEvent, reportError, request?.sourceId],
   );
 
   useGlobalContextMenu(open, reportError, editableTargetRef);
@@ -132,13 +160,17 @@ function useContextMenuDismissal(
     const closeFromPointer = (event: PointerEvent): void => {
       if (
         !(event.target instanceof Node) ||
-        !menuRef.current?.contains(event.target)
+        (!menuRef.current?.contains(event.target) &&
+          !request.boundary?.contains(event.target))
       ) {
         close();
       }
     };
     const closeFromKeyboard = (event: KeyboardEvent): void => {
-      if (event.key === KEYBOARD_KEY.ESCAPE) close();
+      if (event.key === KEYBOARD_KEY.ESCAPE) {
+        close();
+        request.anchor?.focus();
+      }
     };
     document.addEventListener("pointerdown", closeFromPointer, true);
     document.addEventListener("keydown", closeFromKeyboard);

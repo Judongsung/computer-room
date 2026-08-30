@@ -10,7 +10,21 @@ export function focusXpContextMenuItem(
 
 export function handleXpContextMenuKeyDown(
   event: KeyboardEvent<HTMLDivElement>,
+  horizontal: {
+    readonly previous?: () => void;
+    readonly next?: () => void;
+  } = {},
 ): void {
+  if (event.key === KEYBOARD_KEY.ARROW_LEFT && horizontal.previous) {
+    event.preventDefault();
+    horizontal.previous();
+    return;
+  }
+  if (event.key === KEYBOARD_KEY.ARROW_RIGHT && horizontal.next) {
+    event.preventDefault();
+    horizontal.next();
+    return;
+  }
   const items = enabledMenuItems(event.currentTarget);
   if (items.length === 0) return;
   const current =
@@ -43,7 +57,7 @@ export function handleXpContextMenuKeyDown(
 function enabledMenuItems(menu: HTMLDivElement): HTMLButtonElement[] {
   return Array.from(
     menu.querySelectorAll<HTMLButtonElement>(
-      "[role='menuitem']:not(:disabled)",
+      "[role='menuitem']:not(:disabled), [role='menuitemradio']:not(:disabled)",
     ),
   );
 }

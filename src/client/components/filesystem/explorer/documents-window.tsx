@@ -5,8 +5,9 @@ import {
   SYSTEM_APP_CONFIG,
   SYSTEM_APP_ID,
 } from "@client/constants/desktop/system-app";
+import { XP_EXPLORER_HEADER_CLASS_NAME } from "@client/constants/filesystem/explorer-header";
 import { DesktopAppWindow } from "@client/components/desktop/desktop-app-window";
-import { DocumentsToolbar } from "@client/components/filesystem/documents-toolbar";
+import { DocumentsExplorerHeader } from "@client/components/filesystem/explorer/documents-explorer-header";
 import { DocumentsDirectoryView } from "@client/components/filesystem/explorer/documents-directory-view";
 import {
   ConfirmDialog,
@@ -60,16 +61,17 @@ export function DocumentsWindow({
       iconPath={iconPath}
       minWidth={SYSTEM_APP_CONFIG[SYSTEM_APP_ID.DOCUMENTS].minWidth}
       minHeight={SYSTEM_APP_CONFIG[SYSTEM_APP_ID.DOCUMENTS].minHeight}
+      toolbarClassName={XP_EXPLORER_HEADER_CLASS_NAME.FRAME_TOOLBAR}
       toolbar={
-        <DocumentsToolbar
+        <DocumentsExplorerHeader
+          page={page}
+          fallbackAddress={title}
+          locationIconPath={iconPath}
           busy={controller.busy}
           canGoBack={controller.explorer.history.length > 0}
-          canGoUp={Boolean(page && page.breadcrumbs.length > 1)}
-          canMutate={Boolean(currentDirectoryId)}
-          canDownload={selectedEntries.some((entry) => entry.kind !== FILESYSTEM_ENTRY_KIND.WIDGET)}
-          canRename={Boolean(selected)}
-          canShowProperties={Boolean(propertiesTarget)}
-          hasSelection={selectedEntries.length > 0}
+          selectedEntries={selectedEntries}
+          propertiesTarget={propertiesTarget}
+          dropTargetId={controller.dropTargetId}
           fileInputRef={controller.fileInputRef}
           folderInputRef={controller.folderInputRef}
           onBack={controller.explorer.navigateBack}
@@ -89,6 +91,13 @@ export function DocumentsWindow({
           onShowProperties={() =>
             propertiesTarget && controller.folderProperties.open(propertiesTarget)
           }
+          onSelectAll={controller.selection.selectAll}
+          onRefresh={controller.explorer.reload}
+          onChangeSort={controller.changeSort}
+          onClose={chrome.onClose}
+          onNavigateDirect={controller.explorer.navigateDirect}
+          onDropTargetChange={controller.setDropTargetId}
+          onDropIntoDirectory={controller.dropIntoDirectory}
         />
       }
       bodyClassName="explorer-window__body"
@@ -113,8 +122,6 @@ export function DocumentsWindow({
           marquee={controller.marquee}
           selectedDirectory={controller.selectedDirectory}
           thumbnailUrl={gateway.thumbnailUrl.bind(gateway)}
-          onNavigateDirect={controller.explorer.navigateDirect}
-          onChangeSort={(sort) => void controller.changeSort(sort)}
           onOpenEntry={controller.openEntry}
           onShowProperties={controller.folderProperties.open}
           onDropTargetChange={controller.setDropTargetId}

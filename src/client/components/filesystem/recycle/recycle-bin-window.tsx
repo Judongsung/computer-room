@@ -7,8 +7,14 @@ import {
   FILESYSTEM_SELECTION_DATA_ATTRIBUTE,
 } from "@client/constants/filesystem/filesystem";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
-import { SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
+import {
+  SYSTEM_APP_CONFIG,
+  SYSTEM_APP_ID,
+} from "@client/constants/desktop/system-app";
+import { XP_EXPLORER_HEADER_CLASS_NAME } from "@client/constants/filesystem/explorer-header";
+import { SYSTEM_APP_TITLE_BY_ID } from "@client/content/ko/desktop/system-app";
 import { SystemAppWindow } from "@client/components/desktop/system-app-window";
+import { XpExplorerHeader } from "@client/components/filesystem/header/xp-explorer-header";
 import { ConfirmDialog } from "@client/components/filesystem/filesystem-dialogs";
 import { FilesystemEntryIcon } from "@client/components/filesystem/filesystem-entry-icon";
 import { FilesystemBatchResultDialog } from "@client/components/filesystem/filesystem-batch-result-dialog";
@@ -16,6 +22,7 @@ import { FilesystemSelectionMarquee } from "@client/components/filesystem/filesy
 import { writeFilesystemDragPayload } from "@client/domain/filesystem/drag";
 import { useRecycleBinController } from "@client/hooks/filesystem/recycle/use-recycle-bin-controller";
 import type { RecycleBinWindowProps } from "@client/types/filesystem/recycle-bin";
+import { buildRecycleExplorerHeaderModel } from "@client/domain/filesystem/explorer-header-menu";
 
 export function RecycleBinWindow({
   gateway,
@@ -31,37 +38,35 @@ export function RecycleBinWindow({
     onFilesystemChanged,
   });
   const { page, selectedItems, selection } = controller;
-  const toolbar = (
-    <div className="explorer-toolbar" aria-label={FILESYSTEM_COPY.RECYCLE_BIN_TOOLBAR}>
-      <button
-        type="button"
-        disabled={selectedItems.length === 0 || controller.busy}
-        onClick={() => void controller.restore(selection.selectedInOrder)}
-      >
-        {FILESYSTEM_COPY.RESTORE}
-      </button>
-      <button
-        type="button"
-        disabled={selectedItems.length === 0 || controller.busy}
-        onClick={() => controller.setDialog("delete")}
-      >
-        {FILESYSTEM_COPY.PERMANENT_DELETE}
-      </button>
-      <button
-        type="button"
-        disabled={!page || page.items.length === 0 || controller.busy}
-        onClick={() => controller.setDialog("empty")}
-      >
-        {FILESYSTEM_COPY.EMPTY_RECYCLE_BIN}
-      </button>
-    </div>
+  const model = buildRecycleExplorerHeaderModel(
+    {
+      busy: controller.busy,
+      hasSelection: selectedItems.length > 0,
+      hasItems: Boolean(page?.items.length),
+    },
+    {
+      restore: () => controller.restore(selection.selectedInOrder),
+      permanentlyDelete: () => controller.setDialog("delete"),
+      empty: () => controller.setDialog("empty"),
+      selectAll: selection.selectAll,
+      refresh: controller.reload,
+      close: chrome.onClose,
+    },
   );
 
   return (
     <SystemAppWindow
       {...chrome}
       appId={SYSTEM_APP_ID.RECYCLE_BIN}
-      toolbar={toolbar}
+      toolbarClassName={XP_EXPLORER_HEADER_CLASS_NAME.FRAME_TOOLBAR}
+      toolbar={
+        <XpExplorerHeader
+          menus={model.menus}
+          toolbarItems={model.toolbarItems}
+          locationIconPath={SYSTEM_APP_CONFIG[SYSTEM_APP_ID.RECYCLE_BIN].iconPath}
+          address={SYSTEM_APP_TITLE_BY_ID[SYSTEM_APP_ID.RECYCLE_BIN]}
+        />
+      }
       bodyClassName="explorer-window__body"
       footer={
         <footer className="explorer-statusbar">

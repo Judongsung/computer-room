@@ -6,6 +6,8 @@ export const XP_CONTEXT_MENU_ITEM_KIND = {
 export const XP_CONTEXT_MENU_CLASS_NAME = {
   ROOT: "xp-context-menu",
   ITEM: "xp-context-menu__item",
+  RADIO_ITEM: "xp-context-menu__item--radio",
+  CHECK: "xp-context-menu__check",
   SEPARATOR: "xp-context-menu__separator",
   ERROR: "xp-context-menu__error",
 } as const;

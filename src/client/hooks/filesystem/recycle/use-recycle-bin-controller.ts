@@ -153,6 +153,7 @@ export function useRecycleBinController({
     selection,
     marquee,
     selectedItems,
+    reload: query.reload,
     loadMore: query.loadMore,
     setDialog,
     setBatchResult,

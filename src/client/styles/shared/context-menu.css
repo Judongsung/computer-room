@@ -11,6 +11,7 @@
 }
 
 .xp-context-menu__item {
+  position: relative;
   width: 100%;
   min-height: 24px;
   padding: 3px 22px;
@@ -20,6 +21,16 @@
   background: transparent;
   box-shadow: none;
   text-align: left;
+}
+
+.xp-context-menu__item--radio {
+  padding-left: 24px;
+}
+
+.xp-context-menu__check {
+  position: absolute;
+  left: 7px;
+  font-weight: 700;
 }
 
 .xp-context-menu__item:not(:disabled):hover,

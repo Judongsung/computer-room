@@ -8,6 +8,7 @@ export function XpWindowFrame({
   isActive = true,
   controls,
   toolbar,
+  toolbarClassName,
   footer,
   bodyClassName,
   titleBarClassName,
@@ -30,6 +31,9 @@ export function XpWindowFrame({
     .filter(Boolean)
     .join(" ");
   const bodyClasses = ["xp-window-frame__body", bodyClassName]
+    .filter(Boolean)
+    .join(" ");
+  const toolbarClasses = ["xp-window-frame__toolbar", toolbarClassName]
     .filter(Boolean)
     .join(" ");
 
@@ -61,7 +65,7 @@ export function XpWindowFrame({
         ) : null}
       </header>
       {toolbar ? (
-        <div className="xp-window-frame__toolbar">{toolbar}</div>
+        <div className={toolbarClasses}>{toolbar}</div>
       ) : null}
       <div className={bodyClasses}>{children}</div>
       {footer}

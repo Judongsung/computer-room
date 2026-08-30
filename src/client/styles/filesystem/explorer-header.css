@@ -1,0 +1,190 @@
+.xp-window-frame__toolbar.xp-window-frame__toolbar--explorer {
+  display: block;
+  height: auto;
+  min-height: 0;
+  padding: 0;
+  border-bottom: 0;
+  background: #ece9d8;
+  box-shadow: none;
+}
+
+.xp-explorer-header {
+  width: 100%;
+  color: #111;
+  background: #ece9d8;
+  font-family: var(--luna-font-family-ui);
+  font-size: var(--luna-font-size-ui);
+}
+
+.xp-explorer-header__menu-bar {
+  display: flex;
+  height: var(--xp-explorer-menu-bar-height);
+  padding: 1px 4px;
+  align-items: center;
+  gap: 1px;
+  border-bottom: 1px solid #aca899;
+  background: #ece9d8;
+  box-shadow: inset 0 1px #fff;
+}
+
+.xp-explorer-header__menu-trigger {
+  min-width: 0;
+  min-height: 20px;
+  padding: 1px 6px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  color: #111;
+  background: transparent;
+  box-shadow: none;
+  font: inherit;
+}
+
+.xp-explorer-header__menu-trigger:hover,
+.xp-explorer-header__menu-trigger:focus-visible,
+.xp-explorer-header__menu-trigger[data-active="true"] {
+  border-color: #316ac5;
+  background: #c6d9f1;
+  box-shadow: none;
+  outline: none;
+}
+
+.xp-explorer-header__command-bar {
+  display: flex;
+  overflow: hidden;
+  height: var(--xp-explorer-command-bar-height);
+  padding: 3px 5px;
+  align-items: center;
+  gap: 2px;
+  border-bottom: 1px solid #aca899;
+  background: linear-gradient(to bottom, #f7f5ed, #ece9d8);
+  box-shadow: inset 0 1px #fff;
+  white-space: nowrap;
+}
+
+.xp-explorer-header__command {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 32px;
+  padding: 2px 6px;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: #111;
+  background: transparent;
+  box-shadow: none;
+  font: inherit;
+}
+
+.xp-explorer-header__command:not(:disabled):hover,
+.xp-explorer-header__command:not(:disabled):focus-visible {
+  border-color: #316ac5;
+  background: #dbeaff;
+  box-shadow: inset 0 0 0 1px #fff;
+  outline: none;
+}
+
+.xp-explorer-header__command:not(:disabled):active {
+  background: #c6d9f1;
+  box-shadow: inset 1px 1px #7f9db9;
+}
+
+.xp-explorer-header__command:disabled {
+  color: #929292;
+  filter: grayscale(1);
+  opacity: 0.62;
+}
+
+.xp-explorer-header__command-icon,
+.xp-explorer-header__command-icon svg {
+  display: block;
+  width: var(--xp-explorer-command-icon-size);
+  height: var(--xp-explorer-command-icon-size);
+  flex: none;
+}
+
+.xp-explorer-header__command-separator {
+  width: 1px;
+  height: 28px;
+  flex: none;
+  margin: 0 3px;
+  background: #aca899;
+  box-shadow: 1px 0 #fff;
+}
+
+.xp-explorer-header__address-bar {
+  display: flex;
+  height: var(--xp-explorer-address-bar-height);
+  padding: 3px 5px;
+  align-items: center;
+  gap: 7px;
+  border-bottom: 1px solid #aca899;
+  background: #ece9d8;
+  box-shadow: inset 0 1px #fff;
+}
+
+.xp-explorer-header__address-label {
+  flex: none;
+  color: #444;
+}
+
+.xp-explorer-header__address-field {
+  display: flex;
+  overflow: hidden;
+  min-width: 0;
+  height: 23px;
+  flex: 1;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 4px;
+  border: 1px solid #7f9db9;
+  background: #fff;
+  box-shadow: inset 1px 1px 1px rgb(0 0 0 / 10%);
+}
+
+.xp-explorer-header__address-icon {
+  width: var(--xp-explorer-address-icon-size);
+  height: var(--xp-explorer-address-icon-size);
+  flex: none;
+  object-fit: contain;
+}
+
+.xp-explorer-header__address-value {
+  display: flex;
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xp-explorer-header__breadcrumb {
+  min-width: 0;
+  min-height: 0;
+  padding: 0 2px;
+  border: 0;
+  border-radius: 0;
+  color: #111;
+  background: transparent;
+  box-shadow: none;
+  font: inherit;
+}
+
+.xp-explorer-header__breadcrumb:hover,
+.xp-explorer-header__breadcrumb:focus-visible {
+  color: #003399;
+  background: #dbeaff;
+  box-shadow: none;
+  outline: 1px dotted #316ac5;
+}
+
+.xp-explorer-header__breadcrumb[data-drop-target="true"] {
+  background: #c6d9f1;
+  outline: 1px dashed #316ac5;
+}
+
+.xp-explorer-header__breadcrumb-separator {
+  color: #666;
+}

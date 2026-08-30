@@ -41,6 +41,7 @@ export interface XpWindowFrameProps
   readonly isActive?: boolean;
   readonly controls?: ReactNode;
   readonly toolbar?: ReactNode;
+  readonly toolbarClassName?: string;
   readonly footer?: ReactNode;
   readonly bodyClassName?: string;
   readonly titleBarClassName?: string;

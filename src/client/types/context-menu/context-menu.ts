@@ -5,6 +5,7 @@ export interface XpContextMenuCommand {
   readonly id: string;
   readonly label: string;
   readonly disabled?: boolean;
+  readonly checked?: boolean;
   readonly onSelect: () => void | Promise<unknown>;
 }
 
@@ -22,10 +23,27 @@ export interface XpContextMenuRequest {
   readonly y: number;
   readonly items: readonly XpContextMenuItem[];
   readonly label?: string;
+  readonly sourceId?: string;
+  readonly anchor?: HTMLElement;
+  readonly boundary?: HTMLElement;
+  readonly onNavigatePrevious?: () => void;
+  readonly onNavigateNext?: () => void;
+}
+
+export interface XpAnchoredContextMenuRequest {
+  readonly sourceId: string;
+  readonly anchor: HTMLElement;
+  readonly boundary?: HTMLElement;
+  readonly items: readonly XpContextMenuItem[];
+  readonly label?: string;
+  readonly onNavigatePrevious?: () => void;
+  readonly onNavigateNext?: () => void;
 }
 
 export interface XpContextMenuController {
+  readonly activeSourceId: string | null;
   readonly open: (request: XpContextMenuRequest) => void;
+  readonly openAnchored: (request: XpAnchoredContextMenuRequest) => void;
   readonly openFromEvent: (
     event: {
       preventDefault: () => void;

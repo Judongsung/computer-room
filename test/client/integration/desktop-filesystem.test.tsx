@@ -1,6 +1,10 @@
 import { STORAGE_STATUS_COPY } from "@client/content/ko/storage/storage-status";
 import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
-import { FILESYSTEM_SORT_COPY } from "@client/content/ko/filesystem/sort";
+import { XP_EXPLORER_HEADER_COPY } from "@client/content/ko/filesystem/explorer-header";
+import {
+  FILESYSTEM_SORT_DIRECTION_LABELS,
+  FILESYSTEM_SORT_FIELD_OPTIONS,
+} from "@client/content/ko/filesystem/sort";
 import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import type { ReactNode } from "react";
@@ -28,7 +32,11 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "@/constants/filesystem/filesystem";
-import { DEFAULT_FILESYSTEM_DIRECTORY_SORT } from "@/constants/filesystem/sort";
+import {
+  DEFAULT_FILESYSTEM_DIRECTORY_SORT,
+  FILESYSTEM_SORT_DIRECTION,
+  FILESYSTEM_SORT_FIELD,
+} from "@/constants/filesystem/sort";
 import {
   WIDGET_TYPE,
   WIDGET_WINDOW_POLICY,
@@ -91,83 +99,100 @@ describe("App desktop filesystem", () => {
     const api = new FakeDashboardGateway();
     const filesystem = new FakeFilesystemGateway();
     await filesystem.createDirectory(FILESYSTEM_ROOT_ID.DOCUMENTS, "사진");
+    const updateSort = vi.spyOn(filesystem, "updateDirectorySort");
+    const listDirectory = vi.spyOn(filesystem, "listDirectory");
     const user = userEvent.setup();
     render(<App api={api} filesystemApi={filesystem} />);
 
     await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
-    let documentsWindow = await waitFor(() => {
-      const window = desktopWindowByTitle("내 문서");
-      expect(within(window).getByRole("combobox", {
-        name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
-      })).toBeEnabled();
-      return window;
+    let documentsWindow = await waitFor(() => desktopWindowByTitle("내 문서"));
+    await user.click(
+      within(documentsWindow).getByRole("menuitem", {
+        name: XP_EXPLORER_HEADER_COPY.VIEW_MENU,
+      }),
+    );
+    let viewMenu = screen.getByRole("menu", {
+      name: XP_EXPLORER_HEADER_COPY.VIEW_MENU,
     });
-    const field = within(documentsWindow).getByRole("combobox", {
-      name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
-    });
-    fireEvent.change(field, { target: { value: "createdAt" } });
-    await waitFor(() => {
-      documentsWindow = desktopWindowByTitle("내 문서");
-      const liveField = within(documentsWindow).getByRole("combobox", {
-        name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
-      });
-      expect(liveField).toHaveValue("createdAt");
-      expect(liveField).toBeEnabled();
-    });
-    const direction = within(documentsWindow).getByRole("combobox", {
-      name: FILESYSTEM_SORT_COPY.DIRECTION_LABEL,
+    const createdAtLabel = FILESYSTEM_SORT_FIELD_OPTIONS.find(
+      ({ value }) => value === FILESYSTEM_SORT_FIELD.CREATED_AT,
+    )!.label;
+    await user.click(
+      within(viewMenu).getByRole("menuitemradio", { name: createdAtLabel }),
+    );
+    await waitFor(() =>
+      expect(updateSort).toHaveBeenLastCalledWith(FILESYSTEM_ROOT_ID.DOCUMENTS, {
+        field: FILESYSTEM_SORT_FIELD.CREATED_AT,
+        direction: FILESYSTEM_SORT_DIRECTION.ASCENDING,
+      }),
+    );
+    await waitFor(() => expect(listDirectory.mock.calls.length).toBeGreaterThan(1));
+
+    documentsWindow = desktopWindowByTitle("내 문서");
+    await user.click(
+      within(documentsWindow).getByRole("menuitem", {
+        name: XP_EXPLORER_HEADER_COPY.VIEW_MENU,
+      }),
+    );
+    viewMenu = screen.getByRole("menu", {
+      name: XP_EXPLORER_HEADER_COPY.VIEW_MENU,
     });
     expect(
-      within(direction).getByRole("option", { name: "최신 항목부터" }),
-    ).toBeInTheDocument();
-    fireEvent.change(direction, { target: { value: "descending" } });
-    await waitFor(() => {
-      documentsWindow = desktopWindowByTitle("내 문서");
-      const liveDirection = within(documentsWindow).getByRole("combobox", {
-        name: FILESYSTEM_SORT_COPY.DIRECTION_LABEL,
-      });
-      expect(liveDirection).toHaveValue("descending");
-      expect(liveDirection).toBeEnabled();
-    });
+      within(viewMenu).getByRole("menuitemradio", { name: createdAtLabel }),
+    ).toHaveAttribute("aria-checked", "true");
+    const newestFirst =
+      FILESYSTEM_SORT_DIRECTION_LABELS[FILESYSTEM_SORT_FIELD.CREATED_AT][
+        FILESYSTEM_SORT_DIRECTION.DESCENDING
+      ];
+    await user.click(
+      within(viewMenu).getByRole("menuitemradio", { name: newestFirst }),
+    );
+    await waitFor(() =>
+      expect(updateSort).toHaveBeenLastCalledWith(FILESYSTEM_ROOT_ID.DOCUMENTS, {
+        field: FILESYSTEM_SORT_FIELD.CREATED_AT,
+        direction: FILESYSTEM_SORT_DIRECTION.DESCENDING,
+      }),
+    );
+    await waitFor(() => expect(listDirectory.mock.calls.length).toBeGreaterThan(2));
 
     await user.dblClick(
       within(documentsWindow).getByRole("button", { name: "사진" }),
     );
-    documentsWindow = await waitFor(() => {
-      const window = desktopWindowByTitle("사진");
-      within(window).getByRole("combobox", {
-        name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
-      });
-      return window;
-    });
-    expect(
-      within(documentsWindow).getByRole("combobox", {
-        name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
+    documentsWindow = await waitFor(() => desktopWindowByTitle("사진"));
+    await user.click(
+      within(documentsWindow).getByRole("menuitem", {
+        name: XP_EXPLORER_HEADER_COPY.VIEW_MENU,
       }),
-    ).toHaveValue("name");
+    );
+    viewMenu = screen.getByRole("menu", {
+      name: XP_EXPLORER_HEADER_COPY.VIEW_MENU,
+    });
+    const nameLabel = FILESYSTEM_SORT_FIELD_OPTIONS.find(
+      ({ value }) => value === FILESYSTEM_SORT_FIELD.NAME,
+    )!.label;
+    expect(
+      within(viewMenu).getByRole("menuitemradio", { name: nameLabel }),
+    ).toHaveAttribute("aria-checked", "true");
+    await user.keyboard("{Escape}");
 
     await user.click(
       within(documentsWindow).getByRole("button", { name: FILESYSTEM_COPY.BACK }),
     );
-    documentsWindow = await waitFor(() => {
-      const window = desktopWindowByTitle("내 문서");
-      within(window).getByRole("combobox", {
-        name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
-      });
-      return window;
-    });
-    await waitFor(() =>
-      expect(
-        within(documentsWindow).getByRole("combobox", {
-          name: FILESYSTEM_SORT_COPY.FIELD_LABEL,
-        }),
-      ).toHaveValue("createdAt"),
-    );
-    expect(
-      within(documentsWindow).getByRole("combobox", {
-        name: FILESYSTEM_SORT_COPY.DIRECTION_LABEL,
+    documentsWindow = await waitFor(() => desktopWindowByTitle("내 문서"));
+    await user.click(
+      within(documentsWindow).getByRole("menuitem", {
+        name: XP_EXPLORER_HEADER_COPY.VIEW_MENU,
       }),
-    ).toHaveValue("descending");
+    );
+    viewMenu = screen.getByRole("menu", {
+      name: XP_EXPLORER_HEADER_COPY.VIEW_MENU,
+    });
+    expect(
+      within(viewMenu).getByRole("menuitemradio", { name: createdAtLabel }),
+    ).toHaveAttribute("aria-checked", "true");
+    expect(
+      within(viewMenu).getByRole("menuitemradio", { name: newestFirst }),
+    ).toHaveAttribute("aria-checked", "true");
   });
 
   it("keeps a desktop folder selected and opens other folders in independent windows", async () => {
@@ -202,7 +227,7 @@ describe("App desktop filesystem", () => {
     expect(within(taskbar).getByRole("button", { name: "음악" })).toBeInTheDocument();
   });
 
-  it("shows recursive folder properties from keyboard, toolbar, and context menu", async () => {
+  it("shows recursive folder properties from keyboard, Explorer menu, and context menu", async () => {
     const api = new FakeDashboardGateway();
     const filesystem = new FakeFilesystemGateway();
     const photos = await filesystem.createDirectory(
@@ -247,7 +272,12 @@ describe("App desktop filesystem", () => {
     );
 
     await user.click(
-      within(documentsWindow).getByRole("button", {
+      within(documentsWindow).getByRole("menuitem", {
+        name: XP_EXPLORER_HEADER_COPY.FILE_MENU,
+      }),
+    );
+    await user.click(
+      screen.getByRole("menuitem", {
         name: FOLDER_PROPERTIES_COPY.PROPERTIES,
       }),
     );

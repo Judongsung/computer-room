@@ -19,6 +19,7 @@ export function DesktopAppWindow({
   minHeight,
   className = "system-app-window",
   toolbar,
+  toolbarClassName,
   footer,
   bodyClassName,
   onFocus,
@@ -59,6 +60,7 @@ export function DesktopAppWindow({
         iconPath={iconPath}
         isActive={isActive}
         toolbar={toolbar}
+        {...(toolbarClassName ? { toolbarClassName } : {})}
         footer={footer}
         {...(bodyClassName ? { bodyClassName } : {})}
         onMouseDown={onFocus}
