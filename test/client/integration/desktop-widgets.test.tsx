@@ -3,7 +3,7 @@ import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
 import { XP_EXPLORER_HEADER_COPY } from "@client/content/ko/filesystem/explorer-header";
 import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
   fireEvent,
   render,
@@ -65,8 +65,16 @@ import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
 import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
 
 vi.mock("react-rnd", () => ({
-  Rnd: ({ children }: { readonly children: ReactNode }) => (
-    <div data-testid="desktop-window">{children}</div>
+  Rnd: ({
+    children,
+    style,
+  }: {
+    readonly children: ReactNode;
+    readonly style?: CSSProperties;
+  }) => (
+    <div data-testid="desktop-window" style={style}>
+      {children}
+    </div>
   ),
 }));
 import { SESSION } from "@test/support/desktop/app-test-session";
@@ -214,6 +222,37 @@ describe("App desktop widgets", () => {
     expect(
       within(taskbar).getByRole("button", { name: "이름 바꾼 메모" }),
     ).toBeInTheDocument();
+  });
+
+  it("opens a widget file above the explorer window", async () => {
+    const api = new FakeDashboardGateway();
+    const widget = memoWidget("00000000-0000-4000-8000-000000000402");
+    api.savedWidgets = [widget];
+    vi.spyOn(api, "listWidgets").mockResolvedValue([]);
+    const filesystem = new FakeFilesystemGateway();
+    filesystem.addWidgetFile(widget);
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={filesystem} />);
+
+    await user.dblClick(
+      await screen.findByRole("button", { name: "내 문서" }),
+    );
+    const documentsWindow = await waitFor(() =>
+      desktopWindowByTitle("내 문서"),
+    );
+    await user.dblClick(
+      await within(documentsWindow).findByRole("button", {
+        name: MEMO_WIDGET_COPY.TITLE,
+      }),
+    );
+    await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT);
+    const widgetWindow = desktopWindowByTitle(MEMO_WIDGET_COPY.TITLE);
+
+    await waitFor(() =>
+      expect(windowZIndex(widgetWindow)).toBeGreaterThan(
+        windowZIndex(documentsWindow),
+      ),
+    );
   });
 
   it("serializes auto-saves and sends only the latest queued window state", async () => {
@@ -388,3 +427,7 @@ describe("App desktop widgets", () => {
     expect(screen.getByText(CHECKLIST_WIDGET_COPY.CHECKED)).toBeInTheDocument();
   });
 });
+
+function windowZIndex(window: HTMLElement): number {
+  return Number(window.style.zIndex);
+}

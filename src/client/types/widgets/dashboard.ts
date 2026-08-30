@@ -49,10 +49,15 @@ export interface DashboardWidgetCollectionController {
   removeWidgets(widgetIds: readonly string[]): void;
 }
 
+export type WidgetOpenResult = DashboardWidget["id"] | null;
+
 export interface WidgetLifecycleCommands {
-  addWidget(type: DashboardWidget["type"], desktop: DesktopDimensions): Promise<void>;
+  addWidget(
+    type: DashboardWidget["type"],
+    desktop: DesktopDimensions,
+  ): Promise<WidgetOpenResult>;
   saveWidgetFile(widgetId: string, input: SaveWidgetFileInput): Promise<void>;
-  openWidget(widgetId: string): Promise<void>;
+  openWidget(widgetId: string): Promise<WidgetOpenResult>;
   closeWidget(widgetId: string): Promise<void>;
   discardWidget(widgetId: string): Promise<void>;
   removeWidgets(widgetIds: readonly string[]): void;

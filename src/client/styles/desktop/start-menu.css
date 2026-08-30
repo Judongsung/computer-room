@@ -175,6 +175,26 @@
   word-break: keep-all;
 }
 
+.start-menu__system-link {
+  width: 100%;
+  border: 1px solid transparent;
+  color: inherit;
+  text-decoration: none;
+}
+
+.start-menu__system-link:hover,
+.start-menu__system-link:focus-visible {
+  border-color: #316ac5;
+  color: #fff;
+  background: #316ac5;
+  outline: none;
+}
+
+.start-menu__system-link:hover small,
+.start-menu__system-link:focus-visible small {
+  color: #eaf3ff;
+}
+
 .start-menu__footer {
   display: flex;
   height: var(--start-menu-footer-height);

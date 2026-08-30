@@ -10,7 +10,11 @@ import type { MouseEvent, ReactNode } from "react";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { SaveWidgetFileInput } from "@/types/filesystem/filesystem";
-import type { LayoutSaveStatus, StatusMessage } from "@client/types/widgets/dashboard";
+import type {
+  LayoutSaveStatus,
+  StatusMessage,
+  WidgetOpenResult,
+} from "@client/types/widgets/dashboard";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
 import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
 
@@ -109,8 +113,8 @@ export interface DesktopShellProps {
   readonly onAddWidget: (
     type: DashboardWidget["type"],
     desktop: DesktopDimensions,
-  ) => Promise<void>;
-  readonly onOpenWidget: (widgetId: string) => Promise<void>;
+  ) => Promise<WidgetOpenResult>;
+  readonly onOpenWidget: (widgetId: string) => Promise<WidgetOpenResult>;
   readonly onSaveWidgetFile: (
     widgetId: string,
     input: SaveWidgetFileInput,
@@ -152,6 +156,7 @@ export interface StartMenuProps {
   readonly isOpen: boolean;
   readonly email: string;
   readonly logoutUrl: string;
+  readonly repositoryUrl: string;
   readonly onClose: () => void;
   readonly onAddMemo: () => void;
   readonly onAddChecklist: () => void;

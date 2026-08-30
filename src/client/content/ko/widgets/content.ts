@@ -26,6 +26,8 @@ export const DASHBOARD_COPY = {
   PROGRAMS: "위젯",
   PERSONAL_SPACE: "개인 공간",
   ACCESS_PROTECTED: "Cloudflare Access로 보호됨",
+  GITHUB_REPOSITORY: "GitHub 저장소",
+  GITHUB_REPOSITORY_DESCRIPTION: "computer-room 소스 코드",
   POWER: "로그아웃",
   POWER_DESCRIPTION: "Cloudflare Access 세션 종료",
   SAVE_PENDING: "저장 대기 중",

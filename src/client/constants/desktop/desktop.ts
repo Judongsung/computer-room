@@ -43,6 +43,7 @@ export const DESKTOP_WINDOW_CLASS_NAME = {
 export const DESKTOP_ASSET_PATHS = {
   BACKGROUND: "/assets/windows-xp/desktop-bg.jpg",
   START_LOGO: "/assets/windows-xp/logo.svg",
+  INTERNET_ICON: "/assets/windows-xp/ie.png",
   START_BUTTON_MASK: "/assets/shizuku-winxp/start-button-mask.png",
   POWER_ICON: "/assets/shizuku-winxp/power.png",
   MEMO_ICON: "/assets/windows-xp/notepad.png",

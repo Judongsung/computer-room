@@ -26,6 +26,7 @@ import {
 } from "@client/constants/desktop/system-app";
 import { FILESYSTEM_DRAG_SOURCE } from "@client/constants/filesystem/filesystem";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
+import { PROJECT_EXTERNAL_LINKS } from "@client/constants/platform/external-links";
 import { writeFilesystemDragPayload } from "@client/domain/filesystem/drag";
 import { useDesktopDimensions } from "@client/hooks/desktop/use-desktop-dimensions";
 import { useDesktopFilesystemController } from "@client/hooks/desktop/filesystem/use-desktop-filesystem-controller";
@@ -266,7 +267,7 @@ export function DesktopShell(props: DesktopShellProps) {
           filesystemRevision={filesystem.revision}
           onFilesystemChanged={filesystem.notifyChanged}
           onOpenMedia={launcher.openMediaViewer}
-          onOpenWidget={(widgetId) => void props.onOpenWidget(widgetId)}
+          onOpenWidget={launcher.openWidget}
           onEntryChanged={filesystem.synchronizeWidgetFile}
           onWidgetsClosed={filesystem.removeWidgetWindows}
           onUploadNodes={filesystem.uploadNodes}
@@ -338,6 +339,7 @@ export function DesktopShell(props: DesktopShellProps) {
         isOpen={isStartMenuOpen}
         email={session.email}
         logoutUrl={session.logoutUrl}
+        repositoryUrl={PROJECT_EXTERNAL_LINKS.GITHUB_REPOSITORY}
         onClose={closeStartMenu}
         onAddMemo={() => launcher.addWidget(WIDGET_TYPE.MEMO)}
         onAddChecklist={() => launcher.addWidget(WIDGET_TYPE.DAILY_CHECKLIST)}

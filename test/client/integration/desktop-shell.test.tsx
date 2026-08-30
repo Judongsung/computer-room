@@ -3,7 +3,7 @@ import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
 import { FILESYSTEM_SORT_COPY } from "@client/content/ko/filesystem/sort";
 import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
   fireEvent,
   render,
@@ -21,7 +21,7 @@ import {
 } from "@client/content/ko/widgets/content";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
-import { ACCESS_LOGOUT_PATH } from "@/constants/platform/auth";
+import { PROJECT_EXTERNAL_LINKS } from "@client/constants/platform/external-links";
 import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
 import { MAX_FILE_SIZE_BYTES } from "@/constants/filesystem/file";
 import {
@@ -65,8 +65,16 @@ import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
 import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
 
 vi.mock("react-rnd", () => ({
-  Rnd: ({ children }: { readonly children: ReactNode }) => (
-    <div data-testid="desktop-window">{children}</div>
+  Rnd: ({
+    children,
+    style,
+  }: {
+    readonly children: ReactNode;
+    readonly style?: CSSProperties;
+  }) => (
+    <div data-testid="desktop-window" style={style}>
+      {children}
+    </div>
   ),
 }));
 import { SESSION } from "@test/support/desktop/app-test-session";
@@ -106,6 +114,77 @@ describe("App desktop shell", () => {
     expect(
       screen.queryByLabelText(DASHBOARD_COPY.START_MENU),
     ).not.toBeInTheDocument();
+  });
+
+  it("opens the GitHub repository in a new tab and closes the start menu", async () => {
+    const user = userEvent.setup();
+    render(
+      <App
+        api={new FakeDashboardGateway()}
+        filesystemApi={new FakeFilesystemGateway()}
+      />,
+    );
+
+    await openStartMenu(user);
+    const repositoryLink = screen.getByRole("link", {
+      name: new RegExp(DASHBOARD_COPY.GITHUB_REPOSITORY),
+    });
+    expect(repositoryLink).toHaveAttribute(
+      "href",
+      PROJECT_EXTERNAL_LINKS.GITHUB_REPOSITORY,
+    );
+    expect(repositoryLink).toHaveAttribute("target", "_blank");
+    expect(repositoryLink).toHaveAttribute("rel", "noopener noreferrer");
+    repositoryLink.addEventListener("click", (event) => event.preventDefault(), {
+      once: true,
+    });
+
+    await user.click(repositoryLink);
+    expect(
+      screen.queryByLabelText(DASHBOARD_COPY.START_MENU),
+    ).not.toBeInTheDocument();
+  });
+
+  it("brings an existing singleton widget above the current window when reopened", async () => {
+    const api = new FakeDashboardGateway();
+    const user = userEvent.setup();
+    render(
+      <App
+        api={api}
+        filesystemApi={new FakeFilesystemGateway()}
+        storageStatusApi={{
+          getStatus: vi.fn().mockResolvedValue(emptyStorageStatusSnapshot()),
+        }}
+      />,
+    );
+
+    await addWidget(user, DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET);
+    await screen.findByText(STORAGE_STATUS_COPY.R2_TITLE);
+    const storageWindow = desktopWindowByTitle(STORAGE_STATUS_COPY.TITLE);
+
+    await user.dblClick(
+      await screen.findByRole("button", { name: "내 컴퓨터" }),
+    );
+    const computerWindow = await waitFor(() =>
+      desktopWindowByTitle("내 컴퓨터"),
+    );
+    await waitFor(() =>
+      expect(windowZIndex(computerWindow)).toBeGreaterThan(
+        windowZIndex(storageWindow),
+      ),
+    );
+
+    await addWidget(user, DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET);
+    await waitFor(() =>
+      expect(windowZIndex(storageWindow)).toBeGreaterThan(
+        windowZIndex(computerWindow),
+      ),
+    );
+    expect(
+      api.savedWidgets.filter(
+        (widget) => widget.type === WIDGET_TYPE.STORAGE_STATUS,
+      ),
+    ).toHaveLength(1);
   });
 
   it("maximizes, minimizes, and restores a window from the taskbar", async () => {
@@ -329,3 +408,7 @@ describe("App desktop shell", () => {
     ).toBeInTheDocument();
   });
 });
+
+function windowZIndex(window: HTMLElement): number {
+  return Number(window.style.zIndex);
+}

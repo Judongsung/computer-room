@@ -11,6 +11,7 @@ import { UI_MESSAGES } from "@client/content/ko/widgets/dashboard";
 import type { DesktopDimensions } from "@client/types/desktop/desktop";
 import type {
   DashboardWidgetCollectionController,
+  WidgetOpenResult,
   WidgetLifecycleCommands,
 } from "@client/types/widgets/dashboard";
 import type { WidgetLifecycleGateway } from "@client/types/widgets/ports/lifecycle";
@@ -36,7 +37,10 @@ export function useWidgetLifecycleCommands({
   } = collection;
 
   const addWidget = useCallback(
-    async (type: WidgetType, desktop: DesktopDimensions): Promise<void> => {
+    async (
+      type: WidgetType,
+      desktop: DesktopDimensions,
+    ): Promise<WidgetOpenResult> => {
       const widgets = current();
       const existingSingleton = WIDGET_BEHAVIOR[type].singleton
         ? widgets.find((widget) => widget.type === type)
@@ -45,11 +49,11 @@ export function useWidgetLifecycleCommands({
         replaceAndSave((items) =>
           bringWidgetToFront(items, existingSingleton.id),
         );
-        return;
+        return existingSingleton.id;
       }
       if (widgets.length >= MAX_OPEN_WIDGET_COUNT) {
         reportMessage(UI_MESSAGES.MAX_WIDGETS);
-        return;
+        return null;
       }
 
       const policy = WIDGET_WINDOW_POLICY[type];
@@ -72,8 +76,10 @@ export function useWidgetLifecycleCommands({
             : [...items, widget];
           return bringWidgetToFront(merged, widget.id);
         });
+        return widget.id;
       } catch (error) {
         reportError(error, UI_MESSAGES.SAVE_FAILED);
+        return null;
       }
     },
     [current, gateway, replaceAndSave, reportError, reportMessage],
@@ -93,11 +99,11 @@ export function useWidgetLifecycleCommands({
   );
 
   const openWidget = useCallback(
-    async (widgetId: string): Promise<void> => {
+    async (widgetId: string): Promise<WidgetOpenResult> => {
       const existing = current().find((widget) => widget.id === widgetId);
       if (existing) {
         replaceAndSave((widgets) => bringWidgetToFront(widgets, widgetId));
-        return;
+        return widgetId;
       }
       try {
         const widget = await gateway.openWidget(widgetId);
@@ -109,8 +115,10 @@ export function useWidgetLifecycleCommands({
               Math.max(-1, ...widgets.map((item) => item.stackOrder)) + 1,
           },
         ]);
+        return widget.id;
       } catch (error) {
         reportError(error, UI_MESSAGES.LOAD_FAILED);
+        return null;
       }
     },
     [current, gateway, replaceAndSave, reportError],

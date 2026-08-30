@@ -15,6 +15,7 @@ export function StartMenu({
   isOpen,
   email,
   logoutUrl,
+  repositoryUrl,
   onClose,
   onAddMemo,
   onAddChecklist,
@@ -164,6 +165,19 @@ export function StartMenu({
               <small>{DASHBOARD_COPY.ACCESS_PROTECTED}</small>
             </span>
           </div>
+          <a
+            className="start-menu__system-item start-menu__system-link"
+            href={repositoryUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={onClose}
+          >
+            <img src={DESKTOP_ASSET_PATHS.INTERNET_ICON} alt="" />
+            <span>
+              <strong>{DASHBOARD_COPY.GITHUB_REPOSITORY}</strong>
+              <small>{DASHBOARD_COPY.GITHUB_REPOSITORY_DESCRIPTION}</small>
+            </span>
+          </a>
         </section>
       </div>
       <footer className="start-menu__footer">

@@ -31,11 +31,16 @@ describe("useDashboard", () => {
     const { result } = renderHook(() => useDashboard(api));
     await waitFor(() => expect(result.current.state.session).not.toBeNull());
 
-    await act(() =>
-      result.current.addWidget(WIDGET_TYPE.STORAGE_STATUS, DESKTOP),
-    );
+    let openedWidgetId: string | null = null;
+    await act(async () => {
+      openedWidgetId = await result.current.addWidget(
+        WIDGET_TYPE.STORAGE_STATUS,
+        DESKTOP,
+      );
+    });
 
     expect(createWidget).not.toHaveBeenCalled();
+    expect(openedWidgetId).toBe(storage.id);
     expect(result.current.activeWidgetId).toBe(storage.id);
     expect(result.current.state.widgets).toHaveLength(2);
   });
@@ -52,10 +57,44 @@ describe("useDashboard", () => {
       expect(result.current.state.widgets).toHaveLength(MAX_OPEN_WIDGET_COUNT),
     );
 
-    await act(() => result.current.addWidget(WIDGET_TYPE.MEMO, DESKTOP));
+    let openedWidgetId: string | null = "not-null";
+    await act(async () => {
+      openedWidgetId = await result.current.addWidget(
+        WIDGET_TYPE.MEMO,
+        DESKTOP,
+      );
+    });
 
     expect(createWidget).not.toHaveBeenCalled();
+    expect(openedWidgetId).toBeNull();
     expect(result.current.state.message?.text).toBe(UI_MESSAGES.MAX_WIDGETS);
+  });
+
+  it("returns the widget id after creating and reopening a widget", async () => {
+    const api = new FakeDashboardGateway();
+    const { result } = renderHook(() => useDashboard(api));
+    await waitFor(() => expect(result.current.state.session).not.toBeNull());
+
+    let createdWidgetId: string | null = null;
+    await act(async () => {
+      createdWidgetId = await result.current.addWidget(
+        WIDGET_TYPE.MEMO,
+        DESKTOP,
+      );
+    });
+    expect(createdWidgetId).not.toBeNull();
+
+    await act(async () => {
+      await result.current.closeWidget(createdWidgetId!);
+    });
+    expect(result.current.state.widgets).toHaveLength(0);
+
+    let reopenedWidgetId: string | null = null;
+    await act(async () => {
+      reopenedWidgetId = await result.current.openWidget(createdWidgetId!);
+    });
+    expect(reopenedWidgetId).toBe(createdWidgetId);
+    expect(result.current.state.widgets).toHaveLength(1);
   });
 
   it("merges checklist reset metadata returned by layout auto-save", async () => {

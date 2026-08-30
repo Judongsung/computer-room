@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
   CHECKLIST_WIDGET_COPY,
@@ -23,7 +23,8 @@ export async function addWidget(
   label: string,
 ): Promise<void> {
   await openStartMenu(user);
-  await user.click(screen.getByRole("button", { name: label }));
+  const startMenu = screen.getByLabelText(DASHBOARD_COPY.START_MENU);
+  await user.click(within(startMenu).getByRole("button", { name: label }));
 }
 
 export function emptyStorageStatusSnapshot(): StorageStatusSnapshot {

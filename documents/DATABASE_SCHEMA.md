@@ -1,5 +1,7 @@
 # D1 데이터베이스 명세
 
+기준 커밋: `c29649fb716353ce5b9d08bce8eec96d5b701fa9`
+
 이 문서는 `migrations/0000_superb_hitman.sql`부터
 `migrations/0011_magical_mister_sinister.sql`까지 모든 마이그레이션을 적용한
 최종 애플리케이션 스키마를 설명한다.

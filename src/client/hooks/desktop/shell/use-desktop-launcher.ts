@@ -17,6 +17,7 @@ import type { useSystemWindows } from "@client/hooks/desktop/use-system-windows"
 import type { useMediaWindows } from "@client/hooks/media/use-media-windows";
 import type { DesktopDimensions } from "@client/types/desktop/desktop";
 import type { SystemAppId } from "@client/types/desktop/system-app";
+import type { WidgetOpenResult } from "@client/types/widgets/dashboard";
 import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
 import { downloadFile } from "@client/utils/download-file";
 
@@ -28,8 +29,11 @@ interface DesktopLauncherOptions {
   readonly filesystem: Pick<FilesystemContentGateway, "downloadUrl">;
   readonly focusWindow: (id: string, persist?: () => void) => void;
   readonly closeStartMenu: () => void;
-  readonly onAddWidget: (type: WidgetType, desktop: DesktopDimensions) => Promise<void>;
-  readonly onOpenWidget: (widgetId: string) => Promise<void>;
+  readonly onAddWidget: (
+    type: WidgetType,
+    desktop: DesktopDimensions,
+  ) => Promise<WidgetOpenResult>;
+  readonly onOpenWidget: (widgetId: string) => Promise<WidgetOpenResult>;
 }
 
 export function useDesktopLauncher({
@@ -43,12 +47,27 @@ export function useDesktopLauncher({
   onAddWidget,
   onOpenWidget,
 }: DesktopLauncherOptions) {
+  const focusOpenedWidget = useCallback(
+    async (operation: Promise<WidgetOpenResult>): Promise<void> => {
+      const widgetId = await operation;
+      if (widgetId) focusWindow(widgetId);
+    },
+    [focusWindow],
+  );
+
   const addWidget = useCallback(
     (type: WidgetType): void => {
-      void onAddWidget(type, desktop);
       closeStartMenu();
+      void focusOpenedWidget(onAddWidget(type, desktop));
     },
-    [closeStartMenu, desktop, onAddWidget],
+    [closeStartMenu, desktop, focusOpenedWidget, onAddWidget],
+  );
+
+  const openWidget = useCallback(
+    (widgetId: string): void => {
+      void focusOpenedWidget(onOpenWidget(widgetId));
+    },
+    [focusOpenedWidget, onOpenWidget],
   );
 
   const openSystemApp = useCallback(
@@ -96,14 +115,14 @@ export function useDesktopLauncher({
       if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
         openDocumentsDirectory(entry.id, entry.name, DESKTOP_ASSET_PATHS.FOLDER_ICON);
       } else if (entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET) {
-        void onOpenWidget(entry.widgetId);
+        openWidget(entry.widgetId);
       } else {
         const kind = mediaKindFromContentType(entry.contentType);
         if (kind) openMediaViewer({ entry, directoryId: entry.parentId, kind });
         else downloadFile(filesystem.downloadUrl(entry.id));
       }
     },
-    [filesystem, onOpenWidget, openDocumentsDirectory, openMediaViewer],
+    [filesystem, openDocumentsDirectory, openMediaViewer, openWidget],
   );
 
   return {
@@ -112,6 +131,7 @@ export function useDesktopLauncher({
     openDocumentsDirectory,
     openSystemShortcut,
     openMediaViewer,
+    openWidget,
     openFilesystemEntry,
   } as const;
 }
