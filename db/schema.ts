@@ -33,6 +33,10 @@ import {
   IMAGE_UPLOAD_PROFILE_ROOT_IDS,
 } from "@/constants/integrations/image-upload-profile";
 import {
+  IMAGE_UPLOAD_LOG_OUTCOME,
+  IMAGE_UPLOAD_LOG_OUTCOME_VALUES,
+} from "@/constants/integrations/image-upload-log";
+import {
   WIDGET_TYPE,
   WIDGET_TYPE_VALUES,
   WINDOW_POSITION_LIMITS,
@@ -66,6 +70,9 @@ const IMAGE_UPLOAD_PROFILE_ROOT_SQL = IMAGE_UPLOAD_PROFILE_ROOT_IDS.map(
 ).join(", ");
 const IMAGE_UPLOAD_CONTENT_TYPE_SQL = IMAGE_UPLOAD_CONTENT_TYPE_VALUES.map(
   (contentType) => `'${contentType}'`,
+).join(", ");
+const IMAGE_UPLOAD_LOG_OUTCOME_SQL = IMAGE_UPLOAD_LOG_OUTCOME_VALUES.map(
+  (outcome) => `'${outcome}'`,
 ).join(", ");
 
 export const files = sqliteTable(
@@ -230,6 +237,57 @@ export const integrationImageProfileContentTypes = sqliteTable(
     check(
       "integration_image_profile_content_types_value_check",
       sql`${table.contentType} IN (${sql.raw(IMAGE_UPLOAD_CONTENT_TYPE_SQL)})`,
+    ),
+  ],
+);
+
+export const integrationImageUploadLogs = sqliteTable(
+  "integration_image_upload_logs",
+  {
+    id: text("id").primaryKey(),
+    profileId: text("profile_id"),
+    outcome: text("outcome", {
+      enum: IMAGE_UPLOAD_LOG_OUTCOME_VALUES,
+    }).notNull(),
+    contentType: text("content_type"),
+    declaredSize: integer("declared_size"),
+    fileEntryId: text("file_entry_id"),
+    fileName: text("file_name"),
+    httpStatus: integer("http_status").notNull(),
+    errorCode: text("error_code"),
+    errorMessage: text("error_message"),
+    receivedAt: integer("received_at").notNull(),
+    durationMs: integer("duration_ms").notNull(),
+  },
+  (table) => [
+    check(
+      "integration_image_upload_logs_outcome_check",
+      sql`${table.outcome} IN (${sql.raw(IMAGE_UPLOAD_LOG_OUTCOME_SQL)})`,
+    ),
+    check(
+      "integration_image_upload_logs_declared_size_check",
+      sql`${table.declaredSize} IS NULL OR ${table.declaredSize} >= 0`,
+    ),
+    check(
+      "integration_image_upload_logs_http_status_check",
+      sql`${table.httpStatus} BETWEEN 100 AND 599`,
+    ),
+    check(
+      "integration_image_upload_logs_duration_check",
+      sql`${table.durationMs} >= 0`,
+    ),
+    check(
+      "integration_image_upload_logs_result_check",
+      sql`(${table.outcome} = ${sql.raw(`'${IMAGE_UPLOAD_LOG_OUTCOME.SUCCESS}'`)} AND ${table.fileEntryId} IS NOT NULL AND ${table.fileName} IS NOT NULL AND ${table.errorCode} IS NULL AND ${table.errorMessage} IS NULL) OR (${table.outcome} = ${sql.raw(`'${IMAGE_UPLOAD_LOG_OUTCOME.FAILURE}'`)} AND ${table.fileEntryId} IS NULL AND ${table.fileName} IS NULL AND ${table.errorCode} IS NOT NULL AND ${table.errorMessage} IS NOT NULL)`,
+    ),
+    index("idx_integration_image_upload_logs_time").on(
+      table.receivedAt,
+      table.id,
+    ),
+    index("idx_integration_image_upload_logs_profile_time").on(
+      table.profileId,
+      table.receivedAt,
+      table.id,
     ),
   ],
 );

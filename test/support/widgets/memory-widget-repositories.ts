@@ -33,7 +33,13 @@ export class MemoryWidgetLayoutRepository implements WidgetLayoutRepository {
     const updates = new Map(widgets.map((widget) => [widget.id, widget] as const));
     this.records = this.records.map((widget) => {
       const update = updates.get(widget.id);
-      return update ? { ...structuredClone(update), isOpen: true, file: widget.file } : widget;
+      return update
+        ? {
+            ...structuredClone(update),
+            isOpen: widget.isOpen,
+            file: widget.file,
+          }
+        : widget;
     });
   }
 

@@ -18,6 +18,7 @@ export const ONE_PIXEL_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
 export async function resetWorkerState(): Promise<void> {
+  await env.DB.prepare("DELETE FROM integration_image_upload_logs").run();
   await env.DB.prepare("DELETE FROM integration_image_profiles").run();
   await env.DB.batch([
     env.DB

@@ -12,6 +12,7 @@
     "0008_complex_strong_guy.sql": "4307934c6e10ecc76e2e42ac9eae26e5b83ee7b4c26e40e4765aa1b12a7c356b",
     "0009_mobile_preferences.sql": "45b2c7c876a46017707c43347ea2fb6a30b3a808dad23a4b6489ec7f00a2e904",
     "0010_clumsy_groot.sql": "fca5496798a517658ecb9aa2268491d4d4ed1954cf5414eca769b5e63c803429",
-    "0011_magical_mister_sinister.sql": "223bb79d7312c7cb6aea169d665c9c8e392e6f2afe5727c8e215ab605bae6396"
+    "0011_magical_mister_sinister.sql": "223bb79d7312c7cb6aea169d665c9c8e392e6f2afe5727c8e215ab605bae6396",
+    "0012_image_upload_logs.sql": "66666bfebc609c76ea5dbf421f17f75cfcd60dcef135366834b5311c0c9cf6ba"
   }
 }

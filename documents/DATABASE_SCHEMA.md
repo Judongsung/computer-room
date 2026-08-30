@@ -1,13 +1,13 @@
 # D1 데이터베이스 명세
 
-기준 커밋: `c29649fb716353ce5b9d08bce8eec96d5b701fa9`
+기준 커밋: `7aed3d670c0083aece9a931d757c6f3d3fc20e60`
 
 이 문서는 `migrations/0000_superb_hitman.sql`부터
-`migrations/0011_magical_mister_sinister.sql`까지 모든 마이그레이션을 적용한
+`migrations/0012_image_upload_logs.sql`까지 모든 마이그레이션을 적용한
 최종 애플리케이션 스키마를 설명한다.
 
 Wrangler가 관리하는 마이그레이션 이력 등의 내부 테이블은 제외한다.
-애플리케이션이 직접 관리하는 테이블은 총 12개다.
+애플리케이션이 직접 관리하는 테이블은 총 13개다.
 
 ## 공통 규칙
 
@@ -29,7 +29,7 @@ Wrangler가 관리하는 마이그레이션 이력 등의 내부 테이블은 �
 | 파일 시스템 | `filesystem_entries` | 폴더·일반 파일·위젯 파일 계층을 저장한다. |
 | 파일 시스템 | `desktop_entry_order` | 동적 바탕 화면 항목 순서를 저장한다. |
 | 파일 시스템 | `filesystem_directory_preferences` | 폴더별 정렬 설정을 저장한다. |
-| 위젯 | `dashboard_widgets` | 위젯 창 배치와 열림 상태를 저장한다. |
+| 위젯 | `dashboard_widgets` | 위젯 창 배치와 복원 가능한 열림 상태를 저장한다. |
 | 위젯 | `memo_widgets` | 메모 위젯의 마크다운 본문을 저장한다. |
 | 체크리스트 | `checklist_items` | 일일 체크리스트 항목을 저장한다. |
 | 체크리스트 | `checklist_daily_states` | 날짜별 체크 상태를 저장한다. |
@@ -37,6 +37,7 @@ Wrangler가 관리하는 마이그레이션 이력 등의 내부 테이블은 �
 | 모바일 | `mobile_preferences` | 계정 공용 모바일 설정을 저장한다. |
 | 외부 연동 | `integration_image_profiles` | 이미지 수신 API 프로필을 저장한다. |
 | 외부 연동 | `integration_image_profile_content_types` | 이미지 수신 프로필별 허용 MIME을 저장한다. |
+| 외부 연동 | `integration_image_upload_logs` | 인증을 통과한 이미지 수신 요청의 성공·실패 기록을 저장한다. |
 
 ## 관계
 
@@ -60,6 +61,9 @@ filesystem_entries
 
 integration_image_profiles
 └── integration_image_profile_content_types.profile_id
+
+integration_image_upload_logs
+└── 파일·프로필 삭제 후에도 보존되는 독립 이력
 ```
 
 ## `files`
@@ -160,7 +164,7 @@ integration_image_profiles
 
 ## `dashboard_widgets`
 
-모든 위젯의 영속 창 배치, 쌓임 순서와 열림 상태를 저장한다.
+모든 위젯의 영속 창 배치와 쌓임 순서를 저장한다. 파일 저장을 지원하는 위젯은 열림 상태도 복원하며, 파일 저장을 지원하지 않는 내장 위젯은 `is_open = 0`을 유지하고 현재 클라이언트 세션에서만 열린다.
 
 | 컬럼 | 타입 | Nullable | 기본값 | 키·제약조건 | 설명 |
 |---|---|---:|---|---|---|
@@ -173,7 +177,7 @@ integration_image_profiles
 | `window_state` | `TEXT` | NO | `'normal'` | `normal`, `minimized`, `maximized` | 현재 창 상태다. |
 | `restore_state` | `TEXT` | NO | `'normal'` | `normal` 또는 `maximized` | 최소화 해제 시 복원할 상태다. |
 | `stack_order` | `INTEGER` | NO | - | `stack_order >= 0` | 위젯 창의 Z 순서다. |
-| `is_open` | `INTEGER` | NO | `1` | `0` 또는 `1` | 위젯 창의 열림 여부다. |
+| `is_open` | `INTEGER` | NO | `1` | `0` 또는 `1` | 다음 접속에서 복원할 열림 여부다. 파일 저장 불가 위젯은 `0`을 유지한다. |
 
 ### 지원 위젯 타입
 
@@ -325,8 +329,41 @@ Cloudflare Access audience 값은 이 테이블에 저장하지 않는다.
 | `image/avif` |
 | `image/bmp` |
 
+## `integration_image_upload_logs`
+
+인증을 통과해 이미지 수신 핸들러에 도달한 요청의 결과를 저장한다. 프로필이나
+파일을 삭제해도 감사 이력을 유지할 수 있도록 외래 키를 두지 않는다. 원본 이미지
+본문, 인증 정보, R2 객체 키는 저장하지 않는다.
+
+| 컬럼 | 타입 | Nullable | 기본값 | 키·제약조건 | 설명 |
+|---|---|---:|---|---|---|
+| `id` | `TEXT` | NO | - | 기본 키 | 수신 기록 ID다. |
+| `profile_id` | `TEXT` | YES | `NULL` | - | 유효한 형식으로 확인된 요청 프로필 ID다. 삭제된 프로필도 문자열로 보존한다. |
+| `outcome` | `TEXT` | NO | - | `success` 또는 `failure` | 요청 처리 결과다. |
+| `content_type` | `TEXT` | YES | `NULL` | - | 정규화 가능한 경우 기록한 요청 MIME 타입이다. |
+| `declared_size` | `INTEGER` | YES | `NULL` | `declared_size >= 0` | 검증 가능한 경우 기록한 `X-File-Size` 값이다. |
+| `file_entry_id` | `TEXT` | YES | `NULL` | 성공 시 필수 | 성공 당시 생성된 파일 시스템 항목 ID다. 외래 키는 아니다. |
+| `file_name` | `TEXT` | YES | `NULL` | 성공 시 필수 | 성공 당시 서버가 부여한 파일명이다. |
+| `http_status` | `INTEGER` | NO | - | 100~599 | 요청 결과의 HTTP 상태 코드다. |
+| `error_code` | `TEXT` | YES | `NULL` | 실패 시 필수 | 클라이언트에 공개해도 안전한 애플리케이션 오류 코드다. |
+| `error_message` | `TEXT` | YES | `NULL` | 실패 시 필수 | 클라이언트에 공개해도 안전한 오류 메시지다. |
+| `received_at` | `INTEGER` | NO | - | - | Worker가 요청 처리를 시작한 시각이다. |
+| `duration_ms` | `INTEGER` | NO | - | `duration_ms >= 0` | 요청 처리에 걸린 밀리초다. |
+
+`success` 행은 파일 ID·파일명이 필요하고 오류 정보가 없어야 한다. `failure` 행은
+파일 정보가 없어야 하며 오류 코드·메시지가 필요하다. 최근 30일의 한국 날짜
+경계를 기준으로 조회하며, 매일 `00:00 KST` Cron Trigger가 경계보다 오래된 행을
+삭제한다.
+
+### 인덱스
+
+| 인덱스 | 컬럼 | 종류 | 목적 |
+|---|---|---|---|
+| `idx_integration_image_upload_logs_time` | `received_at`, `id` | 일반 | 전체 기록의 최신순 커서 페이징과 보존 기한 정리를 지원한다. |
+| `idx_integration_image_upload_logs_profile_time` | `profile_id`, `received_at`, `id` | 일반 | 프로필별 최신순 조회를 지원한다. |
+
 ## 마이그레이션 기준
 
-최종 스키마는 [`migrations`](./migrations)의 변경 불가능한 SQL 파일을 기준으로 한다.
+최종 스키마는 [`migrations`](../migrations)의 변경 불가능한 SQL 파일을 기준으로 한다.
 스키마를 변경할 때는 이미 적용된 마이그레이션을 수정하지 않고 새 마이그레이션을
 추가한 뒤 이 문서를 함께 갱신한다.

@@ -34,7 +34,19 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
   ) {}
 
   async listWidgets(): Promise<DashboardWidget[]> {
-    return this.hydrate(await this.layouts.list());
+    const openLayouts = await this.layouts.list();
+    const restorableLayouts = openLayouts.filter(
+      (layout) => WIDGET_BEHAVIOR[layout.type].persistsOpenState,
+    );
+    const staleSessionLayouts = openLayouts.filter(
+      (layout) => !WIDGET_BEHAVIOR[layout.type].persistsOpenState,
+    );
+    await Promise.all(
+      staleSessionLayouts.map((layout) =>
+        this.layouts.setOpen(layout.id, false),
+      ),
+    );
+    return this.hydrate(restorableLayouts);
   }
 
   async getWidget(widgetId: string): Promise<DashboardWidget> {
@@ -48,23 +60,35 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     const existingWidgets = await Promise.all(
       validatedWidgets.map((widget) => this.layouts.findById(widget.id)),
     );
-    const existingTypeById = new Map(
+    const existingById = new Map(
       existingWidgets.flatMap((widget) =>
-        widget ? [[widget.id, widget.type] as const] : [],
+        widget ? [[widget.id, widget] as const] : [],
       ),
     );
     for (const widget of validatedWidgets) {
-      const existingType = existingTypeById.get(widget.id);
-      if (existingType === undefined) {
+      const existing = existingById.get(widget.id);
+      if (existing === undefined) {
         throw new AppError(WIDGET_ERRORS.WIDGET_NOT_FOUND);
       }
-      if (existingType !== widget.type) {
+      if (existing.type !== widget.type) {
         throw new AppError(WIDGET_ERRORS.WIDGET_TYPE_CHANGE_NOT_ALLOWED);
       }
     }
 
     await this.layouts.synchronize(validatedWidgets);
-    return this.listWidgets();
+    return this.hydrate(
+      validatedWidgets.map((widget) => {
+        const existing = existingById.get(widget.id);
+        if (!existing) {
+          throw new AppError(WIDGET_ERRORS.WIDGET_NOT_FOUND);
+        }
+        return {
+          ...widget,
+          isOpen: existing.isOpen,
+          file: existing.file,
+        };
+      }),
+    );
   }
 
   async createWidget(input: CreateWidgetInput): Promise<WidgetCreationResult> {
@@ -72,7 +96,12 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     if (behavior.singleton) {
       const existing = await this.layouts.findByType(input.type);
       if (existing) {
-        if (!existing.isOpen) {
+        if (!behavior.persistsOpenState) {
+          if (existing.isOpen) {
+            await this.layouts.setOpen(existing.id, false);
+          }
+          await this.assertOpenCapacity();
+        } else if (!existing.isOpen) {
           await this.assertOpenCapacity();
           await this.layouts.setOpen(existing.id, true);
         }
@@ -106,8 +135,10 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
         if (!existing) {
           throw new AppError(WIDGET_ERRORS.INVALID_STORED_WIDGET);
         }
-        if (!existing.isOpen) {
+        if (behavior.persistsOpenState && !existing.isOpen) {
           await this.layouts.setOpen(existing.id, true);
+        } else if (!behavior.persistsOpenState && existing.isOpen) {
+          await this.layouts.setOpen(existing.id, false);
         }
         return {
           widget: await this.hydrateOne({ ...existing, isOpen: true }),
@@ -117,6 +148,9 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     } else {
       await this.layouts.insert(layout);
     }
+    if (!behavior.persistsOpenState) {
+      await this.layouts.setOpen(layout.id, false);
+    }
     return {
       widget: await this.hydrateOne({ ...layout, isOpen: true, file: null }),
       created: true,
@@ -125,23 +159,36 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
 
   async openWidget(widgetId: string): Promise<DashboardWidget> {
     const widget = await this.requireWidget(widgetId);
-    if (widget.isOpen) {
+    const behavior = WIDGET_BEHAVIOR[widget.type];
+    if (behavior.persistsOpenState && widget.isOpen) {
       return this.hydrateOne(widget);
     }
-    if (!widget.file && !WIDGET_BEHAVIOR[widget.type].persistsWithoutFile) {
+    if (!widget.file && !behavior.persistsWithoutFile) {
       throw new AppError(WIDGET_ERRORS.WIDGET_NOT_FOUND);
     }
+    if (!behavior.persistsOpenState && widget.isOpen) {
+      await this.layouts.setOpen(widgetId, false);
+    }
     await this.assertOpenCapacity();
-    await this.layouts.setOpen(widgetId, true);
+    if (behavior.persistsOpenState) {
+      await this.layouts.setOpen(widgetId, true);
+    }
     return this.hydrateOne({ ...widget, isOpen: true });
   }
 
   async closeWidget(widgetId: string): Promise<void> {
     const widget = await this.requireWidget(widgetId);
+    const behavior = WIDGET_BEHAVIOR[widget.type];
+    if (!behavior.persistsOpenState) {
+      if (widget.isOpen) {
+        await this.layouts.setOpen(widgetId, false);
+      }
+      return;
+    }
     if (!widget.isOpen) {
       throw new AppError(WIDGET_ERRORS.WIDGET_NOT_OPEN);
     }
-    if (!widget.file && !WIDGET_BEHAVIOR[widget.type].persistsWithoutFile) {
+    if (!widget.file && !behavior.persistsWithoutFile) {
       throw new AppError(WIDGET_ERRORS.UNSAVED_WIDGET_CLOSE_NOT_ALLOWED);
     }
     await this.layouts.setOpen(widgetId, false);

@@ -1,4 +1,5 @@
 import { IMAGE_UPLOAD_PROFILE_COPY } from "@client/content/ko/integrations/image-upload-profile";
+import { IMAGE_UPLOAD_LOG_COPY } from "@client/content/ko/integrations/image-upload-log";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -6,7 +7,11 @@ import {
   DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE,
   IMAGE_UPLOAD_CONTENT_TYPE_VALUES,
 } from "@/constants/integrations/image-upload-profile";
-import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
+import {
+  FILESYSTEM_ENTRY_KIND,
+  FILESYSTEM_ROOT_ID,
+} from "@/constants/filesystem/filesystem";
+import { IMAGE_UPLOAD_LOG_OUTCOME } from "@/constants/integrations/image-upload-log";
 import {
   WIDGET_TYPE,
   WIDGET_WINDOW_POLICY,
@@ -20,6 +25,7 @@ import type {
 } from "@/types/integrations/image-upload-profile";
 import { ImageUploadProfilesWidget } from "@client/components/widgets/image-upload-profiles-widget";
 import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
+import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
 
 const NOVELAI_PROFILE: ImageUploadProfile = {
   id: DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE.ID,
@@ -47,6 +53,15 @@ describe("image upload profiles widget", () => {
     renderWidget(gateway);
 
     expect(await screen.findByDisplayValue("NovelAI")).toBeInTheDocument();
+    expect(document.querySelector(".xp-window-frame__toolbar")).toBeNull();
+    expect(
+      screen.getByRole("group", {
+        name: IMAGE_UPLOAD_PROFILE_COPY.CONTENT_TYPES,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("group", { name: IMAGE_UPLOAD_PROFILE_COPY.PREVIEW }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/바탕 화면\\NovelAI\\2026-08-28/)).toBeInTheDocument();
     const nameInput = screen.getByLabelText(IMAGE_UPLOAD_PROFILE_COPY.DISPLAY_NAME);
     await user.clear(nameInput);
@@ -99,9 +114,70 @@ describe("image upload profiles widget", () => {
     );
     await waitFor(() => expect(gateway.deleteProfile).toHaveBeenCalledWith("camera"));
   });
+
+  it("loads receive logs from a reusable tab and opens an available file", async () => {
+    const gateway = fakeGateway([NOVELAI_PROFILE]);
+    const file = {
+      id: "saved-file",
+      parentId: "date-directory",
+      kind: FILESYSTEM_ENTRY_KIND.FILE,
+      name: "saved.png",
+      contentType: "image/png",
+      size: 128,
+      createdAt: "2026-08-29T15:00:00.000Z",
+      updatedAt: "2026-08-29T15:00:00.000Z",
+      desktopOrder: null,
+    } as const;
+    const logGateway: ImageUploadLogGateway = {
+      listImageUploadLogs: vi.fn(async () => ({
+        items: [
+          {
+            id: "log",
+            profileId: "novelai",
+            outcome: IMAGE_UPLOAD_LOG_OUTCOME.SUCCESS,
+            contentType: "image/png",
+            declaredSize: file.size,
+            fileName: file.name,
+            file,
+            httpStatus: 201,
+            error: null,
+            receivedAt: "2026-08-29T15:00:00.000Z",
+            durationMs: 23,
+          },
+        ],
+        nextCursor: null,
+      })),
+    };
+    const openFile = vi.fn();
+    const user = userEvent.setup();
+    renderWidget(gateway, logGateway, openFile);
+
+    await user.click(
+      screen.getByRole("tab", { name: IMAGE_UPLOAD_LOG_COPY.LOGS_TAB }),
+    );
+    const fileButton = await screen.findByRole("button", { name: file.name });
+    expect(logGateway.listImageUploadLogs).toHaveBeenCalledWith({});
+    expect(screen.getByText(IMAGE_UPLOAD_LOG_COPY.RETENTION_NOTICE)).toBeInTheDocument();
+    await user.click(fileButton);
+    expect(openFile).toHaveBeenCalledWith(file);
+
+    await user.click(
+      screen.getByRole("tab", { name: IMAGE_UPLOAD_LOG_COPY.PROFILES_TAB }),
+    );
+    await user.click(
+      screen.getByRole("tab", { name: IMAGE_UPLOAD_LOG_COPY.LOGS_TAB }),
+    );
+    await waitFor(() =>
+      expect(logGateway.listImageUploadLogs).toHaveBeenCalledTimes(2),
+    );
+  });
 });
 
-function renderWidget(gateway: ImageUploadProfileGateway): void {
+function renderWidget(
+  gateway: ImageUploadProfileGateway,
+  logGateway: ImageUploadLogGateway = EMPTY_LOG_GATEWAY,
+  onOpenFilesystemEntry = vi.fn(),
+): void {
   const policy = WIDGET_WINDOW_POLICY[WIDGET_TYPE.IMAGE_UPLOAD_PROFILES];
   render(
     <ImageUploadProfilesWidget
@@ -129,10 +205,16 @@ function renderWidget(gateway: ImageUploadProfileGateway): void {
       gateway={{} as never}
       storageStatusGateway={{} as never}
       imageUploadProfileGateway={gateway}
+      imageUploadLogGateway={logGateway}
+      onOpenFilesystemEntry={onOpenFilesystemEntry}
       onWidgetChange={vi.fn()}
     />,
   );
 }
+
+const EMPTY_LOG_GATEWAY: ImageUploadLogGateway = {
+  listImageUploadLogs: vi.fn(async () => ({ items: [], nextCursor: null })),
+};
 
 function fakeGateway(initial: readonly ImageUploadProfile[]) {
   let profiles = [...initial];

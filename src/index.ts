@@ -6,6 +6,10 @@ import { FilesystemPathService } from "@/application/filesystem/filesystem-path-
 import { FilesystemDownloadManifestService } from "@/application/filesystem/filesystem-download-manifest-service";
 import { DirectoryDetailsService } from "@/application/filesystem/directory-details-service";
 import { ImageUploadProfileService } from "@/application/integrations/image-upload-profile-service";
+import {
+  ImageUploadLogService,
+  purgeExpiredImageUploadLogs,
+} from "@/application/integrations/image-upload-log-service";
 import { ImageUploadService } from "@/application/integrations/image-upload-service";
 import { RecycleBinService } from "@/application/filesystem/recycle/recycle-bin-service";
 import { MemoService } from "@/application/widgets/memo-service";
@@ -27,6 +31,7 @@ import { FileApiHandler } from "@/http/filesystem/file-api-handler";
 import { DirectoryDetailsApiHandler } from "@/http/filesystem/directory-details-api-handler";
 import { ImageUploadProfileApiHandler } from "@/http/integrations/image-upload-profile-api-handler";
 import { ImageUploadApiHandler } from "@/http/integrations/image-upload-api-handler";
+import { ImageUploadLogApiHandler } from "@/http/integrations/image-upload-log-api-handler";
 import { WidgetApiHandler } from "@/http/widgets/widget-api-handler";
 import { WidgetFileApiHandler } from "@/http/widgets/widget-file-api-handler";
 import { StorageStatusApiHandler } from "@/http/storage/storage-status-api-handler";
@@ -52,6 +57,8 @@ import { ConsoleFileUploadCompensationObserver } from "@/infrastructure/filesyst
 import { CloudflareBackgroundTaskScheduler } from "@/infrastructure/platform/cloudflare-background-task-scheduler";
 import { D1MobilePreferencesRepository } from "@/infrastructure/platform/d1-mobile-preferences-repository";
 import { D1ImageUploadProfileRepository } from "@/infrastructure/integrations/d1-image-upload-profile-repository";
+import { D1ImageUploadLogRepository } from "@/infrastructure/integrations/d1-image-upload-log-repository";
+import { BACKGROUND_TASK_FAILURE_CODE } from "@/constants/platform/background-task";
 import { CryptoIdGenerator, SystemClock } from "@/infrastructure/platform/runtime";
 import type { IdentityVerifier, RequestVerifier } from "@/types/platform/auth";
 
@@ -69,6 +76,7 @@ export default {
     const storage = new R2FileObjectStorage(env.FILES);
     const ids = new CryptoIdGenerator();
     const clock = new SystemClock();
+    const backgroundTasks = new CloudflareBackgroundTaskScheduler(context);
     const thumbnailService = new ThumbnailService(
       fileRepository,
       storage,
@@ -86,7 +94,7 @@ export default {
     const fileService = new ThumbnailPreparingFileService(
       storedFileService,
       thumbnailService,
-      new CloudflareBackgroundTaskScheduler(context),
+      backgroundTasks,
     );
     const directoryService = new FilesystemDirectoryService(
       fileRepository,
@@ -119,6 +127,12 @@ export default {
       ids,
       clock,
     );
+    const imageUploadLogService = new ImageUploadLogService(
+      new D1ImageUploadLogRepository(env.DB),
+      activeFilesystemEntries,
+      ids,
+      clock,
+    );
     const recycleBinService = new RecycleBinService(
       fileRepository,
       storage,
@@ -146,6 +160,12 @@ export default {
     );
     const imageUploadApiHandler = new ImageUploadApiHandler(
       imageUploadService,
+      imageUploadLogService,
+      clock,
+      backgroundTasks,
+    );
+    const imageUploadLogApiHandler = new ImageUploadLogApiHandler(
+      imageUploadLogService,
     );
     const imageUploadProfileApiHandler = new ImageUploadProfileApiHandler(
       imageUploadProfileService,
@@ -207,6 +227,7 @@ export default {
         storageStatusApiHandler,
         mobilePreferencesApiHandler,
         imageUploadProfileApiHandler,
+        imageUploadLogApiHandler,
       ],
       [imageUploadApiHandler],
       createIdentityVerifier(env),
@@ -214,6 +235,19 @@ export default {
     );
 
     return router.handle(request);
+  },
+  scheduled(
+    controller: ScheduledController,
+    env: Env,
+    context: ExecutionContext,
+  ): void {
+    new CloudflareBackgroundTaskScheduler(context).schedule(
+      purgeExpiredImageUploadLogs(
+        new D1ImageUploadLogRepository(env.DB),
+        controller.scheduledTime,
+      ),
+      BACKGROUND_TASK_FAILURE_CODE.IMAGE_UPLOAD_LOG_PURGE,
+    );
   },
 } satisfies ExportedHandler<Env>;
 

@@ -36,6 +36,7 @@ export const API_PATH_SEGMENTS = {
   DETAILS: "details",
   MOBILE: "mobile",
   IMAGE_PROFILES: "image-profiles",
+  IMAGE_UPLOAD_LOGS: "image-upload-logs",
 } as const;
 
 export const FILESYSTEM_API_PATHS = {
@@ -62,6 +63,9 @@ export const NOVELAI_IMAGE_UPLOAD_API_PATH =
 export const IMAGE_UPLOAD_PROFILES_API_PATH =
   `${API_PATHS.INTEGRATIONS}/${API_PATH_SEGMENTS.IMAGE_PROFILES}`;
 
+export const IMAGE_UPLOAD_LOGS_API_PATH =
+  `${API_PATHS.INTEGRATIONS}/${API_PATH_SEGMENTS.IMAGE_UPLOAD_LOGS}`;
+
 export const MOBILE_PREFERENCES_API_PATH =
   `${API_PATHS.PREFERENCES}/${API_PATH_SEGMENTS.MOBILE}`;
 
@@ -72,4 +76,7 @@ export const API_QUERY_PARAMETERS = {
   PARENT_ID: "parentId",
   DESKTOP_TARGET_INDEX: "desktopTargetIndex",
   DESKTOP_CAPACITY: "desktopCapacity",
+  PROFILE_ID: "profileId",
+  OUTCOME: "outcome",
+  CURSOR: "cursor",
 } as const;

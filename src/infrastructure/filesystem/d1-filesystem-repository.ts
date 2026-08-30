@@ -39,6 +39,13 @@ export class D1FilesystemRepository implements FilesystemRepository {
     return this.queries.findEntryWithinRoots(id, rootIds);
   }
 
+  findEntriesWithinRoots(
+    ids: readonly string[],
+    rootIds: readonly string[],
+  ): Promise<FilesystemEntryRecord[]> {
+    return this.queries.findEntriesWithinRoots(ids, rootIds);
+  }
+
   listActiveSubtrees(
     rootIds: readonly string[],
   ): Promise<RootedFilesystemEntryRecord[]> {

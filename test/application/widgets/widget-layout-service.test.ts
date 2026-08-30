@@ -7,6 +7,7 @@ import {
   WINDOW_STATE,
 } from "@/constants/widgets/widget";
 import { WIDGET_ERRORS } from "@/constants/widgets/errors/widget";
+import type { WidgetLayout } from "@/types/widgets/widget";
 import { SequenceIdGenerator, StaticClock } from "@test/support/platform/runtime-fakes";
 import { MemoryChecklistRepository } from "@test/support/widgets/memory-checklist-repository";
 import {
@@ -66,7 +67,10 @@ describe("WidgetLayoutService", () => {
     await expect(service.listWidgets()).resolves.toEqual(expected);
   });
 
-  it("creates one persistent storage status widget and reopens the same instance", async () => {
+  it.each([
+    WIDGET_TYPE.STORAGE_STATUS,
+    WIDGET_TYPE.IMAGE_UPLOAD_PROFILES,
+  ] as const)("keeps the %s singleton while making its open state session-only", async (type) => {
     const repository = new MemoryWidgetLayoutRepository();
     const service = new WidgetLayoutService(
       repository,
@@ -78,9 +82,9 @@ describe("WidgetLayoutService", () => {
       ]),
       new StaticClock(NOW),
     );
-    const policy = WIDGET_WINDOW_POLICY[WIDGET_TYPE.STORAGE_STATUS];
+    const policy = WIDGET_WINDOW_POLICY[type];
     const input = {
-      type: WIDGET_TYPE.STORAGE_STATUS,
+      type,
       position: { x: 32, y: 32 },
       size: {
         width: policy.DEFAULT_WIDTH,
@@ -90,6 +94,31 @@ describe("WidgetLayoutService", () => {
 
     const first = await service.createWidget(input);
     expect(first.created).toBe(true);
+    expect(repository.records[0]?.isOpen).toBe(false);
+
+    repository.records = repository.records.map((widget) => ({
+      ...widget,
+      isOpen: true,
+    }));
+    await expect(service.listWidgets()).resolves.toEqual([]);
+    expect(repository.records[0]?.isOpen).toBe(false);
+
+    const movedLayout: WidgetLayout = {
+      id: first.widget.id,
+      type,
+      position: { x: 72, y: 80 },
+      size: first.widget.size,
+      windowState: first.widget.windowState,
+      restoreState: first.widget.restoreState,
+      stackOrder: first.widget.stackOrder,
+    };
+    await expect(service.replaceWidgets([movedLayout])).resolves.toEqual([
+      { ...movedLayout, file: null, data: null },
+    ]);
+    expect(repository.records[0]).toMatchObject({
+      position: movedLayout.position,
+      isOpen: false,
+    });
     await service.closeWidget(first.widget.id);
 
     const reopened = await service.createWidget({
@@ -98,8 +127,9 @@ describe("WidgetLayoutService", () => {
     });
     expect(reopened.created).toBe(false);
     expect(reopened.widget.id).toBe(first.widget.id);
+    expect(reopened.widget.position).toEqual(movedLayout.position);
     expect(repository.records).toHaveLength(1);
-    expect(repository.records[0]?.isOpen).toBe(true);
+    expect(repository.records[0]?.isOpen).toBe(false);
   });
 
   it("does not discard the built-in storage status widget", async () => {

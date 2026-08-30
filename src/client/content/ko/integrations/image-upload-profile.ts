@@ -12,7 +12,6 @@ import type {
 
 export const IMAGE_UPLOAD_PROFILE_COPY = {
   TITLE: "이미지 API 프로필",
-  REFRESH: "새로 고침",
   NEW_PROFILE: "새 프로필",
   PROFILE_LIST: "프로필 목록",
   EMPTY: "등록된 프로필이 없습니다.",

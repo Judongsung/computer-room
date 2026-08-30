@@ -26,6 +26,9 @@
   "images": {
     "binding": "IMAGES"
   },
+  "triggers": {
+    "crons": ["0 15 * * *"]
+  },
   "vars": {
     "ENVIRONMENT": "production"
   }

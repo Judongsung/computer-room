@@ -5,6 +5,7 @@ import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
 import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
+import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/desktop";
 import type { MediaViewerOpenRequest } from "@client/types/media/media";
@@ -51,6 +52,7 @@ interface DesktopWindowLayerProps {
   readonly filesystemGateway: FilesystemGateway;
   readonly storageStatusGateway: StorageStatusGateway;
   readonly imageUploadProfileGateway: ImageUploadProfileGateway;
+  readonly imageUploadLogGateway: ImageUploadLogGateway;
   readonly explorer: ReturnType<typeof useExplorerWindows>;
   readonly system: ReturnType<typeof useSystemWindows>;
   readonly media: ReturnType<typeof useMediaWindows>;
@@ -58,6 +60,7 @@ interface DesktopWindowLayerProps {
   readonly filesystemRevision: number;
   readonly onFilesystemChanged: () => void;
   readonly onOpenMedia: (request: MediaViewerOpenRequest) => void;
+  readonly onOpenFilesystemEntry: (entry: FilesystemEntry) => void;
   readonly onOpenWidget: (widgetId: string) => void;
   readonly onEntryChanged: (entry: FilesystemEntry) => void;
   readonly onWidgetsClosed: (widgetIds: readonly string[]) => void;
@@ -87,6 +90,7 @@ export function DesktopWindowLayer({
   filesystemGateway,
   storageStatusGateway,
   imageUploadProfileGateway,
+  imageUploadLogGateway,
   explorer,
   system,
   media,
@@ -94,6 +98,7 @@ export function DesktopWindowLayer({
   filesystemRevision,
   onFilesystemChanged,
   onOpenMedia,
+  onOpenFilesystemEntry,
   onOpenWidget,
   onEntryChanged,
   onWidgetsClosed,
@@ -142,6 +147,8 @@ export function DesktopWindowLayer({
           gateway={gateway}
           storageStatusGateway={storageStatusGateway}
           imageUploadProfileGateway={imageUploadProfileGateway}
+          imageUploadLogGateway={imageUploadLogGateway}
+          onOpenFilesystemEntry={onOpenFilesystemEntry}
           onFocus={() => onFocusWindow(widget.id, () => onFocusWidget(widget.id))}
           onMinimize={() => {
             onMinimizeWidget(widget.id);

@@ -96,6 +96,8 @@ function ChecklistHarness({
       gateway={gateway}
       storageStatusGateway={STORAGE_STATUS_GATEWAY}
       imageUploadProfileGateway={IMAGE_UPLOAD_PROFILE_GATEWAY}
+      imageUploadLogGateway={{} as never}
+      onOpenFilesystemEntry={vi.fn()}
       windowControls={WINDOW_CONTROLS}
       onWidgetChange={updateWidget}
     />

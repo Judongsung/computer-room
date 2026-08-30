@@ -16,6 +16,10 @@ export interface FilesystemQueryRepository {
     id: string,
     rootIds: readonly string[],
   ): Promise<FilesystemEntryRecord | null>;
+  findEntriesWithinRoots(
+    ids: readonly string[],
+    rootIds: readonly string[],
+  ): Promise<FilesystemEntryRecord[]>;
   listActiveSubtrees(
     rootIds: readonly string[],
   ): Promise<RootedFilesystemEntryRecord[]>;

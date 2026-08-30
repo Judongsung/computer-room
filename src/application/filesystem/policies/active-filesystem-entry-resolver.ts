@@ -19,6 +19,10 @@ export class ActiveFilesystemEntryResolver
     return this.entries.findEntryWithinRoots(id, FILESYSTEM_ACTIVE_ROOT_IDS);
   }
 
+  findMany(ids: readonly string[]): Promise<FilesystemEntryRecord[]> {
+    return this.entries.findEntriesWithinRoots(ids, FILESYSTEM_ACTIVE_ROOT_IDS);
+  }
+
   async requireEntry(
     id: string,
     errors: ActiveEntryErrorPolicy,

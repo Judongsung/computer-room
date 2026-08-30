@@ -31,16 +31,18 @@ export function WidgetCard({
       titleBarClassName="widget-card__header widget-card__drag-handle"
       bodyClassName="widget-card__body"
       toolbar={
-        <>
-          {windowControls.canSaveFile ? (
-            <XpWidgetToolbarButton
-              action={XP_WIDGET_TOOLBAR_ACTION.SAVE_FILE}
-              label={DASHBOARD_COPY.SAVE_AS_FILE}
-              onClick={windowControls.onSaveFile}
-            />
-          ) : null}
-          {toolbarActions}
-        </>
+        windowControls.canSaveFile || toolbarActions ? (
+          <>
+            {windowControls.canSaveFile ? (
+              <XpWidgetToolbarButton
+                action={XP_WIDGET_TOOLBAR_ACTION.SAVE_FILE}
+                label={DASHBOARD_COPY.SAVE_AS_FILE}
+                onClick={windowControls.onSaveFile}
+              />
+            ) : null}
+            {toolbarActions}
+          </>
+        ) : undefined
       }
       onMouseDown={windowControls.onFocus}
       onTitleBarDoubleClick={windowControls.onToggleMaximize}

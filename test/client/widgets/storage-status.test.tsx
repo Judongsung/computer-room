@@ -91,6 +91,8 @@ function renderWidget(storageStatusGateway: StorageStatusGateway): void {
       gateway={{} as never}
       storageStatusGateway={storageStatusGateway}
       imageUploadProfileGateway={{} as never}
+      imageUploadLogGateway={{} as never}
+      onOpenFilesystemEntry={vi.fn()}
       onWidgetChange={vi.fn()}
     />,
   );

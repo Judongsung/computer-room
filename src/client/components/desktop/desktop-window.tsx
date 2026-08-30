@@ -17,6 +17,8 @@ export function DesktopWindow({
   gateway,
   storageStatusGateway,
   imageUploadProfileGateway,
+  imageUploadLogGateway,
+  onOpenFilesystemEntry,
   onFocus,
   onMinimize,
   onToggleMaximize,
@@ -68,6 +70,8 @@ export function DesktopWindow({
         gateway={gateway}
         storageStatusGateway={storageStatusGateway}
         imageUploadProfileGateway={imageUploadProfileGateway}
+        imageUploadLogGateway={imageUploadLogGateway}
+        onOpenFilesystemEntry={onOpenFilesystemEntry}
         onWidgetChange={onWidgetChange}
       />
     </MovableDesktopWindow>

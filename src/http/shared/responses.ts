@@ -1,10 +1,11 @@
-import { HTTP_ERRORS, HTTP_LOG_MESSAGES } from "@/constants/platform/errors/http";
+import { HTTP_LOG_MESSAGES } from "@/constants/platform/errors/http";
 import {
   API_RESPONSE_HEADERS,
   EMPTY_RESPONSE_HEADERS,
   HTTP_STATUS,
 } from "@/constants/platform/http";
 import { AppError } from "@/domain/shared/errors";
+import { publicErrorDefinition } from "@/http/shared/public-error";
 
 export function jsonResponse(
   data: unknown,
@@ -36,22 +37,17 @@ export function emptyResponse(
 }
 
 export function errorResponse(error: unknown): Response {
-  if (error instanceof AppError) {
-    return jsonResponse(
-      { error: { code: error.code, message: error.message } },
-      error.status,
-    );
+  if (!(error instanceof AppError)) {
+    console.error(HTTP_LOG_MESSAGES.UNHANDLED_API_ERROR, error);
   }
-
-  console.error(HTTP_LOG_MESSAGES.UNHANDLED_API_ERROR, error);
-  const internalError = HTTP_ERRORS.INTERNAL_ERROR;
+  const publicError = publicErrorDefinition(error);
   return jsonResponse(
     {
       error: {
-        code: internalError.code,
-        message: internalError.message,
+        code: publicError.code,
+        message: publicError.message,
       },
     },
-    internalError.status,
+    publicError.status,
   );
 }

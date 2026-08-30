@@ -23,6 +23,7 @@ export default defineConfig(async () => {
             "DB",
             "MIGRATION_REGRESSION_DB",
             "FILESYSTEM_REPOSITORY_TEST_DB",
+            "IMAGE_UPLOAD_LOG_TEST_DB",
           ],
           r2Buckets: ["FILES"],
         },

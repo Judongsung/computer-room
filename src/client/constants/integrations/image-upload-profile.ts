@@ -6,6 +6,7 @@ import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import type { ImageUploadProfileDraft } from "@client/types/integrations/image-upload-profile";
 
 export const IMAGE_UPLOAD_PROFILE_CLASS_NAME = {
+  TABS: "image-upload-profiles-widget__tabs",
   ROOT: "image-upload-profiles-widget",
   SIDEBAR: "image-upload-profiles-widget__sidebar",
   LIST: "image-upload-profiles-widget__list",
@@ -14,12 +15,15 @@ export const IMAGE_UPLOAD_PROFILE_CLASS_NAME = {
   STATUS: "image-upload-profiles-widget__status",
   EDITOR: "image-upload-profiles-widget__editor",
   FORM: "image-upload-profiles-widget__form",
+  FORM_FIELDS: "image-upload-profiles-widget__form-fields",
   FIELD: "image-upload-profiles-widget__field",
   HELP: "image-upload-profiles-widget__help",
+  GROUP: "image-upload-profiles-widget__group",
+  GROUP_CONTENT: "image-upload-profiles-widget__group-content",
   MIME_LIST: "image-upload-profiles-widget__mime-list",
+  ENABLED: "image-upload-profiles-widget__enabled",
   PREVIEW: "image-upload-profiles-widget__preview",
   URL: "image-upload-profiles-widget__url",
-  ACTIONS: "image-upload-profiles-widget__actions",
   NOTICE: "image-upload-profiles-widget__notice",
 } as const;
 

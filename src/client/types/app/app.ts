@@ -5,6 +5,7 @@ import type { WidgetFileGateway } from "@client/types/widgets/widget-file";
 import type { CLIENT_INTERFACE_MODE } from "@client/constants/shared/interface-mode";
 import type { MobilePreferencesGateway } from "@client/types/platform/mobile-preferences";
 import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
+import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
 
 export type ClientInterfaceMode =
   (typeof CLIENT_INTERFACE_MODE)[keyof typeof CLIENT_INTERFACE_MODE];
@@ -16,5 +17,6 @@ export interface AppProps {
   readonly widgetFileApi?: WidgetFileGateway;
   readonly mobilePreferencesApi?: MobilePreferencesGateway;
   readonly imageUploadProfileApi?: ImageUploadProfileGateway;
+  readonly imageUploadLogApi?: ImageUploadLogGateway;
   readonly interfaceMode?: ClientInterfaceMode;
 }

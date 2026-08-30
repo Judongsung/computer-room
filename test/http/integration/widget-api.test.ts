@@ -96,7 +96,7 @@ describe("computer-room widget API", () => {
     await discardWidget(second.id);
   });
 
-  it("keeps the image upload profile manager as one persistent non-file widget", async () => {
+  it("keeps one image upload profile manager without restoring its open state", async () => {
     const type = WIDGET_TYPE.IMAGE_UPLOAD_PROFILES;
     const policy = WIDGET_WINDOW_POLICY[type];
     const input = {
@@ -112,6 +112,16 @@ describe("computer-room widget API", () => {
     expect(firstResponse.status).toBe(HTTP_STATUS.CREATED);
     const first = (await firstResponse.json()) as { widget: DashboardWidget };
     expect(first.widget).toMatchObject({ type, file: null, data: null });
+    expect(
+      await env.DB.prepare(
+        "SELECT is_open FROM dashboard_widgets WHERE id = ?1",
+      )
+        .bind(first.widget.id)
+        .first("is_open"),
+    ).toBe(0);
+    await expect(
+      (await SELF.fetch(`${ORIGIN}${API_PATHS.WIDGETS}`)).json(),
+    ).resolves.toEqual({ items: [] });
 
     const duplicateResponse = await jsonRequest(
       API_PATHS.WIDGETS,
@@ -140,7 +150,18 @@ describe("computer-room widget API", () => {
       ...toLayout(first.widget),
       position: { x: 240, y: 180 },
     };
-    expect((await saveWidgets([movedLayout])).status).toBe(HTTP_STATUS.OK);
+    const saveResponse = await saveWidgets([movedLayout]);
+    expect(saveResponse.status).toBe(HTTP_STATUS.OK);
+    await expect(saveResponse.json()).resolves.toMatchObject({
+      items: [{ id: first.widget.id, type, position: movedLayout.position }],
+    });
+    expect(
+      await env.DB.prepare(
+        "SELECT is_open FROM dashboard_widgets WHERE id = ?1",
+      )
+        .bind(first.widget.id)
+        .first("is_open"),
+    ).toBe(0);
     expect(
       (
         await jsonRequest(
@@ -169,6 +190,13 @@ describe("computer-room widget API", () => {
         data: null,
       },
     });
+    expect(
+      await env.DB.prepare(
+        "SELECT is_open FROM dashboard_widgets WHERE id = ?1",
+      )
+        .bind(first.widget.id)
+        .first("is_open"),
+    ).toBe(0);
 
     const discardResponse = await discardWidget(first.widget.id);
     expect(discardResponse.status).toBe(

@@ -100,6 +100,39 @@ export class D1FilesystemQueryRepository
     return row ? mapFilesystemEntryRow(row) : null;
   }
 
+  async findEntriesWithinRoots(
+    ids: readonly string[],
+    rootIds: readonly string[],
+  ): Promise<FilesystemEntryRecord[]> {
+    if (ids.length === 0 || rootIds.length === 0) return [];
+    const rootPlaceholders = rootIds
+      .map((_, index) => `?${index + 2}`)
+      .join(", ");
+    const result = await this.database
+      .prepare(
+        `WITH RECURSIVE requested(request_id) AS (
+           SELECT CAST(value AS TEXT) FROM json_each(?1)
+         ), ancestors(request_id, id, parent_id) AS (
+           SELECT requested.request_id, entry.id, entry.parent_id
+           FROM requested
+           JOIN filesystem_entries entry ON entry.id = requested.request_id
+           UNION ALL
+           SELECT ancestors.request_id, parent.id, parent.parent_id
+           FROM filesystem_entries parent
+           JOIN ancestors ON parent.id = ancestors.parent_id
+         ), active(request_id) AS (
+           SELECT DISTINCT request_id FROM ancestors
+           WHERE id IN (${rootPlaceholders})
+         )
+         ${FILESYSTEM_ENTRY_SELECT}
+         JOIN active ON active.request_id = e.id
+         ORDER BY e.id`,
+      )
+      .bind(JSON.stringify([...new Set(ids)]), ...rootIds)
+      .all<FilesystemEntryRow>();
+    return result.results.map(mapFilesystemEntryRow);
+  }
+
   async listActiveSubtrees(
     rootIds: readonly string[],
   ): Promise<RootedFilesystemEntryRecord[]> {

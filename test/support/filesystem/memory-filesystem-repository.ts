@@ -47,6 +47,18 @@ export class MemoryFileRepository implements FilesystemRepository {
     return null;
   }
 
+  async findEntriesWithinRoots(
+    ids: readonly string[],
+    rootIds: readonly string[],
+  ): Promise<FilesystemEntryRecord[]> {
+    const entries = await Promise.all(
+      [...new Set(ids)].map((id) => this.findEntryWithinRoots(id, rootIds)),
+    );
+    return entries.filter(
+      (entry): entry is FilesystemEntryRecord => entry !== null,
+    );
+  }
+
   async listActiveSubtrees(
     rootIds: readonly string[],
   ): Promise<RootedFilesystemEntryRecord[]> {

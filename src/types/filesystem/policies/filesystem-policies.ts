@@ -8,6 +8,7 @@ export interface ActiveEntryErrorPolicy {
 
 export interface ActiveFilesystemEntryResolver {
   find(id: string): Promise<FilesystemEntryRecord | null>;
+  findMany(ids: readonly string[]): Promise<FilesystemEntryRecord[]>;
   requireEntry(
     id: string,
     errors: ActiveEntryErrorPolicy,

@@ -17,21 +17,25 @@ export const WIDGET_BEHAVIOR = {
     singleton: false,
     supportsFileStorage: true,
     persistsWithoutFile: false,
+    persistsOpenState: true,
   },
   [WIDGET_TYPE.DAILY_CHECKLIST]: {
     singleton: false,
     supportsFileStorage: true,
     persistsWithoutFile: false,
+    persistsOpenState: true,
   },
   [WIDGET_TYPE.STORAGE_STATUS]: {
     singleton: true,
     supportsFileStorage: false,
     persistsWithoutFile: true,
+    persistsOpenState: false,
   },
   [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]: {
     singleton: true,
     supportsFileStorage: false,
     persistsWithoutFile: true,
+    persistsOpenState: false,
   },
 } as const;
 

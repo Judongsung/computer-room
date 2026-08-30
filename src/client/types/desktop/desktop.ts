@@ -17,6 +17,8 @@ import type {
 } from "@client/types/widgets/dashboard";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
 import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
+import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
+import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 
 export interface DesktopDimensions {
   readonly width: number;
@@ -88,6 +90,8 @@ export interface WidgetComponentProps {
   readonly gateway: DashboardGateway;
   readonly storageStatusGateway: StorageStatusGateway;
   readonly imageUploadProfileGateway: ImageUploadProfileGateway;
+  readonly imageUploadLogGateway: ImageUploadLogGateway;
+  readonly onOpenFilesystemEntry: (entry: FilesystemEntry) => void;
   readonly onWidgetChange: (widget: DashboardWidget) => void;
 }
 
@@ -107,6 +111,7 @@ export interface DesktopShellProps {
   readonly filesystemGateway: FilesystemGateway;
   readonly storageStatusGateway: StorageStatusGateway;
   readonly imageUploadProfileGateway: ImageUploadProfileGateway;
+  readonly imageUploadLogGateway: ImageUploadLogGateway;
   readonly layoutSaveStatus: LayoutSaveStatus;
   readonly layoutSaveError: string | null;
   readonly message: StatusMessage | null;
@@ -143,6 +148,8 @@ export interface DesktopWindowProps {
   readonly gateway: DashboardGateway;
   readonly storageStatusGateway: StorageStatusGateway;
   readonly imageUploadProfileGateway: ImageUploadProfileGateway;
+  readonly imageUploadLogGateway: ImageUploadLogGateway;
+  readonly onOpenFilesystemEntry: (entry: FilesystemEntry) => void;
   readonly onFocus: () => void;
   readonly onMinimize: () => void;
   readonly onToggleMaximize: () => void;

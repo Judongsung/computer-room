@@ -68,6 +68,7 @@ export function DesktopShell(props: DesktopShellProps) {
     filesystemGateway,
     storageStatusGateway,
     imageUploadProfileGateway,
+    imageUploadLogGateway,
     layoutSaveStatus,
     layoutSaveError,
     message,
@@ -260,6 +261,7 @@ export function DesktopShell(props: DesktopShellProps) {
           filesystemGateway={filesystemGateway}
           storageStatusGateway={storageStatusGateway}
           imageUploadProfileGateway={imageUploadProfileGateway}
+          imageUploadLogGateway={imageUploadLogGateway}
           explorer={explorer}
           system={system}
           media={media}
@@ -267,6 +269,7 @@ export function DesktopShell(props: DesktopShellProps) {
           filesystemRevision={filesystem.revision}
           onFilesystemChanged={filesystem.notifyChanged}
           onOpenMedia={launcher.openMediaViewer}
+          onOpenFilesystemEntry={launcher.openFilesystemEntry}
           onOpenWidget={launcher.openWidget}
           onEntryChanged={filesystem.synchronizeWidgetFile}
           onWidgetsClosed={filesystem.removeWidgetWindows}

@@ -74,6 +74,15 @@ describe("D1FilesystemRepository queries", () => {
       repository.findEntryWithinRoots("image", [FILESYSTEM_ROOT_ID.DESKTOP]),
     ).resolves.toBeNull();
     await expect(
+      repository.findEntriesWithinRoots(
+        ["image", "archive", "missing", "image"],
+        [FILESYSTEM_ROOT_ID.DOCUMENTS],
+      ),
+    ).resolves.toEqual([
+      expect.objectContaining({ id: "archive" }),
+      expect.objectContaining({ id: "image" }),
+    ]);
+    await expect(
       repository.isWithinRoot("archive", FILESYSTEM_ROOT_ID.DOCUMENTS),
     ).resolves.toBe(true);
     await expect(repository.isDescendant("photos", "archive")).resolves.toBe(
