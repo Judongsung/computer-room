@@ -43,10 +43,6 @@ export function methodNotAllowed(): AppError {
   return new AppError(HTTP_ERRORS.METHOD_NOT_ALLOWED);
 }
 
-export function readRouteId(match: RegExpExecArray): string {
-  return decodeURIComponent(match[1] ?? "");
-}
-
 export function readOptionalString(value: unknown): string | undefined {
   if (value === undefined || value === null) return undefined;
   if (typeof value !== "string") throw new AppError(HTTP_ERRORS.INVALID_JSON);

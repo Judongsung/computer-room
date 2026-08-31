@@ -3,6 +3,7 @@ import {
   FILESYSTEM_API_PATHS,
 } from "@/constants/platform/api";
 import { HTTP_ERRORS } from "@/constants/platform/errors/http";
+import { API_ROUTE_PATTERN } from "@/constants/platform/http-route";
 import { HTTP_METHOD } from "@/constants/platform/http";
 import { AppError } from "@/domain/shared/errors";
 import type { FilesystemEntryUseCases } from "@/types/filesystem/services/entry-service";
@@ -16,14 +17,22 @@ import {
   readIdArray,
   readOptionalString,
   readRequiredJsonObject,
-  readRouteId,
 } from "@/http/filesystem/filesystem-request";
+import {
+  createExactApiRoutePattern,
+  readApiRouteSegment,
+} from "@/http/shared/api-route";
 import { readJsonBody } from "@/http/shared/request-body";
 import { jsonResponse } from "@/http/shared/responses";
 
-const ENTRY_PATH = new RegExp(`^${FILESYSTEM_API_PATHS.ENTRIES}/([^/]+)$`);
-const MOVE_PATH = new RegExp(
-  `^${FILESYSTEM_API_PATHS.ENTRIES}/([^/]+)/${API_PATH_SEGMENTS.MOVE}$`,
+const ENTRY_PATH = createExactApiRoutePattern(
+  FILESYSTEM_API_PATHS.ENTRIES,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+);
+const MOVE_PATH = createExactApiRoutePattern(
+  FILESYSTEM_API_PATHS.ENTRIES,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+  API_PATH_SEGMENTS.MOVE,
 );
 
 export class FilesystemEntryApiRoutes implements FeatureApiHandler {
@@ -42,12 +51,12 @@ export class FilesystemEntryApiRoutes implements FeatureApiHandler {
 
     const moveMatch = MOVE_PATH.exec(url.pathname);
     if (moveMatch) {
-      return this.moveEntry(request, readRouteId(moveMatch));
+      return this.moveEntry(request, readApiRouteSegment(moveMatch));
     }
 
     const entryMatch = ENTRY_PATH.exec(url.pathname);
     if (entryMatch) {
-      return this.updateOrTrashEntry(request, readRouteId(entryMatch));
+      return this.updateOrTrashEntry(request, readApiRouteSegment(entryMatch));
     }
 
     return null;

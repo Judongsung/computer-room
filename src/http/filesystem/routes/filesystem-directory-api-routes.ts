@@ -5,6 +5,7 @@ import {
   FILESYSTEM_API_PATHS,
 } from "@/constants/platform/api";
 import { HTTP_ERRORS } from "@/constants/platform/errors/http";
+import { API_ROUTE_PATTERN } from "@/constants/platform/http-route";
 import { HTTP_METHOD, HTTP_STATUS } from "@/constants/platform/http";
 import { requireFilesystemDirectorySort } from "@/domain/filesystem/filesystem-sort";
 import { AppError } from "@/domain/shared/errors";
@@ -16,12 +17,17 @@ import {
   readOptionalString,
   readPageParameters,
   readRequiredJsonObject,
-  readRouteId,
 } from "@/http/filesystem/filesystem-request";
+import {
+  createExactApiRoutePattern,
+  readApiRouteSegment,
+} from "@/http/shared/api-route";
 import { jsonResponse } from "@/http/shared/responses";
 
-const DIRECTORY_SORT_PATH = new RegExp(
-  `^${FILESYSTEM_API_PATHS.DIRECTORIES}/([^/]+)/${API_PATH_SEGMENTS.SORT}$`,
+const DIRECTORY_SORT_PATH = createExactApiRoutePattern(
+  FILESYSTEM_API_PATHS.DIRECTORIES,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+  API_PATH_SEGMENTS.SORT,
 );
 
 export class FilesystemDirectoryApiRoutes implements FeatureApiHandler {
@@ -37,7 +43,7 @@ export class FilesystemDirectoryApiRoutes implements FeatureApiHandler {
 
     const sortMatch = DIRECTORY_SORT_PATH.exec(url.pathname);
     if (sortMatch) {
-      return this.updateDirectorySort(request, readRouteId(sortMatch));
+      return this.updateDirectorySort(request, readApiRouteSegment(sortMatch));
     }
 
     return null;

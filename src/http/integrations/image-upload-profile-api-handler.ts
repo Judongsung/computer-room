@@ -1,11 +1,16 @@
 import { IMAGE_UPLOAD_PROFILES_API_PATH } from "@/constants/platform/api";
 import { HTTP_ERRORS } from "@/constants/platform/errors/http";
+import { API_ROUTE_PATTERN } from "@/constants/platform/http-route";
 import {
   HTTP_METHOD,
   HTTP_STATUS,
   PRIVATE_NO_STORE_RESPONSE_HEADERS,
 } from "@/constants/platform/http";
 import { AppError } from "@/domain/shared/errors";
+import {
+  createExactApiRoutePattern,
+  readApiRouteSegment,
+} from "@/http/shared/api-route";
 import { readJsonBody } from "@/http/shared/request-body";
 import { emptyResponse, jsonResponse } from "@/http/shared/responses";
 import type {
@@ -15,7 +20,10 @@ import type {
 } from "@/types/integrations/image-upload-profile";
 import type { FeatureApiHandler } from "@/types/platform/http";
 
-const PROFILE_PATH = new RegExp(`^${IMAGE_UPLOAD_PROFILES_API_PATH}/([^/]+)$`);
+const PROFILE_PATH = createExactApiRoutePattern(
+  IMAGE_UPLOAD_PROFILES_API_PATH,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+);
 
 export class ImageUploadProfileApiHandler implements FeatureApiHandler {
   constructor(private readonly profiles: ImageUploadProfileUseCases) {}
@@ -37,7 +45,7 @@ export class ImageUploadProfileApiHandler implements FeatureApiHandler {
 
     const match = PROFILE_PATH.exec(url.pathname);
     if (!match) return null;
-    const id = decodeURIComponent(match[1] ?? "");
+    const id = readApiRouteSegment(match);
     if (request.method === HTTP_METHOD.PUT) {
       const input = readConfigurationInput(await readJsonBody(request), false);
       return this.response({

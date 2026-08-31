@@ -1,5 +1,6 @@
 import { API_PATHS, API_PATH_SEGMENTS } from "@/constants/platform/api";
 import { HTTP_ERRORS } from "@/constants/platform/errors/http";
+import { API_ROUTE_PATTERN } from "@/constants/platform/http-route";
 import {
   HTTP_HEADERS,
   HTTP_METHOD,
@@ -8,6 +9,10 @@ import {
 import { AppError } from "@/domain/shared/errors";
 import { imageUploadLogProfileId } from "@/domain/integrations/image-upload-log";
 import { readDeclaredFileSize } from "@/http/filesystem/file-upload-request";
+import {
+  createExactApiRoutePattern,
+  readApiRouteSegment,
+} from "@/http/shared/api-route";
 import { publicErrorDefinition } from "@/http/shared/public-error";
 import { jsonResponse } from "@/http/shared/responses";
 import {
@@ -22,8 +27,10 @@ import type { ImageUploadLogRecorder } from "@/types/integrations/image-upload-l
 import type { ServiceApiHandler } from "@/types/platform/http";
 import type { BackgroundTaskScheduler, Clock } from "@/types/platform/runtime";
 
-const IMAGE_UPLOAD_PATH = new RegExp(
-  `^${API_PATHS.INTEGRATIONS}/([^/]+)/${API_PATH_SEGMENTS.IMAGES}$`,
+const IMAGE_UPLOAD_PATH = createExactApiRoutePattern(
+  API_PATHS.INTEGRATIONS,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+  API_PATH_SEGMENTS.IMAGES,
 );
 
 export class ImageUploadApiHandler implements ServiceApiHandler {
@@ -50,7 +57,7 @@ export class ImageUploadApiHandler implements ServiceApiHandler {
     let profileId: string | null = null;
     let declaredSize: number | null = null;
     try {
-      const requestedProfileId = decodeURIComponent(match[1] ?? "");
+      const requestedProfileId = readApiRouteSegment(match);
       profileId = imageUploadLogProfileId(requestedProfileId);
       declaredSize = readDeclaredFileSize(request);
       const file = await this.images.uploadImage(requestedProfileId, {

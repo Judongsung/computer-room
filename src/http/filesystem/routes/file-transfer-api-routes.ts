@@ -3,6 +3,7 @@ import {
   API_QUERY_PARAMETERS,
   FILESYSTEM_API_PATHS,
 } from "@/constants/platform/api";
+import { API_ROUTE_PATTERN } from "@/constants/platform/http-route";
 import {
   HTTP_HEADERS,
   HTTP_METHOD,
@@ -19,19 +20,28 @@ import {
 import {
   assertMethod,
   readDesktopPlacementFromQuery,
-  readRouteId,
 } from "@/http/filesystem/filesystem-request";
 import { readDeclaredFileSize } from "@/http/filesystem/file-upload-request";
+import {
+  createExactApiRoutePattern,
+  readApiRouteSegment,
+} from "@/http/shared/api-route";
 import { jsonResponse } from "@/http/shared/responses";
 
-const FILE_DOWNLOAD_PATH = new RegExp(
-  `^${FILESYSTEM_API_PATHS.FILES}/([^/]+)/${API_PATH_SEGMENTS.DOWNLOAD}$`,
+const FILE_DOWNLOAD_PATH = createExactApiRoutePattern(
+  FILESYSTEM_API_PATHS.FILES,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+  API_PATH_SEGMENTS.DOWNLOAD,
 );
-const FILE_CONTENT_PATH = new RegExp(
-  `^${FILESYSTEM_API_PATHS.FILES}/([^/]+)/${API_PATH_SEGMENTS.CONTENT}$`,
+const FILE_CONTENT_PATH = createExactApiRoutePattern(
+  FILESYSTEM_API_PATHS.FILES,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+  API_PATH_SEGMENTS.CONTENT,
 );
-const FILE_THUMBNAIL_PATH = new RegExp(
-  `^${FILESYSTEM_API_PATHS.FILES}/([^/]+)/${API_PATH_SEGMENTS.THUMBNAIL}$`,
+const FILE_THUMBNAIL_PATH = createExactApiRoutePattern(
+  FILESYSTEM_API_PATHS.FILES,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+  API_PATH_SEGMENTS.THUMBNAIL,
 );
 
 export class FileTransferApiRoutes implements FeatureApiHandler {
@@ -47,12 +57,20 @@ export class FileTransferApiRoutes implements FeatureApiHandler {
 
     const downloadMatch = FILE_DOWNLOAD_PATH.exec(url.pathname);
     if (downloadMatch) {
-      return fileDownloadResponse(this.files, request, readRouteId(downloadMatch));
+      return fileDownloadResponse(
+        this.files,
+        request,
+        readApiRouteSegment(downloadMatch),
+      );
     }
 
     const contentMatch = FILE_CONTENT_PATH.exec(url.pathname);
     if (contentMatch) {
-      return fileContentResponse(this.files, request, readRouteId(contentMatch));
+      return fileContentResponse(
+        this.files,
+        request,
+        readApiRouteSegment(contentMatch),
+      );
     }
 
     const thumbnailMatch = FILE_THUMBNAIL_PATH.exec(url.pathname);
@@ -60,7 +78,7 @@ export class FileTransferApiRoutes implements FeatureApiHandler {
       return thumbnailResponse(
         this.thumbnails,
         request,
-        readRouteId(thumbnailMatch),
+        readApiRouteSegment(thumbnailMatch),
       );
     }
 

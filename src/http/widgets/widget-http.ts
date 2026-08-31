@@ -16,10 +16,6 @@ export async function readRecordBody(request: Request): Promise<Record<string, u
   return body;
 }
 
-export function decodeId(value: string | undefined): string {
-  return decodeURIComponent(value ?? "");
-}
-
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }

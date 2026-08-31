@@ -1,20 +1,40 @@
 import { API_PATHS, API_PATH_SEGMENTS } from "@/constants/platform/api";
 import { HTTP_ERRORS } from "@/constants/platform/errors/http";
+import { API_ROUTE_PATTERN } from "@/constants/platform/http-route";
 import { HTTP_METHOD, HTTP_STATUS } from "@/constants/platform/http";
 import { WIDGET_TYPE_VALUES } from "@/constants/widgets/widget";
 import { AppError } from "@/domain/shared/errors";
 import { isWidgetLayoutCollection } from "@/domain/widgets/widget-layout";
+import {
+  createExactApiRoutePattern,
+  readApiRouteSegment,
+} from "@/http/shared/api-route";
 import { readJsonBody } from "@/http/shared/request-body";
 import { emptyResponse, jsonResponse } from "@/http/shared/responses";
-import { assertMethod, decodeId, isRecord, methodNotAllowed, readRecordBody } from "@/http/widgets/widget-http";
+import { assertMethod, isRecord, methodNotAllowed, readRecordBody } from "@/http/widgets/widget-http";
 import type { WidgetLayoutUseCases } from "@/types/widgets/widget-service";
 import type { WidgetFileUseCases } from "@/types/widgets/widget-file-service";
 import type { WidgetType } from "@/types/widgets/widget";
 
-const WIDGET_FILE_PATH = new RegExp(`^${API_PATHS.WIDGETS}/([^/]+)/${API_PATH_SEGMENTS.FILE}$`);
-const WIDGET_OPEN_PATH = new RegExp(`^${API_PATHS.WIDGETS}/([^/]+)/${API_PATH_SEGMENTS.OPEN}$`);
-const WIDGET_CLOSE_PATH = new RegExp(`^${API_PATHS.WIDGETS}/([^/]+)/${API_PATH_SEGMENTS.CLOSE}$`);
-const WIDGET_PATH = new RegExp(`^${API_PATHS.WIDGETS}/([^/]+)$`);
+const WIDGET_FILE_PATH = createExactApiRoutePattern(
+  API_PATHS.WIDGETS,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+  API_PATH_SEGMENTS.FILE,
+);
+const WIDGET_OPEN_PATH = createExactApiRoutePattern(
+  API_PATHS.WIDGETS,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+  API_PATH_SEGMENTS.OPEN,
+);
+const WIDGET_CLOSE_PATH = createExactApiRoutePattern(
+  API_PATHS.WIDGETS,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+  API_PATH_SEGMENTS.CLOSE,
+);
+const WIDGET_PATH = createExactApiRoutePattern(
+  API_PATHS.WIDGETS,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+);
 
 export class WidgetLifecycleApiRoutes {
   constructor(
@@ -25,22 +45,22 @@ export class WidgetLifecycleApiRoutes {
   async handle(request: Request, url: URL): Promise<Response | null> {
     if (url.pathname === API_PATHS.WIDGETS) return this.handleCollection(request);
     const fileMatch = WIDGET_FILE_PATH.exec(url.pathname);
-    if (fileMatch) return this.saveFile(request, fileMatch[1]);
+    if (fileMatch) return this.saveFile(request, readApiRouteSegment(fileMatch));
     const openMatch = WIDGET_OPEN_PATH.exec(url.pathname);
     if (openMatch) {
       assertMethod(request, HTTP_METHOD.POST);
-      return jsonResponse({ widget: await this.widgets.openWidget(decodeId(openMatch[1])) });
+      return jsonResponse({ widget: await this.widgets.openWidget(readApiRouteSegment(openMatch)) });
     }
     const closeMatch = WIDGET_CLOSE_PATH.exec(url.pathname);
     if (closeMatch) {
       assertMethod(request, HTTP_METHOD.POST);
-      await this.widgets.closeWidget(decodeId(closeMatch[1]));
+      await this.widgets.closeWidget(readApiRouteSegment(closeMatch));
       return emptyResponse();
     }
     const widgetMatch = WIDGET_PATH.exec(url.pathname);
     if (!widgetMatch) return null;
     assertMethod(request, HTTP_METHOD.DELETE);
-    await this.widgets.discardWidget(decodeId(widgetMatch[1]));
+    await this.widgets.discardWidget(readApiRouteSegment(widgetMatch));
     return emptyResponse();
   }
 
@@ -60,12 +80,12 @@ export class WidgetLifecycleApiRoutes {
     throw methodNotAllowed();
   }
 
-  private async saveFile(request: Request, widgetId?: string): Promise<Response> {
+  private async saveFile(request: Request, widgetId: string): Promise<Response> {
     assertMethod(request, HTTP_METHOD.POST);
     const body = await readRecordBody(request);
     if (typeof body.parentId !== "string" || typeof body.name !== "string") throw new AppError(HTTP_ERRORS.INVALID_JSON);
     const desktopPlacement = readDesktopPlacement(body);
-    return jsonResponse(await this.widgetFiles.save(decodeId(widgetId), {
+    return jsonResponse(await this.widgetFiles.save(widgetId, {
       parentId: body.parentId,
       name: body.name,
       ...(desktopPlacement === undefined ? {} : { desktopPlacement }),

@@ -10,6 +10,7 @@ import {
   GUEST_API_PATHS,
 } from "@/constants/platform/api";
 import { HTTP_ERRORS } from "@/constants/platform/errors/http";
+import { API_ROUTE_PATTERN } from "@/constants/platform/http-route";
 import {
   GUEST_BINARY_RESPONSE_HEADERS,
   GUEST_FILE_CONTENT_RESPONSE_HEADERS,
@@ -26,8 +27,12 @@ import {
 import {
   assertMethod,
   readPageParameters,
-  readRouteId,
 } from "@/http/filesystem/filesystem-request";
+import {
+  createExactApiRoutePattern,
+  matchesApiPathNamespace,
+  readApiRouteSegment,
+} from "@/http/shared/api-route";
 import { errorResponse, jsonResponse } from "@/http/shared/responses";
 import type {
   GuestRequestRateLimiter,
@@ -35,12 +40,18 @@ import type {
 } from "@/types/guest/guest-service";
 import type { PublicApiHandler } from "@/types/platform/http";
 
-const DIRECTORY_PATH = new RegExp(`^${GUEST_API_PATHS.DIRECTORIES}/([^/]+)$`);
-const FILE_ACTION_PATH = new RegExp(
-  `^${GUEST_API_PATHS.FILES}/([^/]+)/(${API_PATH_SEGMENTS.DOWNLOAD}|${API_PATH_SEGMENTS.CONTENT}|${API_PATH_SEGMENTS.THUMBNAIL})$`,
+const DIRECTORY_PATH = createExactApiRoutePattern(
+  GUEST_API_PATHS.DIRECTORIES,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
 );
-const PROGRAM_DOCUMENT_PATH = new RegExp(
-  `^${GUEST_API_PATHS.PROGRAM_DOCUMENTS}/([^/]+)$`,
+const FILE_ACTION_PATH = createExactApiRoutePattern(
+  GUEST_API_PATHS.FILES,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+  `(${API_PATH_SEGMENTS.DOWNLOAD}|${API_PATH_SEGMENTS.CONTENT}|${API_PATH_SEGMENTS.THUMBNAIL})`,
+);
+const PROGRAM_DOCUMENT_PATH = createExactApiRoutePattern(
+  GUEST_API_PATHS.PROGRAM_DOCUMENTS,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
 );
 
 export class GuestApiHandler implements PublicApiHandler {
@@ -50,10 +61,7 @@ export class GuestApiHandler implements PublicApiHandler {
   ) {}
 
   matches(url: URL): boolean {
-    return (
-      url.pathname === API_PATHS.GUEST ||
-      url.pathname.startsWith(`${API_PATHS.GUEST}/`)
-    );
+    return matchesApiPathNamespace(url.pathname, API_PATHS.GUEST);
   }
 
   async handle(request: Request, url: URL): Promise<Response | null> {
@@ -79,7 +87,7 @@ export class GuestApiHandler implements PublicApiHandler {
         );
         return jsonResponse(
           await this.guest.listDirectory(
-            readRouteId(directoryMatch),
+            readApiRouteSegment(directoryMatch),
             offset,
             limit,
           ),
@@ -92,7 +100,11 @@ export class GuestApiHandler implements PublicApiHandler {
     const fileMatch = FILE_ACTION_PATH.exec(url.pathname);
     if (fileMatch) {
       return this.binary(request, () =>
-        this.handleFile(request, readRouteId(fileMatch), fileMatch[2] ?? ""),
+        this.handleFile(
+          request,
+          readApiRouteSegment(fileMatch),
+          readApiRouteSegment(fileMatch, 2),
+        ),
       );
     }
 
@@ -101,7 +113,7 @@ export class GuestApiHandler implements PublicApiHandler {
       return this.metadata(request, async () => {
         assertMethod(request, HTTP_METHOD.GET);
         return jsonResponse(
-          await this.guest.getProgramDocument(readRouteId(programMatch)),
+          await this.guest.getProgramDocument(readApiRouteSegment(programMatch)),
           undefined,
           GUEST_METADATA_RESPONSE_HEADERS,
         );

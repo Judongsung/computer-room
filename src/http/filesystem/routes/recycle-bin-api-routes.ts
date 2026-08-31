@@ -4,6 +4,7 @@ import {
   FILESYSTEM_API_PATHS,
 } from "@/constants/platform/api";
 import { HTTP_ERRORS } from "@/constants/platform/errors/http";
+import { API_ROUTE_PATTERN } from "@/constants/platform/http-route";
 import { HTTP_METHOD } from "@/constants/platform/http";
 import type { RecycleBinUseCases } from "@/types/filesystem/services/recycle-bin-service";
 import type { FeatureApiHandler } from "@/types/platform/http";
@@ -16,15 +17,21 @@ import {
   readOptionalString,
   readPageParameters,
   readRequiredJsonObject,
-  readRouteId,
 } from "@/http/filesystem/filesystem-request";
+import {
+  createExactApiRoutePattern,
+  readApiRouteSegment,
+} from "@/http/shared/api-route";
 import { emptyResponse, jsonResponse } from "@/http/shared/responses";
 
-const TRASH_ENTRY_PATH = new RegExp(
-  `^${FILESYSTEM_API_PATHS.TRASH}/([^/]+)$`,
+const TRASH_ENTRY_PATH = createExactApiRoutePattern(
+  FILESYSTEM_API_PATHS.TRASH,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
 );
-const RESTORE_PATH = new RegExp(
-  `^${FILESYSTEM_API_PATHS.TRASH}/([^/]+)/${API_PATH_SEGMENTS.RESTORE}$`,
+const RESTORE_PATH = createExactApiRoutePattern(
+  FILESYSTEM_API_PATHS.TRASH,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
+  API_PATH_SEGMENTS.RESTORE,
 );
 
 export class RecycleBinApiRoutes implements FeatureApiHandler {
@@ -43,14 +50,14 @@ export class RecycleBinApiRoutes implements FeatureApiHandler {
 
     const restoreMatch = RESTORE_PATH.exec(url.pathname);
     if (restoreMatch) {
-      return this.restoreEntry(request, readRouteId(restoreMatch));
+      return this.restoreEntry(request, readApiRouteSegment(restoreMatch));
     }
 
     const trashEntryMatch = TRASH_ENTRY_PATH.exec(url.pathname);
     if (trashEntryMatch) {
       assertMethod(request, HTTP_METHOD.DELETE);
       await this.recycleBin.permanentlyDeleteEntry(
-        readRouteId(trashEntryMatch),
+        readApiRouteSegment(trashEntryMatch),
       );
       return emptyResponse();
     }

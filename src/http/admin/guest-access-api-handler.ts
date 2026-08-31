@@ -4,6 +4,7 @@ import {
   GUEST_ACCESS_API_PATHS,
 } from "@/constants/platform/api";
 import { HTTP_ERRORS } from "@/constants/platform/errors/http";
+import { API_ROUTE_PATTERN } from "@/constants/platform/http-route";
 import {
   HTTP_METHOD,
   PRIVATE_NO_STORE_RESPONSE_HEADERS,
@@ -13,17 +14,22 @@ import {
   assertMethod,
   readPageParameters,
   readRequiredJsonObject,
-  readRouteId,
 } from "@/http/filesystem/filesystem-request";
+import {
+  createExactApiRoutePattern,
+  readApiRouteSegment,
+} from "@/http/shared/api-route";
 import { jsonResponse } from "@/http/shared/responses";
 import type { GuestAccessUseCases } from "@/types/admin/guest-access-service";
 import type { FeatureApiHandler } from "@/types/platform/http";
 
-const GUEST_ACCESS_DIRECTORY_PATH = new RegExp(
-  `^${GUEST_ACCESS_API_PATHS.DIRECTORIES}/([^/]+)$`,
+const GUEST_ACCESS_DIRECTORY_PATH = createExactApiRoutePattern(
+  GUEST_ACCESS_API_PATHS.DIRECTORIES,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
 );
-const GUEST_ACCESS_ENTRY_PATH = new RegExp(
-  `^${GUEST_ACCESS_API_PATHS.ENTRIES}/([^/]+)$`,
+const GUEST_ACCESS_ENTRY_PATH = createExactApiRoutePattern(
+  GUEST_ACCESS_API_PATHS.ENTRIES,
+  API_ROUTE_PATTERN.CAPTURED_SEGMENT,
 );
 
 export class GuestAccessApiHandler implements FeatureApiHandler {
@@ -43,7 +49,7 @@ export class GuestAccessApiHandler implements FeatureApiHandler {
       );
       return this.response(
         await this.guestAccess.listDirectory(
-          readRouteId(directoryMatch),
+          readApiRouteSegment(directoryMatch),
           offset,
           limit,
         ),
@@ -58,7 +64,7 @@ export class GuestAccessApiHandler implements FeatureApiHandler {
       }
       return this.response(
         await this.guestAccess.setEntryPublished(
-          readRouteId(entryMatch),
+          readApiRouteSegment(entryMatch),
           body.published,
         ),
       );
