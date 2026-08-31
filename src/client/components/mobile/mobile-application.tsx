@@ -25,6 +25,7 @@ export function MobileApplication({
   storageStatusApi,
   widgetFileApi,
   mobilePreferencesApi,
+  initialSession,
 }: AppProps) {
   const [dashboard] = useState<DashboardGateway>(() => api ?? new DashboardApiClient());
   const [filesystem] = useState<FilesystemGateway>(() => filesystemApi ?? new FilesystemApiClient());
@@ -33,17 +34,24 @@ export function MobileApplication({
   const [mobilePreferences] = useState<MobilePreferencesGateway>(
     () => mobilePreferencesApi ?? new MobilePreferencesApiClient(),
   );
-  const [session, setSession] = useState<SessionInfo | null>(null);
+  const [session, setSession] = useState<SessionInfo | null>(
+    initialSession ?? null,
+  );
   const [error, setError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
   const load = useCallback(async (): Promise<void> => {
+    if (initialSession) {
+      setSession(initialSession);
+      setError(null);
+      return;
+    }
     try {
       setSession(await dashboard.getSession());
       setError(null);
     } catch (caught) {
       setError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
     }
-  }, [dashboard]);
+  }, [dashboard, initialSession]);
   useEffect(() => void load(), [load, revision]);
 
   if (!session) {

@@ -5,3 +5,7 @@ export interface FeatureApiHandler {
 export interface ServiceApiHandler extends FeatureApiHandler {
   matches(url: URL): boolean;
 }
+
+export interface PublicApiHandler extends FeatureApiHandler {
+  matches(url: URL): boolean;
+}

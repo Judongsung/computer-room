@@ -10,13 +10,18 @@ import type {
   RequestVerifier,
   SessionInfo,
 } from "@/types/platform/auth";
-import type { FeatureApiHandler, ServiceApiHandler } from "@/types/platform/http";
+import type {
+  FeatureApiHandler,
+  PublicApiHandler,
+  ServiceApiHandler,
+} from "@/types/platform/http";
 import { errorResponse, jsonResponse } from "@/http/shared/responses";
 
 export class ApiRouter {
   constructor(
     private readonly ownerHandlers: readonly FeatureApiHandler[],
     private readonly serviceHandlers: readonly ServiceApiHandler[],
+    private readonly publicHandlers: readonly PublicApiHandler[],
     private readonly identities: IdentityVerifier,
     private readonly serviceRequests: RequestVerifier,
   ) {}
@@ -33,6 +38,15 @@ export class ApiRouter {
         if (response !== null) {
           return response;
         }
+        throw new AppError(HTTP_ERRORS.ROUTE_NOT_FOUND);
+      }
+
+      const publicHandler = this.publicHandlers.find((handler) =>
+        handler.matches(url),
+      );
+      if (publicHandler) {
+        const response = await publicHandler.handle(request, url);
+        if (response !== null) return response;
         throw new AppError(HTTP_ERRORS.ROUTE_NOT_FOUND);
       }
 

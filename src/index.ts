@@ -20,6 +20,7 @@ import { WidgetFileService } from "@/application/widgets/widget-file-service";
 import { StorageStatusService } from "@/application/storage/storage-status-service";
 import { MobilePreferencesService } from "@/application/platform/mobile-preferences-service";
 import { GuestAccessService } from "@/application/admin/guest-access-service";
+import { GuestService } from "@/application/guest/guest-service";
 import { ActiveFilesystemEntryResolver } from "@/application/filesystem/policies/active-filesystem-entry-resolver";
 import { FilesystemNameAllocator } from "@/application/filesystem/policies/filesystem-name-allocator";
 import {
@@ -38,6 +39,8 @@ import { WidgetFileApiHandler } from "@/http/widgets/widget-file-api-handler";
 import { StorageStatusApiHandler } from "@/http/storage/storage-status-api-handler";
 import { MobilePreferencesApiHandler } from "@/http/platform/mobile-preferences-api-handler";
 import { GuestAccessApiHandler } from "@/http/admin/guest-access-api-handler";
+import { GuestApiHandler } from "@/http/guest/guest-api-handler";
+import { OwnerLoginApiHandler } from "@/http/platform/owner-login-api-handler";
 import {
   CloudflareAccessIdentityVerifier,
   CloudflareAccessApplicationVerifier,
@@ -61,6 +64,8 @@ import { D1MobilePreferencesRepository } from "@/infrastructure/platform/d1-mobi
 import { D1ImageUploadProfileRepository } from "@/infrastructure/integrations/d1-image-upload-profile-repository";
 import { D1ImageUploadLogRepository } from "@/infrastructure/integrations/d1-image-upload-log-repository";
 import { D1GuestAccessRepository } from "@/infrastructure/admin/d1-guest-access-repository";
+import { D1GuestPublicationRepository } from "@/infrastructure/guest/d1-guest-publication-repository";
+import { CloudflareGuestRequestRateLimiter } from "@/infrastructure/guest/cloudflare-guest-request-rate-limiter";
 import { BACKGROUND_TASK_FAILURE_CODE } from "@/constants/platform/background-task";
 import { CryptoIdGenerator, SystemClock } from "@/infrastructure/platform/runtime";
 import type { IdentityVerifier, RequestVerifier } from "@/types/platform/auth";
@@ -229,8 +234,22 @@ export default {
         clock,
       ),
     );
+    const guestApiHandler = new GuestApiHandler(
+      new GuestService(
+        new D1GuestPublicationRepository(env.DB),
+        new D1DirectorySortRepository(env.DB),
+        fileService,
+        thumbnailService,
+        clock,
+      ),
+      new CloudflareGuestRequestRateLimiter(
+        env.GUEST_METADATA_RATE_LIMITER,
+        env.GUEST_BINARY_RATE_LIMITER,
+      ),
+    );
     const router = new ApiRouter(
       [
+        new OwnerLoginApiHandler(),
         fileApiHandler,
         directoryDetailsApiHandler,
         widgetFileApiHandler,
@@ -242,6 +261,7 @@ export default {
         guestAccessApiHandler,
       ],
       [imageUploadApiHandler],
+      [guestApiHandler],
       createIdentityVerifier(env),
       createServiceRequestVerifier(env),
     );

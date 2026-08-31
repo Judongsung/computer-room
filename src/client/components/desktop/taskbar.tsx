@@ -11,6 +11,7 @@ export function Taskbar({
   windows,
   isStartMenuOpen,
   saveStatus,
+  showSaveStatus = true,
   onToggleStartMenu,
   onActivateWindow,
   onRestoreWindow,
@@ -96,12 +97,14 @@ export function Taskbar({
         })}
       </div>
       <div className="taskbar__tray">
-        <span
-          className={`taskbar__save taskbar__save--${saveStatus}`}
-          role={saveStatus === LAYOUT_SAVE_STATUS.ERROR ? "alert" : "status"}
-        >
-          {LAYOUT_SAVE_COPY_BY_STATUS[saveStatus]}
-        </span>
+        {showSaveStatus ? (
+          <span
+            className={`taskbar__save taskbar__save--${saveStatus}`}
+            role={saveStatus === LAYOUT_SAVE_STATUS.ERROR ? "alert" : "status"}
+          >
+            {LAYOUT_SAVE_COPY_BY_STATUS[saveStatus]}
+          </span>
+        ) : null}
         <time title={clock.dateTime}>{clock.time}</time>
       </div>
     </footer>

@@ -1,0 +1,11 @@
+export const GUEST_RATE_LIMIT_CATEGORY = {
+  METADATA: "metadata",
+  BINARY: "binary",
+} as const;
+
+export const GUEST_RATE_LIMIT = {
+  METADATA_REQUESTS_PER_MINUTE: 300,
+  BINARY_REQUESTS_PER_MINUTE: 120,
+  WINDOW_SECONDS: 60,
+  RETRY_AFTER_SECONDS: 60,
+} as const;

@@ -9,6 +9,7 @@ export interface DesktopIconLayout {
 
 export function desktopIconLayout(
   desktop: DesktopDimensions,
+  fixedShortcutCount: number = DESKTOP_LAYOUT.FIXED_SHORTCUT_COUNT,
 ): DesktopIconLayout {
   const rowStride =
     DESKTOP_LAYOUT.SHORTCUT_ROW_HEIGHT_PX + DESKTOP_LAYOUT.SHORTCUT_GAP_PX;
@@ -35,7 +36,7 @@ export function desktopIconLayout(
     columnCount,
     dynamicCapacity: Math.max(
       0,
-      rowCount * columnCount - DESKTOP_LAYOUT.FIXED_SHORTCUT_COUNT,
+      rowCount * columnCount - fixedShortcutCount,
     ),
   };
 }

@@ -9,6 +9,7 @@
 @import "./desktop/start-menu.css";
 @import "./desktop/taskbar.css";
 @import "./desktop/notifications.css";
+@import "./desktop/guest.css";
 @import "./filesystem/explorer.css";
 @import "./filesystem/explorer-header.css";
 @import "./filesystem/selection.css";

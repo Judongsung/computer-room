@@ -7,6 +7,9 @@ import type { MobilePreferencesGateway } from "@client/types/platform/mobile-pre
 import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
 import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
 import type { GuestAccessGateway } from "@client/types/admin/guest-access";
+import type { GuestGateway } from "@client/types/guest/guest";
+import type { ClientAccessMode } from "@client/types/platform/access";
+import type { SessionInfo } from "@/types/platform/auth";
 
 export type ClientInterfaceMode =
   (typeof CLIENT_INTERFACE_MODE)[keyof typeof CLIENT_INTERFACE_MODE];
@@ -20,5 +23,8 @@ export interface AppProps {
   readonly imageUploadProfileApi?: ImageUploadProfileGateway;
   readonly imageUploadLogApi?: ImageUploadLogGateway;
   readonly guestAccessApi?: GuestAccessGateway;
+  readonly guestApi?: GuestGateway;
+  readonly accessMode?: ClientAccessMode;
+  readonly initialSession?: SessionInfo;
   readonly interfaceMode?: ClientInterfaceMode;
 }

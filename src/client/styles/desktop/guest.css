@@ -1,0 +1,38 @@
+.guest-start-menu__content {
+  min-height: var(--start-menu-content-min-height);
+  margin: 0 2px;
+  padding: 10px 7px;
+  border-top: 1px solid #385de7;
+  color: #00136b;
+  background: #cbe3ff;
+  box-shadow: 0 1px #385de7;
+}
+
+.guest-program-window__body {
+  overflow: auto;
+  padding: 12px;
+  background: #fff;
+}
+
+.guest-program-checklist {
+  display: grid;
+  gap: 8px;
+}
+
+.guest-program-checklist > p,
+.guest-program-checklist > ul {
+  margin: 0;
+}
+
+.guest-program-checklist > ul {
+  display: grid;
+  padding: 0;
+  gap: 6px;
+  list-style: none;
+}
+
+.guest-program-checklist__item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}

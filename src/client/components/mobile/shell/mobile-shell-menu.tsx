@@ -3,6 +3,7 @@ import type { SessionInfo } from "@/types/platform/auth";
 import { MobileMenu } from "@client/components/mobile/shared/mobile-menu";
 import { MOBILE_ACTIVITY_KIND } from "@client/constants/mobile/activity";
 import type { MobileShellController } from "@client/types/app/mobile-shell";
+import { clearOwnerAccessHint } from "@client/domain/platform/access-mode";
 
 interface MobileShellMenuProps {
   readonly session: SessionInfo;
@@ -29,7 +30,9 @@ export function MobileShellMenu({
           <button type="button" onClick={controller.openWallpaper}>
             {MOBILE_COPY.WALLPAPER}
           </button>
-          <a href={session.logoutUrl}>{MOBILE_COPY.LOGOUT}</a>
+          <a href={session.logoutUrl} onClick={clearOwnerAccessHint}>
+            {MOBILE_COPY.LOGOUT}
+          </a>
         </>
       ) : null}
       {activity.kind === MOBILE_ACTIVITY_KIND.TRASH ? (

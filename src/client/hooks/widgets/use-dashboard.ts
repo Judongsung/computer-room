@@ -7,8 +7,12 @@ import { useWidgetLifecycleCommands } from "@client/hooks/widgets/use-widget-lif
 import { useWidgetWindowCommands } from "@client/hooks/widgets/use-widget-window-commands";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { DashboardController } from "@client/types/widgets/dashboard";
+import type { SessionInfo } from "@/types/platform/auth";
 
-export function useDashboard(api: DashboardGateway): DashboardController {
+export function useDashboard(
+  api: DashboardGateway,
+  initialSession?: SessionInfo,
+): DashboardController {
   const {
     state,
     widgetsRef,
@@ -17,7 +21,7 @@ export function useDashboard(api: DashboardGateway): DashboardController {
     showError,
     dismissMessage,
     retryLoad,
-  } = useDashboardState(api);
+  } = useDashboardState(api, initialSession);
   const layoutSave = useDashboardLayoutSave(api, {
     widgetsRef,
     replaceWidgets,

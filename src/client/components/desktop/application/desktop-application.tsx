@@ -45,6 +45,7 @@ function DesktopApplicationContent({
   imageUploadProfileApi,
   imageUploadLogApi,
   guestAccessApi,
+  initialSession,
 }: AppProps) {
   const [gateway] = useState<DashboardGateway>(
     () => api ?? new DashboardApiClient(),
@@ -64,7 +65,7 @@ function DesktopApplicationContent({
   const [guestAccessGateway] = useState<GuestAccessGateway>(
     () => guestAccessApi ?? new GuestAccessApiClient(),
   );
-  const dashboard = useDashboard(gateway);
+  const dashboard = useDashboard(gateway, initialSession);
   const { state } = dashboard;
 
   if (state.loadStatus === LOAD_STATUS.LOADING) {

@@ -10,9 +10,13 @@ import { dashboardReducer, INITIAL_DASHBOARD_STATE } from "@client/state/widgets
 import type { StatusMessage } from "@client/types/widgets/dashboard";
 import type { WidgetLayoutGateway } from "@client/types/widgets/ports/layout";
 import type { SessionGateway } from "@client/types/widgets/ports/session";
+import type { SessionInfo } from "@/types/platform/auth";
 import { messageFromError } from "@client/errors/error-message";
 
-export function useDashboardState(api: SessionGateway & WidgetLayoutGateway) {
+export function useDashboardState(
+  api: SessionGateway & WidgetLayoutGateway,
+  initialSession?: SessionInfo,
+) {
   const [state, dispatch] = useReducer(dashboardReducer, INITIAL_DASHBOARD_STATE);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const widgetsRef = useRef<readonly DashboardWidget[]>(state.widgets);
@@ -24,7 +28,10 @@ export function useDashboardState(api: SessionGateway & WidgetLayoutGateway) {
   useEffect(() => {
     let active = true;
     dispatch({ type: DASHBOARD_ACTION_TYPE.LOAD_STARTED });
-    void Promise.all([api.getSession(), api.listWidgets()])
+    void Promise.all([
+      initialSession ? Promise.resolve(initialSession) : api.getSession(),
+      api.listWidgets(),
+    ])
       .then(([session, widgets]) => {
         if (!active) return;
         widgetsRef.current = cloneDashboardWidgets(widgets);
@@ -40,7 +47,7 @@ export function useDashboardState(api: SessionGateway & WidgetLayoutGateway) {
     return () => {
       active = false;
     };
-  }, [api, loadAttempt]);
+  }, [api, initialSession, loadAttempt]);
 
   const replaceWidgets = useCallback((widgets: readonly DashboardWidget[]): void => {
     widgetsRef.current = widgets;

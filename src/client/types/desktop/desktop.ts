@@ -176,6 +176,7 @@ export interface TaskbarProps {
   readonly windows: readonly TaskbarWindowItem[];
   readonly isStartMenuOpen: boolean;
   readonly saveStatus: LayoutSaveStatus;
+  readonly showSaveStatus?: boolean;
   readonly onToggleStartMenu: () => void;
   readonly onActivateWindow: (widgetId: string) => void;
   readonly onRestoreWindow: (windowId: string) => void;

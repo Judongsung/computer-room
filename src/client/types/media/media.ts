@@ -6,7 +6,8 @@ import type {
   ManagedDesktopWindowState,
   WindowBounds,
 } from "@client/types/desktop/desktop";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
+import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
 import type { MouseEvent } from "react";
 
 export type ImageViewerZoomMode =
@@ -27,7 +28,8 @@ export interface MediaWindowState extends ManagedDesktopWindowState {
 export interface MediaViewerWindowProps {
   readonly window: MediaWindowState;
   readonly desktop: DesktopDimensions;
-  readonly gateway: FilesystemGateway;
+  readonly gateway: Pick<FilesystemDirectoryGateway, "listDirectory"> &
+    Pick<FilesystemContentGateway, "contentUrl" | "downloadUrl">;
   readonly filesystemRevision: number;
   readonly isActive: boolean;
   readonly zIndex: number;

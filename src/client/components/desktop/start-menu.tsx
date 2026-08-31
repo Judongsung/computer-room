@@ -10,6 +10,7 @@ import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import type { StartMenuProps } from "@client/types/desktop/desktop";
 import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
 import { contextMenuCommand } from "@client/domain/context-menu/context-menu";
+import { clearOwnerAccessHint } from "@client/domain/platform/access-mode";
 
 export function StartMenu({
   isOpen,
@@ -128,6 +129,7 @@ export function StartMenu({
           className="start-menu__power"
           href={logoutUrl}
           title={DASHBOARD_COPY.POWER_DESCRIPTION}
+          onClick={clearOwnerAccessHint}
         >
           <img src={DESKTOP_ASSET_PATHS.POWER_ICON} alt="" />
           <strong>{DASHBOARD_COPY.POWER}</strong>

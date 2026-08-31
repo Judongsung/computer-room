@@ -1,5 +1,6 @@
 export const API_PATHS = {
   ADMIN: "/api/admin",
+  GUEST: "/api/guest",
   SESSION: "/api/session",
   FILESYSTEM: "/api/filesystem",
   INTEGRATIONS: "/api/integrations",
@@ -10,6 +11,7 @@ export const API_PATHS = {
 } as const;
 
 export const API_PATH_SEGMENTS = {
+  FILESYSTEM: "filesystem",
   MEMO: "memo",
   CHECKLIST: "checklist",
   ITEMS: "items",
@@ -39,6 +41,8 @@ export const API_PATH_SEGMENTS = {
   IMAGE_PROFILES: "image-profiles",
   IMAGE_UPLOAD_LOGS: "image-upload-logs",
   GUEST_ACCESS: "guest-access",
+  SESSION: "session",
+  PROGRAM_DOCUMENTS: "program-documents",
 } as const;
 
 export const FILESYSTEM_API_PATHS = {
@@ -74,6 +78,13 @@ export const GUEST_ACCESS_API_PATH =
 export const GUEST_ACCESS_API_PATHS = {
   DIRECTORIES: `${GUEST_ACCESS_API_PATH}/${API_PATH_SEGMENTS.DIRECTORIES}`,
   ENTRIES: `${GUEST_ACCESS_API_PATH}/${API_PATH_SEGMENTS.ENTRIES}`,
+} as const;
+
+export const GUEST_API_PATHS = {
+  SESSION: `${API_PATHS.GUEST}/${API_PATH_SEGMENTS.SESSION}`,
+  DIRECTORIES: `${API_PATHS.GUEST}/${API_PATH_SEGMENTS.FILESYSTEM}/${API_PATH_SEGMENTS.DIRECTORIES}`,
+  FILES: `${API_PATHS.GUEST}/${API_PATH_SEGMENTS.FILESYSTEM}/${API_PATH_SEGMENTS.FILES}`,
+  PROGRAM_DOCUMENTS: `${API_PATHS.GUEST}/${API_PATH_SEGMENTS.PROGRAM_DOCUMENTS}`,
 } as const;
 
 export const MOBILE_PREFERENCES_API_PATH =

@@ -36,7 +36,10 @@ export function emptyResponse(
   });
 }
 
-export function errorResponse(error: unknown): Response {
+export function errorResponse(
+  error: unknown,
+  additionalHeaders?: HeadersInit,
+): Response {
   if (!(error instanceof AppError)) {
     console.error(HTTP_LOG_MESSAGES.UNHANDLED_API_ERROR, error);
   }
@@ -49,5 +52,6 @@ export function errorResponse(error: unknown): Response {
       },
     },
     publicError.status,
+    additionalHeaders,
   );
 }

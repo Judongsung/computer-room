@@ -27,4 +27,11 @@ describe("desktopIconLayout", () => {
     });
     expect(large.dynamicCapacity).toBeGreaterThan(small.dynamicCapacity);
   });
+
+  it("reserves only the fixed shortcuts supplied by each desktop mode", () => {
+    const owner = desktopIconLayout({ width: 1_024, height: 606 });
+    const guest = desktopIconLayout({ width: 1_024, height: 606 }, 1);
+
+    expect(guest.dynamicCapacity).toBe(owner.dynamicCapacity + 2);
+  });
 });

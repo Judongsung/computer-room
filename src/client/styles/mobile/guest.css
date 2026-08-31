@@ -1,0 +1,34 @@
+.guest-mobile-program {
+  min-height: 100%;
+  padding: 14px;
+  color: var(--android-text);
+  background: #151815;
+}
+
+.guest-mobile-program .markdown-content {
+  overflow-wrap: anywhere;
+}
+
+.guest-mobile-checklist,
+.guest-mobile-checklist > ul {
+  display: grid;
+  gap: 10px;
+}
+
+.guest-mobile-checklist > p,
+.guest-mobile-checklist > ul {
+  margin: 0;
+}
+
+.guest-mobile-checklist > ul {
+  padding: 0;
+  list-style: none;
+}
+
+.guest-mobile-checklist li {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--android-line);
+}

@@ -12,17 +12,19 @@ import {
 } from "@client/constants/mobile/launcher";
 import { MOBILE_LAYOUT } from "@client/constants/mobile/layout";
 import { useElementSize } from "@client/hooks/shared/use-element-size";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
 
 interface MobileHomeProps {
   readonly entries: readonly FilesystemEntry[];
   readonly error: string | null;
-  readonly gateway: FilesystemGateway;
+  readonly gateway: Pick<FilesystemContentGateway, "thumbnailUrl">;
   readonly onOpenDocuments: () => void;
   readonly onOpenComputer: () => void;
   readonly onOpenTrash: () => void;
   readonly onOpenEntry: (entry: FilesystemEntry) => void;
   readonly wallpaperUrl: string | null;
+  readonly showComputer?: boolean;
+  readonly showTrash?: boolean;
 }
 
 type HomeItem =
@@ -43,6 +45,8 @@ export function MobileHome({
   onOpenTrash,
   onOpenEntry,
   wallpaperUrl,
+  showComputer = true,
+  showTrash = true,
 }: MobileHomeProps) {
   const pagesRef = useRef<HTMLDivElement>(null);
   const size = useElementSize(pagesRef);
@@ -67,21 +71,25 @@ export function MobileHome({
         iconPath: MOBILE_ASSET_PATHS.DOCUMENTS,
         onOpen: onOpenDocuments,
       },
-      {
-        id: MOBILE_SYSTEM_ITEM_ID.COMPUTER,
-        name: MOBILE_COPY.MY_COMPUTER,
-        iconPath: MOBILE_ASSET_PATHS.COMPUTER,
-        onOpen: onOpenComputer,
-      },
-      {
-        id: MOBILE_SYSTEM_ITEM_ID.RECYCLE_BIN,
-        name: MOBILE_COPY.RECYCLE_BIN,
-        iconPath: MOBILE_ASSET_PATHS.RECYCLE_BIN,
-        onOpen: onOpenTrash,
-      },
+      ...(showComputer
+        ? [{
+            id: MOBILE_SYSTEM_ITEM_ID.COMPUTER,
+            name: MOBILE_COPY.MY_COMPUTER,
+            iconPath: MOBILE_ASSET_PATHS.COMPUTER,
+            onOpen: onOpenComputer,
+          }]
+        : []),
+      ...(showTrash
+        ? [{
+            id: MOBILE_SYSTEM_ITEM_ID.RECYCLE_BIN,
+            name: MOBILE_COPY.RECYCLE_BIN,
+            iconPath: MOBILE_ASSET_PATHS.RECYCLE_BIN,
+            onOpen: onOpenTrash,
+          }]
+        : []),
       ...entries.map((entry) => ({ id: entry.id, name: entry.name, entry })),
     ],
-    [entries, onOpenComputer, onOpenDocuments, onOpenTrash],
+    [entries, onOpenComputer, onOpenDocuments, onOpenTrash, showComputer, showTrash],
   );
   const pages = chunk(items, columns * rows);
   const pageStyle = {

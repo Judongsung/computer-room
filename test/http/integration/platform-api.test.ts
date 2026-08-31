@@ -8,7 +8,12 @@ import {
   MOBILE_PREFERENCES_API_PATH,
   NOVELAI_IMAGE_UPLOAD_API_PATH,
 } from "@/constants/platform/api";
-import { ACCESS_LOGOUT_PATH } from "@/constants/platform/auth";
+import {
+  ACCESS_LOGIN_PATH,
+  ACCESS_LOGOUT_PATH,
+  ACCESS_MODE_OWNER_VALUE,
+  ACCESS_MODE_QUERY_PARAMETER,
+} from "@/constants/platform/auth";
 import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
 import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import { MOBILE_PREFERENCES_ERRORS } from "@/constants/platform/errors/mobile-preferences";
@@ -77,6 +82,22 @@ describe("computer-room platform API", () => {
         maxUploadSizeBytes: MAX_FILE_SIZE_BYTES,
       },
     });
+  });
+
+  it("turns a protected login route into a short-lived owner hint", async () => {
+    const response = await SELF.fetch(`${ORIGIN}${ACCESS_LOGIN_PATH}`, {
+      redirect: "manual",
+    });
+
+    expect(response.status).toBe(HTTP_STATUS.FOUND);
+    const location = new URL(
+      response.headers.get(HTTP_HEADERS.LOCATION) ?? "",
+    );
+    expect(location.origin).toBe(ORIGIN);
+    expect(location.pathname).toBe("/");
+    expect(location.searchParams.get(ACCESS_MODE_QUERY_PARAMETER)).toBe(
+      ACCESS_MODE_OWNER_VALUE,
+    );
   });
 
   it("stores one shared mobile wallpaper and clears it with a trashed subtree", async () => {

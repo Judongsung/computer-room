@@ -3,17 +3,11 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "@/constants/filesystem/filesystem";
-import {
-  FILESYSTEM_SORT_DIRECTION,
-  FILESYSTEM_SORT_FIELD,
-} from "@/constants/filesystem/sort";
 import type { FilesystemEntryRow } from "@/types/platform/database";
 import type {
   FilesystemBreadcrumb,
   FilesystemDirectorySort,
   FilesystemEntryRecord,
-  FilesystemSortDirection,
-  FilesystemSortField,
   RootedFilesystemEntryRecord,
 } from "@/types/filesystem/filesystem";
 import type { FilesystemQueryRepository } from "@/types/filesystem/repository";
@@ -22,6 +16,7 @@ import {
   ROOTED_FILESYSTEM_ENTRY_SELECT,
 } from "@/infrastructure/filesystem/d1/filesystem-entry-select";
 import { mapFilesystemEntryRow } from "@/infrastructure/filesystem/d1/filesystem-entry-row-mapper";
+import { directoryOrderClause } from "@/infrastructure/filesystem/d1/d1-directory-order";
 
 interface BreadcrumbRow {
   id: string;
@@ -40,25 +35,6 @@ interface ExistsRow {
 interface RootedFilesystemEntryRow extends FilesystemEntryRow {
   root_id: string;
 }
-
-const SORT_DIRECTION_SQL = {
-  [FILESYSTEM_SORT_DIRECTION.ASCENDING]: "ASC",
-  [FILESYSTEM_SORT_DIRECTION.DESCENDING]: "DESC",
-} as const satisfies Record<FilesystemSortDirection, string>;
-
-const SORT_EXPRESSION_SQL = {
-  [FILESYSTEM_SORT_FIELD.NAME]: "e.name_key",
-  [FILESYSTEM_SORT_FIELD.CREATED_AT]: "e.created_at",
-  [FILESYSTEM_SORT_FIELD.UPDATED_AT]: "e.updated_at",
-  [FILESYSTEM_SORT_FIELD.TYPE]:
-    `CASE WHEN e.kind = '${FILESYSTEM_ENTRY_KIND.WIDGET}' ` +
-    "THEN 'widget:' || COALESCE(w.type, '') " +
-    "ELSE LOWER(TRIM(CASE " +
-    "WHEN INSTR(f.content_type, ';') > 0 " +
-    "THEN SUBSTR(f.content_type, 1, INSTR(f.content_type, ';') - 1) " +
-    "ELSE COALESCE(f.content_type, '') END)) END",
-  [FILESYSTEM_SORT_FIELD.SIZE]: "f.size",
-} as const satisfies Record<FilesystemSortField, string>;
 
 export class D1FilesystemQueryRepository
   implements FilesystemQueryRepository
@@ -285,16 +261,4 @@ export class D1FilesystemQueryRepository
       .first<ExistsRow>();
     return row?.found === 1;
   }
-}
-
-function directoryOrderClause(sort: FilesystemDirectorySort): string {
-  const direction = SORT_DIRECTION_SQL[sort.direction];
-  const expression = SORT_EXPRESSION_SQL[sort.field];
-  const sizePresenceOrder =
-    sort.field === FILESYSTEM_SORT_FIELD.SIZE
-      ? `CASE WHEN e.kind = '${FILESYSTEM_ENTRY_KIND.FILE}' THEN 0 ELSE 1 END ASC,`
-      : "";
-  return `CASE e.kind WHEN '${FILESYSTEM_ENTRY_KIND.DIRECTORY}' THEN 0 ELSE 1 END ASC,
-          ${sizePresenceOrder}
-          ${expression} ${direction}, e.name_key ASC, e.id ASC`;
 }

@@ -4,10 +4,10 @@ import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import { DESKTOP_ENTRY_UNORDERED_INDEX } from "@client/constants/filesystem/filesystem";
 import { messageFromError } from "@client/errors/error-message";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 
 export function useDesktopEntries(
-  gateway: FilesystemGateway,
+  gateway: Pick<FilesystemDirectoryGateway, "listDirectory">,
   revision: number,
 ) {
   const [entries, setEntries] = useState<readonly FilesystemEntry[]>([]);
@@ -34,7 +34,7 @@ export function useDesktopEntries(
 }
 
 async function listAllDesktopEntries(
-  gateway: FilesystemGateway,
+  gateway: Pick<FilesystemDirectoryGateway, "listDirectory">,
 ): Promise<FilesystemEntry[]> {
   const items: FilesystemEntry[] = [];
   let offset = 0;

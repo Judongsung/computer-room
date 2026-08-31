@@ -19,15 +19,16 @@ import {
 import { jsonResponse } from "@/http/shared/responses";
 
 export async function fileDownloadResponse(
-  files: FileTransferUseCases,
+  files: Pick<FileTransferUseCases, "downloadFile">,
   request: Request,
   id: string,
+  responseHeaders: HeadersInit = FILE_DOWNLOAD_RESPONSE_HEADERS,
 ): Promise<Response> {
   assertMethod(request, HTTP_METHOD.GET);
   const { entry, object } = await files.downloadFile(id);
   return new Response(object.body, {
     headers: {
-      ...FILE_DOWNLOAD_RESPONSE_HEADERS,
+      ...responseHeaders,
       [HTTP_HEADERS.CONTENT_DISPOSITION]: contentDisposition(entry.name, CONTENT_DISPOSITION_MODE.ATTACHMENT),
       [HTTP_HEADERS.CONTENT_LENGTH]: String(object.size),
       [HTTP_HEADERS.CONTENT_TYPE]: object.contentType,
@@ -37,9 +38,10 @@ export async function fileDownloadResponse(
 }
 
 export async function fileContentResponse(
-  files: FileTransferUseCases,
+  files: Pick<FileTransferUseCases, "streamFile">,
   request: Request,
   id: string,
+  responseHeaders: HeadersInit = FILE_CONTENT_RESPONSE_HEADERS,
 ): Promise<Response> {
   assertMethod(request, HTTP_METHOD.GET);
   try {
@@ -47,7 +49,7 @@ export async function fileContentResponse(
       id,
       parseRangeHeader(request.headers.get(HTTP_HEADERS.RANGE)),
     );
-    const headers = new Headers(FILE_CONTENT_RESPONSE_HEADERS);
+    const headers = new Headers(responseHeaders);
     headers.set(HTTP_HEADERS.CONTENT_DISPOSITION, contentDisposition(entry.name, CONTENT_DISPOSITION_MODE.INLINE));
     headers.set(HTTP_HEADERS.CONTENT_LENGTH, String(range?.length ?? object.size));
     headers.set(HTTP_HEADERS.CONTENT_TYPE, object.contentType);
@@ -62,7 +64,7 @@ export async function fileContentResponse(
       return jsonResponse(
         { error: { code: error.code, message: error.message } },
         error.status,
-        { ...FILE_CONTENT_RESPONSE_HEADERS, [HTTP_HEADERS.CONTENT_RANGE]: `${HTTP_RANGE_UNIT} */${error.totalSize}` },
+        { ...responseHeaders, [HTTP_HEADERS.CONTENT_RANGE]: `${HTTP_RANGE_UNIT} */${error.totalSize}` },
       );
     }
     throw error;
@@ -73,10 +75,11 @@ export async function thumbnailResponse(
   thumbnails: ThumbnailUseCases,
   request: Request,
   id: string,
+  responseHeaders: HeadersInit = THUMBNAIL_RESPONSE_HEADERS,
 ): Promise<Response> {
   assertMethod(request, HTTP_METHOD.GET);
   const object = await thumbnails.getThumbnail(id);
-  const headers = new Headers(THUMBNAIL_RESPONSE_HEADERS);
+  const headers = new Headers(responseHeaders);
   headers.set(HTTP_HEADERS.CONTENT_LENGTH, String(object.size));
   headers.set(HTTP_HEADERS.CONTENT_TYPE, object.contentType);
   headers.set(HTTP_HEADERS.ETAG, object.httpEtag);

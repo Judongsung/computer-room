@@ -1,6 +1,6 @@
 # computer-room
 
-Cloudflare Access로 보호되는 1인용 가상 컴퓨터 홈입니다.
+소유자 공간은 Cloudflare Access로 보호하고, 선택한 항목만 게스트에게 공개할 수 있는 개인용 가상 컴퓨터 홈입니다.
 
 - 데스크톱: Windows XP Luna 스타일
 - 모바일: 초기 Android 스타일
@@ -31,6 +31,7 @@ Cloudflare Access로 보호되는 1인용 가상 컴퓨터 홈입니다.
 - 자유롭게 이동하고 크기를 조절할 수 있는 XP 스타일 창
 - 창 포커스, 최소화, 최대화, 복원과 작업 표시줄 전환
 - 시작 메뉴와 Cloudflare Access 로그아웃
+- 게스트용 공개 바탕 화면과 로그인 시작 메뉴
 - 바탕 화면, 탐색기, 휴지통, 창, 작업 표시줄을 지원하는 XP형 우클릭 메뉴
 - 창 위치·크기·상태·쌓임 순서의 D1 저장과 250ms 병합 자동 저장
 
@@ -43,6 +44,7 @@ Cloudflare Access로 보호되는 1인용 가상 컴퓨터 홈입니다.
 - 바탕 화면·내 문서의 기존 이미지를 사용하는 계정 공용 홈 배경화면
 - 모바일 로컬 메모·체크리스트 초안 작성
 - 로컬 초안을 D1 프로그램 문서로 저장하고 다시 열기
+- 게스트 공개 파일·폴더·프로그램 문서의 읽기 전용 탐색
 
 모바일에서는 데스크톱에서 열어 둔 프로그램 창을 자동으로 열지 않습니다. 새 프로그램은 한 번에 하나의 로컬 초안으로 보관되며 로그아웃 후에도 유지됩니다. `파일로 저장`을 실행해야 D1에 프로그램 문서가 생성됩니다.
 
@@ -100,7 +102,7 @@ Cloudflare Access로 보호되는 1인용 가상 컴퓨터 홈입니다.
 | --- | --- |
 | D1 | 폴더 계층, 파일 메타데이터, 프로그램 내용·배치, 체크리스트 로그, 모바일 배경화면, 이미지 API 프로필·수신 기록과 게스트 공개 설정 |
 | R2 | 일반 파일 원본과 생성된 썸네일 바이트 |
-| 브라우저 `localStorage` | 모바일에서 작성 중인 프로그램 초안 하나 |
+| 브라우저 `localStorage` | 모바일에서 작성 중인 프로그램 초안 하나, 소유자 모드 재접속 힌트 |
 
 파일이나 폴더의 이름을 바꾸거나 이동해도 R2 객체 키는 변경하지 않습니다. 프로그램 문서는 D1에만 저장되고 일반 파일 바이트만 R2에 저장됩니다. 기존 데이터·API 호환성을 위해 내부 저장소의 `widget` 명칭은 유지합니다. R2의 공개 `r2.dev` 접근은 사용하지 않습니다.
 
@@ -112,7 +114,9 @@ Cloudflare Access로 보호되는 1인용 가상 컴퓨터 홈입니다.
 
 데스크톱의 `관리자` 프로그램에서 게스트 접속 마스터 설정과 바탕 화면·내 문서 항목의 공개 여부를 관리합니다. 폴더를 공개하면 그 시점에 존재하는 하위 항목만 함께 공개되며, 나중에 추가되거나 이동해 들어온 항목은 비공개입니다. 공개한 항목을 휴지통으로 보내면 하위 공개 기록도 제거되고 복원 후에도 자동으로 다시 공개되지 않습니다.
 
-현재 단계는 소유자용 설정과 관리 API만 제공합니다. 비로그인 게스트 화면과 공개 읽기 API는 아직 연결하지 않았으므로 마스터 설정을 켜도 외부 접근 경로가 생기지 않습니다.
+게스트는 같은 배포 주소의 XP 데스크톱 또는 Android 모바일 화면을 사용합니다. 바탕 화면의 공개 항목과 고정된 `내 문서`만 표시하며 내 컴퓨터, 휴지통, 관리자와 파일이 없는 내장 프로그램은 노출하지 않습니다. 파일은 보기·단일 다운로드, 폴더는 탐색, 메모와 일일 체크리스트 프로그램 문서는 읽기만 할 수 있습니다. 체크리스트 로그와 창 배치는 공개하지 않습니다.
+
+비공개 상위 폴더 아래의 항목을 공개하면 상위 폴더는 경로 탐색용 컨테이너로만 보입니다. 파일과 프로그램 문서는 `guest_publications`에 정확히 등록된 항목만 열 수 있으며, 폴더를 공개한 뒤 새로 추가한 하위 항목은 자동 공개되지 않습니다. 마스터 설정이 꺼져 있으면 게스트 세션 조회만 `{ enabled: false }`를 반환하고 나머지 공개 리소스는 모두 동일한 `404`로 응답합니다.
 
 | 메서드 | 경로 | 동작 |
 | --- | --- | --- |
@@ -120,6 +124,42 @@ Cloudflare Access로 보호되는 1인용 가상 컴퓨터 홈입니다.
 | `PATCH` | `/api/admin/guest-access` | 마스터 설정 변경 |
 | `GET` | `/api/admin/guest-access/directories/:id` | 폴더와 항목별 공개 상태 조회 |
 | `PUT` | `/api/admin/guest-access/entries/:id` | 파일·폴더·프로그램 문서 공개 상태 변경 |
+
+게스트 읽기 API는 다음과 같습니다.
+
+| 메서드 | 경로 | 동작 |
+| --- | --- | --- |
+| `GET` | `/api/guest/session` | 게스트 허용 상태와 소유자 로그인 경로 조회 |
+| `GET` | `/api/guest/filesystem/directories/:id` | 공개 항목만 필터링한 폴더 조회 |
+| `GET` | `/api/guest/files/:id/content` | 공개 파일 보기·Range 스트리밍 |
+| `GET` | `/api/guest/files/:id/download` | 공개 파일 다운로드 |
+| `GET` | `/api/guest/files/:id/thumbnail` | 공개 이미지 썸네일 조회 |
+| `GET` | `/api/guest/program-documents/:id` | 공개 메모·현재 일일 체크리스트 조회 |
+
+게스트 응답은 `private, no-store`와 same-origin 리소스 정책을 사용하며 CORS를 열지 않습니다. 메타데이터 API는 IP당 분당 300회, 파일·썸네일 API는 IP당 분당 120회로 제한합니다. 초과 시 `429`와 `Retry-After: 60`, Rate Limiting 바인딩 오류 시 `503`을 반환합니다.
+
+### Cloudflare Access 경로 구성
+
+한 Worker와 같은 도메인을 유지하려면 Access 애플리케이션을 경로별로 분리합니다. 더 구체적인 경로가 우선 적용되므로 다음 구성을 사용합니다.
+
+| 경로 | 정책 |
+| --- | --- |
+| `/*` | `Bypass` — 정적 앱 셸과 게스트 진입 허용 |
+| `/api/*` | 소유자 이메일만 허용 |
+| `/api/guest/*` | `Bypass` — Worker의 공개 정책과 요청 제한이 보호 |
+| `/auth/login` | 소유자 이메일만 허용 |
+| `/api/integrations/*/images` | 기존 `Service Auth` 정책 |
+
+`Bypass`는 Access의 인증과 접근 로그를 적용하지 않으므로 반드시 위 범위로만 제한합니다. Worker는 게스트 API에서 D1의 마스터 설정·항목 공개 여부를 매 요청 검증합니다. `/auth/login`은 Access 인증 성공 후 `/?access=owner`로 돌려보내며, 브라우저는 소유자 모드 힌트가 있을 때만 보호된 `/api/session`을 조회합니다. 로그아웃하면 이 힌트를 제거해 다음 접속은 다시 게스트 모드로 시작합니다. 자세한 우선순위는 [Cloudflare Access application paths](https://developers.cloudflare.com/cloudflare-one/access-controls/policies/app-paths/)를 참고하세요.
+
+`wrangler.jsonc`에는 다음 Rate Limiting 바인딩이 선언되어 있습니다.
+
+| 바인딩 | namespace | 제한 |
+| --- | --- | --- |
+| `GUEST_METADATA_RATE_LIMITER` | `31001` | 300회 / 60초 |
+| `GUEST_BINARY_RATE_LIMITER` | `31002` | 120회 / 60초 |
+
+namespace ID는 같은 계정에서 다른 Rate Limiting 바인딩과 겹치지 않게 유지합니다. 설정 형식은 [Workers Rate Limiting binding](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)을 참고하세요.
 
 ## 미디어 뷰어 지원 형식
 
@@ -269,7 +309,7 @@ git diff --check
 
 1. `wrangler login`으로 Cloudflare 계정에 로그인합니다.
 2. `wrangler.jsonc`의 D1·R2·Images 바인딩을 확인합니다.
-3. 배포 주소 전체를 Cloudflare Access로 보호하고 본인 계정만 허용합니다.
+3. 위의 `Cloudflare Access 경로 구성`대로 공개 셸·게스트 API와 소유자 API 정책을 분리합니다.
 4. Worker 환경 변수와 비밀 값을 설정합니다.
 5. `npm run deploy`를 실행합니다.
 
