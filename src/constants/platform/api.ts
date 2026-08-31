@@ -1,4 +1,5 @@
 export const API_PATHS = {
+  ADMIN: "/api/admin",
   SESSION: "/api/session",
   FILESYSTEM: "/api/filesystem",
   INTEGRATIONS: "/api/integrations",
@@ -37,6 +38,7 @@ export const API_PATH_SEGMENTS = {
   MOBILE: "mobile",
   IMAGE_PROFILES: "image-profiles",
   IMAGE_UPLOAD_LOGS: "image-upload-logs",
+  GUEST_ACCESS: "guest-access",
 } as const;
 
 export const FILESYSTEM_API_PATHS = {
@@ -65,6 +67,14 @@ export const IMAGE_UPLOAD_PROFILES_API_PATH =
 
 export const IMAGE_UPLOAD_LOGS_API_PATH =
   `${API_PATHS.INTEGRATIONS}/${API_PATH_SEGMENTS.IMAGE_UPLOAD_LOGS}`;
+
+export const GUEST_ACCESS_API_PATH =
+  `${API_PATHS.ADMIN}/${API_PATH_SEGMENTS.GUEST_ACCESS}`;
+
+export const GUEST_ACCESS_API_PATHS = {
+  DIRECTORIES: `${GUEST_ACCESS_API_PATH}/${API_PATH_SEGMENTS.DIRECTORIES}`,
+  ENTRIES: `${GUEST_ACCESS_API_PATH}/${API_PATH_SEGMENTS.ENTRIES}`,
+} as const;
 
 export const MOBILE_PREFERENCES_API_PATH =
   `${API_PATHS.PREFERENCES}/${API_PATH_SEGMENTS.MOBILE}`;

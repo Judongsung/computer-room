@@ -18,7 +18,7 @@ export async function openStartMenu(
   );
 }
 
-export async function addWidget(
+export async function launchApplication(
   user: ReturnType<typeof userEvent.setup>,
   label: string,
 ): Promise<void> {

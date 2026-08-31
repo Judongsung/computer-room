@@ -6,6 +6,7 @@ import type { DashboardGateway } from "@client/types/widgets/api";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
 import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
 import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
+import type { GuestAccessGateway } from "@client/types/admin/guest-access";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/desktop";
 import type { MediaViewerOpenRequest } from "@client/types/media/media";
@@ -53,6 +54,7 @@ interface DesktopWindowLayerProps {
   readonly storageStatusGateway: StorageStatusGateway;
   readonly imageUploadProfileGateway: ImageUploadProfileGateway;
   readonly imageUploadLogGateway: ImageUploadLogGateway;
+  readonly guestAccessGateway: GuestAccessGateway;
   readonly explorer: ReturnType<typeof useExplorerWindows>;
   readonly system: ReturnType<typeof useSystemWindows>;
   readonly media: ReturnType<typeof useMediaWindows>;
@@ -78,7 +80,7 @@ interface DesktopWindowLayerProps {
   readonly onCommitWidgetBounds: (id: string, bounds: WindowBounds) => void;
   readonly onWidgetChange: (widget: DashboardWidget) => void;
   readonly onSaveWidgetFile: (id: string) => void;
-  readonly onAddWidget: (type: WidgetType) => void;
+  readonly onLaunchApplication: (type: WidgetType) => void;
 }
 
 export function DesktopWindowLayer({
@@ -91,6 +93,7 @@ export function DesktopWindowLayer({
   storageStatusGateway,
   imageUploadProfileGateway,
   imageUploadLogGateway,
+  guestAccessGateway,
   explorer,
   system,
   media,
@@ -112,7 +115,7 @@ export function DesktopWindowLayer({
   onCommitWidgetBounds,
   onWidgetChange,
   onSaveWidgetFile,
-  onAddWidget,
+  onLaunchApplication,
 }: DesktopWindowLayerProps) {
   const systemChrome = (id: typeof SYSTEM_APP_ID.MY_COMPUTER | typeof SYSTEM_APP_ID.RECYCLE_BIN) => ({
     window: system.windows[id],
@@ -148,6 +151,7 @@ export function DesktopWindowLayer({
           storageStatusGateway={storageStatusGateway}
           imageUploadProfileGateway={imageUploadProfileGateway}
           imageUploadLogGateway={imageUploadLogGateway}
+          guestAccessGateway={guestAccessGateway}
           onOpenFilesystemEntry={onOpenFilesystemEntry}
           onFocus={() => onFocusWindow(widget.id, () => onFocusWidget(widget.id))}
           onMinimize={() => {
@@ -204,7 +208,10 @@ export function DesktopWindowLayer({
       ))}
       {system.windows[SYSTEM_APP_ID.MY_COMPUTER].isOpen ? (
         <LazyFeatureBoundary title={SYSTEM_APP_TITLE_BY_ID[SYSTEM_APP_ID.MY_COMPUTER]}>
-          <MyComputerWindow {...systemChrome(SYSTEM_APP_ID.MY_COMPUTER)} onAddWidget={onAddWidget} />
+          <MyComputerWindow
+            {...systemChrome(SYSTEM_APP_ID.MY_COMPUTER)}
+            onLaunchApplication={onLaunchApplication}
+          />
         </LazyFeatureBoundary>
       ) : null}
       {system.windows[SYSTEM_APP_ID.RECYCLE_BIN].isOpen ? (

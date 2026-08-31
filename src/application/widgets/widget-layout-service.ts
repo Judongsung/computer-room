@@ -277,6 +277,14 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
         file: null,
         data: null,
       }),
+      [WIDGET_TYPE.ADMIN]: (
+        layout: StoredWidgetLayout,
+      ): DashboardWidget => ({
+        ...toPublicLayout(layout),
+        type: WIDGET_TYPE.ADMIN,
+        file: null,
+        data: null,
+      }),
     } satisfies Record<
       WidgetType,
       (layout: StoredWidgetLayout) => DashboardWidget

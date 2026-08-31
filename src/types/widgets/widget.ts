@@ -100,11 +100,18 @@ export type ImageUploadProfilesWidget = WidgetLayout & {
   readonly data: null;
 };
 
+export type AdminWidget = WidgetLayout & {
+  readonly type: typeof WIDGET_TYPE.ADMIN;
+  readonly file: null;
+  readonly data: null;
+};
+
 export type DashboardWidget =
   | MemoWidget
   | DailyChecklistWidget
   | StorageStatusWidget
-  | ImageUploadProfilesWidget;
+  | ImageUploadProfilesWidget
+  | AdminWidget;
 
 export type WidgetByType<T extends WidgetType> = Extract<
   DashboardWidget,

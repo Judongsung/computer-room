@@ -20,7 +20,7 @@ export const CHECKLIST_ERRORS = {
   TOO_MANY_ITEMS: {
     status: HTTP_STATUS.BAD_REQUEST,
     code: "TOO_MANY_CHECKLIST_ITEMS",
-    message: `체크 항목은 위젯당 최대 ${MAX_ACTIVE_CHECKLIST_ITEMS}개까지 추가할 수 있습니다.`,
+    message: `체크 항목은 프로그램당 최대 ${MAX_ACTIVE_CHECKLIST_ITEMS}개까지 추가할 수 있습니다.`,
   },
   ITEM_NOT_FOUND: {
     status: HTTP_STATUS.NOT_FOUND,

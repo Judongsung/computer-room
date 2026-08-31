@@ -2,6 +2,7 @@
 @import "./shared/window.css";
 @import "./shared/context-menu.css";
 @import "./shared/lazy-feature.css";
+@import "./shared/xp-checkbox.css";
 @import "./shared/xp-tabs.css";
 @import "./desktop/background.css";
 @import "./desktop/shortcuts.css";
@@ -15,10 +16,11 @@
 @import "./filesystem/folder-properties.css";
 @import "./filesystem/transfer.css";
 @import "./filesystem/recycle-bin.css";
-@import "./filesystem/widget-catalog.css";
+@import "./filesystem/application-catalog.css";
 @import "./widgets/frame.css";
 @import "./widgets/memo.css";
 @import "./widgets/checklist.css";
 @import "./widgets/storage-status.css";
 @import "./widgets/image-upload-profiles.css";
+@import "./widgets/admin.css";
 @import "./media/viewers.css";

@@ -57,6 +57,7 @@ Treat API contracts, database schemas, storage conventions, and shared constants
 * Do not rely on `PRAGMA foreign_keys=OFF` to preserve D1 child rows during a referenced-table rebuild.
 * Explicitly preserve dependent rows and add migration regression coverage before rebuilding a referenced table.
 * Avoid breaking existing contracts unless the requested change requires it.
+* Use `프로그램` in user-facing Korean copy and `Application` for new UI/catalog concepts; preserve existing `widget` database, API, filesystem-kind, and legacy symbol names as compatibility contracts.
 
 ## Constants
 

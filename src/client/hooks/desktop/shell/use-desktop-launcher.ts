@@ -55,7 +55,7 @@ export function useDesktopLauncher({
     [focusWindow],
   );
 
-  const addWidget = useCallback(
+  const launchApplication = useCallback(
     (type: WidgetType): void => {
       closeStartMenu();
       void focusOpenedWidget(onAddWidget(type, desktop));
@@ -126,7 +126,7 @@ export function useDesktopLauncher({
   );
 
   return {
-    addWidget,
+    launchApplication,
     openSystemApp,
     openDocumentsDirectory,
     openSystemShortcut,

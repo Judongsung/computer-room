@@ -15,6 +15,7 @@ import {
   IMAGE_UPLOAD_PROFILE_FIELD_ID,
 } from "@client/constants/integrations/image-upload-profile";
 import { XP_TABS_CLASS_NAME } from "@client/constants/shared/xp-tabs";
+import { XpCheckbox } from "@client/components/shared/xp-checkbox";
 import {
   imageUploadProfilePreview,
   imageUploadProfileUrl,
@@ -151,36 +152,29 @@ export function ImageUploadProfileEditor({
           <legend>{IMAGE_UPLOAD_PROFILE_COPY.CONTENT_TYPES}</legend>
           <div className={IMAGE_UPLOAD_PROFILE_CLASS_NAME.MIME_LIST}>
             {IMAGE_UPLOAD_CONTENT_TYPE_VALUES.map((contentType) => (
-              <label key={contentType}>
-                <input
-                  type="checkbox"
-                  checked={draft.contentTypes.includes(contentType)}
-                  onChange={() =>
-                    onChange({
-                      contentTypes: toggleContentType(
-                        draft.contentTypes,
-                        contentType,
-                      ),
-                    })
-                  }
-                />
-                {IMAGE_UPLOAD_CONTENT_TYPE_LABEL[contentType]}
-              </label>
+              <XpCheckbox
+                key={contentType}
+                checked={draft.contentTypes.includes(contentType)}
+                label={IMAGE_UPLOAD_CONTENT_TYPE_LABEL[contentType]}
+                onCheckedChange={() =>
+                  onChange({
+                    contentTypes: toggleContentType(
+                      draft.contentTypes,
+                      contentType,
+                    ),
+                  })
+                }
+              />
             ))}
           </div>
         </fieldset>
-        <label
+        <XpCheckbox
+          id={IMAGE_UPLOAD_PROFILE_FIELD_ID.ENABLED}
           className={IMAGE_UPLOAD_PROFILE_CLASS_NAME.ENABLED}
-          htmlFor={IMAGE_UPLOAD_PROFILE_FIELD_ID.ENABLED}
-        >
-          <input
-            id={IMAGE_UPLOAD_PROFILE_FIELD_ID.ENABLED}
-            type="checkbox"
-            checked={draft.enabled}
-            onChange={(event) => onChange({ enabled: event.target.checked })}
-          />
-          {IMAGE_UPLOAD_PROFILE_COPY.ENABLED}
-        </label>
+          checked={draft.enabled}
+          label={IMAGE_UPLOAD_PROFILE_COPY.ENABLED}
+          onCheckedChange={(checked) => onChange({ enabled: checked })}
+        />
         <fieldset
           className={`${IMAGE_UPLOAD_PROFILE_CLASS_NAME.GROUP} ${IMAGE_UPLOAD_PROFILE_CLASS_NAME.PREVIEW}`}
         >

@@ -59,7 +59,7 @@ const TOOLBAR_ICON_BY_ACTION = {
       <path d="m17 2 .5 1.5L19 4l-1.5.5L17 6l-.5-1.5L15 4l1.5-.5z" fill="#ffca28" />
     </svg>
   ),
-  [XP_EXPLORER_TOOLBAR_ACTION.RUN_WIDGET]: (
+  [XP_EXPLORER_TOOLBAR_ACTION.RUN_APPLICATION]: (
     <svg {...COMMON_SVG_PROPS}>
       <circle cx="12" cy="12" r="10" fill="#2d9a25" stroke="#17620f" />
       <path d="m9 7 8 5-8 5z" fill="#fff" />

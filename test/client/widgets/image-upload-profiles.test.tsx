@@ -1,4 +1,7 @@
-import { IMAGE_UPLOAD_PROFILE_COPY } from "@client/content/ko/integrations/image-upload-profile";
+import {
+  IMAGE_UPLOAD_CONTENT_TYPE_LABEL,
+  IMAGE_UPLOAD_PROFILE_COPY,
+} from "@client/content/ko/integrations/image-upload-profile";
 import { IMAGE_UPLOAD_LOG_COPY } from "@client/content/ko/integrations/image-upload-log";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -62,6 +65,21 @@ describe("image upload profiles widget", () => {
     expect(
       screen.getByRole("group", { name: IMAGE_UPLOAD_PROFILE_COPY.PREVIEW }),
     ).toBeInTheDocument();
+    const jpegCheckbox = screen.getByRole("checkbox", {
+      name: IMAGE_UPLOAD_CONTENT_TYPE_LABEL["image/jpeg"],
+    });
+    const enabledCheckbox = screen.getByRole("checkbox", {
+      name: IMAGE_UPLOAD_PROFILE_COPY.ENABLED,
+    });
+    expect(jpegCheckbox.nextElementSibling).toHaveAttribute(
+      "for",
+      jpegCheckbox.id,
+    );
+    expect(enabledCheckbox.nextElementSibling).toHaveAttribute(
+      "for",
+      enabledCheckbox.id,
+    );
+    await user.click(jpegCheckbox);
     expect(screen.getByText(/바탕 화면\\NovelAI\\2026-08-28/)).toBeInTheDocument();
     const nameInput = screen.getByLabelText(IMAGE_UPLOAD_PROFILE_COPY.DISPLAY_NAME);
     await user.clear(nameInput);
@@ -71,7 +89,10 @@ describe("image upload profiles widget", () => {
     await waitFor(() => expect(gateway.updateProfile).toHaveBeenCalledOnce());
     expect(gateway.updateProfile).toHaveBeenCalledWith(
       "novelai",
-      expect.objectContaining({ displayName: "NovelAI 자동 저장" }),
+      expect.objectContaining({
+        displayName: "NovelAI 자동 저장",
+        contentTypes: expect.not.arrayContaining(["image/jpeg"]),
+      }),
     );
 
     await user.click(
@@ -206,6 +227,7 @@ function renderWidget(
       storageStatusGateway={{} as never}
       imageUploadProfileGateway={gateway}
       imageUploadLogGateway={logGateway}
+      guestAccessGateway={{} as never}
       onOpenFilesystemEntry={onOpenFilesystemEntry}
       onWidgetChange={vi.fn()}
     />,

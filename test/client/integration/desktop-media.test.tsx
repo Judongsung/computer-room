@@ -73,7 +73,6 @@ import { SESSION } from "@test/support/desktop/app-test-session";
 import { FakeDashboardGateway } from "@test/support/widgets/fake-dashboard-gateway";
 import { FakeFilesystemGateway } from "@test/support/filesystem/fake-filesystem-gateway";
 import {
-  addWidget,
   checklistWidget,
   desktopWindowByTitle,
   desktopWindowTitles,

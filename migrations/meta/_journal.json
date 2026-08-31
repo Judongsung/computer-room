@@ -92,6 +92,13 @@
       "when": 1788084690998,
       "tag": "0012_image_upload_logs",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1788154234650,
+      "tag": "0013_guest_access_admin",
+      "breakpoints": true
     }
   ]
 }

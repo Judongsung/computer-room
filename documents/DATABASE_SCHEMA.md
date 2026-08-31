@@ -1,13 +1,16 @@
 # D1 데이터베이스 명세
 
-기준 커밋: `7aed3d670c0083aece9a931d757c6f3d3fc20e60`
+기준 커밋: `6ab40baa896f3cbe3abc575e3230371a13a0d80b`
+
+이 기준 커밋 이후 현재 작업 트리의 `0013_guest_access_admin` 마이그레이션을
+포함한다. 해당 변경을 커밋할 때 기준 커밋을 새 커밋으로 갱신해야 한다.
 
 이 문서는 `migrations/0000_superb_hitman.sql`부터
-`migrations/0012_image_upload_logs.sql`까지 모든 마이그레이션을 적용한
+`migrations/0013_guest_access_admin.sql`까지 모든 마이그레이션을 적용한
 최종 애플리케이션 스키마를 설명한다.
 
 Wrangler가 관리하는 마이그레이션 이력 등의 내부 테이블은 제외한다.
-애플리케이션이 직접 관리하는 테이블은 총 13개다.
+애플리케이션이 직접 관리하는 테이블은 총 15개다.
 
 ## 공통 규칙
 
@@ -26,15 +29,17 @@ Wrangler가 관리하는 마이그레이션 이력 등의 내부 테이블은 �
 | 영역 | 테이블 | 책임 |
 |---|---|---|
 | 파일 저장 | `files` | 비공개 R2 객체의 메타데이터를 저장한다. |
-| 파일 시스템 | `filesystem_entries` | 폴더·일반 파일·위젯 파일 계층을 저장한다. |
+| 파일 시스템 | `filesystem_entries` | 폴더·일반 파일·프로그램 문서 계층을 저장한다. |
 | 파일 시스템 | `desktop_entry_order` | 동적 바탕 화면 항목 순서를 저장한다. |
 | 파일 시스템 | `filesystem_directory_preferences` | 폴더별 정렬 설정을 저장한다. |
-| 위젯 | `dashboard_widgets` | 위젯 창 배치와 복원 가능한 열림 상태를 저장한다. |
-| 위젯 | `memo_widgets` | 메모 위젯의 마크다운 본문을 저장한다. |
+| 프로그램 | `dashboard_widgets` | 프로그램 창 배치와 복원 가능한 열림 상태를 저장한다. |
+| 프로그램 | `memo_widgets` | 메모 프로그램의 마크다운 본문을 저장한다. |
 | 체크리스트 | `checklist_items` | 일일 체크리스트 항목을 저장한다. |
 | 체크리스트 | `checklist_daily_states` | 날짜별 체크 상태를 저장한다. |
 | 체크리스트 | `checklist_events` | 체크리스트 변경 이력을 저장한다. |
 | 모바일 | `mobile_preferences` | 계정 공용 모바일 설정을 저장한다. |
+| 관리자 | `guest_access_settings` | 게스트 접속 마스터 설정을 저장한다. |
+| 관리자 | `guest_publications` | 게스트에게 공개하도록 선택한 파일 시스템 항목을 저장한다. |
 | 외부 연동 | `integration_image_profiles` | 이미지 수신 API 프로필을 저장한다. |
 | 외부 연동 | `integration_image_profile_content_types` | 이미지 수신 프로필별 허용 MIME을 저장한다. |
 | 외부 연동 | `integration_image_upload_logs` | 인증을 통과한 이미지 수신 요청의 성공·실패 기록을 저장한다. |
@@ -58,6 +63,9 @@ filesystem_entries
 ├── desktop_entry_order.entry_id
 ├── filesystem_directory_preferences.directory_id
 └── mobile_preferences.wallpaper_entry_id
+
+filesystem_entries
+└── guest_publications.entry_id
 
 integration_image_profiles
 └── integration_image_profile_content_types.profile_id
@@ -91,7 +99,7 @@ integration_image_upload_logs
 
 ## `filesystem_entries`
 
-운영체제와 유사한 파일 시스템 계층을 표현한다. 폴더, 일반 파일, 위젯 파일이
+운영체제와 유사한 파일 시스템 계층을 표현한다. 폴더, 일반 파일, 프로그램 문서가
 하나의 트리를 공유한다.
 
 | 컬럼 | 타입 | Nullable | 기본값 | 키·제약조건 | 설명 |
@@ -102,7 +110,7 @@ integration_image_upload_logs
 | `name` | `TEXT` | NO | - | - | 사용자에게 표시하는 이름이다. |
 | `name_key` | `TEXT` | NO | - | 활성 형제 이름 UNIQUE에 사용 | 대소문자를 무시한 이름 충돌 검사에 사용하는 정규화 키다. |
 | `file_id` | `TEXT` | YES | `NULL` | UNIQUE, `files.id` FK, `ON DELETE CASCADE` | 일반 파일의 메타데이터 참조다. |
-| `widget_id` | `TEXT` | YES | `NULL` | UNIQUE, `dashboard_widgets.id` FK, `ON DELETE CASCADE` | 위젯 파일의 위젯 참조다. |
+| `widget_id` | `TEXT` | YES | `NULL` | UNIQUE, `dashboard_widgets.id` FK, `ON DELETE CASCADE` | 프로그램 문서가 참조하는 내부 프로그램 ID다. 이름은 호환성을 위해 유지한다. |
 | `restore_parent_id` | `TEXT` | YES | `NULL` | `filesystem_entries.id` FK, `ON DELETE SET NULL` | 휴지통에서 복원할 때 사용하는 원래 부모다. |
 | `restore_path` | `TEXT` | YES | `NULL` | - | 휴지통에 표시하고 복원에 참고하는 원래 경로다. |
 | `trashed_at` | `INTEGER` | YES | `NULL` | - | 최상위 항목이 휴지통으로 이동한 시각이다. |
@@ -130,7 +138,7 @@ integration_image_upload_logs
 | 인덱스 | 컬럼 | 종류 | 목적 |
 |---|---|---|---|
 | `filesystem_entries_file_id_unique` | `file_id` | UNIQUE | 하나의 파일 메타데이터가 최대 한 항목에만 속하게 한다. |
-| `filesystem_entries_widget_id_unique` | `widget_id` | UNIQUE | 하나의 위젯이 최대 한 위젯 파일에만 속하게 한다. |
+| `filesystem_entries_widget_id_unique` | `widget_id` | UNIQUE | 하나의 프로그램이 최대 한 프로그램 문서에만 속하게 한다. |
 | `uq_filesystem_entries_active_parent_name` | `parent_id`, `name_key` | `trashed_at IS NULL`인 행의 부분 UNIQUE | 활성 상태인 형제 항목의 이름 충돌을 막는다. |
 | `idx_filesystem_entries_parent_kind_name` | `parent_id`, `kind`, `name_key` | 일반 | 폴더 목록과 이름순 조회를 지원한다. |
 | `idx_filesystem_entries_trash` | `parent_id`, `trashed_at` | 일반 | 휴지통 목록 조회를 지원한다. |
@@ -164,37 +172,39 @@ integration_image_upload_logs
 
 ## `dashboard_widgets`
 
-모든 위젯의 영속 창 배치와 쌓임 순서를 저장한다. 파일 저장을 지원하는 위젯은 열림 상태도 복원하며, 파일 저장을 지원하지 않는 내장 위젯은 `is_open = 0`을 유지하고 현재 클라이언트 세션에서만 열린다.
+모든 프로그램의 영속 창 배치와 쌓임 순서를 저장한다. 문서 저장을 지원하는 프로그램은 열림 상태도 복원하며, 문서 저장을 지원하지 않는 내장 프로그램은 `is_open = 0`을 유지하고 현재 클라이언트 세션에서만 열린다. 테이블·컬럼의 `widget` 명칭은 기존 데이터와 API 호환성을 위한 레거시 저장소 용어다.
 
 | 컬럼 | 타입 | Nullable | 기본값 | 키·제약조건 | 설명 |
 |---|---|---:|---|---|---|
-| `id` | `TEXT` | NO | - | 기본 키 | 위젯 ID다. |
-| `type` | `TEXT` | NO | `'memo'` | 지원 위젯 타입 | 위젯 동작을 구분한다. |
+| `id` | `TEXT` | NO | - | 기본 키 | 프로그램 ID다. |
+| `type` | `TEXT` | NO | `'memo'` | 지원 프로그램 타입 | 프로그램 동작을 구분한다. |
 | `position_x` | `INTEGER` | NO | - | `0 <= position_x <= 8192` | 데스크톱 X 위치다. 단위는 픽셀이다. |
 | `position_y` | `INTEGER` | NO | - | `0 <= position_y <= 8192` | 데스크톱 Y 위치다. 단위는 픽셀이다. |
 | `width` | `INTEGER` | NO | - | `0 < width <= 4096` | 창 너비다. 단위는 픽셀이다. |
 | `height` | `INTEGER` | NO | - | `0 < height <= 2160` | 창 높이다. 단위는 픽셀이다. |
 | `window_state` | `TEXT` | NO | `'normal'` | `normal`, `minimized`, `maximized` | 현재 창 상태다. |
 | `restore_state` | `TEXT` | NO | `'normal'` | `normal` 또는 `maximized` | 최소화 해제 시 복원할 상태다. |
-| `stack_order` | `INTEGER` | NO | - | `stack_order >= 0` | 위젯 창의 Z 순서다. |
-| `is_open` | `INTEGER` | NO | `1` | `0` 또는 `1` | 다음 접속에서 복원할 열림 여부다. 파일 저장 불가 위젯은 `0`을 유지한다. |
+| `stack_order` | `INTEGER` | NO | - | `stack_order >= 0` | 프로그램 창의 Z 순서다. |
+| `is_open` | `INTEGER` | NO | `1` | `0` 또는 `1` | 다음 접속에서 복원할 열림 여부다. 문서 저장 불가 프로그램은 `0`을 유지한다. |
 
-### 지원 위젯 타입
+### 지원 프로그램 타입
 
 | 값 | 의미 |
 |---|---|
-| `memo` | 마크다운 메모 위젯이다. |
-| `daily-checklist` | 일일 체크리스트 위젯이다. |
-| `storage-status` | 단일 저장소 상태 위젯이다. |
-| `image-upload-profiles` | 단일 이미지 API 프로필 관리 위젯이다. |
+| `memo` | 마크다운 메모 프로그램이다. |
+| `daily-checklist` | 일일 체크리스트 프로그램이다. |
+| `storage-status` | 단일 저장소 상태 프로그램이다. |
+| `image-upload-profiles` | 단일 이미지 API 프로필 관리 프로그램이다. |
+| `admin` | 단일 관리자 프로그램이다. |
 
 ### 인덱스
 
 | 인덱스 | 컬럼 | 종류 | 목적 |
 |---|---|---|---|
 | `idx_dashboard_widgets_stack_order` | `stack_order` | 일반 | 안정적인 창 쌓임 순서 조회를 지원한다. |
-| `uq_dashboard_widgets_storage_status` | `type` | `storage-status`에 대한 부분 UNIQUE | 저장소 상태 위젯을 하나만 허용한다. |
-| `uq_dashboard_widgets_image_upload_profiles` | `type` | `image-upload-profiles`에 대한 부분 UNIQUE | 이미지 API 프로필 위젯을 하나만 허용한다. |
+| `uq_dashboard_widgets_storage_status` | `type` | `storage-status`에 대한 부분 UNIQUE | 저장소 상태 프로그램을 하나만 허용한다. |
+| `uq_dashboard_widgets_image_upload_profiles` | `type` | `image-upload-profiles`에 대한 부분 UNIQUE | 이미지 API 프로필 프로그램을 하나만 허용한다. |
+| `uq_dashboard_widgets_admin` | `type` | `admin`에 대한 부분 UNIQUE | 관리자 프로그램을 하나만 허용한다. |
 
 ## `memo_widgets`
 
@@ -202,7 +212,7 @@ integration_image_upload_logs
 
 | 컬럼 | 타입 | Nullable | 기본값 | 키·제약조건 | 설명 |
 |---|---|---:|---|---|---|
-| `widget_id` | `TEXT` | NO | - | 기본 키, `dashboard_widgets.id` FK, `ON DELETE CASCADE` | 소유 메모 위젯이다. |
+| `widget_id` | `TEXT` | NO | - | 기본 키, `dashboard_widgets.id` FK, `ON DELETE CASCADE` | 소유 메모 프로그램이다. |
 | `markdown` | `TEXT` | NO | `''` | - | 마크다운 원문이다. |
 | `updated_at` | `INTEGER` | YES | `NULL` | - | 마지막 본문 수정 시각이다. |
 
@@ -214,9 +224,9 @@ integration_image_upload_logs
 | 컬럼 | 타입 | Nullable | 기본값 | 키·제약조건 | 설명 |
 |---|---|---:|---|---|---|
 | `id` | `TEXT` | NO | - | 기본 키 | 체크리스트 항목 ID다. |
-| `widget_id` | `TEXT` | NO | - | `dashboard_widgets.id` FK, `ON DELETE CASCADE` | 소유 체크리스트 위젯이다. |
+| `widget_id` | `TEXT` | NO | - | `dashboard_widgets.id` FK, `ON DELETE CASCADE` | 소유 체크리스트 프로그램이다. |
 | `label` | `TEXT` | NO | - | 길이 1~200자 | 현재 항목 이름이다. |
-| `sort_order` | `INTEGER` | NO | - | `sort_order >= 0` | 위젯 내 표시 순서다. |
+| `sort_order` | `INTEGER` | NO | - | `sort_order >= 0` | 프로그램 내 표시 순서다. |
 | `created_at` | `INTEGER` | NO | - | - | 생성 시각이다. |
 | `updated_at` | `INTEGER` | NO | - | - | 마지막 수정 시각이다. |
 | `archived_at` | `INTEGER` | YES | `NULL` | - | 논리 삭제 시각이다. |
@@ -251,7 +261,7 @@ integration_image_upload_logs
 | 컬럼 | 타입 | Nullable | 기본값 | 키·제약조건 | 설명 |
 |---|---|---:|---|---|---|
 | `id` | `TEXT` | NO | - | 기본 키 | 이벤트 ID다. |
-| `widget_id` | `TEXT` | NO | - | `dashboard_widgets.id` FK, `ON DELETE CASCADE` | 이벤트 소유 체크리스트 위젯이다. |
+| `widget_id` | `TEXT` | NO | - | `dashboard_widgets.id` FK, `ON DELETE CASCADE` | 이벤트 소유 체크리스트 프로그램이다. |
 | `item_id` | `TEXT` | NO | - | `checklist_items.id` FK, `ON DELETE CASCADE` | 관련 체크리스트 항목이다. |
 | `item_label` | `TEXT` | NO | - | - | 이벤트 발생 당시 기록한 항목 이름이다. |
 | `previous_item_label` | `TEXT` | YES | `NULL` | 값이 있으면 길이 1~200자 | 이름 변경 전 항목 이름이다. |
@@ -263,7 +273,7 @@ integration_image_upload_logs
 
 | 인덱스 | 컬럼 | 종류 | 목적 |
 |---|---|---|---|
-| `idx_checklist_events_widget_time` | `widget_id`, `occurred_at`, `id` | 일반 | 위젯별 최신순 이력 조회를 지원한다. |
+| `idx_checklist_events_widget_time` | `widget_id`, `occurred_at`, `id` | 일반 | 프로그램별 최신순 이력 조회를 지원한다. |
 
 ## `mobile_preferences`
 
@@ -275,6 +285,31 @@ integration_image_upload_logs
 | `wallpaper_entry_id` | `TEXT` | YES | `NULL` | `filesystem_entries.id` FK, `ON DELETE SET NULL` | 선택한 모바일 배경 이미지다. |
 
 마이그레이션은 `(singleton_id = 1, wallpaper_entry_id = NULL)` 행을 기본으로 생성한다.
+
+## `guest_access_settings`
+
+게스트 접속 허용 여부를 계정 전체에서 공유하는 단일 고정 행으로 저장한다.
+마스터 설정을 꺼도 `guest_publications`의 항목별 공개 선택은 보존된다.
+
+| 컬럼 | 타입 | Nullable | 기본값 | 키·제약조건 | 설명 |
+|---|---|---:|---|---|---|
+| `singleton_id` | `INTEGER` | NO | `1` | 기본 키, 값은 반드시 `1` | 설정 행을 하나로 제한한다. |
+| `enabled` | `INTEGER` | NO | `0` | `0` 또는 `1` | 게스트 접속 마스터 허용 여부다. |
+
+마이그레이션은 `(singleton_id = 1, enabled = 0)` 행을 기본으로 생성한다.
+현재 버전은 소유자용 설정만 저장하며 실제 비로그인 공개 경로는 제공하지 않는다.
+
+## `guest_publications`
+
+게스트에게 공개하도록 명시적으로 선택한 활성 파일 시스템 항목을 저장한다. 폴더
+공개 시 실행 시점의 하위 트리를 개별 행으로 기록하므로 이후 추가된 항목은
+자동으로 공개되지 않는다. 휴지통 이동 시 해당 하위 트리의 행을 같은 D1 batch에서
+제거하고 복원 시 다시 만들지 않는다.
+
+| 컬럼 | 타입 | Nullable | 기본값 | 키·제약조건 | 설명 |
+|---|---|---:|---|---|---|
+| `entry_id` | `TEXT` | NO | - | 기본 키, `filesystem_entries.id` FK, `ON DELETE CASCADE` | 공개 대상으로 선택한 파일·폴더·프로그램 문서다. |
+| `published_at` | `INTEGER` | NO | - | - | 해당 항목을 공개 대상으로 등록한 시각이다. |
 
 ## `integration_image_profiles`
 

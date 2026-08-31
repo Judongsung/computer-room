@@ -2,6 +2,7 @@ import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import { KOREA_TIME_ZONE } from "@/constants/platform/date";
 import { LAYOUT_SAVE_STATUS } from "@client/constants/desktop/layout-save";
 import { STORAGE_STATUS_COPY } from "@client/content/ko/storage/storage-status";
+import { APPLICATION_NAME_BY_TYPE } from "@client/content/ko/desktop/application";
 
 export const SITE_COPY = {
   TITLE: "computer-room",
@@ -19,11 +20,7 @@ export const DASHBOARD_COPY = {
   CONFIRM: "확인",
   START: "시작",
   START_MENU: "시작 메뉴",
-  ADD_MEMO_WIDGET: "새 메모",
-  ADD_CHECKLIST_WIDGET: "새 일일 체크리스트",
-  ADD_STORAGE_STATUS_WIDGET: "저장소 상태",
-  ADD_IMAGE_UPLOAD_PROFILES_WIDGET: "이미지 API 프로필",
-  PROGRAMS: "위젯",
+  PROGRAMS: "프로그램",
   PERSONAL_SPACE: "개인 공간",
   ACCESS_PROTECTED: "Cloudflare Access로 보호됨",
   GITHUB_REPOSITORY: "GitHub 저장소",
@@ -39,7 +36,7 @@ export const DASHBOARD_COPY = {
   MAXIMIZE: "최대화",
   RESTORE: "이전 크기로",
   CLOSE: "닫기",
-  EMPTY_DESKTOP: "시작 메뉴에서 위젯을 추가하세요.",
+  EMPTY_DESKTOP: "시작 메뉴에서 프로그램을 실행하세요.",
   DESKTOP: "computer-room 바탕 화면",
   TASKBAR: "작업 표시줄",
 } as const;
@@ -88,20 +85,15 @@ export const CHECKLIST_WIDGET_COPY = {
   UNCHECKED: "체크 취소",
 } as const;
 
-export const WIDGET_TITLE_BY_TYPE = {
-  [WIDGET_TYPE.MEMO]: MEMO_WIDGET_COPY.TITLE,
-  [WIDGET_TYPE.DAILY_CHECKLIST]: CHECKLIST_WIDGET_COPY.TITLE,
-  [WIDGET_TYPE.STORAGE_STATUS]: STORAGE_STATUS_COPY.TITLE,
-  [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]:
-    DASHBOARD_COPY.ADD_IMAGE_UPLOAD_PROFILES_WIDGET,
-} as const;
+export const WIDGET_TITLE_BY_TYPE = APPLICATION_NAME_BY_TYPE;
 
 export const UNSAVED_WIDGET_TITLE_BY_TYPE = {
   [WIDGET_TYPE.MEMO]: MEMO_WIDGET_COPY.UNSAVED_TITLE,
   [WIDGET_TYPE.DAILY_CHECKLIST]: CHECKLIST_WIDGET_COPY.UNSAVED_TITLE,
   [WIDGET_TYPE.STORAGE_STATUS]: STORAGE_STATUS_COPY.TITLE,
   [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]:
-    DASHBOARD_COPY.ADD_IMAGE_UPLOAD_PROFILES_WIDGET,
+    APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.IMAGE_UPLOAD_PROFILES],
+  [WIDGET_TYPE.ADMIN]: APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.ADMIN],
 } as const;
 
 export const LAYOUT_SAVE_COPY_BY_STATUS = {

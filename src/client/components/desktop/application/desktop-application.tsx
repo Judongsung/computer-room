@@ -19,6 +19,8 @@ import { ImageUploadProfileApiClient } from "@client/api/integrations/image-uplo
 import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
 import { ImageUploadLogApiClient } from "@client/api/integrations/image-upload-log-api-client";
 import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
+import { GuestAccessApiClient } from "@client/api/admin/guest-access-api-client";
+import type { GuestAccessGateway } from "@client/types/admin/guest-access";
 import { ThumbnailLoadProvider } from "@client/state/filesystem/thumbnail-load-context";
 import { XpContextMenuProvider } from "@client/state/context-menu/context-menu-context";
 
@@ -42,6 +44,7 @@ function DesktopApplicationContent({
   storageStatusApi,
   imageUploadProfileApi,
   imageUploadLogApi,
+  guestAccessApi,
 }: AppProps) {
   const [gateway] = useState<DashboardGateway>(
     () => api ?? new DashboardApiClient(),
@@ -57,6 +60,9 @@ function DesktopApplicationContent({
   );
   const [imageUploadLogGateway] = useState<ImageUploadLogGateway>(
     () => imageUploadLogApi ?? new ImageUploadLogApiClient(),
+  );
+  const [guestAccessGateway] = useState<GuestAccessGateway>(
+    () => guestAccessApi ?? new GuestAccessApiClient(),
   );
   const dashboard = useDashboard(gateway);
   const { state } = dashboard;
@@ -106,6 +112,7 @@ function DesktopApplicationContent({
       storageStatusGateway={storageStatusGateway}
       imageUploadProfileGateway={imageUploadProfileGateway}
       imageUploadLogGateway={imageUploadLogGateway}
+      guestAccessGateway={guestAccessGateway}
       layoutSaveStatus={dashboard.layoutSave.status}
       layoutSaveError={dashboard.layoutSave.error}
       message={state.message}

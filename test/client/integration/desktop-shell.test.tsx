@@ -81,14 +81,15 @@ import { SESSION } from "@test/support/desktop/app-test-session";
 import { FakeDashboardGateway } from "@test/support/widgets/fake-dashboard-gateway";
 import { FakeFilesystemGateway } from "@test/support/filesystem/fake-filesystem-gateway";
 import {
-  addWidget,
   checklistWidget,
   desktopWindowByTitle,
   desktopWindowTitles,
   emptyStorageStatusSnapshot,
+  launchApplication,
   memoWidget,
   openStartMenu,
 } from "@test/client/support/desktop/app-integration-helpers";
+import { APPLICATION_NAME_BY_TYPE } from "@client/content/ko/desktop/application";
 
 describe("App desktop shell", () => {
   beforeEach(() => {
@@ -158,7 +159,10 @@ describe("App desktop shell", () => {
       />,
     );
 
-    await addWidget(user, DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET);
+    await launchApplication(
+      user,
+      APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.STORAGE_STATUS],
+    );
     await screen.findByText(STORAGE_STATUS_COPY.R2_TITLE);
     const storageWindow = desktopWindowByTitle(STORAGE_STATUS_COPY.TITLE);
 
@@ -174,7 +178,10 @@ describe("App desktop shell", () => {
       ),
     );
 
-    await addWidget(user, DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET);
+    await launchApplication(
+      user,
+      APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.STORAGE_STATUS],
+    );
     await waitFor(() =>
       expect(windowZIndex(storageWindow)).toBeGreaterThan(
         windowZIndex(computerWindow),
@@ -369,7 +376,7 @@ describe("App desktop shell", () => {
     ).toBeInTheDocument();
     await user.click(
       screen.getByRole("menuitem", {
-        name: DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET,
+        name: APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.STORAGE_STATUS],
       }),
     );
 

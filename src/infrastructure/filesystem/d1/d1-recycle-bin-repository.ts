@@ -51,6 +51,7 @@ export class D1RecycleBinRepository implements RecycleBinRepository {
           trashedAt,
         ),
       this.clearWallpaperWithinSubtree(id),
+      this.clearGuestPublicationsWithinSubtree(id),
     ];
     if (widgetIds.length > 0) {
       const placeholders = widgetIds
@@ -201,6 +202,25 @@ export class D1RecycleBinRepository implements RecycleBinRepository {
         `UPDATE mobile_preferences
          SET wallpaper_entry_id = NULL
          WHERE wallpaper_entry_id IN (
+           WITH RECURSIVE subtree(id) AS (
+             SELECT id FROM filesystem_entries WHERE id = ?1
+             UNION ALL
+             SELECT child.id FROM filesystem_entries child
+             JOIN subtree parent ON child.parent_id = parent.id
+           )
+           SELECT id FROM subtree
+         )`,
+      )
+      .bind(rootId);
+  }
+
+  private clearGuestPublicationsWithinSubtree(
+    rootId: string,
+  ): D1PreparedStatement {
+    return this.database
+      .prepare(
+        `DELETE FROM guest_publications
+         WHERE entry_id IN (
            WITH RECURSIVE subtree(id) AS (
              SELECT id FROM filesystem_entries WHERE id = ?1
              UNION ALL

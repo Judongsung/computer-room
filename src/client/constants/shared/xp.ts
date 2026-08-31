@@ -21,3 +21,8 @@ export const XP_WINDOW_INTERACTION_CLASS_NAME = {
 export const XP_WINDOW_INTERACTION_SELECTOR = {
   CONTROLS: `.${XP_WINDOW_INTERACTION_CLASS_NAME.CONTROLS}`,
 } as const;
+
+export const XP_CHECKBOX_CLASS_NAME = {
+  ROOT: "xp-checkbox",
+  LABEL_HIDDEN: "xp-checkbox--label-hidden",
+} as const;

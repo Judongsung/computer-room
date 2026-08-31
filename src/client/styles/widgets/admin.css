@@ -1,0 +1,118 @@
+.admin-application__tabs {
+  height: 100%;
+}
+
+.admin-application__tabs > .xp-tabs__panel {
+  overflow: hidden;
+}
+
+.guest-access-admin {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.guest-access-admin__settings {
+  flex: none;
+  padding: 2px 3px 8px;
+  border-bottom: 1px solid #aca899;
+  box-shadow: 0 1px #fff;
+}
+
+.guest-access-admin__settings label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.guest-access-admin__settings p {
+  margin: 5px 0 2px 22px;
+}
+
+.guest-access-admin__settings small {
+  display: block;
+  margin-left: 22px;
+  color: #555;
+}
+
+.guest-access-admin__roots {
+  display: flex;
+  min-width: 0;
+  flex: none;
+  gap: 4px;
+}
+
+.guest-access-admin__roots {
+  padding-top: 1px;
+}
+
+.guest-access-admin__list {
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  border: 1px solid #7f9db9;
+  background: #fff;
+  box-shadow: inset 1px 1px #d4d0c8, inset -1px -1px #fff;
+}
+
+.guest-access-admin__row {
+  display: grid;
+  min-width: 520px;
+  min-height: 36px;
+  padding: 3px 7px;
+  align-items: center;
+  grid-template-columns: 22px minmax(180px, 1fr) 110px 90px;
+  border-bottom: 1px solid #ece9d8;
+  gap: 5px;
+}
+
+.guest-access-admin__row-name {
+  display: flex;
+  min-width: 0;
+  padding: 2px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  box-shadow: none;
+  color: #111;
+  text-align: left;
+}
+
+.guest-access-admin__row-name:hover,
+.guest-access-admin__row-name:focus-visible {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.guest-access-admin__row-name img {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  object-fit: contain;
+}
+
+.guest-access-admin__row-name span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.guest-access-admin__row-meta,
+.guest-access-admin__status {
+  color: #555;
+}
+
+.guest-access-admin__empty {
+  margin: 12px;
+}
+
+.guest-access-admin__load-more {
+  align-self: center;
+  flex: none;
+}

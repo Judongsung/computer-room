@@ -35,11 +35,16 @@ describe("widget data strategies", () => {
       file: null,
       data: null,
     });
+    const admin = widget(WIDGET_TYPE.ADMIN, {
+      file: null,
+      data: null,
+    });
 
     const memoClone = cloneDashboardWidget(memo);
     const checklistClone = cloneDashboardWidget(checklist);
     const storageClone = cloneDashboardWidget(storage);
     const profilesClone = cloneDashboardWidget(profiles);
+    const adminClone = cloneDashboardWidget(admin);
 
     expect(memoClone).toEqual(memo);
     expect(memoClone).not.toBe(memo);
@@ -51,6 +56,7 @@ describe("widget data strategies", () => {
     expect(checklistClone.data.items[0]).not.toBe(checklist.data.items[0]);
     expect(storageClone.data).toBeNull();
     expect(profilesClone.data).toBeNull();
+    expect(adminClone.data).toBeNull();
   });
 
   it("validates data and file-reference policies by widget type", () => {
@@ -65,10 +71,12 @@ describe("widget data strategies", () => {
     })).toBe(true);
     expect(isWidgetDataForType(WIDGET_TYPE.STORAGE_STATUS, null)).toBe(true);
     expect(isWidgetDataForType(WIDGET_TYPE.IMAGE_UPLOAD_PROFILES, {})).toBe(false);
+    expect(isWidgetDataForType(WIDGET_TYPE.ADMIN, null)).toBe(true);
     expect(widgetTypeSupportsFileReference(WIDGET_TYPE.MEMO)).toBe(true);
     expect(widgetTypeSupportsFileReference(WIDGET_TYPE.DAILY_CHECKLIST)).toBe(true);
     expect(widgetTypeSupportsFileReference(WIDGET_TYPE.STORAGE_STATUS)).toBe(false);
     expect(widgetTypeSupportsFileReference(WIDGET_TYPE.IMAGE_UPLOAD_PROFILES)).toBe(false);
+    expect(widgetTypeSupportsFileReference(WIDGET_TYPE.ADMIN)).toBe(false);
 
     const storage = widget(WIDGET_TYPE.STORAGE_STATUS, {
       file: null,

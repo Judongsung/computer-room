@@ -232,7 +232,7 @@ export function buildRecycleExplorerHeaderModel(
 
 export function buildMyComputerExplorerHeaderModel(
   selected: boolean,
-  actions: { readonly runWidget: () => void; readonly close: () => void },
+  actions: { readonly runApplication: () => void; readonly close: () => void },
 ): {
   readonly menus: readonly XpExplorerMenu[];
   readonly toolbarItems: readonly XpExplorerToolbarItem[];
@@ -240,13 +240,13 @@ export function buildMyComputerExplorerHeaderModel(
   return {
     menus: [
       menu(XP_EXPLORER_MENU_ID.FILE, XP_EXPLORER_HEADER_COPY.FILE_MENU, [
-        contextMenuCommand(XP_CONTEXT_MENU_COMMAND_ID.OPEN, FILESYSTEM_COPY.RUN_WIDGET, actions.runWidget, !selected),
+        contextMenuCommand(XP_CONTEXT_MENU_COMMAND_ID.OPEN, FILESYSTEM_COPY.RUN_APPLICATION, actions.runApplication, !selected),
         contextMenuSeparator("my-computer-file-separator-1"),
         contextMenuCommand(XP_CONTEXT_MENU_COMMAND_ID.CLOSE, FILESYSTEM_COPY.CLOSE, actions.close),
       ]),
     ],
     toolbarItems: [
-      toolbar(XP_EXPLORER_TOOLBAR_ACTION.RUN_WIDGET, FILESYSTEM_COPY.RUN_WIDGET, actions.runWidget, !selected),
+      toolbar(XP_EXPLORER_TOOLBAR_ACTION.RUN_APPLICATION, FILESYSTEM_COPY.RUN_APPLICATION, actions.runApplication, !selected),
     ],
   };
 }

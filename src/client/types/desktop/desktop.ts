@@ -19,6 +19,7 @@ import type { StorageStatusGateway } from "@client/types/storage/storage-status"
 import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
 import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
+import type { GuestAccessGateway } from "@client/types/admin/guest-access";
 
 export interface DesktopDimensions {
   readonly width: number;
@@ -91,6 +92,7 @@ export interface WidgetComponentProps {
   readonly storageStatusGateway: StorageStatusGateway;
   readonly imageUploadProfileGateway: ImageUploadProfileGateway;
   readonly imageUploadLogGateway: ImageUploadLogGateway;
+  readonly guestAccessGateway: GuestAccessGateway;
   readonly onOpenFilesystemEntry: (entry: FilesystemEntry) => void;
   readonly onWidgetChange: (widget: DashboardWidget) => void;
 }
@@ -112,6 +114,7 @@ export interface DesktopShellProps {
   readonly storageStatusGateway: StorageStatusGateway;
   readonly imageUploadProfileGateway: ImageUploadProfileGateway;
   readonly imageUploadLogGateway: ImageUploadLogGateway;
+  readonly guestAccessGateway: GuestAccessGateway;
   readonly layoutSaveStatus: LayoutSaveStatus;
   readonly layoutSaveError: string | null;
   readonly message: StatusMessage | null;
@@ -149,6 +152,7 @@ export interface DesktopWindowProps {
   readonly storageStatusGateway: StorageStatusGateway;
   readonly imageUploadProfileGateway: ImageUploadProfileGateway;
   readonly imageUploadLogGateway: ImageUploadLogGateway;
+  readonly guestAccessGateway: GuestAccessGateway;
   readonly onOpenFilesystemEntry: (entry: FilesystemEntry) => void;
   readonly onFocus: () => void;
   readonly onMinimize: () => void;
@@ -165,10 +169,7 @@ export interface StartMenuProps {
   readonly logoutUrl: string;
   readonly repositoryUrl: string;
   readonly onClose: () => void;
-  readonly onAddMemo: () => void;
-  readonly onAddChecklist: () => void;
-  readonly onAddStorageStatus: () => void;
-  readonly onAddImageUploadProfiles: () => void;
+  readonly onLaunchApplication: (type: DashboardWidget["type"]) => void;
 }
 
 export interface TaskbarProps {

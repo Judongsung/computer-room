@@ -81,14 +81,15 @@ import { SESSION } from "@test/support/desktop/app-test-session";
 import { FakeDashboardGateway } from "@test/support/widgets/fake-dashboard-gateway";
 import { FakeFilesystemGateway } from "@test/support/filesystem/fake-filesystem-gateway";
 import {
-  addWidget,
   checklistWidget,
   desktopWindowByTitle,
   desktopWindowTitles,
   emptyStorageStatusSnapshot,
+  launchApplication,
   memoWidget,
   openStartMenu,
 } from "@test/client/support/desktop/app-integration-helpers";
+import { APPLICATION_NAME_BY_TYPE } from "@client/content/ko/desktop/application";
 
 describe("App desktop widgets", () => {
   beforeEach(() => {
@@ -110,7 +111,9 @@ describe("App desktop widgets", () => {
     ).toHaveAttribute("href", ACCESS_LOGOUT_PATH);
 
     await user.click(
-      screen.getByRole("button", { name: DASHBOARD_COPY.ADD_MEMO_WIDGET }),
+      screen.getByRole("button", {
+        name: APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.MEMO],
+      }),
     );
     expect(
       await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT),
@@ -145,7 +148,10 @@ describe("App desktop widgets", () => {
     const user = userEvent.setup();
     render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
 
-    await addWidget(user, DASHBOARD_COPY.ADD_MEMO_WIDGET);
+    await launchApplication(
+      user,
+      APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.MEMO],
+    );
     await user.click(
       screen.getByRole("button", { name: DASHBOARD_COPY.SAVE_AS_FILE }),
     );
@@ -302,7 +308,10 @@ describe("App desktop widgets", () => {
     const user = userEvent.setup();
     render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
 
-    await addWidget(user, DASHBOARD_COPY.ADD_MEMO_WIDGET);
+    await launchApplication(
+      user,
+      APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.MEMO],
+    );
     expect(screen.getByText(MEMO_WIDGET_COPY.EMPTY_CONTENT)).toBeInTheDocument();
     await user.click(
       screen.getByRole("button", { name: DASHBOARD_COPY.MAXIMIZE }),
@@ -323,7 +332,10 @@ describe("App desktop widgets", () => {
     const markdown =
       "# 오늘\n\n**중요**\n다음 줄\n\n~~완료~~\n\n- [x] 확인\n\n<script>alert('x')</script>";
     render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
-    await addWidget(user, DASHBOARD_COPY.ADD_MEMO_WIDGET);
+    await launchApplication(
+      user,
+      APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.MEMO],
+    );
     await waitFor(() => expect(api.savedWidgets).toHaveLength(1));
 
     await user.click(
@@ -366,7 +378,10 @@ describe("App desktop widgets", () => {
     const api = new FakeDashboardGateway();
     const user = userEvent.setup();
     render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
-    await addWidget(user, DASHBOARD_COPY.ADD_CHECKLIST_WIDGET);
+    await launchApplication(
+      user,
+      APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.DAILY_CHECKLIST],
+    );
     await waitFor(() => expect(api.savedWidgets).toHaveLength(1));
 
     expect(

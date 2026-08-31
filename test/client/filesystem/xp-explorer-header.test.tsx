@@ -2,8 +2,13 @@ import { render, screen, waitFor, within, fireEvent } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { XP_EXPLORER_HEADER_COPY } from "@client/content/ko/filesystem/explorer-header";
-import { XP_EXPLORER_TOOLBAR_ACTION } from "@client/constants/filesystem/explorer-header";
+import {
+  XP_EXPLORER_HEADER_CLASS_NAME,
+  XP_EXPLORER_HEADER_LAYOUT,
+  XP_EXPLORER_TOOLBAR_ACTION,
+} from "@client/constants/filesystem/explorer-header";
 import { XpExplorerHeader } from "@client/components/filesystem/header/xp-explorer-header";
+import { XpExplorerAddressBar } from "@client/components/filesystem/header/xp-explorer-address-bar";
 import {
   contextMenuCommand,
   contextMenuRadioCommand,
@@ -11,6 +16,28 @@ import {
 import { XpContextMenuProvider } from "@client/state/context-menu/context-menu-context";
 
 describe("XpExplorerHeader", () => {
+  it("renders the reusable address bar with standalone XP sizing", () => {
+    render(
+      <XpExplorerAddressBar
+        locationIconPath="/assets/windows-xp/folder.png"
+        address={<span>바탕 화면{"\\"}사진</span>}
+      />,
+    );
+
+    const addressBar = screen.getByLabelText(
+      XP_EXPLORER_HEADER_COPY.ADDRESS_BAR,
+    );
+    expect(addressBar).toHaveTextContent("바탕 화면\\사진");
+    expect(addressBar).toHaveStyle(
+      `--xp-explorer-address-bar-height: ${XP_EXPLORER_HEADER_LAYOUT.ADDRESS_BAR_HEIGHT_PX}px`,
+    );
+    expect(
+      addressBar.querySelector(
+        `.${XP_EXPLORER_HEADER_CLASS_NAME.ADDRESS_FIELD}`,
+      ),
+    ).toBeInTheDocument();
+  });
+
   it("renders the three XP header rows and preserves toolbar disabled state", () => {
     renderHeader();
 

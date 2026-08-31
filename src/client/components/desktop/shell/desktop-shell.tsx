@@ -11,7 +11,6 @@ import {
   FILESYSTEM_ROOT_ID,
   FILESYSTEM_ROOT_NAME,
 } from "@/constants/filesystem/filesystem";
-import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { SystemAppId } from "@client/types/desktop/system-app";
 import type { DesktopShellProps } from "@client/types/desktop/desktop";
 import { DASHBOARD_COPY, SITE_COPY } from "@client/content/ko/widgets/content";
@@ -69,6 +68,7 @@ export function DesktopShell(props: DesktopShellProps) {
     storageStatusGateway,
     imageUploadProfileGateway,
     imageUploadLogGateway,
+    guestAccessGateway,
     layoutSaveStatus,
     layoutSaveError,
     message,
@@ -124,7 +124,7 @@ export function DesktopShell(props: DesktopShellProps) {
     notifyFilesystemChanged: filesystem.notifyChanged,
     openFilesystemEntry: launcher.openFilesystemEntry,
     openSystemShortcut: launcher.openSystemShortcut,
-    addWidget: launcher.addWidget,
+    launchApplication: launcher.launchApplication,
     setSelectedSystemShortcutId,
   });
   const widgetFiles = useWidgetFileLifecycle({
@@ -262,6 +262,7 @@ export function DesktopShell(props: DesktopShellProps) {
           storageStatusGateway={storageStatusGateway}
           imageUploadProfileGateway={imageUploadProfileGateway}
           imageUploadLogGateway={imageUploadLogGateway}
+          guestAccessGateway={guestAccessGateway}
           explorer={explorer}
           system={system}
           media={media}
@@ -283,7 +284,7 @@ export function DesktopShell(props: DesktopShellProps) {
           onCommitWidgetBounds={props.onCommitWindowBounds}
           onWidgetChange={props.onWidgetChange}
           onSaveWidgetFile={widgetFiles.beginSave}
-          onAddWidget={launcher.addWidget}
+          onLaunchApplication={launcher.launchApplication}
         />
       </main>
       <DesktopDialogLayer
@@ -344,12 +345,7 @@ export function DesktopShell(props: DesktopShellProps) {
         logoutUrl={session.logoutUrl}
         repositoryUrl={PROJECT_EXTERNAL_LINKS.GITHUB_REPOSITORY}
         onClose={closeStartMenu}
-        onAddMemo={() => launcher.addWidget(WIDGET_TYPE.MEMO)}
-        onAddChecklist={() => launcher.addWidget(WIDGET_TYPE.DAILY_CHECKLIST)}
-        onAddStorageStatus={() => launcher.addWidget(WIDGET_TYPE.STORAGE_STATUS)}
-        onAddImageUploadProfiles={() =>
-          launcher.addWidget(WIDGET_TYPE.IMAGE_UPLOAD_PROFILES)
-        }
+        onLaunchApplication={launcher.launchApplication}
       />
       <Taskbar
         windows={windowManager.taskbarWindows}

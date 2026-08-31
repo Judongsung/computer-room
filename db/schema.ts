@@ -46,6 +46,7 @@ import {
   WINDOW_STATE,
   WINDOW_STATE_VALUES,
 } from "@/constants/widgets/widget";
+import { GUEST_ACCESS_SETTINGS_SINGLETON_ID } from "@/constants/admin/guest-access";
 
 const FILE_STATUS_SQL = FILE_STATUS_VALUES.map((status) => `'${status}'`).join(", ");
 const FILESYSTEM_ENTRY_KIND_SQL = FILESYSTEM_ENTRY_KIND_VALUES.map(
@@ -153,6 +154,30 @@ export const filesystemEntries = sqliteTable(
     ),
   ],
 );
+
+export const guestAccessSettings = sqliteTable(
+  "guest_access_settings",
+  {
+    singletonId: integer("singleton_id")
+      .primaryKey()
+      .default(GUEST_ACCESS_SETTINGS_SINGLETON_ID),
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(false),
+  },
+  (table) => [
+    check(
+      "guest_access_settings_singleton_check",
+      sql`${table.singletonId} = ${sql.raw(String(GUEST_ACCESS_SETTINGS_SINGLETON_ID))}`,
+    ),
+    check("guest_access_settings_enabled_check", sql`${table.enabled} IN (0, 1)`),
+  ],
+);
+
+export const guestPublications = sqliteTable("guest_publications", {
+  entryId: text("entry_id")
+    .primaryKey()
+    .references(() => filesystemEntries.id, { onDelete: "cascade" }),
+  publishedAt: integer("published_at").notNull(),
+});
 
 export const filesystemDirectoryPreferences = sqliteTable(
   "filesystem_directory_preferences",
@@ -354,6 +379,9 @@ export const dashboardWidgets = sqliteTable(
       .where(
         sql`${table.type} = ${sql.raw(`'${WIDGET_TYPE.IMAGE_UPLOAD_PROFILES}'`)}`,
       ),
+    uniqueIndex("uq_dashboard_widgets_admin")
+      .on(table.type)
+      .where(sql`${table.type} = ${sql.raw(`'${WIDGET_TYPE.ADMIN}'`)}`),
   ],
 );
 

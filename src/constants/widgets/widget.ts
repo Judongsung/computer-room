@@ -3,6 +3,7 @@ export const WIDGET_TYPE = {
   DAILY_CHECKLIST: "daily-checklist",
   STORAGE_STATUS: "storage-status",
   IMAGE_UPLOAD_PROFILES: "image-upload-profiles",
+  ADMIN: "admin",
 } as const;
 
 export const WIDGET_TYPE_VALUES = [
@@ -10,6 +11,7 @@ export const WIDGET_TYPE_VALUES = [
   WIDGET_TYPE.DAILY_CHECKLIST,
   WIDGET_TYPE.STORAGE_STATUS,
   WIDGET_TYPE.IMAGE_UPLOAD_PROFILES,
+  WIDGET_TYPE.ADMIN,
 ] as const;
 
 export const WIDGET_BEHAVIOR = {
@@ -32,6 +34,12 @@ export const WIDGET_BEHAVIOR = {
     persistsOpenState: false,
   },
   [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]: {
+    singleton: true,
+    supportsFileStorage: false,
+    persistsWithoutFile: true,
+    persistsOpenState: false,
+  },
+  [WIDGET_TYPE.ADMIN]: {
     singleton: true,
     supportsFileStorage: false,
     persistsWithoutFile: true,
@@ -102,6 +110,13 @@ export const WIDGET_WINDOW_POLICY = {
     DEFAULT_WIDTH: 720,
     DEFAULT_HEIGHT: 560,
     MIN_WIDTH: 600,
+    MIN_HEIGHT: 460,
+    ...WINDOW_SIZE_LIMITS,
+  },
+  [WIDGET_TYPE.ADMIN]: {
+    DEFAULT_WIDTH: 760,
+    DEFAULT_HEIGHT: 560,
+    MIN_WIDTH: 620,
     MIN_HEIGHT: 460,
     ...WINDOW_SIZE_LIMITS,
   },

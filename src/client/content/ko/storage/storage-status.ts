@@ -20,7 +20,7 @@ export const STORAGE_STATUS_COPY = {
   FILESYSTEM_COUNTS: "등록 상태",
   REGISTERED_FILES: "준비 완료 파일",
   DIRECTORIES: "폴더",
-  WIDGETS: "위젯",
+  WIDGETS: "프로그램",
   TRASH_ITEMS: "휴지통 항목",
   MEASURED_AT: "측정 시각",
   R2_FREE_REFERENCE: "Standard 무료 10 GB-month 참고",

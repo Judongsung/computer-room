@@ -58,6 +58,7 @@ export const DESKTOP_ASSET_PATHS = {
   STORAGE_STATUS_ICON: "/assets/computer-room/storage-status.svg",
   IMAGE_UPLOAD_PROFILES_ICON:
     "/assets/computer-room/image-upload-profiles.svg",
+  ADMIN_ICON: "/assets/computer-room/admin.svg",
 } as const;
 
 export const WIDGET_ICON_PATH_BY_TYPE = {
@@ -66,6 +67,7 @@ export const WIDGET_ICON_PATH_BY_TYPE = {
   [WIDGET_TYPE.STORAGE_STATUS]: DESKTOP_ASSET_PATHS.STORAGE_STATUS_ICON,
   [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]:
     DESKTOP_ASSET_PATHS.IMAGE_UPLOAD_PROFILES_ICON,
+  [WIDGET_TYPE.ADMIN]: DESKTOP_ASSET_PATHS.ADMIN_ICON,
 } as const;
 
 export const DESKTOP_DRAG_DATA_TYPE =

@@ -35,7 +35,7 @@
 }
 
 .explorer-item,
-.widget-catalog__item {
+.application-catalog__item {
   display: grid;
   min-width: 0;
   min-height: 88px;
@@ -53,9 +53,9 @@
 .explorer-item:focus,
 .explorer-item:active,
 .explorer-item--selected,
-.widget-catalog__item:focus,
-.widget-catalog__item:active,
-.widget-catalog__item--selected {
+.application-catalog__item:focus,
+.application-catalog__item:active,
+.application-catalog__item--selected {
   border-color: #316ac5;
   background: #c6d9f1;
   box-shadow: none;
@@ -68,14 +68,14 @@
 }
 
 .explorer-item img,
-.widget-catalog__item img {
+.application-catalog__item img {
   width: 48px;
   height: 48px;
   object-fit: contain;
 }
 
 .explorer-item span,
-.widget-catalog__item span {
+.application-catalog__item span {
   max-width: 100%;
   text-align: center;
   overflow-wrap: anywhere;

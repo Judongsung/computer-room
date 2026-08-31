@@ -31,7 +31,7 @@ interface DesktopContextMenuOptions {
   readonly notifyFilesystemChanged: () => void;
   readonly openFilesystemEntry: (entry: FilesystemEntry) => void;
   readonly openSystemShortcut: (id: SystemAppId) => void;
-  readonly addWidget: (type: WidgetType) => void;
+  readonly launchApplication: (type: WidgetType) => void;
   readonly setSelectedSystemShortcutId: (id: SystemAppId | null) => void;
 }
 
@@ -45,7 +45,7 @@ export function useDesktopContextMenus({
   notifyFilesystemChanged,
   openFilesystemEntry,
   openSystemShortcut,
-  addWidget,
+  launchApplication,
   setSelectedSystemShortcutId,
 }: DesktopContextMenuOptions) {
   const contextMenu = useXpContextMenu();
@@ -82,12 +82,12 @@ export function useDesktopContextMenus({
         event,
         buildDesktopBlankContextMenu({
           createDirectory: () => setDialog({ kind: "create" }),
-          addWidget,
+          launchApplication,
           refresh: notifyFilesystemChanged,
         }),
       );
     },
-    [addWidget, contextMenu, notifyFilesystemChanged, setDialog],
+    [contextMenu, launchApplication, notifyFilesystemChanged, setDialog],
   );
 
   const openSystemMenu = useCallback(
@@ -114,12 +114,13 @@ export function useDesktopContextMenus({
       contextMenu.openFromEvent(
         event,
         buildDesktopRootContextMenu({
-          openStorageStatus: () => addWidget(WIDGET_TYPE.STORAGE_STATUS),
+          openStorageStatus: () =>
+            launchApplication(WIDGET_TYPE.STORAGE_STATUS),
           refreshPage: () => window.location.reload(),
         }),
       );
     },
-    [addWidget, contextMenu],
+    [contextMenu, launchApplication],
   );
 
   return {

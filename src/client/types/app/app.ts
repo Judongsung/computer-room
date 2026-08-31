@@ -6,6 +6,7 @@ import type { CLIENT_INTERFACE_MODE } from "@client/constants/shared/interface-m
 import type { MobilePreferencesGateway } from "@client/types/platform/mobile-preferences";
 import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
 import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
+import type { GuestAccessGateway } from "@client/types/admin/guest-access";
 
 export type ClientInterfaceMode =
   (typeof CLIENT_INTERFACE_MODE)[keyof typeof CLIENT_INTERFACE_MODE];
@@ -18,5 +19,6 @@ export interface AppProps {
   readonly mobilePreferencesApi?: MobilePreferencesGateway;
   readonly imageUploadProfileApi?: ImageUploadProfileGateway;
   readonly imageUploadLogApi?: ImageUploadLogGateway;
+  readonly guestAccessApi?: GuestAccessGateway;
   readonly interfaceMode?: ClientInterfaceMode;
 }

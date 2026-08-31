@@ -19,6 +19,7 @@ import { WidgetLayoutService } from "@/application/widgets/widget-layout-service
 import { WidgetFileService } from "@/application/widgets/widget-file-service";
 import { StorageStatusService } from "@/application/storage/storage-status-service";
 import { MobilePreferencesService } from "@/application/platform/mobile-preferences-service";
+import { GuestAccessService } from "@/application/admin/guest-access-service";
 import { ActiveFilesystemEntryResolver } from "@/application/filesystem/policies/active-filesystem-entry-resolver";
 import { FilesystemNameAllocator } from "@/application/filesystem/policies/filesystem-name-allocator";
 import {
@@ -36,6 +37,7 @@ import { WidgetApiHandler } from "@/http/widgets/widget-api-handler";
 import { WidgetFileApiHandler } from "@/http/widgets/widget-file-api-handler";
 import { StorageStatusApiHandler } from "@/http/storage/storage-status-api-handler";
 import { MobilePreferencesApiHandler } from "@/http/platform/mobile-preferences-api-handler";
+import { GuestAccessApiHandler } from "@/http/admin/guest-access-api-handler";
 import {
   CloudflareAccessIdentityVerifier,
   CloudflareAccessApplicationVerifier,
@@ -58,6 +60,7 @@ import { CloudflareBackgroundTaskScheduler } from "@/infrastructure/platform/clo
 import { D1MobilePreferencesRepository } from "@/infrastructure/platform/d1-mobile-preferences-repository";
 import { D1ImageUploadProfileRepository } from "@/infrastructure/integrations/d1-image-upload-profile-repository";
 import { D1ImageUploadLogRepository } from "@/infrastructure/integrations/d1-image-upload-log-repository";
+import { D1GuestAccessRepository } from "@/infrastructure/admin/d1-guest-access-repository";
 import { BACKGROUND_TASK_FAILURE_CODE } from "@/constants/platform/background-task";
 import { CryptoIdGenerator, SystemClock } from "@/infrastructure/platform/runtime";
 import type { IdentityVerifier, RequestVerifier } from "@/types/platform/auth";
@@ -218,6 +221,14 @@ export default {
         fileRepository,
       ),
     );
+    const guestAccessApiHandler = new GuestAccessApiHandler(
+      new GuestAccessService(
+        new D1GuestAccessRepository(env.DB),
+        directoryService,
+        activeFilesystemEntries,
+        clock,
+      ),
+    );
     const router = new ApiRouter(
       [
         fileApiHandler,
@@ -228,6 +239,7 @@ export default {
         mobilePreferencesApiHandler,
         imageUploadProfileApiHandler,
         imageUploadLogApiHandler,
+        guestAccessApiHandler,
       ],
       [imageUploadApiHandler],
       createIdentityVerifier(env),

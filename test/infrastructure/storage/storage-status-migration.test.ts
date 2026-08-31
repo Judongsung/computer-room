@@ -44,6 +44,12 @@ describe("singleton widget migrations", () => {
     const imageProfileWidgetMigration = [
       migrationByName(migrations, "0011_magical_mister_sinister"),
     ];
+    const imageUploadLogMigration = [
+      migrationByName(migrations, "0012_image_upload_logs"),
+    ];
+    const guestAccessAdminMigration = [
+      migrationByName(migrations, "0013_guest_access_admin"),
+    ];
     const database = testEnvironment.MIGRATION_REGRESSION_DB;
 
     await applyD1Migrations(database, previousMigrations);
@@ -249,6 +255,57 @@ describe("singleton widget migrations", () => {
     await expect(
       insertImageUploadProfilesWidget(database, "image-profile-widget-two"),
     ).rejects.toThrow();
+
+    await applyD1Migrations(database, imageUploadLogMigration);
+    await database
+      .prepare(
+        `INSERT INTO integration_image_upload_logs(
+          id, profile_id, outcome, content_type, declared_size,
+          file_entry_id, file_name, http_status, error_code, error_message,
+          received_at, duration_ms
+        ) VALUES ('preserved-log', 'custom', 'failure', 'image/png', 4,
+          NULL, NULL, 500, 'TEST_ERROR', 'preserved', ?1, 10)`,
+      )
+      .bind(TIMESTAMP)
+      .run();
+    await applyD1Migrations(database, guestAccessAdminMigration);
+
+    await expect(
+      rows(database, "SELECT widget_id, markdown FROM memo_widgets"),
+    ).resolves.toEqual([
+      { widget_id: MEMO_WIDGET_ID, markdown: "# preserved memo" },
+    ]);
+    await expect(
+      rows(database, "SELECT id, widget_id FROM checklist_events"),
+    ).resolves.toEqual([
+      { id: CHECKLIST_EVENT_ID, widget_id: CHECKLIST_WIDGET_ID },
+    ]);
+    await expect(
+      rows(
+        database,
+        "SELECT id, widget_id FROM filesystem_entries WHERE widget_id IS NOT NULL ORDER BY id",
+      ),
+    ).resolves.toEqual([
+      { id: CHECKLIST_ENTRY_ID, widget_id: CHECKLIST_WIDGET_ID },
+      { id: MEMO_ENTRY_ID, widget_id: MEMO_WIDGET_ID },
+    ]);
+    await expect(rows(database, "SELECT * FROM desktop_entry_order")).resolves.toEqual([
+      { entry_id: MEMO_ENTRY_ID, sort_order: 0 },
+    ]);
+    await expect(
+      rows(database, "SELECT id FROM integration_image_profiles ORDER BY id"),
+    ).resolves.toEqual([{ id: "custom" }, { id: "novelai" }]);
+    await expect(
+      rows(database, "SELECT id FROM integration_image_upload_logs"),
+    ).resolves.toEqual([{ id: "preserved-log" }]);
+    await expect(rows(database, "SELECT * FROM guest_access_settings")).resolves.toEqual([
+      { singleton_id: 1, enabled: 0 },
+    ]);
+    await expect(rows(database, "SELECT * FROM guest_publications")).resolves.toEqual([]);
+    await expect(rows(database, "PRAGMA foreign_key_check")).resolves.toEqual([]);
+
+    await insertAdminWidget(database, "admin-widget-one");
+    await expect(insertAdminWidget(database, "admin-widget-two")).rejects.toThrow();
   });
 });
 
@@ -373,6 +430,10 @@ async function insertImageUploadProfilesWidget(
     3,
     1,
   ).run();
+}
+
+async function insertAdminWidget(database: D1Database, id: string): Promise<void> {
+  await widgetStatement(database, id, WIDGET_TYPE.ADMIN, 4, 1).run();
 }
 
 async function rows(

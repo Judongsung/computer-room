@@ -70,6 +70,7 @@ describe("WidgetLayoutService", () => {
   it.each([
     WIDGET_TYPE.STORAGE_STATUS,
     WIDGET_TYPE.IMAGE_UPLOAD_PROFILES,
+    WIDGET_TYPE.ADMIN,
   ] as const)("keeps the %s singleton while making its open state session-only", async (type) => {
     const repository = new MemoryWidgetLayoutRepository();
     const service = new WidgetLayoutService(

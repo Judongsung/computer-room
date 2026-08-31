@@ -12,7 +12,7 @@ export const FOLDER_PROPERTIES_COPY = {
     `${formatted} (${bytes}바이트)`,
   CONTAINS: "포함",
   CONTAINS_VALUE: (files: string, directories: string, widgets: string) =>
-    `파일 ${files}개, 폴더 ${directories}개, 위젯 파일 ${widgets}개`,
+    `파일 ${files}개, 폴더 ${directories}개, 프로그램 문서 ${widgets}개`,
   CREATED_AT: "만든 날짜",
   UPDATED_AT: "수정한 날짜",
   LOADING: "폴더 정보를 계산하는 중…",

@@ -250,6 +250,14 @@ export function fakeWidgetFromLayout(layout: WidgetLayout): DashboardWidget {
       data: null,
     };
   }
+  if (layout.type === WIDGET_TYPE.ADMIN) {
+    return {
+      ...layout,
+      type: WIDGET_TYPE.ADMIN,
+      file: null,
+      data: null,
+    };
+  }
   return {
     ...layout,
     type: WIDGET_TYPE.DAILY_CHECKLIST,
@@ -283,6 +291,15 @@ export function mergeFakeWidgetLayout(
       ...existing,
       ...layout,
       type: WIDGET_TYPE.IMAGE_UPLOAD_PROFILES,
+      file: null,
+      data: null,
+    };
+  }
+  if (existing.type === WIDGET_TYPE.ADMIN) {
+    return {
+      ...existing,
+      ...layout,
+      type: WIDGET_TYPE.ADMIN,
       file: null,
       data: null,
     };

@@ -1,15 +1,15 @@
 import { useEffect, useRef } from "react";
 import { DASHBOARD_COPY } from "@client/content/ko/widgets/content";
+import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import {
-  DESKTOP_ASSET_PATHS,
-  WIDGET_ICON_PATH_BY_TYPE,
-} from "@client/constants/desktop/desktop";
+  DESKTOP_APPLICATION_CATALOG,
+} from "@client/constants/desktop/application-catalog";
+import { APPLICATION_LAUNCH_LOCATION } from "@client/constants/desktop/application";
+import { APPLICATION_NAME_BY_TYPE } from "@client/content/ko/desktop/application";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
-import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { StartMenuProps } from "@client/types/desktop/desktop";
 import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
 import { contextMenuCommand } from "@client/domain/context-menu/context-menu";
-import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
 
 export function StartMenu({
   isOpen,
@@ -17,10 +17,7 @@ export function StartMenu({
   logoutUrl,
   repositoryUrl,
   onClose,
-  onAddMemo,
-  onAddChecklist,
-  onAddStorageStatus,
-  onAddImageUploadProfiles,
+  onLaunchApplication,
 }: StartMenuProps) {
   const contextMenu = useXpContextMenu();
   const menuRef = useRef<HTMLElement>(null);
@@ -74,85 +71,31 @@ export function StartMenu({
           <h2 className="start-menu__section-title">
             {DASHBOARD_COPY.PROGRAMS}
           </h2>
-          <button
-            type="button"
-            className="start-menu__item"
-            onClick={onAddMemo}
-            onContextMenu={(event) =>
-              contextMenu.openFromEvent(event, [
-                contextMenuCommand(
-                  XP_CONTEXT_MENU_COMMAND_ID.ADD_MEMO,
-                  DASHBOARD_COPY.ADD_MEMO_WIDGET,
-                  onAddMemo,
-                ),
-              ])
-            }
-          >
-            <img src={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.MEMO]} alt="" />
-            <span>{DASHBOARD_COPY.ADD_MEMO_WIDGET}</span>
-          </button>
-          <button
-            type="button"
-            className="start-menu__item"
-            onClick={onAddChecklist}
-            onContextMenu={(event) =>
-              contextMenu.openFromEvent(event, [
-                contextMenuCommand(
-                  XP_CONTEXT_MENU_COMMAND_ID.ADD_CHECKLIST,
-                  DASHBOARD_COPY.ADD_CHECKLIST_WIDGET,
-                  onAddChecklist,
-                ),
-              ])
-            }
-          >
-            <img
-              src={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.DAILY_CHECKLIST]}
-              alt=""
-            />
-            <span>{DASHBOARD_COPY.ADD_CHECKLIST_WIDGET}</span>
-          </button>
-          <button
-            type="button"
-            className="start-menu__item"
-            onClick={onAddStorageStatus}
-            onContextMenu={(event) =>
-              contextMenu.openFromEvent(event, [
-                contextMenuCommand(
-                  XP_CONTEXT_MENU_COMMAND_ID.ADD_STORAGE_STATUS,
-                  DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET,
-                  onAddStorageStatus,
-                ),
-              ])
-            }
-          >
-            <img
-              src={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.STORAGE_STATUS]}
-              alt=""
-            />
-            <span>{DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET}</span>
-          </button>
-          <button
-            type="button"
-            className="start-menu__item"
-            onClick={onAddImageUploadProfiles}
-            onContextMenu={(event) =>
-              contextMenu.openFromEvent(event, [
-                contextMenuCommand(
-                  XP_CONTEXT_MENU_COMMAND_ID.ADD_IMAGE_UPLOAD_PROFILES,
-                  DASHBOARD_COPY.ADD_IMAGE_UPLOAD_PROFILES_WIDGET,
-                  onAddImageUploadProfiles,
-                ),
-              ])
-            }
-          >
-            <img
-              src={
-                WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]
-              }
-              alt=""
-            />
-            <span>{DASHBOARD_COPY.ADD_IMAGE_UPLOAD_PROFILES_WIDGET}</span>
-          </button>
+          {DESKTOP_APPLICATION_CATALOG.filter(({ launchLocations }) =>
+            launchLocations.includes(APPLICATION_LAUNCH_LOCATION.START_MENU),
+          ).map(({ type, iconPath, contextCommandId }) => {
+            const launch = (): void => onLaunchApplication(type);
+            return (
+              <button
+                key={type}
+                type="button"
+                className="start-menu__item"
+                onClick={launch}
+                onContextMenu={(event) =>
+                  contextMenu.openFromEvent(event, [
+                    contextMenuCommand(
+                      contextCommandId,
+                      APPLICATION_NAME_BY_TYPE[type],
+                      launch,
+                    ),
+                  ])
+                }
+              >
+                <img src={iconPath} alt="" />
+                <span>{APPLICATION_NAME_BY_TYPE[type]}</span>
+              </button>
+            );
+          })}
         </section>
         <section
           className="start-menu__system"

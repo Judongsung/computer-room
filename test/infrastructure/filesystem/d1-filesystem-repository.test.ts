@@ -23,6 +23,7 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
+  await database.prepare("DELETE FROM guest_publications").run();
   await database
     .prepare(
       "UPDATE mobile_preferences SET wallpaper_entry_id = NULL WHERE singleton_id = 1",
@@ -212,6 +213,18 @@ describe("D1FilesystemRepository recycle bin", () => {
       )
       .bind("wallpaper")
       .run();
+    await database.batch([
+      database
+        .prepare(
+          "INSERT INTO guest_publications(entry_id, published_at) VALUES (?1, 30)",
+        )
+        .bind("trash-folder"),
+      database
+        .prepare(
+          "INSERT INTO guest_publications(entry_id, published_at) VALUES (?1, 30)",
+        )
+        .bind("wallpaper"),
+    ]);
 
     await expect(
       repository.moveToTrash(
@@ -228,6 +241,10 @@ describe("D1FilesystemRepository recycle bin", () => {
     });
     await expect(widgetOpen("memo-widget")).resolves.toBe(1);
     await expect(currentWallpaper()).resolves.toBe("wallpaper");
+    await expect(publishedEntryIds()).resolves.toEqual([
+      "trash-folder",
+      "wallpaper",
+    ]);
 
     await expect(
       repository.moveToTrash(
@@ -246,6 +263,7 @@ describe("D1FilesystemRepository recycle bin", () => {
     });
     await expect(widgetOpen("memo-widget")).resolves.toBe(0);
     await expect(currentWallpaper()).resolves.toBeNull();
+    await expect(publishedEntryIds()).resolves.toEqual([]);
     await expect(repository.listDesktopEntryIds()).resolves.toEqual([]);
     await expect(repository.listTrashRootIds()).resolves.toEqual(["trash-folder"]);
 
@@ -395,4 +413,11 @@ async function currentWallpaper(): Promise<string | null> {
   return database
     .prepare("SELECT wallpaper_entry_id FROM mobile_preferences WHERE singleton_id = 1")
     .first<string>("wallpaper_entry_id");
+}
+
+async function publishedEntryIds(): Promise<string[]> {
+  const result = await database
+    .prepare("SELECT entry_id FROM guest_publications ORDER BY entry_id")
+    .all<{ entry_id: string }>();
+  return result.results.map((row) => row.entry_id);
 }

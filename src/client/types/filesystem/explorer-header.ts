@@ -35,5 +35,10 @@ export interface XpExplorerHeaderProps {
   readonly address: ReactNode;
 }
 
+export interface XpExplorerAddressBarProps {
+  readonly locationIconPath: string;
+  readonly address: ReactNode;
+}
+
 export type XpExplorerHeaderStyle = CSSProperties &
   Readonly<Record<`--xp-explorer-${string}`, string>>;

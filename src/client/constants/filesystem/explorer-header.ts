@@ -58,7 +58,7 @@ export const XP_EXPLORER_TOOLBAR_ACTION = {
   RESTORE: "restore",
   PERMANENT_DELETE: "permanent-delete",
   EMPTY_RECYCLE_BIN: "empty-recycle-bin",
-  RUN_WIDGET: "run-widget",
+  RUN_APPLICATION: "run-application",
 } as const;
 
 export const XP_EXPLORER_SORT_FIELD_COMMAND_ID = {

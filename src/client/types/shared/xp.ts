@@ -33,6 +33,17 @@ export interface XpWidgetToolbarButtonProps
   readonly label: string;
 }
 
+export interface XpCheckboxProps {
+  readonly id?: string;
+  readonly checked: boolean;
+  readonly disabled?: boolean;
+  readonly indeterminate?: boolean;
+  readonly label: ReactNode;
+  readonly labelVisuallyHidden?: boolean;
+  readonly className?: string;
+  readonly onCheckedChange: (checked: boolean) => void;
+}
+
 export interface XpWindowFrameProps
   extends Omit<HTMLAttributes<HTMLElement>, "children" | "title"> {
   readonly title: string;

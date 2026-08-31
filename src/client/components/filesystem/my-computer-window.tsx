@@ -1,9 +1,7 @@
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { useState } from "react";
-import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { WidgetType } from "@/types/widgets/widget";
-import { WIDGET_TITLE_BY_TYPE } from "@client/content/ko/widgets/content";
-import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
+import { APPLICATION_NAME_BY_TYPE } from "@client/content/ko/desktop/application";
 import {
   SYSTEM_APP_CONFIG,
   SYSTEM_APP_ID,
@@ -17,29 +15,26 @@ import { useXpContextMenu } from "@client/state/context-menu/context-menu-contex
 import { contextMenuCommand } from "@client/domain/context-menu/context-menu";
 import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
 import { buildMyComputerExplorerHeaderModel } from "@client/domain/filesystem/explorer-header-menu";
-
-const WIDGET_CATALOG = [
-  WIDGET_TYPE.MEMO,
-  WIDGET_TYPE.DAILY_CHECKLIST,
-  WIDGET_TYPE.STORAGE_STATUS,
-  WIDGET_TYPE.IMAGE_UPLOAD_PROFILES,
-] as const;
+import {
+  DESKTOP_APPLICATION_CATALOG,
+} from "@client/constants/desktop/application-catalog";
+import { APPLICATION_LAUNCH_LOCATION } from "@client/constants/desktop/application";
 
 interface MyComputerWindowProps extends SystemWindowChromeProps {
-  readonly onAddWidget: (type: WidgetType) => void;
+  readonly onLaunchApplication: (type: WidgetType) => void;
 }
 
 export function MyComputerWindow({
-  onAddWidget,
+  onLaunchApplication,
   ...chrome
 }: MyComputerWindowProps) {
   const contextMenu = useXpContextMenu();
   const [selectedType, setSelectedType] = useState<WidgetType | null>(null);
-  const runSelectedWidget = (): void => {
-    if (selectedType) onAddWidget(selectedType);
+  const runSelectedApplication = (): void => {
+    if (selectedType) onLaunchApplication(selectedType);
   };
   const model = buildMyComputerExplorerHeaderModel(Boolean(selectedType), {
-    runWidget: runSelectedWidget,
+    runApplication: runSelectedApplication,
     close: chrome.onClose,
   });
   return (
@@ -58,26 +53,28 @@ export function MyComputerWindow({
       }
     >
       <p>{FILESYSTEM_COPY.MY_COMPUTER_DESCRIPTION}</p>
-      <div className="widget-catalog">
-        {WIDGET_CATALOG.map((type) => (
+      <div className="application-catalog">
+        {DESKTOP_APPLICATION_CATALOG.filter(({ launchLocations }) =>
+          launchLocations.includes(APPLICATION_LAUNCH_LOCATION.MY_COMPUTER),
+        ).map(({ type, iconPath }) => (
           <button
             key={type}
             type="button"
-            className={type === selectedType ? "widget-catalog__item widget-catalog__item--selected" : "widget-catalog__item"}
+            className={type === selectedType ? "application-catalog__item application-catalog__item--selected" : "application-catalog__item"}
             onClick={() => setSelectedType(type)}
-            onDoubleClick={() => onAddWidget(type)}
+            onDoubleClick={() => onLaunchApplication(type)}
             onContextMenu={(event) =>
               contextMenu.openFromEvent(event, [
                 contextMenuCommand(
                   XP_CONTEXT_MENU_COMMAND_ID.OPEN,
-                  FILESYSTEM_COPY.RUN_WIDGET,
-                  () => onAddWidget(type),
+                  FILESYSTEM_COPY.RUN_APPLICATION,
+                  () => onLaunchApplication(type),
                 ),
               ])
             }
           >
-            <img src={WIDGET_ICON_PATH_BY_TYPE[type]} alt="" />
-            <span>{WIDGET_TITLE_BY_TYPE[type]}</span>
+            <img src={iconPath} alt="" />
+            <span>{APPLICATION_NAME_BY_TYPE[type]}</span>
           </button>
         ))}
       </div>

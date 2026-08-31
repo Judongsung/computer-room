@@ -1,9 +1,13 @@
 import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { XP_CONTEXT_MENU_COPY } from "@client/content/ko/context-menu/context-menu";
-import { WIDGET_TYPE } from "@/constants/widgets/widget";
+import type { WidgetType } from "@/types/widgets/widget";
 import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
-import { DASHBOARD_COPY } from "@client/content/ko/widgets/content";
+import { APPLICATION_NAME_BY_TYPE } from "@client/content/ko/desktop/application";
+import {
+  DESKTOP_APPLICATION_CATALOG,
+} from "@client/constants/desktop/application-catalog";
+import { APPLICATION_LAUNCH_LOCATION } from "@client/constants/desktop/application";
 import { SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
 import {
   contextMenuCommand,
@@ -14,7 +18,7 @@ import type { SystemAppId } from "@client/types/desktop/system-app";
 
 interface DesktopBlankMenuActions {
   readonly createDirectory: () => void;
-  readonly addWidget: (type: typeof WIDGET_TYPE[keyof typeof WIDGET_TYPE]) => void;
+  readonly launchApplication: (type: WidgetType) => void;
   readonly refresh: () => void;
 }
 
@@ -28,25 +32,16 @@ export function buildDesktopBlankContextMenu(
       actions.createDirectory,
     ),
     contextMenuSeparator("desktop-blank-separator-1"),
-    contextMenuCommand(
-      XP_CONTEXT_MENU_COMMAND_ID.ADD_MEMO,
-      DASHBOARD_COPY.ADD_MEMO_WIDGET,
-      () => actions.addWidget(WIDGET_TYPE.MEMO),
-    ),
-    contextMenuCommand(
-      XP_CONTEXT_MENU_COMMAND_ID.ADD_CHECKLIST,
-      DASHBOARD_COPY.ADD_CHECKLIST_WIDGET,
-      () => actions.addWidget(WIDGET_TYPE.DAILY_CHECKLIST),
-    ),
-    contextMenuCommand(
-      XP_CONTEXT_MENU_COMMAND_ID.ADD_STORAGE_STATUS,
-      DASHBOARD_COPY.ADD_STORAGE_STATUS_WIDGET,
-      () => actions.addWidget(WIDGET_TYPE.STORAGE_STATUS),
-    ),
-    contextMenuCommand(
-      XP_CONTEXT_MENU_COMMAND_ID.ADD_IMAGE_UPLOAD_PROFILES,
-      DASHBOARD_COPY.ADD_IMAGE_UPLOAD_PROFILES_WIDGET,
-      () => actions.addWidget(WIDGET_TYPE.IMAGE_UPLOAD_PROFILES),
+    ...DESKTOP_APPLICATION_CATALOG.filter(({ launchLocations }) =>
+      launchLocations.includes(
+        APPLICATION_LAUNCH_LOCATION.DESKTOP_CONTEXT_MENU,
+      ),
+    ).map(({ type, contextCommandId }) =>
+      contextMenuCommand(
+        contextCommandId,
+        APPLICATION_NAME_BY_TYPE[type],
+        () => actions.launchApplication(type),
+      ),
     ),
     contextMenuSeparator("desktop-blank-separator-2"),
     contextMenuCommand(

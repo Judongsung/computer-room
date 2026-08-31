@@ -26,12 +26,18 @@ const ImageUploadProfilesWidget = lazy(() =>
     (module) => ({ default: module.ImageUploadProfilesWidget }),
   ),
 );
+const AdminApplication = lazy(() =>
+  import("@client/components/widgets/admin-application").then((module) => ({
+    default: module.AdminApplication,
+  })),
+);
 
 const WIDGET_COMPONENTS = {
   [WIDGET_TYPE.MEMO]: MemoWidget,
   [WIDGET_TYPE.DAILY_CHECKLIST]: DailyChecklistWidget,
   [WIDGET_TYPE.STORAGE_STATUS]: StorageStatusWidget,
   [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]: ImageUploadProfilesWidget,
+  [WIDGET_TYPE.ADMIN]: AdminApplication,
 } satisfies Record<WidgetType, ComponentType<WidgetComponentProps>>;
 
 export function WidgetRenderer(props: WidgetComponentProps) {
