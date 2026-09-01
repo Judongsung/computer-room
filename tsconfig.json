@@ -18,7 +18,7 @@
     "skipLibCheck": true
   },
   "include": [
-    "worker-configuration.d.ts",
+    "src/types/platform/generated/worker-configuration.d.ts",
     "src/**/*.ts",
     "db/**/*.ts",
     "test/**/*.ts",

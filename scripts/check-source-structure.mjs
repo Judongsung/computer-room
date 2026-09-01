@@ -25,6 +25,9 @@ if (violations.length > 0) {
 console.log("Source structure check passed.");
 
 function inspectDirectory(directory) {
+  const projectDirectory = normalize(relative(process.cwd(), directory));
+  if (SOURCE_STRUCTURE_POLICY.EXCLUDED_DIRECTORIES.has(projectDirectory)) return;
+
   const entries = readdirSync(directory, { withFileTypes: true });
   const productFiles = entries.filter(
     (entry) => entry.isFile() && SOURCE_STRUCTURE_POLICY.EXTENSIONS.has(extname(entry.name)),

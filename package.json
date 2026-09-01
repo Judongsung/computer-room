@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "preview": "vite preview",
-    "typegen": "wrangler types --env-file .dev.vars.example",
+    "typegen": "wrangler types src/types/platform/generated/worker-configuration.d.ts --env-file .dev.vars.example",
     "check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.node.json --noEmit && npm run check:migrations && npm run check:structure && npm run check:content && npm run check:http-routes",
     "check:migrations": "node scripts/check-migration-safety.mjs",
     "check:structure": "node scripts/check-source-structure.mjs",
