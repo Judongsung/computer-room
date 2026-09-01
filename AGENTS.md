@@ -51,6 +51,7 @@ Treat API contracts, database schemas, storage conventions, and shared constants
 * Validate untrusted input at system boundaries.
 * Reuse existing request, response, and contract types when available.
 * Keep HTTP transport concerns separate from domain logic.
+* Build dynamic API route patterns with the shared HTTP route helpers. Reuse `API_PATHS` and `API_ROUTE_PATTERN`; do not inline `/api/...`, `([^/]+)`, or exact-route anchors in route handlers.
 * Keep D1 and R2 implementation details inside infrastructure code.
 * Use explicit migrations for database schema changes.
 * Treat applied migration files as immutable; add a new migration instead of editing or removing one.

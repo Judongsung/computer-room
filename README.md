@@ -261,6 +261,8 @@ src/
 
 계층은 SOLID 원칙에 따라 분리합니다. 도메인 로직은 React·Cloudflare·D1·R2·HTTP에 의존하지 않고, application 계층은 구체 구현 대신 포트 인터페이스에 의존합니다. D1·R2 세부 구현은 infrastructure 밖으로 노출하지 않습니다.
 
+동적 HTTP 경로는 공용 exact-route 도우미와 `API_PATHS` 계열 상수를 사용합니다. 캡처 구문과 `/api/...` 문자열을 개별 핸들러에 직접 작성하지 않으며 `npm run check:http-routes`가 이 경계를 검사합니다.
+
 경로 별칭은 다음과 같습니다.
 
 - `@/*` → `src/*`
@@ -301,7 +303,7 @@ npm run build
 git diff --check
 ```
 
-- `npm run check`: TypeScript, 마이그레이션 안전성, 디렉터리·파일 구조 검사
+- `npm run check`: TypeScript, 마이그레이션 안전성, 디렉터리·파일 구조와 HTTP 라우트 경계 검사
 - `npm test`: Worker와 React 클라이언트 테스트
 - `npm run build`: Worker·클라이언트 프로덕션 빌드와 초기 번들 500KiB 제한 검사
 
