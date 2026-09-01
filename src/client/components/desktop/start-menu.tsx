@@ -10,7 +10,8 @@ import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import type { StartMenuProps } from "@client/types/desktop/desktop";
 import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
 import { contextMenuCommand } from "@client/domain/context-menu/context-menu";
-import { clearOwnerAccessHint } from "@client/domain/platform/access-mode";
+import { AccessLogoutLink } from "@client/components/shared/access-logout-link";
+import { ACCESS_COPY } from "@client/content/ko/platform/access";
 
 export function StartMenu({
   isOpen,
@@ -125,15 +126,20 @@ export function StartMenu({
         </section>
       </div>
       <footer className="start-menu__footer">
-        <a
+        <AccessLogoutLink
           className="start-menu__power"
-          href={logoutUrl}
+          logoutUrl={logoutUrl}
           title={DASHBOARD_COPY.POWER_DESCRIPTION}
-          onClick={clearOwnerAccessHint}
+          pendingChildren={
+            <>
+              <img src={DESKTOP_ASSET_PATHS.POWER_ICON} alt="" />
+              <strong>{ACCESS_COPY.LOGGING_OUT}</strong>
+            </>
+          }
         >
           <img src={DESKTOP_ASSET_PATHS.POWER_ICON} alt="" />
           <strong>{DASHBOARD_COPY.POWER}</strong>
-        </a>
+        </AccessLogoutLink>
       </footer>
     </aside>
   );

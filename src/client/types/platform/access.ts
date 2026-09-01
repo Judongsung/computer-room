@@ -26,3 +26,12 @@ export type AccessBootstrapState =
 export interface GuestSessionGateway {
   getSession(): Promise<GuestSessionInfo>;
 }
+
+export interface AccessLogoutGateway {
+  logout(logoutUrl: string): Promise<void>;
+}
+
+export interface AccessLogoutNavigator {
+  replace(path: string): void;
+  assign(path: string): void;
+}

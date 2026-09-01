@@ -2,6 +2,7 @@ export const ACCESS_JWT_HEADER = "cf-access-jwt-assertion";
 export const ACCESS_CERTS_PATH = "/cdn-cgi/access/certs";
 export const ACCESS_LOGOUT_PATH = "/cdn-cgi/access/logout";
 export const ACCESS_LOGIN_PATH = "/auth/login";
+export const ACCESS_GUEST_LANDING_PATH = "/";
 export const ACCESS_MODE_QUERY_PARAMETER = "access";
 export const ACCESS_MODE_OWNER_VALUE = "owner";
 

@@ -11,3 +11,7 @@ export const ACCESS_BOOTSTRAP_STATUS = {
 } as const;
 
 export const OWNER_ACCESS_STORAGE_KEY = "computer-room.access-mode";
+
+export const ACCESS_LOGOUT_REQUEST_POLICY = {
+  CACHE: "no-store",
+} as const satisfies { readonly CACHE: RequestCache };

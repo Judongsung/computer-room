@@ -3,7 +3,8 @@ import type { SessionInfo } from "@/types/platform/auth";
 import { MobileMenu } from "@client/components/mobile/shared/mobile-menu";
 import { MOBILE_ACTIVITY_KIND } from "@client/constants/mobile/activity";
 import type { MobileShellController } from "@client/types/app/mobile-shell";
-import { clearOwnerAccessHint } from "@client/domain/platform/access-mode";
+import { AccessLogoutLink } from "@client/components/shared/access-logout-link";
+import { ACCESS_COPY } from "@client/content/ko/platform/access";
 
 interface MobileShellMenuProps {
   readonly session: SessionInfo;
@@ -30,9 +31,12 @@ export function MobileShellMenu({
           <button type="button" onClick={controller.openWallpaper}>
             {MOBILE_COPY.WALLPAPER}
           </button>
-          <a href={session.logoutUrl} onClick={clearOwnerAccessHint}>
+          <AccessLogoutLink
+            logoutUrl={session.logoutUrl}
+            pendingChildren={ACCESS_COPY.LOGGING_OUT}
+          >
             {MOBILE_COPY.LOGOUT}
-          </a>
+          </AccessLogoutLink>
         </>
       ) : null}
       {activity.kind === MOBILE_ACTIVITY_KIND.TRASH ? (
