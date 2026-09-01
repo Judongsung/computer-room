@@ -1,7 +1,7 @@
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 import type { FilesystemDirectorySort } from "@/types/filesystem/filesystem";
-import { usePaginatedDirectory } from "@client/hooks/filesystem/directory/use-paginated-directory";
+import { useDirectoryNavigation } from "@client/hooks/filesystem/directory/use-directory-navigation";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 
 interface DirectoryExplorerOptions {
@@ -25,61 +25,32 @@ export function useDirectoryExplorer({
   onDirectoryChanged,
   onFilesystemChanged,
 }: DirectoryExplorerOptions) {
-  const [directoryId, setDirectoryId] = useState(initialDirectoryId);
-  const [history, setHistory] = useState<readonly string[]>([]);
-  const query = usePaginatedDirectory({
+  const handleDirectoryLoaded = useCallback(
+    (directoryId: string, title: string): void => {
+      onDirectoryChanged(windowId, directoryId, title);
+    },
+    [onDirectoryChanged, windowId],
+  );
+  const navigation = useDirectoryNavigation({
     gateway,
-    directoryId,
+    initialDirectoryId,
     revision,
     errorFallback: FILESYSTEM_COPY.LOAD_FAILED,
+    onDirectoryLoaded: handleDirectoryLoaded,
   });
-  const page = query.page;
-
-  useEffect(() => {
-    if (!page) return;
-    onDirectoryChanged(windowId, page.directory.id, page.directory.name);
-  }, [onDirectoryChanged, page?.directory.id, page?.directory.name, windowId]);
-
-  const navigate = useCallback(
-    (nextDirectoryId: string): void => {
-      if (page?.directory.id) {
-        setHistory((current) => [...current, page.directory.id]);
-      }
-      setDirectoryId(nextDirectoryId);
-    },
-    [page?.directory.id],
-  );
-
-  const navigateBack = useCallback((): void => {
-    const previous = history.at(-1);
-    if (!previous) return;
-    setHistory((current) => current.slice(0, -1));
-    setDirectoryId(previous);
-  }, [history]);
-
-  const navigateUp = useCallback((): void => {
-    const parent = page?.breadcrumbs.at(-2);
-    if (parent) navigate(parent.id);
-  }, [navigate, page?.breadcrumbs]);
 
   const changeSort = useCallback(
     async (sort: FilesystemDirectorySort): Promise<void> => {
-      const currentDirectoryId = page?.directory.id;
+      const currentDirectoryId = navigation.page?.directory.id;
       if (!currentDirectoryId) return;
       await gateway.updateDirectorySort(currentDirectoryId, sort);
       onFilesystemChanged();
     },
-    [gateway, onFilesystemChanged, page?.directory.id],
+    [gateway, navigation.page?.directory.id, onFilesystemChanged],
   );
 
   return {
-    ...query,
-    directoryId,
-    history,
-    navigate,
-    navigateDirect: setDirectoryId,
-    navigateBack,
-    navigateUp,
+    ...navigation,
     changeSort,
   } as const;
 }

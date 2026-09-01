@@ -5,10 +5,13 @@ import {
   SYSTEM_APP_CONFIG,
   SYSTEM_APP_ID,
 } from "@client/constants/desktop/system-app";
+import {
+  FILESYSTEM_DRAG_SOURCE,
+} from "@client/constants/filesystem/filesystem";
 import { XP_EXPLORER_HEADER_CLASS_NAME } from "@client/constants/filesystem/explorer-header";
 import { DesktopAppWindow } from "@client/components/desktop/desktop-app-window";
 import { DocumentsExplorerHeader } from "@client/components/filesystem/explorer/documents-explorer-header";
-import { DocumentsDirectoryView } from "@client/components/filesystem/explorer/documents-directory-view";
+import { ExplorerDirectoryView } from "@client/components/filesystem/explorer/explorer-directory-view";
 import {
   ConfirmDialog,
   DirectoryPickerDialog,
@@ -18,6 +21,7 @@ import { DownloadTransferDialog } from "@client/components/filesystem/download-t
 import { FilesystemBatchResultDialog } from "@client/components/filesystem/filesystem-batch-result-dialog";
 import { FolderPropertiesDialog } from "@client/components/filesystem/details/folder-properties-dialog";
 import { useDocumentsController } from "@client/hooks/filesystem/explorer/use-documents-controller";
+import { writeFilesystemDragPayload } from "@client/domain/filesystem/drag";
 import type { DocumentsWindowProps } from "@client/types/filesystem/explorer";
 import { downloadFile } from "@client/utils/download-file";
 
@@ -112,22 +116,46 @@ export function DocumentsWindow({
       {controller.error ? <p className="explorer-message" role="alert">{controller.error}</p> : null}
       {!page && !controller.error ? <p className="explorer-message">{FILESYSTEM_COPY.BUSY}</p> : null}
       {page && currentDirectoryId ? (
-        <DocumentsDirectoryView
+        <ExplorerDirectoryView
           page={page}
           busy={controller.busy}
           currentDirectoryId={currentDirectoryId}
-          dropTargetId={controller.dropTargetId}
-          contentRef={controller.contentRef}
-          selection={controller.selection}
-          marquee={controller.marquee}
-          selectedDirectory={controller.selectedDirectory}
+          selection={{
+            selectedIds: controller.selection.selectedIds,
+            onSelect: controller.selection.select,
+            onSelectAll: controller.selection.selectAll,
+            onClear: controller.selection.clear,
+          }}
+          marquee={{
+            contentRef: controller.contentRef,
+            ...controller.marquee,
+          }}
+          drag={{
+            targetId: controller.dropTargetId,
+            onTargetChange: controller.setDropTargetId,
+            onDrop: controller.dropIntoDirectory,
+            onDragStart: (entry, event) => {
+              const ids = controller.selection.dragIds(entry.id);
+              controller.selection.replace(ids);
+              writeFilesystemDragPayload(event.dataTransfer, {
+                ids,
+                primaryId: entry.id,
+                source: FILESYSTEM_DRAG_SOURCE.ACTIVE,
+              });
+            },
+          }}
+          properties={{
+            selectedDirectory: controller.selectedDirectory,
+            onShow: controller.folderProperties.open,
+          }}
+          contextMenu={{
+            onEntry: controller.openEntryContextMenu,
+            onDirectory: controller.openDirectoryContextMenu,
+          }}
           thumbnailUrl={gateway.thumbnailUrl.bind(gateway)}
+          emptyLabel={FILESYSTEM_COPY.EMPTY_DIRECTORY}
+          loadMoreLabel={FILESYSTEM_COPY.LOAD_MORE}
           onOpenEntry={controller.openEntry}
-          onShowProperties={controller.folderProperties.open}
-          onDropTargetChange={controller.setDropTargetId}
-          onDropIntoDirectory={controller.dropIntoDirectory}
-          onEntryContextMenu={controller.openEntryContextMenu}
-          onDirectoryContextMenu={controller.openDirectoryContextMenu}
           onLoadMore={() => void controller.explorer.loadMore()}
         />
       ) : null}

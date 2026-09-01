@@ -1,4 +1,5 @@
-import { toPublicDirectory, toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper";
+import { assembleFilesystemDirectoryPage } from "@/application/filesystem/directory/filesystem-directory-page";
+import { toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper";
 import { ACCESS_LOGIN_PATH } from "@/constants/platform/auth";
 import { GUEST_ERRORS } from "@/constants/guest/errors/guest";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
@@ -55,20 +56,23 @@ export class GuestService implements GuestUseCases {
     const sort =
       (await this.directorySorts.find(directory.id)) ??
       DEFAULT_FILESYSTEM_DIRECTORY_SORT;
-    const entries = await this.publications.listVisibleChildren(
-      directory.id,
+    const [entries, breadcrumbs] = await Promise.all([
+      this.publications.listVisibleChildren(
+        directory.id,
+        offset,
+        limit + 1,
+        sort,
+      ),
+      this.publications.listBreadcrumbs(directory.id),
+    ]);
+    return assembleFilesystemDirectoryPage({
+      directory,
+      breadcrumbs,
+      entries,
       offset,
-      limit + 1,
+      limit,
       sort,
-    );
-    const hasMore = entries.length > limit;
-    return {
-      directory: toPublicDirectory(directory),
-      breadcrumbs: await this.publications.listBreadcrumbs(directory.id),
-      items: entries.slice(0, limit).map(toPublicEntry),
-      nextOffset: hasMore ? offset + limit : null,
-      sort,
-    };
+    });
   }
 
   async downloadFile(id: string): Promise<FilesystemDownload> {

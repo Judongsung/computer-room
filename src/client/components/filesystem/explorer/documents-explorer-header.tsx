@@ -9,7 +9,7 @@ import type {
   FilesystemDirectorySort,
   FilesystemEntry,
 } from "@/types/filesystem/filesystem";
-import { XP_EXPLORER_HEADER_CLASS_NAME } from "@client/constants/filesystem/explorer-header";
+import { ExplorerBreadcrumbs } from "@client/components/filesystem/header/explorer-breadcrumbs";
 import { XpExplorerHeader } from "@client/components/filesystem/header/xp-explorer-header";
 import { buildDocumentsExplorerHeaderModel } from "@client/domain/filesystem/explorer-header-menu";
 
@@ -115,33 +115,15 @@ export function DocumentsExplorerHeader({
         locationIconPath={locationIconPath}
         address={
           page ? (
-            page.breadcrumbs.map((item, index) => (
-              <span key={item.id}>
-                {index > 0 ? (
-                  <span
-                    className={XP_EXPLORER_HEADER_CLASS_NAME.BREADCRUMB_SEPARATOR}
-                    aria-hidden="true"
-                  >
-                    {"\\"}
-                  </span>
-                ) : null}
-                <button
-                  type="button"
-                  className={XP_EXPLORER_HEADER_CLASS_NAME.BREADCRUMB}
-                  onClick={() => onNavigateDirect(item.id)}
-                  data-drop-target={dropTargetId === item.id}
-                  onDragEnter={(event) => {
-                    event.stopPropagation();
-                    onDropTargetChange(item.id);
-                  }}
-                  onDragLeave={() => onDropTargetChange(null)}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={(event) => onDropIntoDirectory(event, item.id)}
-                >
-                  {item.name}
-                </button>
-              </span>
-            ))
+            <ExplorerBreadcrumbs
+              items={page.breadcrumbs}
+              onNavigate={(item) => onNavigateDirect(item.id)}
+              drop={{
+                targetId: dropTargetId,
+                onTargetChange: onDropTargetChange,
+                onDrop: onDropIntoDirectory,
+              }}
+            />
           ) : (
             fallbackAddress
           )

@@ -22,10 +22,8 @@ import type {
 import type { FilesystemDirectoryUseCases } from "@/types/filesystem/services/directory-service";
 import type { Clock, IdGenerator } from "@/types/platform/runtime";
 import { nextDesktopOrder } from "@/application/filesystem/desktop-placement";
-import {
-  toPublicDirectory,
-  toPublicEntry,
-} from "@/application/filesystem/filesystem-entry-mapper";
+import { assembleFilesystemDirectoryPage } from "@/application/filesystem/directory/filesystem-directory-page";
+import { toPublicDirectory } from "@/application/filesystem/filesystem-entry-mapper";
 import { ActiveFilesystemEntryResolver } from "@/application/filesystem/policies/active-filesystem-entry-resolver";
 import { FilesystemNameAllocator } from "@/application/filesystem/policies/filesystem-name-allocator";
 
@@ -54,20 +52,18 @@ export class FilesystemDirectoryService
     const sort =
       (await this.directorySorts.find(directory.id)) ??
       DEFAULT_FILESYSTEM_DIRECTORY_SORT;
-    const entries = await this.repository.listChildren(
-      directory.id,
+    const [entries, breadcrumbs] = await Promise.all([
+      this.repository.listChildren(directory.id, offset, limit + 1, sort),
+      this.repository.listBreadcrumbs(directory.id),
+    ]);
+    return assembleFilesystemDirectoryPage({
+      directory,
+      breadcrumbs,
+      entries,
       offset,
-      limit + 1,
+      limit,
       sort,
-    );
-    const hasMore = entries.length > limit;
-    return {
-      directory: toPublicDirectory(directory),
-      breadcrumbs: await this.repository.listBreadcrumbs(directory.id),
-      items: entries.slice(0, limit).map(toPublicEntry),
-      nextOffset: hasMore ? offset + limit : null,
-      sort,
-    };
+    });
   }
 
   async updateDirectorySort(
