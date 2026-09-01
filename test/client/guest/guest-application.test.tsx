@@ -7,6 +7,8 @@ import { CLIENT_ACCESS_MODE } from "@client/constants/platform/access";
 import { CLIENT_INTERFACE_MODE } from "@client/constants/shared/interface-mode";
 import { GUEST_COPY } from "@client/content/ko/guest/guest";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
+import { DASHBOARD_COPY } from "@client/content/ko/widgets/content";
+import { PROJECT_EXTERNAL_LINKS } from "@client/constants/platform/external-links";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
@@ -73,6 +75,36 @@ describe("guest application", () => {
     await user.click(screen.getByRole("button", { name: MOBILE_COPY.HOME }));
     await user.click(await screen.findByRole("button", { name: "공개 메모" }));
     expect(await screen.findByRole("heading", { name: "공개 내용" })).toBeInTheDocument();
+  });
+
+  it("shows the project repository in the guest start menu", async () => {
+    const user = userEvent.setup();
+    render(
+      <App
+        guestApi={new FakeGuestGateway()}
+        accessMode={CLIENT_ACCESS_MODE.GUEST}
+        interfaceMode={CLIENT_INTERFACE_MODE.DESKTOP}
+      />,
+    );
+
+    await user.click(
+      await screen.findByRole("button", { name: DASHBOARD_COPY.START }),
+    );
+    const repository = screen.getByRole("link", {
+      name: new RegExp(DASHBOARD_COPY.GITHUB_REPOSITORY),
+    });
+    expect(repository).toHaveAttribute(
+      "href",
+      PROJECT_EXTERNAL_LINKS.GITHUB_REPOSITORY,
+    );
+    expect(repository).toHaveAttribute("target", "_blank");
+
+    await user.click(repository);
+    expect(
+      screen.queryByRole("link", {
+        name: new RegExp(DASHBOARD_COPY.GITHUB_REPOSITORY),
+      }),
+    ).not.toBeInTheDocument();
   });
 });
 

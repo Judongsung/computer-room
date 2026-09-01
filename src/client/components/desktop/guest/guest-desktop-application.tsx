@@ -20,6 +20,7 @@ import {
   DESKTOP_LAYOUT,
 } from "@client/constants/desktop/desktop";
 import { LAYOUT_SAVE_STATUS } from "@client/constants/desktop/layout-save";
+import { PROJECT_EXTERNAL_LINKS } from "@client/constants/platform/external-links";
 import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
 import { GUEST_DESKTOP_LAYOUT } from "@client/constants/guest/guest";
 import { GUEST_COPY } from "@client/content/ko/guest/guest";
@@ -291,6 +292,7 @@ function GuestDesktopContent({ session, gateway }: GuestApplicationProps) {
       <GuestStartMenu
         open={startMenuOpen}
         loginUrl={session.loginUrl}
+        repositoryUrl={PROJECT_EXTERNAL_LINKS.GITHUB_REPOSITORY}
         onClose={() => setStartMenuOpen(false)}
       />
       <Taskbar

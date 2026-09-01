@@ -2,16 +2,19 @@ import { useEffect, useRef } from "react";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import { GUEST_COPY } from "@client/content/ko/guest/guest";
+import { DASHBOARD_COPY } from "@client/content/ko/widgets/content";
 
 interface GuestStartMenuProps {
   readonly open: boolean;
   readonly loginUrl: string;
+  readonly repositoryUrl: string;
   readonly onClose: () => void;
 }
 
 export function GuestStartMenu({
   open,
   loginUrl,
+  repositoryUrl,
   onClose,
 }: GuestStartMenuProps) {
   const menuRef = useRef<HTMLElement>(null);
@@ -53,6 +56,19 @@ export function GuestStartMenu({
             <small>{GUEST_COPY.START_MENU_DESCRIPTION}</small>
           </span>
         </div>
+        <a
+          className="start-menu__system-item start-menu__system-link"
+          href={repositoryUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={onClose}
+        >
+          <img src={DESKTOP_ASSET_PATHS.INTERNET_ICON} alt="" />
+          <span>
+            <strong>{DASHBOARD_COPY.GITHUB_REPOSITORY}</strong>
+            <small>{DASHBOARD_COPY.GITHUB_REPOSITORY_DESCRIPTION}</small>
+          </span>
+        </a>
       </div>
       <footer className="start-menu__footer">
         <a className="start-menu__power" href={loginUrl}>
