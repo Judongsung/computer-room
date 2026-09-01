@@ -1,7 +1,10 @@
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { FILESYSTEM_DOWNLOAD_STATUS } from "@client/constants/filesystem/download";
+import { DESKTOP_MODAL_VARIANT } from "@client/constants/desktop/modal";
+import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import type { FilesystemDownloadState } from "@client/types/filesystem/download";
 import { formatFileSize } from "@client/utils/format-file-size";
+import { DesktopModal } from "@client/components/desktop/desktop-modal";
 
 export function DownloadTransferDialog({
   state,
@@ -19,13 +22,14 @@ export function DownloadTransferDialog({
       ? Math.min(1, state.transferredBytes / state.totalBytes)
       : undefined;
   return (
-    <div className="filesystem-transfer">
-      <section
-        className="filesystem-dialog filesystem-transfer__window"
-        role="dialog"
-        aria-label={FILESYSTEM_COPY.DOWNLOAD_TITLE}
-      >
-        <strong>{FILESYSTEM_COPY.DOWNLOAD_TITLE}</strong>
+    <DesktopModal
+      title={FILESYSTEM_COPY.DOWNLOAD_TITLE}
+      iconPath={DESKTOP_ASSET_PATHS.FILE_ICON}
+      variant={DESKTOP_MODAL_VARIANT.TRANSFER}
+      onRequestClose={isError ? onClose : onCancel}
+      closeDisabled={!isError}
+    >
+      <section className="filesystem-dialog filesystem-transfer__window">
         <p role={isError ? "alert" : undefined}>
           {isError
             ? state.error ?? FILESYSTEM_COPY.DOWNLOAD_FAILED
@@ -62,6 +66,6 @@ export function DownloadTransferDialog({
           </button>
         </div>
       </section>
-    </div>
+    </DesktopModal>
   );
 }

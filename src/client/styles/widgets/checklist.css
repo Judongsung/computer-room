@@ -73,18 +73,8 @@
   flex: 1;
 }
 
-.dialog-backdrop {
-  position: fixed;
-  z-index: var(--modal-z-index);
-  display: grid;
-  padding: 20px;
-  place-items: center;
-  background: rgb(0 0 0 / 46%);
-  inset: 0;
-}
-
 .checklist-log-dialog {
-  width: 640px;
+  width: min(640px, calc(100vw - 40px));
   max-height: calc(100vh - 40px);
 }
 
@@ -103,9 +93,8 @@
   overflow: auto;
   min-height: 120px;
   flex: 1;
-  margin: 8px;
   padding: 12px;
-  background: #fff;
+  background: var(--luna-surface);
 }
 
 .checklist-log-group + .checklist-log-group {

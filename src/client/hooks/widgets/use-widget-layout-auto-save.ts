@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { cloneWidgetLayouts } from "@/domain/widgets/widget-layout";
+import {
+  cloneWidgetLayouts,
+  normalizeWidgetStackOrders,
+} from "@/domain/widgets/widget-layout";
 import type { WidgetLayout } from "@/types/widgets/widget";
 import {
   LAYOUT_SAVE_DEBOUNCE_MILLISECONDS,
@@ -63,7 +66,9 @@ export function useWidgetLayoutAutoSave(
 
   const schedule = useCallback(
     (widgets: readonly WidgetLayout[]): void => {
-      latestSnapshot.current = cloneWidgetLayouts(widgets);
+      latestSnapshot.current = cloneWidgetLayouts(
+        normalizeWidgetStackOrders(widgets),
+      );
       setStatus(LAYOUT_SAVE_STATUS.PENDING);
       setError(null);
       if (timer.current !== null) {
@@ -91,8 +96,8 @@ export function useWidgetLayoutAutoSave(
   const forget = useCallback((widgetIds: readonly string[]): void => {
     if (latestSnapshot.current === null) return;
     const ids = new Set(widgetIds);
-    latestSnapshot.current = latestSnapshot.current.filter(
-      (widget) => !ids.has(widget.id),
+    latestSnapshot.current = normalizeWidgetStackOrders(
+      latestSnapshot.current.filter((widget) => !ids.has(widget.id)),
     );
   }, []);
 

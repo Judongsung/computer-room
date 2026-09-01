@@ -1,22 +1,9 @@
-.filesystem-dialog-backdrop {
-  position: absolute;
-  z-index: 20;
-  display: grid;
-  padding: 14px;
-  place-items: center;
-  background: rgb(0 0 0 / 28%);
-  inset: 0;
-}
-
 .filesystem-dialog {
   display: grid;
-  width: min(390px, calc(100% - 20px));
+  width: min(390px, calc(100vw - 40px));
   padding: 14px;
   gap: 12px;
-  border: 2px solid #0055ea;
-  border-radius: 4px;
-  background: #ece9d8;
-  box-shadow: 3px 4px 12px rgb(0 0 0 / 45%);
+  background: var(--luna-surface);
 }
 
 .filesystem-dialog label {
@@ -35,7 +22,7 @@
 }
 
 .filesystem-dialog--picker {
-  width: min(480px, calc(100% - 20px));
+  width: min(480px, calc(100vw - 40px));
 }
 
 .filesystem-picker__breadcrumbs {

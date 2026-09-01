@@ -1,5 +1,7 @@
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
+import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
+import { DesktopModal } from "@client/components/desktop/desktop-modal";
 
 export function FilesystemBatchResultDialog({
   result,
@@ -10,13 +12,12 @@ export function FilesystemBatchResultDialog({
 }) {
   if (!result || result.failures.length === 0) return null;
   return (
-    <div className="filesystem-dialog-backdrop">
-      <section
-        className="filesystem-dialog"
-        role="dialog"
-        aria-label={FILESYSTEM_COPY.BATCH_RESULT_TITLE}
-      >
-        <strong>{FILESYSTEM_COPY.BATCH_RESULT_TITLE}</strong>
+    <DesktopModal
+      title={FILESYSTEM_COPY.BATCH_RESULT_TITLE}
+      iconPath={DESKTOP_ASSET_PATHS.FILE_ICON}
+      onRequestClose={onClose}
+    >
+      <section className="filesystem-dialog">
         <p>{FILESYSTEM_COPY.BATCH_PARTIAL}</p>
         <p>{FILESYSTEM_COPY.BATCH_SUCCESS_COUNT(result.succeededIds.length)}</p>
         <ul className="filesystem-transfer__failures">
@@ -32,6 +33,6 @@ export function FilesystemBatchResultDialog({
           </button>
         </div>
       </section>
-    </div>
+    </DesktopModal>
   );
 }

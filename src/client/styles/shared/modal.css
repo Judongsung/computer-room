@@ -1,0 +1,59 @@
+.desktop-modal {
+  position: fixed;
+  inset: 0 0 var(--taskbar-height) 0;
+  width: fit-content;
+  max-width: calc(
+    100vw - var(--desktop-modal-viewport-margin) -
+      var(--desktop-modal-viewport-margin)
+  );
+  height: fit-content;
+  max-height: calc(
+    100vh - var(--taskbar-height) -
+      var(--desktop-modal-viewport-margin) -
+      var(--desktop-modal-viewport-margin)
+  );
+  margin: auto;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  background: transparent;
+}
+
+.desktop-modal--positioned {
+  right: auto;
+  bottom: auto;
+  margin: 0;
+}
+
+.desktop-modal__window {
+  max-width: 100%;
+  max-height: calc(
+    100vh - var(--taskbar-height) -
+      var(--desktop-modal-viewport-margin) -
+      var(--desktop-modal-viewport-margin)
+  );
+}
+
+.desktop-modal__body {
+  overflow: auto;
+}
+
+.desktop-modal__window .xp-window-frame__title-bar {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.desktop-modal--dragging .xp-window-frame__title-bar {
+  cursor: grabbing;
+}
+
+.desktop-modal::backdrop {
+  background: rgb(0 0 0 / 28%);
+}
+
+.desktop-modal--transfer::backdrop {
+  background: rgb(0 0 0 / 20%);
+}

@@ -10,6 +10,10 @@ import {
 import { AppError } from "@/domain/shared/errors";
 import { getKoreaDateContext } from "@/domain/shared/korea-date";
 import { validateWidgetLayout } from "@/domain/widgets/widget-layout-validation";
+import {
+  normalizeWidgetStackOrders,
+  widgetLayoutsEqual,
+} from "@/domain/widgets/widget-layout";
 import type { ChecklistRepository } from "@/types/widgets/checklist-repository";
 import type { MemoRepository } from "@/types/widgets/memo-repository";
 import type { Clock, IdGenerator } from "@/types/platform/runtime";
@@ -41,12 +45,16 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     const staleSessionLayouts = openLayouts.filter(
       (layout) => !WIDGET_BEHAVIOR[layout.type].persistsOpenState,
     );
-    await Promise.all(
-      staleSessionLayouts.map((layout) =>
+    const normalizedLayouts = normalizeWidgetStackOrders(restorableLayouts);
+    await Promise.all([
+      ...staleSessionLayouts.map((layout) =>
         this.layouts.setOpen(layout.id, false),
       ),
-    );
-    return this.hydrate(restorableLayouts);
+      ...(widgetLayoutsEqual(restorableLayouts, normalizedLayouts)
+        ? []
+        : [this.layouts.synchronize(normalizedLayouts)]),
+    ]);
+    return this.hydrate(normalizedLayouts);
   }
 
   async getWidget(widgetId: string): Promise<DashboardWidget> {

@@ -53,6 +53,19 @@ describe("desktop window layout", () => {
       WINDOW_STATE.NORMAL,
     );
   });
+
+  it("normalizes duplicate stack orders even when the target already sorts last", () => {
+    const back = widget("00000000-0000-4000-8000-000000000001", 0);
+    const target = widget("00000000-0000-4000-8000-000000000002", 0);
+
+    const focused = bringWidgetToFront([back, target], target.id);
+
+    expect(focused.map(({ id, stackOrder }) => ({ id, stackOrder }))).toEqual([
+      { id: back.id, stackOrder: 0 },
+      { id: target.id, stackOrder: 1 },
+    ]);
+    expect(activeWidgetId(focused)).toBe(target.id);
+  });
 });
 
 const DESKTOP = { width: 1_024, height: 768 } as const;

@@ -11,6 +11,7 @@ import { FOLDER_PROPERTIES_STATUS } from "@client/constants/filesystem/details";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import type { FolderPropertiesController } from "@client/types/filesystem/folder-properties";
 import { formatFileSize } from "@client/utils/format-file-size";
+import { DesktopModal } from "@client/components/desktop/desktop-modal";
 
 const DATE_TIME_FORMATTER = new Intl.DateTimeFormat(
   UI_LOCALE,
@@ -33,16 +34,15 @@ export function FolderPropertiesDialog({
   const isError = state.status === FOLDER_PROPERTIES_STATUS.ERROR;
 
   return (
-    <div className="filesystem-dialog-backdrop">
-      <section
-        className="filesystem-dialog folder-properties-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-label={FOLDER_PROPERTIES_COPY.TITLE(name)}
-      >
+    <DesktopModal
+      title={FOLDER_PROPERTIES_COPY.TITLE(name)}
+      iconPath={DESKTOP_ASSET_PATHS.FOLDER_ICON}
+      onRequestClose={controller.close}
+    >
+      <section className="filesystem-dialog folder-properties-dialog">
         <header className="folder-properties-dialog__header">
           <img src={DESKTOP_ASSET_PATHS.FOLDER_ICON} alt="" />
-          <strong>{FOLDER_PROPERTIES_COPY.TITLE(name)}</strong>
+          <strong>{name}</strong>
         </header>
         <div className="folder-properties-dialog__content" aria-live="polite">
           {isLoading ? <p>{FOLDER_PROPERTIES_COPY.LOADING}</p> : null}
@@ -66,7 +66,7 @@ export function FolderPropertiesDialog({
           </button>
         </div>
       </section>
-    </div>
+    </DesktopModal>
   );
 }
 

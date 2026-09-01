@@ -7,10 +7,14 @@ import {
 } from "@/constants/filesystem/filesystem";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { WidgetType } from "@/types/widgets/widget";
-import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
+import {
+  DESKTOP_ASSET_PATHS,
+  WIDGET_ICON_PATH_BY_TYPE,
+} from "@client/constants/desktop/desktop";
 import { CHECKLIST_WIDGET_COPY, MEMO_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import { DesktopModal } from "@client/components/desktop/desktop-modal";
 
 interface WidgetSaveDialogProps {
   readonly gateway: FilesystemGateway;
@@ -84,14 +88,16 @@ export function WidgetSaveDialog({
       .finally(() => setIsLoadingMore(false));
   };
   return (
-    <div className="filesystem-dialog-backdrop">
+    <DesktopModal
+      title={FILESYSTEM_COPY.SAVE_WIDGET_TITLE}
+      iconPath={WIDGET_ICON_PATH_BY_TYPE[widgetType]}
+      onRequestClose={onCancel}
+      closeDisabled={busy}
+    >
       <form
         className="filesystem-dialog filesystem-dialog--picker"
-        role="dialog"
-        aria-label={FILESYSTEM_COPY.SAVE_WIDGET_TITLE}
         onSubmit={submit}
       >
-        <strong>{FILESYSTEM_COPY.SAVE_WIDGET_TITLE}</strong>
         <div className="filesystem-save-roots">
           <button
             type="button"
@@ -174,11 +180,12 @@ export function WidgetSaveDialog({
           </button>
         </div>
       </form>
-    </div>
+    </DesktopModal>
   );
 }
 
 interface UnsavedWidgetDialogProps {
+  readonly widgetType: WidgetType;
   readonly busy: boolean;
   readonly onSave: () => void;
   readonly onDiscard: () => void;
@@ -186,19 +193,20 @@ interface UnsavedWidgetDialogProps {
 }
 
 export function UnsavedWidgetDialog({
+  widgetType,
   busy,
   onSave,
   onDiscard,
   onCancel,
 }: UnsavedWidgetDialogProps) {
   return (
-    <div className="filesystem-dialog-backdrop">
-      <section
-        className="filesystem-dialog"
-        role="dialog"
-        aria-label={FILESYSTEM_COPY.UNSAVED_CLOSE_TITLE}
-      >
-        <strong>{FILESYSTEM_COPY.UNSAVED_CLOSE_TITLE}</strong>
+    <DesktopModal
+      title={FILESYSTEM_COPY.UNSAVED_CLOSE_TITLE}
+      iconPath={WIDGET_ICON_PATH_BY_TYPE[widgetType]}
+      onRequestClose={onCancel}
+      closeDisabled={busy}
+    >
+      <section className="filesystem-dialog">
         <p>{FILESYSTEM_COPY.UNSAVED_CLOSE_MESSAGE}</p>
         <div className="filesystem-dialog__actions">
           <button type="button" disabled={busy} onClick={onSave}>
@@ -212,6 +220,6 @@ export function UnsavedWidgetDialog({
           </button>
         </div>
       </section>
-    </div>
+    </DesktopModal>
   );
 }

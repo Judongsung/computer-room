@@ -97,6 +97,51 @@ describe("useDashboard", () => {
     expect(result.current.state.widgets).toHaveLength(1);
   });
 
+  it("normalizes duplicate stack orders returned by consecutive program creation", async () => {
+    const api = new FakeDashboardGateway();
+    const storage = fakeWidgetFromLayout(
+      layout(
+        "00000000-0000-4000-8000-000000000001",
+        WIDGET_TYPE.STORAGE_STATUS,
+        0,
+      ),
+    );
+    const admin = fakeWidgetFromLayout(
+      layout(
+        "00000000-0000-4000-8000-000000000002",
+        WIDGET_TYPE.ADMIN,
+        0,
+      ),
+    );
+    vi.spyOn(api, "createWidget")
+      .mockResolvedValueOnce(storage)
+      .mockResolvedValueOnce(admin);
+    const { result } = renderHook(() => useDashboard(api));
+    await waitFor(() => expect(result.current.state.session).not.toBeNull());
+
+    await act(async () => {
+      await result.current.addWidget(WIDGET_TYPE.STORAGE_STATUS, DESKTOP);
+      await result.current.addWidget(WIDGET_TYPE.ADMIN, DESKTOP);
+    });
+
+    expect(
+      result.current.state.widgets.map(({ id, stackOrder }) => ({
+        id,
+        stackOrder,
+      })),
+    ).toEqual([
+      { id: storage.id, stackOrder: 0 },
+      { id: admin.id, stackOrder: 1 },
+    ]);
+
+    act(() => result.current.layoutSave.retry());
+    await waitFor(() => expect(api.layoutSaveCalls).toHaveLength(1));
+    const savedStackOrders = api.layoutSaveCalls[0]?.map(
+      (widget) => widget.stackOrder,
+    );
+    expect(new Set(savedStackOrders).size).toBe(savedStackOrders?.length);
+  });
+
   it("merges checklist reset metadata returned by layout auto-save", async () => {
     const api = new FakeDashboardGateway();
     const checklist = checklistWidget("checklist", 0);

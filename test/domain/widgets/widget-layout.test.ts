@@ -6,7 +6,10 @@ import {
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
 } from "@/constants/widgets/widget";
-import { widgetLayoutsEqual } from "@/domain/widgets/widget-layout";
+import {
+  normalizeWidgetStackOrders,
+  widgetLayoutsEqual,
+} from "@/domain/widgets/widget-layout";
 import { validateWidgetLayout } from "@/domain/widgets/widget-layout-validation";
 import type { WidgetLayout } from "@/types/widgets/widget";
 
@@ -17,6 +20,21 @@ describe("widget layout rules", () => {
 
     expect(validateWidgetLayout([front, back])).toEqual([back, front]);
     expect(widgetLayoutsEqual([back, front], [front, back])).toBe(true);
+  });
+
+  it("normalizes stack order gaps and duplicates without reordering the collection", () => {
+    const front = widget("00000000-0000-4000-8000-000000000003", 7);
+    const first = widget("00000000-0000-4000-8000-000000000001", 2);
+    const second = widget("00000000-0000-4000-8000-000000000002", 2);
+
+    const normalized = normalizeWidgetStackOrders([front, second, first]);
+
+    expect(normalized.map((widget) => widget.id)).toEqual([
+      front.id,
+      second.id,
+      first.id,
+    ]);
+    expect(normalized.map((widget) => widget.stackOrder)).toEqual([2, 1, 0]);
   });
 
   it("rejects duplicate ids, duplicate stack orders, and invalid bounds", () => {

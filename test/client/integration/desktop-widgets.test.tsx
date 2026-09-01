@@ -19,6 +19,7 @@ import {
   DASHBOARD_COPY,
   MEMO_WIDGET_COPY,
 } from "@client/content/ko/widgets/content";
+import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import { ACCESS_LOGOUT_PATH } from "@/constants/platform/auth";
@@ -181,6 +182,57 @@ describe("App desktop widgets", () => {
         name: FILESYSTEM_COPY.UNSAVED_CLOSE_TITLE,
       }),
     ).not.toBeInTheDocument();
+  });
+
+  it("shows a framed save prompt and preserves cancel and discard behavior", async () => {
+    const api = new FakeDashboardGateway();
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
+
+    await launchApplication(
+      user,
+      APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.MEMO],
+    );
+    const memoWindow = await waitFor(() =>
+      desktopWindowByTitle(MEMO_WIDGET_COPY.UNSAVED_TITLE),
+    );
+    await user.click(
+      within(memoWindow).getByRole("button", { name: DASHBOARD_COPY.CLOSE }),
+    );
+
+    let dialog = screen.getByRole("dialog", {
+      name: FILESYSTEM_COPY.UNSAVED_CLOSE_TITLE,
+    });
+    expect(dialog.querySelectorAll(".xp-window-frame")).toHaveLength(1);
+    expect(dialog.querySelector(".xp-window-frame__title-bar")).not.toBeNull();
+    expect(dialog.querySelector("img")).toHaveAttribute(
+      "src",
+      WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.MEMO],
+    );
+    await user.click(
+      within(dialog).getByRole("button", { name: FILESYSTEM_COPY.CANCEL }),
+    );
+    expect(
+      screen.queryByRole("dialog", {
+        name: FILESYSTEM_COPY.UNSAVED_CLOSE_TITLE,
+      }),
+    ).not.toBeInTheDocument();
+    expect(desktopWindowByTitle(MEMO_WIDGET_COPY.UNSAVED_TITLE)).toBeInTheDocument();
+
+    await user.click(
+      within(memoWindow).getByRole("button", { name: DASHBOARD_COPY.CLOSE }),
+    );
+    dialog = screen.getByRole("dialog", {
+      name: FILESYSTEM_COPY.UNSAVED_CLOSE_TITLE,
+    });
+    await user.click(
+      within(dialog).getByRole("button", { name: FILESYSTEM_COPY.DONT_SAVE }),
+    );
+    await waitFor(() =>
+      expect(desktopWindowTitles()).not.toContain(
+        MEMO_WIDGET_COPY.UNSAVED_TITLE,
+      ),
+    );
   });
 
   it("updates an open widget title when its file is renamed in My Documents", async () => {
@@ -435,7 +487,14 @@ describe("App desktop widgets", () => {
     await user.click(
       screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.DETAILS }),
     );
-    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    const logDialog = await screen.findByRole("dialog", {
+      name: CHECKLIST_WIDGET_COPY.LOG_TITLE,
+    });
+    expect(logDialog.querySelectorAll(".xp-window-frame")).toHaveLength(1);
+    expect(logDialog.querySelector(".checklist-log-dialog")).toBe(
+      logDialog.querySelector(".xp-window-frame"),
+    );
+    expect(logDialog.querySelector(".sunken-panel")).toBeNull();
     expect(screen.getByText(CHECKLIST_WIDGET_COPY.ADDED)).toBeInTheDocument();
     expect(screen.getByText(CHECKLIST_WIDGET_COPY.RENAMED)).toBeInTheDocument();
     expect(screen.getByText("물 마시기 → 물 두 잔 마시기")).toBeInTheDocument();

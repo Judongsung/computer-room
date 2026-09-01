@@ -249,9 +249,7 @@ describe("App desktop filesystem", () => {
       ),
     ).toBeInTheDocument();
     await user.click(
-      within(dialog).getByRole("button", {
-        name: FOLDER_PROPERTIES_COPY.CLOSE,
-      }),
+      within(dialog).getByText(FOLDER_PROPERTIES_COPY.CLOSE),
     );
 
     await user.dblClick(documentsShortcut);
@@ -265,9 +263,7 @@ describe("App desktop filesystem", () => {
     expect(desktopWindowTitles()).toContain("내 문서");
     expect(desktopWindowTitles()).not.toContain("사진");
     await user.click(
-      within(dialog).getByRole("button", {
-        name: FOLDER_PROPERTIES_COPY.CLOSE,
-      }),
+      within(dialog).getByText(FOLDER_PROPERTIES_COPY.CLOSE),
     );
 
     await user.click(
@@ -288,9 +284,7 @@ describe("App desktop filesystem", () => {
       ),
     ).toBeInTheDocument();
     await user.click(
-      within(dialog).getByRole("button", {
-        name: FOLDER_PROPERTIES_COPY.CLOSE,
-      }),
+      within(dialog).getByText(FOLDER_PROPERTIES_COPY.CLOSE),
     );
 
     fireEvent.contextMenu(photosButton);

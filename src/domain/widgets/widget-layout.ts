@@ -25,6 +25,20 @@ export function sortWidgetLayouts<T extends WidgetLayout>(
   );
 }
 
+export function normalizeWidgetStackOrders<T extends WidgetLayout>(
+  widgets: readonly T[],
+): T[] {
+  const stackOrderById = new Map(
+    sortWidgetLayouts(widgets).map(
+      (widget, stackOrder) => [widget.id, stackOrder] as const,
+    ),
+  );
+  return widgets.map((widget) => ({
+    ...widget,
+    stackOrder: stackOrderById.get(widget.id) ?? widget.stackOrder,
+  }));
+}
+
 export function cloneWidgetLayouts(
   widgets: readonly WidgetLayout[],
 ): WidgetLayout[] {

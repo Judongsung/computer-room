@@ -1,5 +1,5 @@
 .folder-properties-dialog {
-  width: min(470px, calc(100% - 20px));
+  width: min(470px, calc(100vw - 40px));
 }
 
 .folder-properties-dialog__header {

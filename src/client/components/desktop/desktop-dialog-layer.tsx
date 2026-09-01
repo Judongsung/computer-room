@@ -48,6 +48,13 @@ export function DesktopDialogLayer({
   onCloseDialog,
   onCloseBatchResult,
 }: DesktopDialogLayerProps) {
+  const saveWidgetType = widgetFiles.saveWidgetId
+    ? (widgets.find((widget) => widget.id === widgetFiles.saveWidgetId)?.type ?? WIDGET_TYPE.MEMO)
+    : null;
+  const closePromptWidgetType = widgetFiles.closePromptWidgetId
+    ? (widgets.find((widget) => widget.id === widgetFiles.closePromptWidgetId)?.type ?? WIDGET_TYPE.MEMO)
+    : null;
+
   return (
     <>
       {dialog?.kind === "create" ? (
@@ -80,17 +87,18 @@ export function DesktopDialogLayer({
           onCancel={onCloseDialog}
         />
       ) : null}
-      {widgetFiles.saveWidgetId ? (
+      {saveWidgetType ? (
         <WidgetSaveDialog
           gateway={gateway}
-          widgetType={widgets.find((widget) => widget.id === widgetFiles.saveWidgetId)?.type ?? WIDGET_TYPE.MEMO}
+          widgetType={saveWidgetType}
           busy={widgetFiles.busy}
           onSave={(parentId, name) => void widgetFiles.save(parentId, name)}
           onCancel={widgetFiles.cancelSave}
         />
       ) : null}
-      {widgetFiles.closePromptWidgetId ? (
+      {closePromptWidgetType ? (
         <UnsavedWidgetDialog
+          widgetType={closePromptWidgetType}
           busy={widgetFiles.busy}
           onSave={widgetFiles.chooseSave}
           onDiscard={widgetFiles.discard}

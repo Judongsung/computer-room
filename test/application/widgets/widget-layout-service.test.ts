@@ -67,6 +67,35 @@ describe("WidgetLayoutService", () => {
     await expect(service.listWidgets()).resolves.toEqual(expected);
   });
 
+  it("repairs duplicate stored stack orders while listing open widgets", async () => {
+    const repository = new MemoryWidgetLayoutRepository();
+    const service = new WidgetLayoutService(
+      repository,
+      new MemoryMemoRepository(),
+      new MemoryChecklistRepository(),
+      new SequenceIdGenerator([]),
+      new StaticClock(NOW),
+    );
+    const first = layout(
+      "00000000-0000-4000-8000-000000000031",
+      0,
+    );
+    const second = layout(
+      "00000000-0000-4000-8000-000000000032",
+      0,
+    );
+    await repository.insert(first);
+    await repository.insert(second);
+
+    const widgets = await service.listWidgets();
+
+    expect(widgets.map((widget) => widget.stackOrder)).toEqual([0, 1]);
+    expect(repository.records.map((widget) => widget.stackOrder)).toEqual([
+      0,
+      1,
+    ]);
+  });
+
   it.each([
     WIDGET_TYPE.STORAGE_STATUS,
     WIDGET_TYPE.IMAGE_UPLOAD_PROFILES,
@@ -157,3 +186,18 @@ describe("WidgetLayoutService", () => {
     });
   });
 });
+
+function layout(id: string, stackOrder: number): WidgetLayout {
+  return {
+    id,
+    type: WIDGET_TYPE.MEMO,
+    position: { x: 32, y: 32 },
+    size: {
+      width: MEMO_WINDOW_POLICY.DEFAULT_WIDTH,
+      height: MEMO_WINDOW_POLICY.DEFAULT_HEIGHT,
+    },
+    windowState: WINDOW_STATE.NORMAL,
+    restoreState: WINDOW_RESTORE_STATE.NORMAL,
+    stackOrder,
+  };
+}

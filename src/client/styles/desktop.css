@@ -2,6 +2,7 @@
 @import "./shared/window.css";
 @import "./shared/context-menu.css";
 @import "./shared/lazy-feature.css";
+@import "./shared/modal.css";
 @import "./shared/xp-checkbox.css";
 @import "./shared/xp-tabs.css";
 @import "./desktop/background.css";

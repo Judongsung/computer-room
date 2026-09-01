@@ -1,5 +1,8 @@
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
+import { DESKTOP_MODAL_VARIANT } from "@client/constants/desktop/modal";
+import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import type { UploadTransferState } from "@client/types/filesystem/upload";
+import { DesktopModal } from "@client/components/desktop/desktop-modal";
 
 interface UploadTransferDialogProps {
   readonly state: UploadTransferState;
@@ -17,13 +20,14 @@ export function UploadTransferDialog({
       ? FILESYSTEM_COPY.TRANSFER_PARTIAL
       : FILESYSTEM_COPY.TRANSFER_COMPLETE;
   return (
-    <div className="filesystem-transfer">
-      <section
-        className="filesystem-dialog filesystem-transfer__window"
-        role="dialog"
-        aria-label={FILESYSTEM_COPY.TRANSFER_TITLE}
-      >
-        <strong>{FILESYSTEM_COPY.TRANSFER_TITLE}</strong>
+    <DesktopModal
+      title={FILESYSTEM_COPY.TRANSFER_TITLE}
+      iconPath={DESKTOP_ASSET_PATHS.FILE_ICON}
+      variant={DESKTOP_MODAL_VARIANT.TRANSFER}
+      onRequestClose={onClose}
+      closeDisabled={state.isRunning}
+    >
+      <section className="filesystem-dialog filesystem-transfer__window">
         <p>{summary}</p>
         <progress max={state.total} value={state.completed} />
         <span>{state.completed} / {state.total}</span>
@@ -49,6 +53,6 @@ export function UploadTransferDialog({
           </button>
         </div>
       </section>
-    </div>
+    </DesktopModal>
   );
 }

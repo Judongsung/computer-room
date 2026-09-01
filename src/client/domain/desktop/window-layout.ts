@@ -33,14 +33,15 @@ export function bringWidgetToFront<T extends WidgetLayout>(
 ): T[] {
   const ordered = sortWidgetLayouts(widgets);
   const target = ordered.find((widget) => widget.id === widgetId);
-  if (!target || ordered.at(-1)?.id === widgetId) {
+  if (!target) {
     return [...widgets];
   }
 
   const nextStackOrderById = new Map(
-    [...ordered.filter((widget) => widget.id !== widgetId), target].map(
-      (widget, stackOrder) => [widget.id, stackOrder] as const,
-    ),
+    [
+      ...ordered.filter((widget) => widget.id !== widgetId),
+      target,
+    ].map((widget, stackOrder) => [widget.id, stackOrder] as const),
   );
 
   return widgets.map((widget) => ({

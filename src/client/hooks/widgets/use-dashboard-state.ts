@@ -1,6 +1,7 @@
 import { UI_MESSAGES } from "@client/content/ko/widgets/dashboard";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { cloneDashboardWidgets } from "@/domain/widgets/widget-data";
+import { normalizeWidgetStackOrders } from "@/domain/widgets/widget-layout";
 import type { DashboardWidget } from "@/types/widgets/widget";
 import {
   DASHBOARD_ACTION_TYPE,
@@ -34,8 +35,15 @@ export function useDashboardState(
     ])
       .then(([session, widgets]) => {
         if (!active) return;
-        widgetsRef.current = cloneDashboardWidgets(widgets);
-        dispatch({ type: DASHBOARD_ACTION_TYPE.LOAD_SUCCEEDED, session, widgets });
+        const normalizedWidgets = cloneDashboardWidgets(
+          normalizeWidgetStackOrders(widgets),
+        );
+        widgetsRef.current = normalizedWidgets;
+        dispatch({
+          type: DASHBOARD_ACTION_TYPE.LOAD_SUCCEEDED,
+          session,
+          widgets: normalizedWidgets,
+        });
       })
       .catch((error: unknown) => {
         if (!active) return;

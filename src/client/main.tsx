@@ -22,6 +22,7 @@ const ROOT_DESKTOP_STYLE = {
   "--xp-window-frame-border-width": `${DESKTOP_LAYOUT.WINDOW_FRAME_BORDER_WIDTH_PX}px`,
   "--xp-window-control-size": `${DESKTOP_LAYOUT.WINDOW_CONTROL_SIZE_PX}px`,
   "--xp-window-toolbar-height": `${DESKTOP_LAYOUT.WINDOW_TOOLBAR_HEIGHT_PX}px`,
+  "--desktop-modal-viewport-margin": `${DESKTOP_LAYOUT.MODAL_VIEWPORT_MARGIN_PX}px`,
 } as const;
 
 for (const [property, value] of Object.entries(ROOT_DESKTOP_STYLE)) {

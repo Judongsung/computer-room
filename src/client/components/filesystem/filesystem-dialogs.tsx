@@ -8,6 +8,7 @@ import {
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
+import { DesktopModal } from "@client/components/desktop/desktop-modal";
 
 interface NameDialogProps {
   readonly title: string;
@@ -34,9 +35,12 @@ export function NameDialog({
     }
   };
   return (
-    <div className="filesystem-dialog-backdrop">
-      <form className="filesystem-dialog" role="dialog" aria-label={title} onSubmit={submit}>
-        <strong>{title}</strong>
+    <DesktopModal
+      title={title}
+      onRequestClose={onCancel}
+      closeDisabled={busy}
+    >
+      <form className="filesystem-dialog" onSubmit={submit}>
         <label>
           {label}
           <input autoFocus value={name} onChange={(event) => setName(event.target.value)} />
@@ -50,7 +54,7 @@ export function NameDialog({
           </button>
         </div>
       </form>
-    </div>
+    </DesktopModal>
   );
 }
 
@@ -74,9 +78,12 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   return (
-    <div className="filesystem-dialog-backdrop">
-      <section className="filesystem-dialog" role="dialog" aria-label={title}>
-        <strong>{title}</strong>
+    <DesktopModal
+      title={title}
+      onRequestClose={onCancel}
+      closeDisabled={busy}
+    >
+      <section className="filesystem-dialog">
         <p>{message}</p>
         <div className="filesystem-dialog__actions">
           <button type="button" disabled={busy} onClick={onConfirm}>
@@ -87,7 +94,7 @@ export function ConfirmDialog({
           </button>
         </div>
       </section>
-    </div>
+    </DesktopModal>
   );
 }
 
@@ -150,9 +157,13 @@ export function DirectoryPickerDialog({
   };
 
   return (
-    <div className="filesystem-dialog-backdrop">
-      <section className="filesystem-dialog filesystem-dialog--picker" role="dialog" aria-label={FILESYSTEM_COPY.MOVE_TITLE}>
-        <strong>{FILESYSTEM_COPY.MOVE_TITLE}</strong>
+    <DesktopModal
+      title={FILESYSTEM_COPY.MOVE_TITLE}
+      iconPath={DESKTOP_ASSET_PATHS.FOLDER_ICON}
+      onRequestClose={onCancel}
+      closeDisabled={busy}
+    >
+      <section className="filesystem-dialog filesystem-dialog--picker">
         <div className="filesystem-save-roots">
           <button
             type="button"
@@ -222,6 +233,6 @@ export function DirectoryPickerDialog({
           </button>
         </div>
       </section>
-    </div>
+    </DesktopModal>
   );
 }
