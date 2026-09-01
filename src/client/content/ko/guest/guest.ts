@@ -20,5 +20,4 @@ export const GUEST_COPY = {
   PROGRAM_LOAD_FAILED: "프로그램 문서를 불러오지 못했습니다.",
   UNSUPPORTED_FILE: "이 파일은 브라우저에서 바로 볼 수 없어 다운로드합니다.",
   ITEM_COUNT: (count: number) => `${count}개 항목`,
-  CHECKLIST_DATE: (date: string) => `${date} 체크리스트`,
 } as const;

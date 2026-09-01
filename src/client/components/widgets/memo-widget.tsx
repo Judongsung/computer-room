@@ -18,6 +18,7 @@ import type { WidgetComponentProps } from "@client/types/desktop/desktop";
 import { XpWidgetToolbarButton } from "@client/components/shared/xp-widget-toolbar-button";
 import { WidgetCard } from "@client/components/widgets/widget-card";
 import { MarkdownContent } from "@client/components/widgets/markdown-content";
+import { ReadOnlyMemoContent } from "@client/components/widgets/read-only-program-content";
 
 export function MemoWidget(props: WidgetComponentProps) {
   if (props.widget.type !== WIDGET_TYPE.MEMO) {
@@ -210,7 +211,7 @@ function MemoWidgetContent({
           </div>
         </div>
       ) : (
-        <MarkdownContent markdown={widget.data.markdown} />
+        <ReadOnlyMemoContent markdown={widget.data.markdown} />
       )}
     </WidgetCard>
   );

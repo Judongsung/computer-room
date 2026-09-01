@@ -1,6 +1,7 @@
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useEffect, useState } from "react";
 import { MarkdownContent } from "@client/components/widgets/markdown-content";
+import { ReadOnlyMemoContent } from "@client/components/widgets/read-only-program-content";
 import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
 import { MEMO_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { messageFromError } from "@client/errors/error-message";
@@ -98,7 +99,7 @@ export function MobileMemo({
           />
         )
       ) : (
-        <MarkdownContent markdown={markdown} />
+        <ReadOnlyMemoContent markdown={markdown} />
       )}
       {error ? <p className={MOBILE_CLASS_NAME.ERROR} role="alert">{error}</p> : null}
     </div>

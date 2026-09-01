@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
-import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { GuestProgramDocument } from "@/types/guest/guest";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
-import { MarkdownContent } from "@client/components/widgets/markdown-content";
+import { ReadOnlyProgramContent } from "@client/components/widgets/read-only-program-content";
 import { GUEST_MOBILE_CLASS_NAME } from "@client/constants/guest/guest";
 import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
 import { GUEST_COPY } from "@client/content/ko/guest/guest";
@@ -47,21 +46,7 @@ export function GuestMobileProgramDocument({
       ) : null}
       {document ? (
         <div className={GUEST_MOBILE_CLASS_NAME.PROGRAM}>
-          {document.type === WIDGET_TYPE.MEMO ? (
-            <MarkdownContent markdown={document.data.markdown} />
-          ) : (
-            <div className={GUEST_MOBILE_CLASS_NAME.CHECKLIST}>
-              <p>{GUEST_COPY.CHECKLIST_DATE(document.data.businessDate)}</p>
-              <ul>
-                {document.data.items.map((item) => (
-                  <li key={item.id}>
-                    <input type="checkbox" checked={item.checked} readOnly />
-                    {item.checked ? <del>{item.label}</del> : <span>{item.label}</span>}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+          <ReadOnlyProgramContent program={document} />
         </div>
       ) : null}
     </MobileActivity>

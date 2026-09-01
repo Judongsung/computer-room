@@ -9,23 +9,23 @@
   overflow-wrap: anywhere;
 }
 
-.guest-mobile-checklist,
-.guest-mobile-checklist > ul {
+.guest-mobile-program .read-only-program__checklist,
+.guest-mobile-program .read-only-program__checklist-items {
   display: grid;
   gap: 10px;
 }
 
-.guest-mobile-checklist > p,
-.guest-mobile-checklist > ul {
+.guest-mobile-program .read-only-program__checklist-date,
+.guest-mobile-program .read-only-program__checklist-items {
   margin: 0;
 }
 
-.guest-mobile-checklist > ul {
+.guest-mobile-program .read-only-program__checklist-items {
   padding: 0;
   list-style: none;
 }
 
-.guest-mobile-checklist li {
+.guest-mobile-program .read-only-program__checklist-item {
   display: flex;
   min-height: 34px;
   align-items: center;

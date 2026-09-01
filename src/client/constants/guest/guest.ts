@@ -10,11 +10,8 @@ export const GUEST_DESKTOP_CLASS_NAME = {
   SHORTCUTS: "guest-desktop-shortcuts",
   START_MENU: "guest-start-menu",
   PROGRAM_BODY: "guest-program-window__body",
-  CHECKLIST: "guest-program-checklist",
-  CHECKLIST_ITEM: "guest-program-checklist__item",
 } as const;
 
 export const GUEST_MOBILE_CLASS_NAME = {
   PROGRAM: "guest-mobile-program",
-  CHECKLIST: "guest-mobile-checklist",
 } as const;

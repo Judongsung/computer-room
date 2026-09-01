@@ -58,6 +58,7 @@ export const MEMO_WIDGET_COPY = {
 
 export const CHECKLIST_WIDGET_COPY = {
   TITLE: "일일 체크리스트",
+  DATE: (date: string) => `${date} 체크리스트`,
   UNSAVED_TITLE: "제목 없음 - 일일 체크리스트",
   DETAILS: "상세보기",
   EDIT: "편집",
