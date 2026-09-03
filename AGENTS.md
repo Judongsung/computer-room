@@ -23,6 +23,7 @@ Preserve the existing separation between client, domain, application, infrastruc
 * Organize every layer by feature (`filesystem`, `widgets`, `media`, `integrations`, `storage`, or `platform/shared`) when the layer contains multiple responsibilities.
 * Separate desktop and mobile implementations explicitly under `client/components` and `client/styles`; keep hooks, state, API, domain, constants, and types shared by feature unless behavior is genuinely interface-specific.
 * Use `@/*`, `@client/*`, and `@test/*` aliases and import the owning module directly; do not add barrel `index.ts` files.
+* Keep TypeScript aliases in `tsconfig.base.json`; keep the nested client `tsconfig.json` files as thin VS Code project entry points.
 * Mirror source features under `test` and place reusable fakes in `test/support/<feature>`.
 
 ## Change Discipline

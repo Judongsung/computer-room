@@ -271,6 +271,8 @@ src/
 - `@client/*` → `src/client/*`
 - `@test/*` → `test/*`
 
+별칭은 `tsconfig.base.json`에서 공통 관리합니다. `src/client/tsconfig.json`과 `test/client/tsconfig.json`은 VS Code가 각 클라이언트 영역을 올바른 TypeScript 프로젝트로 인식하기 위한 얇은 편집기 진입점입니다.
+
 barrel `index.ts`는 만들지 않고 소유 모듈을 직접 import합니다. 데스크톱과 모바일 애플리케이션은 서로 다른 CSS·JavaScript 청크로 지연 로딩됩니다.
 
 ## 로컬 실행
