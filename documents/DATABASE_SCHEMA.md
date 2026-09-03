@@ -1,16 +1,16 @@
 # D1 데이터베이스 명세
 
-기준 커밋: `6ab40baa896f3cbe3abc575e3230371a13a0d80b`
+기준 커밋: `de60aead682ce342efaf11c0957183786d610af0`
 
-이 기준 커밋 이후 현재 작업 트리의 `0013_guest_access_admin` 마이그레이션을
+이 기준 커밋 이후 현재 작업 트리의 `0014_image-upload-log-privacy` 마이그레이션을
 포함한다. 해당 변경을 커밋할 때 기준 커밋을 새 커밋으로 갱신해야 한다.
 
 이 문서는 `migrations/0000_superb_hitman.sql`부터
-`migrations/0013_guest_access_admin.sql`까지 모든 마이그레이션을 적용한
+`migrations/0014_image-upload-log-privacy.sql`까지 모든 마이그레이션을 적용한
 최종 애플리케이션 스키마를 설명한다.
 
 Wrangler가 관리하는 마이그레이션 이력 등의 내부 테이블은 제외한다.
-애플리케이션이 직접 관리하는 테이블은 총 15개다.
+애플리케이션이 직접 관리하는 테이블은 총 16개다.
 
 ## 공통 규칙
 
@@ -42,6 +42,7 @@ Wrangler가 관리하는 마이그레이션 이력 등의 내부 테이블은 �
 | 관리자 | `guest_publications` | 게스트에게 공개하도록 선택한 파일 시스템 항목을 저장한다. |
 | 외부 연동 | `integration_image_profiles` | 이미지 수신 API 프로필을 저장한다. |
 | 외부 연동 | `integration_image_profile_content_types` | 이미지 수신 프로필별 허용 MIME을 저장한다. |
+| 외부 연동 | `integration_image_upload_log_settings` | 이미지 수신 기록의 계정 공용 보관 기간을 저장한다. |
 | 외부 연동 | `integration_image_upload_logs` | 인증을 통과한 이미지 수신 요청의 성공·실패 기록을 저장한다. |
 
 ## 관계
@@ -72,6 +73,9 @@ integration_image_profiles
 
 integration_image_upload_logs
 └── 파일·프로필 삭제 후에도 보존되는 독립 이력
+
+integration_image_upload_log_settings
+└── 다른 행을 참조하지 않는 단일 설정
 ```
 
 ## `files`
@@ -364,6 +368,18 @@ Cloudflare Access audience 값은 이 테이블에 저장하지 않는다.
 | `image/avif` |
 | `image/bmp` |
 
+## `integration_image_upload_log_settings`
+
+모든 이미지 수신 프로필에 공통으로 적용할 로그 보관 기간을 단일 고정 행으로
+저장한다.
+
+| 컬럼 | 타입 | Nullable | 기본값 | 키·제약조건 | 설명 |
+|---|---|---:|---|---|---|
+| `singleton_id` | `INTEGER` | NO | `1` | 기본 키, 값은 반드시 `1` | 설정 행을 하나로 제한한다. |
+| `retention_days` | `INTEGER` | NO | `30` | `1 <= retention_days <= 365` | 한국 날짜 경계 기준 보관 일수다. |
+
+마이그레이션은 `(singleton_id = 1, retention_days = 30)` 행을 기본으로 생성한다.
+
 ## `integration_image_upload_logs`
 
 인증을 통과해 이미지 수신 핸들러에 도달한 요청의 결과를 저장한다. 프로필이나
@@ -374,6 +390,7 @@ Cloudflare Access audience 값은 이 테이블에 저장하지 않는다.
 |---|---|---:|---|---|---|
 | `id` | `TEXT` | NO | - | 기본 키 | 수신 기록 ID다. |
 | `profile_id` | `TEXT` | YES | `NULL` | - | 유효한 형식으로 확인된 요청 프로필 ID다. 삭제된 프로필도 문자열로 보존한다. |
+| `source_ip` | `TEXT` | YES | `NULL` | - | 유효한 경우 `CF-Connecting-IP`에서 읽은 송신 IPv4 또는 IPv6 주소다. |
 | `outcome` | `TEXT` | NO | - | `success` 또는 `failure` | 요청 처리 결과다. |
 | `content_type` | `TEXT` | YES | `NULL` | - | 정규화 가능한 경우 기록한 요청 MIME 타입이다. |
 | `declared_size` | `INTEGER` | YES | `NULL` | `declared_size >= 0` | 검증 가능한 경우 기록한 `X-File-Size` 값이다. |
@@ -386,9 +403,9 @@ Cloudflare Access audience 값은 이 테이블에 저장하지 않는다.
 | `duration_ms` | `INTEGER` | NO | - | `duration_ms >= 0` | 요청 처리에 걸린 밀리초다. |
 
 `success` 행은 파일 ID·파일명이 필요하고 오류 정보가 없어야 한다. `failure` 행은
-파일 정보가 없어야 하며 오류 코드·메시지가 필요하다. 최근 30일의 한국 날짜
-경계를 기준으로 조회하며, 매일 `00:00 KST` Cron Trigger가 경계보다 오래된 행을
-삭제한다.
+파일 정보가 없어야 하며 오류 코드·메시지가 필요하다. 설정된 1~365일의 한국 날짜
+경계를 기준으로 조회하며, 매일 `00:00 KST` Cron Trigger가 경계보다 오래된 행과
+그 송신 IP를 함께 삭제한다.
 
 ### 인덱스
 

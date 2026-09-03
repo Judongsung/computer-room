@@ -7,7 +7,10 @@ import {
   HTTP_STATUS,
 } from "@/constants/platform/http";
 import { AppError } from "@/domain/shared/errors";
-import { imageUploadLogProfileId } from "@/domain/integrations/image-upload-log";
+import {
+  imageUploadLogProfileId,
+  imageUploadLogSourceIp,
+} from "@/domain/integrations/image-upload-log";
 import { readDeclaredFileSize } from "@/http/filesystem/file-upload-request";
 import {
   createExactApiRoutePattern,
@@ -53,6 +56,9 @@ export class ImageUploadApiHandler implements ServiceApiHandler {
     }
 
     const receivedAt = this.clock.now();
+    const sourceIp = imageUploadLogSourceIp(
+      request.headers.get(HTTP_HEADERS.CF_CONNECTING_IP),
+    );
     const contentType = request.headers.get(HTTP_HEADERS.CONTENT_TYPE);
     let profileId: string | null = null;
     let declaredSize: number | null = null;
@@ -67,6 +73,7 @@ export class ImageUploadApiHandler implements ServiceApiHandler {
       });
       this.scheduleLog({
         profileId,
+        sourceIp,
         contentType,
         declaredSize,
         receivedAt,
@@ -81,6 +88,7 @@ export class ImageUploadApiHandler implements ServiceApiHandler {
     } catch (error) {
       this.scheduleLog({
         profileId,
+        sourceIp,
         contentType,
         declaredSize,
         receivedAt,

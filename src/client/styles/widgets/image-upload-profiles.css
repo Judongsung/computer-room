@@ -163,6 +163,56 @@
   gap: 8px;
 }
 
+.image-upload-logs__settings {
+  flex: none;
+}
+
+.image-upload-logs__settings fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 7px 9px 8px;
+  border: 1px solid #d0d0bf;
+}
+
+.image-upload-logs__settings legend {
+  padding: 0 4px;
+  color: #0046d5;
+}
+
+.image-upload-logs__settings-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+}
+
+.image-upload-logs__settings-row label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.image-upload-logs__settings-row input {
+  width: 76px;
+}
+
+.image-upload-logs__settings-row small,
+.image-upload-logs__settings-error {
+  color: #555;
+}
+
+.image-upload-logs__settings .image-upload-logs__notice {
+  margin-top: 6px;
+}
+
+.image-upload-logs__settings-error {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+  color: var(--luna-error);
+  gap: 8px;
+}
+
 .image-upload-logs__filters {
   display: flex;
   padding: 2px 1px 8px;

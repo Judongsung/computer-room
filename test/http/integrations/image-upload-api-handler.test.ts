@@ -37,6 +37,7 @@ describe("ImageUploadApiHandler logging", () => {
       expect.objectContaining({
         outcome: IMAGE_UPLOAD_LOG_OUTCOME.SUCCESS,
         profileId: "novelai",
+        sourceIp: "203.0.113.8",
       }),
     );
   });
@@ -63,8 +64,41 @@ describe("ImageUploadApiHandler logging", () => {
     expect(logs.record).toHaveBeenCalledWith(
       expect.objectContaining({
         outcome: IMAGE_UPLOAD_LOG_OUTCOME.FAILURE,
+        sourceIp: "203.0.113.8",
         error: HTTP_ERRORS.UNSUPPORTED_MEDIA_TYPE,
       }),
+    );
+  });
+
+  it("normalizes IPv6 and ignores malformed or missing client IP headers", async () => {
+    const scheduler = new CapturingBackgroundTaskScheduler();
+    const images: ImageUploadUseCases = {
+      uploadImage: vi.fn(async () => uploadedFile()),
+    };
+    const logs: ImageUploadLogRecorder = { record: vi.fn(async () => undefined) };
+    const handler = new ImageUploadApiHandler(
+      images,
+      logs,
+      new StaticClock(100),
+      scheduler,
+    );
+
+    await handler.handle(uploadRequest("2001:db8::8"), new URL(REQUEST_URL));
+    await handler.handle(uploadRequest("not-an-ip"), new URL(REQUEST_URL));
+    await handler.handle(uploadRequest(null), new URL(REQUEST_URL));
+    await scheduler.settle();
+
+    expect(logs.record).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ sourceIp: "2001:db8::8" }),
+    );
+    expect(logs.record).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ sourceIp: null }),
+    );
+    expect(logs.record).toHaveBeenNthCalledWith(
+      3,
+      expect.objectContaining({ sourceIp: null }),
     );
   });
 });
@@ -81,13 +115,17 @@ class CapturingBackgroundTaskScheduler implements BackgroundTaskScheduler {
   }
 }
 
-function uploadRequest(): Request {
+function uploadRequest(sourceIp: string | null = "203.0.113.8"): Request {
+  const headers = new Headers({
+    [HTTP_HEADERS.CONTENT_TYPE]: "image/png",
+    [HTTP_HEADERS.FILE_SIZE]: "3",
+  });
+  if (sourceIp !== null) {
+    headers.set(HTTP_HEADERS.CF_CONNECTING_IP, sourceIp);
+  }
   return new Request(REQUEST_URL, {
     method: HTTP_METHOD.POST,
-    headers: {
-      [HTTP_HEADERS.CONTENT_TYPE]: "image/png",
-      [HTTP_HEADERS.FILE_SIZE]: "3",
-    },
+    headers,
     body: "png",
   });
 }

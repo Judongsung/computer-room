@@ -1,7 +1,9 @@
 import { IMAGE_UPLOAD_LOG_OUTCOME_VALUES } from "@/constants/integrations/image-upload-log";
+import { isImageUploadLogRetentionDays } from "@/domain/integrations/image-upload-log";
 import type {
   ImageUploadLog,
   ImageUploadLogPage,
+  ImageUploadLogSettingsResponse,
 } from "@/types/integrations/image-upload-log";
 import { isFileEntry } from "@client/api/filesystem/filesystem-api-contract";
 import { isRecord } from "@client/api/shared/api-contract";
@@ -15,11 +17,23 @@ export function isImageUploadLogPage(value: unknown): value is ImageUploadLogPag
   );
 }
 
+export function isImageUploadLogSettingsResponse(
+  value: unknown,
+): value is ImageUploadLogSettingsResponse {
+  return (
+    isRecord(value) &&
+    isRecord(value.settings) &&
+    typeof value.settings.retentionDays === "number" &&
+    isImageUploadLogRetentionDays(value.settings.retentionDays)
+  );
+}
+
 function isImageUploadLog(value: unknown): value is ImageUploadLog {
   return (
     isRecord(value) &&
     typeof value.id === "string" &&
     (value.profileId === null || typeof value.profileId === "string") &&
+    (value.sourceIp === null || typeof value.sourceIp === "string") &&
     IMAGE_UPLOAD_LOG_OUTCOME_VALUES.some(
       (outcome) => outcome === value.outcome,
     ) &&

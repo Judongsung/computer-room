@@ -3,6 +3,7 @@ import {
   IMAGE_UPLOAD_LOG_OUTCOME_VALUES,
 } from "@/constants/integrations/image-upload-log";
 import { IMAGE_UPLOAD_LOG_ERRORS } from "@/constants/integrations/errors/image-upload-log";
+import { imageUploadLogSourceIp } from "@/domain/integrations/image-upload-log";
 import { AppError } from "@/domain/shared/errors";
 import type {
   ImageUploadLogOutcome,
@@ -14,6 +15,7 @@ import type {
 interface ImageUploadLogRow {
   readonly id: string;
   readonly profile_id: string | null;
+  readonly source_ip: string | null;
   readonly outcome: string;
   readonly content_type: string | null;
   readonly declared_size: number | null;
@@ -33,14 +35,15 @@ export class D1ImageUploadLogRepository implements ImageUploadLogRepository {
     await this.database
       .prepare(
         `INSERT INTO integration_image_upload_logs (
-           id, profile_id, outcome, content_type, declared_size,
+           id, profile_id, source_ip, outcome, content_type, declared_size,
            file_entry_id, file_name, http_status, error_code, error_message,
            received_at, duration_ms
-         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)`,
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)`,
       )
       .bind(
         log.id,
         log.profileId,
+        log.sourceIp,
         log.outcome,
         log.contentType,
         log.declaredSize,
@@ -78,7 +81,7 @@ export class D1ImageUploadLogRepository implements ImageUploadLogRepository {
     const limit = bind(query.limit);
     const result = await this.database
       .prepare(
-        `SELECT id, profile_id, outcome, content_type, declared_size,
+        `SELECT id, profile_id, source_ip, outcome, content_type, declared_size,
                 file_entry_id, file_name, http_status, error_code, error_message,
                 received_at, duration_ms
          FROM integration_image_upload_logs
@@ -104,12 +107,18 @@ function mapImageUploadLogRow(row: ImageUploadLogRow): StoredImageUploadLog {
   const outcome = IMAGE_UPLOAD_LOG_OUTCOME_VALUES.find(
     (candidate) => candidate === row.outcome,
   );
-  if (!outcome || !isValidResult(row, outcome)) {
+  const sourceIp = imageUploadLogSourceIp(row.source_ip);
+  if (
+    !outcome ||
+    (row.source_ip !== null && sourceIp === null) ||
+    !isValidResult(row, outcome)
+  ) {
     throw new AppError(IMAGE_UPLOAD_LOG_ERRORS.INVALID_STORED_LOG);
   }
   return {
     id: row.id,
     profileId: row.profile_id,
+    sourceIp,
     outcome,
     contentType: row.content_type,
     declaredSize: row.declared_size,

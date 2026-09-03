@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   API_QUERY_PARAMETERS,
   IMAGE_UPLOAD_LOGS_API_PATH,
+  IMAGE_UPLOAD_LOG_SETTINGS_API_PATH,
 } from "@/constants/platform/api";
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { IMAGE_UPLOAD_LOG_OUTCOME } from "@/constants/integrations/image-upload-log";
@@ -11,6 +12,7 @@ import type { ImageUploadLogResponse } from "@/types/integrations/image-upload-l
 import {
   ORIGIN,
   TEST_MEDIA_TYPE,
+  jsonRequest,
   resetWorkerState,
   uploadNovelAiImage,
 } from "@test/support/http/worker-api-harness";
@@ -45,12 +47,14 @@ describe("image upload log API", () => {
       expect.arrayContaining([
         expect.objectContaining({
           profileId: "novelai",
+          sourceIp: "203.0.113.8",
           outcome: IMAGE_UPLOAD_LOG_OUTCOME.SUCCESS,
           file: expect.objectContaining({ name: expect.stringMatching(/\.png$/u) }),
           error: null,
         }),
         expect.objectContaining({
           profileId: "novelai",
+          sourceIp: "203.0.113.8",
           outcome: IMAGE_UPLOAD_LOG_OUTCOME.FAILURE,
           file: null,
           httpStatus: HTTP_STATUS.UNSUPPORTED_MEDIA_TYPE,
@@ -103,6 +107,64 @@ describe("image upload log API", () => {
 
     const wrongMethod = await SELF.fetch(
       `${ORIGIN}${IMAGE_UPLOAD_LOGS_API_PATH}`,
+      {
+        method: HTTP_METHOD.POST,
+        headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN },
+      },
+    );
+    expect(wrongMethod.status).toBe(HTTP_STATUS.METHOD_NOT_ALLOWED);
+  });
+});
+
+describe("image upload log settings API", () => {
+  it("reads the default and persists an owner setting", async () => {
+    const initial = await SELF.fetch(
+      `${ORIGIN}${IMAGE_UPLOAD_LOG_SETTINGS_API_PATH}`,
+    );
+    expect(initial.status).toBe(HTTP_STATUS.OK);
+    expect(initial.headers.get(HTTP_HEADERS.CACHE_CONTROL)).toBe(
+      "private, no-store",
+    );
+    await expect(initial.json()).resolves.toEqual({
+      settings: { retentionDays: 30 },
+    });
+
+    const updated = await jsonRequest(
+      IMAGE_UPLOAD_LOG_SETTINGS_API_PATH,
+      HTTP_METHOD.PATCH,
+      { retentionDays: 90 },
+    );
+    expect(updated.status).toBe(HTTP_STATUS.OK);
+    await expect(updated.json()).resolves.toEqual({
+      settings: { retentionDays: 90 },
+    });
+  });
+
+  it.each([0, 1.5, 366, "30"])(
+    "rejects invalid retention input: %s",
+    async (retentionDays) => {
+      const response = await jsonRequest(
+        IMAGE_UPLOAD_LOG_SETTINGS_API_PATH,
+        HTTP_METHOD.PATCH,
+        { retentionDays },
+      );
+      expect(response.status).toBe(HTTP_STATUS.BAD_REQUEST);
+    },
+  );
+
+  it("requires same-origin for changes and permits only GET and PATCH", async () => {
+    const crossOrigin = await SELF.fetch(
+      `${ORIGIN}${IMAGE_UPLOAD_LOG_SETTINGS_API_PATH}`,
+      {
+        method: HTTP_METHOD.PATCH,
+        headers: { [HTTP_HEADERS.CONTENT_TYPE]: "application/json" },
+        body: JSON.stringify({ retentionDays: 30 }),
+      },
+    );
+    expect(crossOrigin.status).toBe(HTTP_STATUS.FORBIDDEN);
+
+    const wrongMethod = await SELF.fetch(
+      `${ORIGIN}${IMAGE_UPLOAD_LOG_SETTINGS_API_PATH}`,
       {
         method: HTTP_METHOD.POST,
         headers: { [HTTP_HEADERS.ORIGIN]: ORIGIN },

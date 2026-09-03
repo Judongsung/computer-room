@@ -155,6 +155,7 @@ describe("image upload profiles widget", () => {
           {
             id: "log",
             profileId: "novelai",
+            sourceIp: "203.0.113.8",
             outcome: IMAGE_UPLOAD_LOG_OUTCOME.SUCCESS,
             contentType: "image/png",
             declaredSize: file.size,
@@ -168,6 +169,10 @@ describe("image upload profiles widget", () => {
         ],
         nextCursor: null,
       })),
+      getImageUploadLogSettings: vi.fn(async () => ({ retentionDays: 30 })),
+      updateImageUploadLogRetentionDays: vi.fn(async (retentionDays) => ({
+        retentionDays,
+      })),
     };
     const openFile = vi.fn();
     const user = userEvent.setup();
@@ -178,9 +183,27 @@ describe("image upload profiles widget", () => {
     );
     const fileButton = await screen.findByRole("button", { name: file.name });
     expect(logGateway.listImageUploadLogs).toHaveBeenCalledWith({});
-    expect(screen.getByText(IMAGE_UPLOAD_LOG_COPY.RETENTION_NOTICE)).toBeInTheDocument();
+    expect(logGateway.getImageUploadLogSettings).toHaveBeenCalledOnce();
+    expect(
+      screen.getByText(IMAGE_UPLOAD_LOG_COPY.RETENTION_NOTICE(30)),
+    ).toBeInTheDocument();
+    expect(screen.getByText("203.0.113.8")).toBeInTheDocument();
     await user.click(fileButton);
     expect(openFile).toHaveBeenCalledWith(file);
+
+    const retentionInput = screen.getByRole("spinbutton", {
+      name: IMAGE_UPLOAD_LOG_COPY.RETENTION_DAYS,
+    });
+    await user.clear(retentionInput);
+    await user.type(retentionInput, "90");
+    await user.click(
+      screen.getByRole("button", { name: IMAGE_UPLOAD_LOG_COPY.SAVE_SETTINGS }),
+    );
+    await waitFor(() =>
+      expect(logGateway.updateImageUploadLogRetentionDays).toHaveBeenCalledWith(
+        90,
+      ),
+    );
 
     await user.click(
       screen.getByRole("tab", { name: IMAGE_UPLOAD_LOG_COPY.PROFILES_TAB }),
@@ -189,8 +212,38 @@ describe("image upload profiles widget", () => {
       screen.getByRole("tab", { name: IMAGE_UPLOAD_LOG_COPY.LOGS_TAB }),
     );
     await waitFor(() =>
-      expect(logGateway.listImageUploadLogs).toHaveBeenCalledTimes(2),
+      expect(logGateway.listImageUploadLogs).toHaveBeenCalledTimes(3),
     );
+  });
+
+  it("validates retention days before sending a settings update", async () => {
+    const updateRetentionDays = vi.fn(async (retentionDays: number) => ({
+      retentionDays,
+    }));
+    const logGateway: ImageUploadLogGateway = {
+      listImageUploadLogs: vi.fn(async () => ({ items: [], nextCursor: null })),
+      getImageUploadLogSettings: vi.fn(async () => ({ retentionDays: 30 })),
+      updateImageUploadLogRetentionDays: updateRetentionDays,
+    };
+    const user = userEvent.setup();
+    renderWidget(fakeGateway([NOVELAI_PROFILE]), logGateway);
+
+    await user.click(
+      screen.getByRole("tab", { name: IMAGE_UPLOAD_LOG_COPY.LOGS_TAB }),
+    );
+    const input = await screen.findByRole("spinbutton", {
+      name: IMAGE_UPLOAD_LOG_COPY.RETENTION_DAYS,
+    });
+    await user.clear(input);
+    await user.type(input, "0");
+    await user.click(
+      screen.getByRole("button", { name: IMAGE_UPLOAD_LOG_COPY.SAVE_SETTINGS }),
+    );
+
+    expect(updateRetentionDays).not.toHaveBeenCalled();
+    expect(
+      screen.getByText(IMAGE_UPLOAD_LOG_COPY.INVALID_RETENTION_DAYS),
+    ).toBeInTheDocument();
   });
 });
 
@@ -236,6 +289,10 @@ function renderWidget(
 
 const EMPTY_LOG_GATEWAY: ImageUploadLogGateway = {
   listImageUploadLogs: vi.fn(async () => ({ items: [], nextCursor: null })),
+  getImageUploadLogSettings: vi.fn(async () => ({ retentionDays: 30 })),
+  updateImageUploadLogRetentionDays: vi.fn(async (retentionDays) => ({
+    retentionDays,
+  })),
 };
 
 function fakeGateway(initial: readonly ImageUploadProfile[]) {

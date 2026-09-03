@@ -7,6 +7,7 @@ import {
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import { useImageUploadProfiles } from "@client/hooks/integrations/use-image-upload-profiles";
 import { useImageUploadLogs } from "@client/hooks/integrations/use-image-upload-logs";
+import { useImageUploadLogSettings } from "@client/hooks/integrations/use-image-upload-log-settings";
 import {
   IMAGE_UPLOAD_PROFILES_TAB,
   type ImageUploadProfilesTab,
@@ -34,12 +35,19 @@ export function ImageUploadProfilesWidget({
     imageUploadLogGateway,
     activeTab === IMAGE_UPLOAD_PROFILES_TAB.LOGS,
   );
+  const logSettings = useImageUploadLogSettings(
+    imageUploadLogGateway,
+    activeTab === IMAGE_UPLOAD_PROFILES_TAB.LOGS,
+  );
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   if (widget.type !== WIDGET_TYPE.IMAGE_UPLOAD_PROFILES) return null;
 
   const remove = async (): Promise<void> => {
     if (await profiles.remove()) setConfirmDelete(false);
+  };
+  const saveLogSettings = async (): Promise<void> => {
+    if (await logSettings.save()) logs.refresh();
   };
 
   const profilePanel = (
@@ -134,10 +142,19 @@ export function ImageUploadProfilesWidget({
           outcome={logs.outcome}
           loading={logs.loading}
           error={logs.error}
+          retentionDays={logSettings.retentionDays}
+          retentionDraft={logSettings.draft}
+          settingsLoading={logSettings.loading}
+          settingsSaving={logSettings.saving}
+          settingsError={logSettings.error}
+          settingsLoadFailed={logSettings.loadFailed}
           hasMore={logs.nextCursor !== null}
           onProfileChange={logs.setProfileId}
           onOutcomeChange={logs.setOutcome}
           onRetry={logs.refresh}
+          onRetentionDraftChange={logSettings.setDraft}
+          onSaveSettings={() => void saveLogSettings()}
+          onRetrySettings={() => void logSettings.load()}
           onLoadMore={logs.loadMore}
           onOpenFile={onOpenFilesystemEntry}
         />

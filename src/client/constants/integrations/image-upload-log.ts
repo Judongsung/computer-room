@@ -16,6 +16,9 @@ export const IMAGE_UPLOAD_LOG_FILTER_VALUE = {
 
 export const IMAGE_UPLOAD_LOG_CLASS_NAME = {
   ROOT: "image-upload-logs",
+  SETTINGS: "image-upload-logs__settings",
+  SETTINGS_ROW: "image-upload-logs__settings-row",
+  SETTINGS_ERROR: "image-upload-logs__settings-error",
   FILTERS: "image-upload-logs__filters",
   TABLE_WRAPPER: "image-upload-logs__table-wrapper",
   TABLE: "image-upload-logs__table",

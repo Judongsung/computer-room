@@ -1,6 +1,7 @@
 import type {
   ImageUploadLogOutcome,
   ImageUploadLogPage,
+  ImageUploadLogSettings,
 } from "@/types/integrations/image-upload-log";
 
 export interface ImageUploadLogListQuery {
@@ -13,4 +14,8 @@ export interface ImageUploadLogGateway {
   listImageUploadLogs(
     query: ImageUploadLogListQuery,
   ): Promise<ImageUploadLogPage>;
+  getImageUploadLogSettings(): Promise<ImageUploadLogSettings>;
+  updateImageUploadLogRetentionDays(
+    retentionDays: number,
+  ): Promise<ImageUploadLogSettings>;
 }

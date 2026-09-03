@@ -25,6 +25,11 @@ export async function resetWorkerState(): Promise<void> {
     )
     .run();
   await env.DB.prepare("DELETE FROM integration_image_upload_logs").run();
+  await env.DB
+    .prepare(
+      "UPDATE integration_image_upload_log_settings SET retention_days = 30 WHERE singleton_id = 1",
+    )
+    .run();
   await env.DB.prepare("DELETE FROM integration_image_profiles").run();
   await env.DB.batch([
     env.DB
@@ -108,6 +113,7 @@ export function uploadNovelAiImage(
     headers: {
       [HTTP_HEADERS.CONTENT_TYPE]: contentType,
       [HTTP_HEADERS.FILE_SIZE]: String(bytes.byteLength),
+      [HTTP_HEADERS.CF_CONNECTING_IP]: "203.0.113.8",
     },
     body: bytes,
   });

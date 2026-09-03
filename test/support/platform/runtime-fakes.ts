@@ -23,6 +23,20 @@ export class SequenceIdGenerator implements IdGenerator {
   }
 }
 
+export class CapturingExecutionContext {
+  readonly tasks: Promise<unknown>[] = [];
+  readonly value = {
+    waitUntil: (task: Promise<unknown>) => {
+      this.tasks.push(task);
+    },
+    passThroughOnException: () => undefined,
+  } as unknown as ExecutionContext;
+
+  async settle(): Promise<void> {
+    await Promise.all(this.tasks);
+  }
+}
+
 export function streamFromText(value: string): ReadableStream<Uint8Array> {
   return new Blob([value]).stream();
 }

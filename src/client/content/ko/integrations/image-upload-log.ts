@@ -1,4 +1,3 @@
-import { IMAGE_UPLOAD_LOG_RETENTION_DAYS } from "@/constants/integrations/image-upload-log";
 import { KOREA_TIME_ZONE } from "@/constants/platform/date";
 import { UI_LOCALE } from "@client/content/ko/shared/format";
 
@@ -17,6 +16,7 @@ export const IMAGE_UPLOAD_LOG_COPY = {
   CONTENT_TYPE: "형식",
   SIZE: "크기",
   DURATION: "처리 시간",
+  SOURCE_IP: "송신 IP",
   UNKNOWN_PROFILE: "알 수 없는 프로필",
   EMPTY_VALUE: "-",
   UNAVAILABLE_FILE: "파일이 이동되었거나 휴지통에 있습니다.",
@@ -25,8 +25,16 @@ export const IMAGE_UPLOAD_LOG_COPY = {
   LOAD_FAILED: "이미지 수신 기록을 불러오지 못했습니다.",
   RETRY: "다시 시도",
   LOAD_MORE: "더 보기",
-  RETENTION_NOTICE:
-    `기록은 ${IMAGE_UPLOAD_LOG_RETENTION_DAYS}일간 보관되며 매일 00:00 KST에 지난 기록을 정리합니다.`,
+  SETTINGS_GROUP: "보관 정책",
+  RETENTION_DAYS: "보관 기간(일)",
+  RETENTION_RANGE: "1~365일 사이의 정수를 입력하세요.",
+  SAVE_SETTINGS: "설정 저장",
+  SETTINGS_LOADING: "보관 설정을 불러오는 중…",
+  SETTINGS_LOAD_FAILED: "이미지 수신 기록 설정을 불러오지 못했습니다.",
+  SETTINGS_SAVE_FAILED: "이미지 수신 기록 설정을 저장하지 못했습니다.",
+  INVALID_RETENTION_DAYS: "보관 기간은 1~365일 사이의 정수여야 합니다.",
+  RETENTION_NOTICE: (retentionDays: number) =>
+    `기록은 ${retentionDays}일간 표시되며 지난 기록은 매일 00:00 KST에 정리합니다.`,
   MILLISECONDS: (value: number) => `${value} ms`,
   HTTP_STATUS: (value: number) => `HTTP ${value}`,
 } as const;

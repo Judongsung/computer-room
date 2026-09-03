@@ -50,6 +50,9 @@ describe("singleton widget migrations", () => {
     const guestAccessAdminMigration = [
       migrationByName(migrations, "0013_guest_access_admin"),
     ];
+    const imageUploadLogPrivacyMigration = [
+      migrationByName(migrations, "0014_image-upload-log-privacy"),
+    ];
     const database = testEnvironment.MIGRATION_REGRESSION_DB;
 
     await applyD1Migrations(database, previousMigrations);
@@ -269,6 +272,7 @@ describe("singleton widget migrations", () => {
       .bind(TIMESTAMP)
       .run();
     await applyD1Migrations(database, guestAccessAdminMigration);
+    await applyD1Migrations(database, imageUploadLogPrivacyMigration);
 
     await expect(
       rows(database, "SELECT widget_id, markdown FROM memo_widgets"),
@@ -296,8 +300,21 @@ describe("singleton widget migrations", () => {
       rows(database, "SELECT id FROM integration_image_profiles ORDER BY id"),
     ).resolves.toEqual([{ id: "custom" }, { id: "novelai" }]);
     await expect(
-      rows(database, "SELECT id FROM integration_image_upload_logs"),
-    ).resolves.toEqual([{ id: "preserved-log" }]);
+      rows(
+        database,
+        "SELECT id, source_ip FROM integration_image_upload_logs",
+      ),
+    ).resolves.toEqual([{ id: "preserved-log", source_ip: null }]);
+    await expect(
+      rows(database, "SELECT * FROM integration_image_upload_log_settings"),
+    ).resolves.toEqual([{ singleton_id: 1, retention_days: 30 }]);
+    await expect(
+      database
+        .prepare(
+          "UPDATE integration_image_upload_log_settings SET retention_days = 366 WHERE singleton_id = 1",
+        )
+        .run(),
+    ).rejects.toThrow();
     await expect(rows(database, "SELECT * FROM guest_access_settings")).resolves.toEqual([
       { singleton_id: 1, enabled: 0 },
     ]);

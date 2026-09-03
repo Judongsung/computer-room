@@ -1,4 +1,5 @@
 import { IMAGE_UPLOAD_LOG_OUTCOME } from "@/constants/integrations/image-upload-log";
+import { IMAGE_UPLOAD_LOG_RETENTION } from "@/constants/integrations/image-upload-log";
 import type {
   ImageUploadLog,
   ImageUploadLogOutcome,
@@ -21,10 +22,19 @@ interface ImageUploadLogListProps {
   readonly outcome: ImageUploadLogOutcome | null;
   readonly loading: boolean;
   readonly error: string | null;
+  readonly retentionDays: number;
+  readonly retentionDraft: string;
+  readonly settingsLoading: boolean;
+  readonly settingsSaving: boolean;
+  readonly settingsError: string | null;
+  readonly settingsLoadFailed: boolean;
   readonly hasMore: boolean;
   readonly onProfileChange: (profileId: string | null) => void;
   readonly onOutcomeChange: (outcome: ImageUploadLogOutcome | null) => void;
   readonly onRetry: () => void;
+  readonly onRetentionDraftChange: (value: string) => void;
+  readonly onSaveSettings: () => void;
+  readonly onRetrySettings: () => void;
   readonly onLoadMore: () => void;
   readonly onOpenFile: (file: NonNullable<ImageUploadLog["file"]>) => void;
 }
@@ -36,10 +46,19 @@ export function ImageUploadLogList({
   outcome,
   loading,
   error,
+  retentionDays,
+  retentionDraft,
+  settingsLoading,
+  settingsSaving,
+  settingsError,
+  settingsLoadFailed,
   hasMore,
   onProfileChange,
   onOutcomeChange,
   onRetry,
+  onRetentionDraftChange,
+  onSaveSettings,
+  onRetrySettings,
   onLoadMore,
   onOpenFile,
 }: ImageUploadLogListProps) {
@@ -48,6 +67,53 @@ export function ImageUploadLogList({
   );
   return (
     <div className={IMAGE_UPLOAD_LOG_CLASS_NAME.ROOT} aria-busy={loading}>
+      <form
+        className={IMAGE_UPLOAD_LOG_CLASS_NAME.SETTINGS}
+        noValidate
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSaveSettings();
+        }}
+      >
+        <fieldset disabled={settingsLoading || settingsSaving}>
+          <legend>{IMAGE_UPLOAD_LOG_COPY.SETTINGS_GROUP}</legend>
+          <div className={IMAGE_UPLOAD_LOG_CLASS_NAME.SETTINGS_ROW}>
+            <label>
+              <span>{IMAGE_UPLOAD_LOG_COPY.RETENTION_DAYS}</span>
+              <input
+                type="number"
+                min={IMAGE_UPLOAD_LOG_RETENTION.MIN_DAYS}
+                max={IMAGE_UPLOAD_LOG_RETENTION.MAX_DAYS}
+                step={1}
+                value={retentionDraft}
+                onChange={(event) =>
+                  onRetentionDraftChange(event.target.value)
+                }
+              />
+            </label>
+            <button type="submit">{IMAGE_UPLOAD_LOG_COPY.SAVE_SETTINGS}</button>
+            <small>{IMAGE_UPLOAD_LOG_COPY.RETENTION_RANGE}</small>
+          </div>
+          <p className={IMAGE_UPLOAD_LOG_CLASS_NAME.NOTICE}>
+            {settingsLoading
+              ? IMAGE_UPLOAD_LOG_COPY.SETTINGS_LOADING
+              : IMAGE_UPLOAD_LOG_COPY.RETENTION_NOTICE(retentionDays)}
+          </p>
+          {settingsError ? (
+            <div
+              className={IMAGE_UPLOAD_LOG_CLASS_NAME.SETTINGS_ERROR}
+              role="alert"
+            >
+              <span>{settingsError}</span>
+              {settingsLoadFailed ? (
+                <button type="button" onClick={onRetrySettings}>
+                  {IMAGE_UPLOAD_LOG_COPY.RETRY}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+        </fieldset>
+      </form>
       <div className={IMAGE_UPLOAD_LOG_CLASS_NAME.FILTERS}>
         <label>
           <span>{IMAGE_UPLOAD_LOG_COPY.FILTER_PROFILE}</span>
@@ -87,15 +153,13 @@ export function ImageUploadLogList({
           </select>
         </label>
       </div>
-      <p className={IMAGE_UPLOAD_LOG_CLASS_NAME.NOTICE}>
-        {IMAGE_UPLOAD_LOG_COPY.RETENTION_NOTICE}
-      </p>
       <div className={IMAGE_UPLOAD_LOG_CLASS_NAME.TABLE_WRAPPER}>
         <table className={IMAGE_UPLOAD_LOG_CLASS_NAME.TABLE}>
           <thead>
             <tr>
               <th>{IMAGE_UPLOAD_LOG_COPY.RECEIVED_AT}</th>
               <th>{IMAGE_UPLOAD_LOG_COPY.FILTER_PROFILE}</th>
+              <th>{IMAGE_UPLOAD_LOG_COPY.SOURCE_IP}</th>
               <th>{IMAGE_UPLOAD_LOG_COPY.FILTER_RESULT}</th>
               <th>{IMAGE_UPLOAD_LOG_COPY.FILE_OR_ERROR}</th>
               <th>{IMAGE_UPLOAD_LOG_COPY.CONTENT_TYPE}</th>
@@ -159,6 +223,7 @@ function ImageUploadLogRow({
     <tr>
       <td>{IMAGE_UPLOAD_LOG_DATE_FORMAT.format(new Date(item.receivedAt))}</td>
       <td>{profileName}</td>
+      <td>{item.sourceIp ?? IMAGE_UPLOAD_LOG_COPY.EMPTY_VALUE}</td>
       <td>
         <span
           className={[

@@ -6,11 +6,11 @@ import { FilesystemPathService } from "@/application/filesystem/filesystem-path-
 import { FilesystemDownloadManifestService } from "@/application/filesystem/filesystem-download-manifest-service";
 import { DirectoryDetailsService } from "@/application/filesystem/directory-details-service";
 import { ImageUploadProfileService } from "@/application/integrations/image-upload-profile-service";
-import {
-  ImageUploadLogService,
-  purgeExpiredImageUploadLogs,
-} from "@/application/integrations/image-upload-log-service";
+import { ImageUploadLogService } from "@/application/integrations/image-upload-log-service";
+import { ImageUploadLogPurgeJob } from "@/application/integrations/image-upload-log-purge-job";
+import { ImageUploadLogSettingsService } from "@/application/integrations/image-upload-log-settings-service";
 import { ImageUploadService } from "@/application/integrations/image-upload-service";
+import { ScheduledJobDispatcher } from "@/application/platform/scheduled-job-dispatcher";
 import { RecycleBinService } from "@/application/filesystem/recycle/recycle-bin-service";
 import { MemoService } from "@/application/widgets/memo-service";
 import { ThumbnailService } from "@/application/filesystem/thumbnail-service";
@@ -34,6 +34,7 @@ import { DirectoryDetailsApiHandler } from "@/http/filesystem/directory-details-
 import { ImageUploadProfileApiHandler } from "@/http/integrations/image-upload-profile-api-handler";
 import { ImageUploadApiHandler } from "@/http/integrations/image-upload-api-handler";
 import { ImageUploadLogApiHandler } from "@/http/integrations/image-upload-log-api-handler";
+import { ImageUploadLogSettingsApiHandler } from "@/http/integrations/image-upload-log-settings-api-handler";
 import { WidgetApiHandler } from "@/http/widgets/widget-api-handler";
 import { WidgetFileApiHandler } from "@/http/widgets/widget-file-api-handler";
 import { StorageStatusApiHandler } from "@/http/storage/storage-status-api-handler";
@@ -63,12 +64,13 @@ import { CloudflareBackgroundTaskScheduler } from "@/infrastructure/platform/clo
 import { D1MobilePreferencesRepository } from "@/infrastructure/platform/d1-mobile-preferences-repository";
 import { D1ImageUploadProfileRepository } from "@/infrastructure/integrations/d1-image-upload-profile-repository";
 import { D1ImageUploadLogRepository } from "@/infrastructure/integrations/d1-image-upload-log-repository";
+import { D1ImageUploadLogSettingsRepository } from "@/infrastructure/integrations/d1-image-upload-log-settings-repository";
 import { D1GuestAccessRepository } from "@/infrastructure/admin/d1-guest-access-repository";
 import { D1GuestPublicationRepository } from "@/infrastructure/guest/d1-guest-publication-repository";
 import { CloudflareGuestRequestRateLimiter } from "@/infrastructure/guest/cloudflare-guest-request-rate-limiter";
-import { BACKGROUND_TASK_FAILURE_CODE } from "@/constants/platform/background-task";
 import { CryptoIdGenerator, SystemClock } from "@/infrastructure/platform/runtime";
 import type { IdentityVerifier, RequestVerifier } from "@/types/platform/auth";
+import type { ScheduledJob } from "@/types/platform/scheduled-job";
 
 export default {
   async fetch(
@@ -135,11 +137,18 @@ export default {
       ids,
       clock,
     );
+    const imageUploadLogRepository = new D1ImageUploadLogRepository(env.DB);
+    const imageUploadLogSettingsRepository =
+      new D1ImageUploadLogSettingsRepository(env.DB);
     const imageUploadLogService = new ImageUploadLogService(
-      new D1ImageUploadLogRepository(env.DB),
+      imageUploadLogRepository,
+      imageUploadLogSettingsRepository,
       activeFilesystemEntries,
       ids,
       clock,
+    );
+    const imageUploadLogSettingsService = new ImageUploadLogSettingsService(
+      imageUploadLogSettingsRepository,
     );
     const recycleBinService = new RecycleBinService(
       fileRepository,
@@ -175,6 +184,8 @@ export default {
     const imageUploadLogApiHandler = new ImageUploadLogApiHandler(
       imageUploadLogService,
     );
+    const imageUploadLogSettingsApiHandler =
+      new ImageUploadLogSettingsApiHandler(imageUploadLogSettingsService);
     const imageUploadProfileApiHandler = new ImageUploadProfileApiHandler(
       imageUploadProfileService,
     );
@@ -258,6 +269,7 @@ export default {
         mobilePreferencesApiHandler,
         imageUploadProfileApiHandler,
         imageUploadLogApiHandler,
+        imageUploadLogSettingsApiHandler,
         guestAccessApiHandler,
       ],
       [imageUploadApiHandler],
@@ -273,15 +285,21 @@ export default {
     env: Env,
     context: ExecutionContext,
   ): void {
-    new CloudflareBackgroundTaskScheduler(context).schedule(
-      purgeExpiredImageUploadLogs(
-        new D1ImageUploadLogRepository(env.DB),
-        controller.scheduledTime,
-      ),
-      BACKGROUND_TASK_FAILURE_CODE.IMAGE_UPLOAD_LOG_PURGE,
-    );
+    new ScheduledJobDispatcher(
+      new CloudflareBackgroundTaskScheduler(context),
+      createScheduledJobs(env),
+    ).dispatch(controller.scheduledTime);
   },
 } satisfies ExportedHandler<Env>;
+
+function createScheduledJobs(env: Env): readonly ScheduledJob[] {
+  return [
+    new ImageUploadLogPurgeJob(
+      new D1ImageUploadLogRepository(env.DB),
+      new D1ImageUploadLogSettingsRepository(env.DB),
+    ),
+  ];
+}
 
 function createIdentityVerifier(env: Env): IdentityVerifier {
   if (isLocalAuthBypass(env)) {

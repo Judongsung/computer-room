@@ -18,6 +18,7 @@ import type {
   ImageUploadLog,
   ImageUploadLogQuery,
   ImageUploadLogRepository,
+  ImageUploadLogSettingsReader,
   ImageUploadLogUseCases,
   RecordImageUploadLogInput,
   StoredImageUploadLog,
@@ -27,6 +28,7 @@ import type { Clock, IdGenerator } from "@/types/platform/runtime";
 export class ImageUploadLogService implements ImageUploadLogUseCases {
   constructor(
     private readonly logs: ImageUploadLogRepository,
+    private readonly settings: ImageUploadLogSettingsReader,
     private readonly activeEntries: ActiveFilesystemEntryResolver,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
@@ -36,6 +38,7 @@ export class ImageUploadLogService implements ImageUploadLogUseCases {
     const base = {
       id: this.ids.generate(),
       profileId: input.profileId,
+      sourceIp: input.sourceIp,
       outcome: input.outcome,
       contentType: normalizedLogContentType(input.contentType),
       declaredSize: input.declaredSize,
@@ -70,9 +73,13 @@ export class ImageUploadLogService implements ImageUploadLogUseCases {
   }
 
   async listLogs(query: ImageUploadLogQuery) {
+    const settings = await this.settings.getSettings();
     const stored = await this.logs.list({
       ...query,
-      cutoff: imageUploadLogRetentionCutoff(this.clock.now()),
+      cutoff: imageUploadLogRetentionCutoff(
+        this.clock.now(),
+        settings.retentionDays,
+      ),
       limit: IMAGE_UPLOAD_LOG_PAGE_LIMIT + 1,
     });
     const hasMore = stored.length > IMAGE_UPLOAD_LOG_PAGE_LIMIT;
@@ -101,16 +108,6 @@ export class ImageUploadLogService implements ImageUploadLogUseCases {
     };
   }
 
-  purgeExpired(referenceTime: number): Promise<number> {
-    return purgeExpiredImageUploadLogs(this.logs, referenceTime);
-  }
-}
-
-export function purgeExpiredImageUploadLogs(
-  logs: Pick<ImageUploadLogRepository, "purgeBefore">,
-  referenceTime: number,
-): Promise<number> {
-  return logs.purgeBefore(imageUploadLogRetentionCutoff(referenceTime));
 }
 
 function toPublicLog(
@@ -120,6 +117,7 @@ function toPublicLog(
   return {
     id: log.id,
     profileId: log.profileId,
+    sourceIp: log.sourceIp,
     outcome: log.outcome,
     contentType: log.contentType,
     declaredSize: log.declaredSize,

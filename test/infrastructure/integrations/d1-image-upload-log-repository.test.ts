@@ -35,7 +35,10 @@ describe("D1ImageUploadLogRepository", () => {
         limit: 2,
         profileId: "novelai",
       }),
-    ).resolves.toMatchObject([{ id: "d" }, { id: "b" }]);
+    ).resolves.toMatchObject([
+      { id: "d", sourceIp: "2001:db8::8" },
+      { id: "b", sourceIp: "203.0.113.8" },
+    ]);
     await expect(
       repository.list({
         cutoff: 0,
@@ -66,6 +69,7 @@ function failureLog(
   return {
     id,
     profileId,
+    sourceIp: "203.0.113.8",
     outcome: IMAGE_UPLOAD_LOG_OUTCOME.FAILURE,
     contentType: "image/png",
     declaredSize: 4,
@@ -87,6 +91,7 @@ function successLog(
   return {
     id,
     profileId,
+    sourceIp: "2001:db8::8",
     outcome: IMAGE_UPLOAD_LOG_OUTCOME.SUCCESS,
     contentType: "image/png",
     declaredSize: 4,

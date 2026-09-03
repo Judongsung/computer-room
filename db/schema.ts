@@ -35,6 +35,8 @@ import {
 import {
   IMAGE_UPLOAD_LOG_OUTCOME,
   IMAGE_UPLOAD_LOG_OUTCOME_VALUES,
+  IMAGE_UPLOAD_LOG_RETENTION,
+  IMAGE_UPLOAD_LOG_SETTINGS_SINGLETON_ID,
 } from "@/constants/integrations/image-upload-log";
 import {
   WIDGET_TYPE,
@@ -271,6 +273,7 @@ export const integrationImageUploadLogs = sqliteTable(
   {
     id: text("id").primaryKey(),
     profileId: text("profile_id"),
+    sourceIp: text("source_ip"),
     outcome: text("outcome", {
       enum: IMAGE_UPLOAD_LOG_OUTCOME_VALUES,
     }).notNull(),
@@ -313,6 +316,28 @@ export const integrationImageUploadLogs = sqliteTable(
       table.profileId,
       table.receivedAt,
       table.id,
+    ),
+  ],
+);
+
+export const integrationImageUploadLogSettings = sqliteTable(
+  "integration_image_upload_log_settings",
+  {
+    singletonId: integer("singleton_id")
+      .primaryKey()
+      .default(IMAGE_UPLOAD_LOG_SETTINGS_SINGLETON_ID),
+    retentionDays: integer("retention_days")
+      .notNull()
+      .default(IMAGE_UPLOAD_LOG_RETENTION.DEFAULT_DAYS),
+  },
+  (table) => [
+    check(
+      "integration_image_upload_log_settings_singleton_check",
+      sql`${table.singletonId} = ${sql.raw(String(IMAGE_UPLOAD_LOG_SETTINGS_SINGLETON_ID))}`,
+    ),
+    check(
+      "integration_image_upload_log_settings_retention_check",
+      sql`${table.retentionDays} BETWEEN ${sql.raw(String(IMAGE_UPLOAD_LOG_RETENTION.MIN_DAYS))} AND ${sql.raw(String(IMAGE_UPLOAD_LOG_RETENTION.MAX_DAYS))}`,
     ),
   ],
 );

@@ -16,7 +16,8 @@ import {
 } from "@test/support/platform/runtime-fakes";
 
 const KOREA_AUGUST_31_MIDNIGHT = Date.parse("2026-08-30T15:00:00.000Z");
-const RETENTION_CUTOFF = Date.parse("2026-07-31T15:00:00.000Z");
+const SEVEN_DAY_RETENTION_CUTOFF = Date.parse("2026-08-23T15:00:00.000Z");
+const SETTINGS = { getSettings: async () => ({ retentionDays: 30 }) };
 
 describe("ImageUploadLogService", () => {
   it("records safe success and failure details and resolves only active files", async () => {
@@ -38,6 +39,7 @@ describe("ImageUploadLogService", () => {
     } as ActiveFilesystemEntryResolver;
     const service = new ImageUploadLogService(
       repository,
+      SETTINGS,
       activeEntries,
       new SequenceIdGenerator(["success-log", "failure-log"]),
       new StaticClock(KOREA_AUGUST_31_MIDNIGHT),
@@ -45,6 +47,7 @@ describe("ImageUploadLogService", () => {
 
     await service.record({
       profileId: "novelai",
+      sourceIp: "203.0.113.8",
       contentType: "IMAGE/PNG; charset=binary",
       declaredSize: 42,
       receivedAt: KOREA_AUGUST_31_MIDNIGHT - 1_000,
@@ -64,6 +67,7 @@ describe("ImageUploadLogService", () => {
     });
     await service.record({
       profileId: "novelai",
+      sourceIp: "2001:db8::8",
       contentType: "text/plain",
       declaredSize: 4,
       receivedAt: KOREA_AUGUST_31_MIDNIGHT,
@@ -76,6 +80,7 @@ describe("ImageUploadLogService", () => {
     expect(page.items).toEqual([
       expect.objectContaining({
         id: "failure-log",
+        sourceIp: "2001:db8::8",
         contentType: "text/plain",
         durationMs: 0,
         file: null,
@@ -85,6 +90,7 @@ describe("ImageUploadLogService", () => {
       }),
       expect.objectContaining({
         id: "success-log",
+        sourceIp: "203.0.113.8",
         contentType: "image/png",
         durationMs: 17,
         file: expect.objectContaining({ id: file.id, name: file.name }),
@@ -98,26 +104,23 @@ describe("ImageUploadLogService", () => {
     });
   });
 
-  it("purges at the 00:00 KST calendar cutoff and keeps the exact boundary", async () => {
+  it("uses the stored retention period when listing logs", async () => {
     const repository = new MemoryImageUploadLogRepository([
-      failureLog("older", RETENTION_CUTOFF - 1),
-      failureLog("boundary", RETENTION_CUTOFF),
+      failureLog("older", SEVEN_DAY_RETENTION_CUTOFF - 1),
+      failureLog("boundary", SEVEN_DAY_RETENTION_CUTOFF),
       failureLog("recent", KOREA_AUGUST_31_MIDNIGHT - 1),
     ]);
     const service = new ImageUploadLogService(
       repository,
+      { getSettings: async () => ({ retentionDays: 7 }) },
       { findMany: async () => [] } as unknown as ActiveFilesystemEntryResolver,
       new SequenceIdGenerator([]),
       new StaticClock(KOREA_AUGUST_31_MIDNIGHT),
     );
 
-    await expect(
-      service.purgeExpired(KOREA_AUGUST_31_MIDNIGHT),
-    ).resolves.toBe(1);
-    expect(repository.items.map(({ id }) => id)).toEqual([
-      "boundary",
-      "recent",
-    ]);
+    await expect(service.listLogs({})).resolves.toMatchObject({
+      items: [{ id: "recent" }, { id: "boundary" }],
+    });
   });
 });
 
@@ -163,6 +166,7 @@ function failureLog(id: string, receivedAt: number): StoredImageUploadLog {
   return {
     id,
     profileId: "novelai",
+    sourceIp: null,
     outcome: IMAGE_UPLOAD_LOG_OUTCOME.FAILURE,
     contentType: "image/png",
     declaredSize: 1,

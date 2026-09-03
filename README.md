@@ -220,9 +220,11 @@ curl --request POST "https://<computer-room-domain>/api/integrations/<profile-id
   --data-binary "@generated.png"
 ```
 
-이미지 API 프로필 프로그램의 `수신 기록` 탭에서는 인증을 통과한 요청의 성공·실패, 수신 시각, MIME, 선언 크기와 처리 시간을 확인할 수 있습니다. 성공 파일이 아직 바탕 화면·내 문서 계층에 있으면 기록에서 바로 열 수 있습니다. 기록 조회 API는 사용자용 Access 인증을 사용하는 `GET /api/integrations/image-upload-logs`이며 `profileId`, `outcome`, `cursor` 쿼리를 지원합니다.
+이미지 API 프로필 프로그램의 `수신 기록` 탭에서는 인증을 통과한 요청의 성공·실패, 수신 시각, 송신 IP, MIME, 선언 크기와 처리 시간을 확인할 수 있습니다. 송신 IP는 Cloudflare의 [`CF-Connecting-IP`](https://developers.cloudflare.com/fundamentals/reference/http-headers/#cf-connecting-ip)에서 읽으며 누락되거나 잘못된 값은 기록하지 않습니다. 성공 파일이 아직 바탕 화면·내 문서 계층에 있으면 기록에서 바로 열 수 있습니다. 기록 조회 API는 사용자용 Access 인증을 사용하는 `GET /api/integrations/image-upload-logs`이며 `profileId`, `outcome`, `cursor` 쿼리를 지원합니다.
 
-기록은 최근 30일의 한국 날짜 경계를 기준으로 보관합니다. Cron Trigger는 매일 `15:00 UTC`, 즉 `00:00 KST`에 오래된 행을 정리합니다. Cloudflare Access가 Service Auth 단계에서 거부한 요청과 Worker에 도달하지 못한 네트워크 오류는 애플리케이션 수신 기록에 남지 않습니다. 서비스 토큰, 인증 헤더, 이미지 본문과 R2 객체 키는 기록하지 않습니다.
+보관 기간은 수신 기록 탭에서 전체 프로필 공통 `1~365일`로 설정하며 기본값은 30일입니다. 소유자 전용 `GET`, `PATCH /api/integrations/image-upload-logs/settings`도 같은 설정을 조회·변경합니다. 변경한 기간은 조회에 즉시 적용되고 Cron Trigger는 매일 `15:00 UTC`, 즉 `00:00 KST`에 실제 만료 행과 송신 IP를 함께 삭제합니다. Cloudflare Access가 Service Auth 단계에서 거부한 요청과 Worker에 도달하지 못한 네트워크 오류는 애플리케이션 수신 기록에 남지 않습니다. 서비스 토큰, 인증 헤더, 이미지 본문과 R2 객체 키는 기록하지 않습니다.
+
+자정 정기 작업은 공통 `ScheduledJob` 계약으로 등록합니다. Worker의 작업 레지스트리가 등록된 작업을 각각 별도의 `waitUntil()`에 전달하므로 한 작업의 실패가 다른 작업을 막지 않습니다. 새 자정 작업은 전용 작업 구현과 레지스트리 항목을 추가하고, 비밀 정보가 없는 전용 실패 코드를 지정합니다.
 
 마이그레이션은 기존 호환성을 위해 다음 NovelAI 프로필을 자동 생성합니다.
 

@@ -18,6 +18,7 @@ export interface ImageUploadLogQuery {
 
 interface ImageUploadLogAttemptBase {
   readonly profileId: string | null;
+  readonly sourceIp: string | null;
   readonly contentType: string | null;
   readonly declaredSize: number | null;
   readonly receivedAt: number;
@@ -37,6 +38,7 @@ export type RecordImageUploadLogInput =
 export interface StoredImageUploadLog {
   readonly id: string;
   readonly profileId: string | null;
+  readonly sourceIp: string | null;
   readonly outcome: ImageUploadLogOutcome;
   readonly contentType: string | null;
   readonly declaredSize: number | null;
@@ -52,6 +54,7 @@ export interface StoredImageUploadLog {
 export interface ImageUploadLog {
   readonly id: string;
   readonly profileId: string | null;
+  readonly sourceIp: string | null;
   readonly outcome: ImageUploadLogOutcome;
   readonly contentType: string | null;
   readonly declaredSize: number | null;
@@ -84,16 +87,37 @@ export interface ImageUploadLogRepository {
   purgeBefore(cutoff: number): Promise<number>;
 }
 
+export interface ImageUploadLogSettings {
+  readonly retentionDays: number;
+}
+
+export interface ImageUploadLogSettingsReader {
+  getSettings(): Promise<ImageUploadLogSettings>;
+}
+
+export interface ImageUploadLogSettingsRepository
+  extends ImageUploadLogSettingsReader {
+  saveRetentionDays(retentionDays: number): Promise<void>;
+}
+
+export interface ImageUploadLogSettingsUseCases
+  extends ImageUploadLogSettingsReader {
+  updateRetentionDays(retentionDays: number): Promise<ImageUploadLogSettings>;
+}
+
 export interface ImageUploadLogRecorder {
   record(input: RecordImageUploadLogInput): Promise<void>;
 }
 
 export interface ImageUploadLogUseCases extends ImageUploadLogRecorder {
   listLogs(query: ImageUploadLogQuery): Promise<ImageUploadLogPage>;
-  purgeExpired(referenceTime: number): Promise<number>;
 }
 
 export interface ImageUploadLogResponse {
   readonly items: readonly ImageUploadLog[];
   readonly nextCursor: string | null;
+}
+
+export interface ImageUploadLogSettingsResponse {
+  readonly settings: ImageUploadLogSettings;
 }

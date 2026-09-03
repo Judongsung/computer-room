@@ -40,6 +40,7 @@ export const API_PATH_SEGMENTS = {
   MOBILE: "mobile",
   IMAGE_PROFILES: "image-profiles",
   IMAGE_UPLOAD_LOGS: "image-upload-logs",
+  SETTINGS: "settings",
   GUEST_ACCESS: "guest-access",
   SESSION: "session",
   PROGRAM_DOCUMENTS: "program-documents",
@@ -71,6 +72,9 @@ export const IMAGE_UPLOAD_PROFILES_API_PATH =
 
 export const IMAGE_UPLOAD_LOGS_API_PATH =
   `${API_PATHS.INTEGRATIONS}/${API_PATH_SEGMENTS.IMAGE_UPLOAD_LOGS}`;
+
+export const IMAGE_UPLOAD_LOG_SETTINGS_API_PATH =
+  `${IMAGE_UPLOAD_LOGS_API_PATH}/${API_PATH_SEGMENTS.SETTINGS}`;
 
 export const GUEST_ACCESS_API_PATH =
   `${API_PATHS.ADMIN}/${API_PATH_SEGMENTS.GUEST_ACCESS}`;
