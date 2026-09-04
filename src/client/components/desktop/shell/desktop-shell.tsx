@@ -35,6 +35,10 @@ import { useDesktopWindowManager } from "@client/hooks/desktop/use-desktop-windo
 import { useExplorerWindows } from "@client/hooks/desktop/use-explorer-windows";
 import { useSystemWindows } from "@client/hooks/desktop/use-system-windows";
 import { useMediaWindows } from "@client/hooks/media/use-media-windows";
+import { useNotepadWindows } from "@client/hooks/filesystem/text/use-notepad-windows";
+import { useDownloadConfirmation } from "@client/hooks/filesystem/text/use-download-confirmation";
+import { NotepadWindowLayer } from "@client/components/desktop/notepad/notepad-window-layer";
+import { DesktopDownloadConfirmation } from "@client/components/desktop/notepad/download-confirmation";
 import { useWidgetFileLifecycle } from "@client/hooks/widgets/use-widget-file-lifecycle";
 import { DesktopDialogLayer } from "@client/components/desktop/desktop-dialog-layer";
 import { DesktopNotification } from "@client/components/desktop/desktop-notification";
@@ -77,6 +81,8 @@ export function DesktopShell(props: DesktopShellProps) {
   const desktop = useDesktopDimensions(workAreaRef);
   const system = useSystemWindows();
   const media = useMediaWindows();
+  const notepad = useNotepadWindows();
+  const downloadConfirmation = useDownloadConfirmation(filesystemGateway);
   const explorer = useExplorerWindows();
   const [isStartMenuOpen, setIsStartMenuOpen] = useState(false);
   const [selectedSystemShortcutId, setSelectedSystemShortcutId] =
@@ -88,6 +94,7 @@ export function DesktopShell(props: DesktopShellProps) {
     explorer,
     system,
     media,
+    additionalWindows: notepad.registrations,
     onActivateWidget: props.onActivateTaskbarWindow,
     onFocusWidget: props.onFocusWindow,
     onMinimizeWidget: props.onMinimizeWindow,
@@ -108,7 +115,8 @@ export function DesktopShell(props: DesktopShellProps) {
     system,
     explorer,
     media,
-    filesystem: filesystemGateway,
+    onOpenText: (file) => windowManager.focus(notepad.open(file, desktop)),
+    onRequestDownload: downloadConfirmation.request,
     focusWindow: windowManager.focus,
     closeStartMenu,
     onAddWidget: props.onAddWidget,
@@ -144,13 +152,10 @@ export function DesktopShell(props: DesktopShellProps) {
 
   const closeManagedWindow = useCallback(
     (id: string): void => {
-      if (explorer.windows.some((window) => window.id === id)) explorer.close(id);
-      else if (isSystemAppId(id)) system.close(id);
-      else if (media.windows.some((window) => window.id === id)) media.close(id);
-      else if (widgets.some((widget) => widget.id === id)) widgetFiles.requestClose(id);
+      if (!windowManager.closeRegisteredWindow(id) && widgets.some((widget) => widget.id === id)) widgetFiles.requestClose(id);
       windowManager.clearActive(id);
     },
-    [explorer, media, system, widgetFiles, widgets, windowManager],
+    [widgetFiles, widgets, windowManager],
   );
   const desktopStyle = {
     ...DESKTOP_BACKGROUND_STYLE,
@@ -248,6 +253,7 @@ export function DesktopShell(props: DesktopShellProps) {
         {widgets.length === 0 &&
         filesystem.entries.entries.length === 0 &&
         media.windows.length === 0 &&
+        notepad.windows.length === 0 &&
         explorer.windows.length === 0 &&
         !SYSTEM_APP_ID_VALUES.some((id) => system.windows[id].isOpen) ? (
           <p className="desktop-empty-hint">{DASHBOARD_COPY.EMPTY_DESKTOP}</p>
@@ -269,7 +275,6 @@ export function DesktopShell(props: DesktopShellProps) {
           desktopCapacity={filesystem.iconLayout.dynamicCapacity}
           filesystemRevision={filesystem.revision}
           onFilesystemChanged={filesystem.notifyChanged}
-          onOpenMedia={launcher.openMediaViewer}
           onOpenFilesystemEntry={launcher.openFilesystemEntry}
           onOpenWidget={launcher.openWidget}
           onEntryChanged={filesystem.synchronizeWidgetFile}
@@ -286,7 +291,9 @@ export function DesktopShell(props: DesktopShellProps) {
           onSaveWidgetFile={widgetFiles.beginSave}
           onLaunchApplication={launcher.launchApplication}
         />
+        <NotepadWindowLayer controller={notepad} gateway={filesystemGateway} desktop={desktop} manager={windowManager} />
       </main>
+      {downloadConfirmation.file ? <DesktopDownloadConfirmation file={downloadConfirmation.file} onConfirm={downloadConfirmation.confirm} onCancel={downloadConfirmation.cancel} /> : null}
       <DesktopDialogLayer
         gateway={filesystemGateway}
         widgets={widgets}
@@ -360,8 +367,4 @@ export function DesktopShell(props: DesktopShellProps) {
       />
     </div>
   );
-}
-
-function isSystemAppId(id: string): id is SystemAppId {
-  return (SYSTEM_APP_ID_VALUES as readonly string[]).includes(id);
 }

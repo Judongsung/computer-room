@@ -1,4 +1,3 @@
-import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import {
@@ -13,7 +12,6 @@ import { DesktopAppWindow } from "@client/components/desktop/desktop-app-window"
 import { DocumentsExplorerHeader } from "@client/components/filesystem/explorer/documents-explorer-header";
 import { ExplorerDirectoryView } from "@client/components/filesystem/explorer/explorer-directory-view";
 import {
-  ConfirmDialog,
   DirectoryPickerDialog,
   NameDialog,
 } from "@client/components/filesystem/filesystem-dialogs";
@@ -23,14 +21,13 @@ import { FolderPropertiesDialog } from "@client/components/filesystem/details/fo
 import { useDocumentsController } from "@client/hooks/filesystem/explorer/use-documents-controller";
 import { writeFilesystemDragPayload } from "@client/domain/filesystem/drag";
 import type { DocumentsWindowProps } from "@client/types/filesystem/explorer";
-import { downloadFile } from "@client/utils/download-file";
 
 export function DocumentsWindow({
   gateway,
   windowId,
   title,
   iconPath,
-  onOpenMedia,
+  onOpenFile,
   initialDirectoryId,
   onDirectoryChanged,
   onOpenWidget,
@@ -49,7 +46,7 @@ export function DocumentsWindow({
     filesystemRevision,
     onFilesystemChanged,
     onDirectoryChanged,
-    onOpenMedia,
+    onOpenFile,
     onOpenWidget,
     onEntryChanged,
     onWidgetsClosed,
@@ -202,20 +199,6 @@ export function DocumentsWindow({
             )
           }
           onCancel={() => controller.setDialog(null)}
-        />
-      ) : null}
-      {controller.unsupportedMedia?.kind === FILESYSTEM_ENTRY_KIND.FILE ? (
-        <ConfirmDialog
-          title={MEDIA_VIEWER_COPY.UNSUPPORTED_TITLE}
-          message={MEDIA_VIEWER_COPY.UNSUPPORTED_MESSAGE}
-          busy={false}
-          confirmLabel={MEDIA_VIEWER_COPY.DOWNLOAD_FILE}
-          cancelLabel={MEDIA_VIEWER_COPY.CANCEL}
-          onConfirm={() => {
-            downloadFile(gateway.downloadUrl(controller.unsupportedMedia!.id));
-            controller.setUnsupportedMedia(null);
-          }}
-          onCancel={() => controller.setUnsupportedMedia(null)}
         />
       ) : null}
       <FilesystemBatchResultDialog

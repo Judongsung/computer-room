@@ -26,7 +26,6 @@ export const MOBILE_COPY = {
   EMPTY_TRASH: "휴지통이 비어 있습니다.",
   LOAD_MORE: "더 보기",
   DOWNLOAD: "다운로드",
-  DOWNLOAD_CONFIRM: (name: string) => `${name} 파일을 다운로드할까요?`,
   CANCEL: "취소",
   CONFIRM: "확인",
   FILE_SIZE: "크기",

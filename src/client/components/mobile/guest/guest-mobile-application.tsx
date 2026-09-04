@@ -6,6 +6,10 @@ import {
   FILESYSTEM_ROOT_NAME,
 } from "@/constants/filesystem/filesystem";
 import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
+import { createFileOpener } from "@client/domain/filesystem/text/file-opening";
+import { useDownloadConfirmation } from "@client/hooks/filesystem/text/use-download-confirmation";
+import { MobileNotepad } from "@client/components/mobile/notepad/mobile-notepad";
+import { MobileDownloadConfirmation } from "@client/components/mobile/notepad/download-confirmation";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import { MobileHome } from "@client/components/mobile/launcher/mobile-home";
 import { GuestMobileDirectory } from "@client/components/mobile/guest/guest-mobile-directory";
@@ -52,6 +56,7 @@ function GuestMobileContent({ session, gateway }: GuestApplicationProps) {
   const [revision, setRevision] = useState(0);
   const [menuOpen, setMenuOpen] = useState(false);
   const desktop = useDesktopEntries(gateway, revision);
+  const downloadConfirmation = useDownloadConfirmation(gateway);
   const activity = navigation.current;
 
   const openDirectory = (directoryId: string, title: string): void => {
@@ -72,16 +77,11 @@ function GuestMobileContent({ session, gateway }: GuestApplicationProps) {
       });
       return;
     }
-    const kind = mediaKindFromContentType(entry.contentType);
-    if (!kind) {
-      downloadFile(gateway.downloadUrl(entry.id));
-      return;
-    }
-    navigation.push({
-      kind: MOBILE_ACTIVITY_KIND.MEDIA,
-      file: entry,
-      directoryId,
-    });
+    createFileOpener({
+      media: ({ entry: file }) => navigation.push({ kind: MOBILE_ACTIVITY_KIND.MEDIA, file, directoryId }),
+      text: (file) => navigation.push({ kind: MOBILE_ACTIVITY_KIND.TEXT_FILE, file }),
+      download: downloadConfirmation.request,
+    })(entry);
   };
 
   let content;
@@ -113,6 +113,8 @@ function GuestMobileContent({ session, gateway }: GuestApplicationProps) {
         onOpenEntry={(entry) => openEntry(entry, activity.directoryId)}
       />
     );
+  } else if (activity.kind === MOBILE_ACTIVITY_KIND.TEXT_FILE) {
+    content = <MobileNotepad file={activity.file} gateway={gateway} />;
   } else if (activity.kind === MOBILE_ACTIVITY_KIND.MEDIA) {
     const kind = mediaKindFromContentType(activity.file.contentType);
     content = kind ? (
@@ -142,9 +144,10 @@ function GuestMobileContent({ session, gateway }: GuestApplicationProps) {
   return (
     <div className={MOBILE_CLASS_NAME.ROOT} style={MOBILE_LAYOUT_CSS_VARIABLES}>
       <div className={MOBILE_CLASS_NAME.SCREEN}>{content}</div>
+      {downloadConfirmation.file ? <MobileDownloadConfirmation file={downloadConfirmation.file} onConfirm={downloadConfirmation.confirm} onCancel={downloadConfirmation.cancel} /> : null}
       <MobileNavigationBar
         canGoBack={navigation.canGoBack}
-        menuEnabled
+        menuEnabled={activity.kind !== MOBILE_ACTIVITY_KIND.TEXT_FILE}
         menuOpen={menuOpen}
         onBack={() => {
           setMenuOpen(false);

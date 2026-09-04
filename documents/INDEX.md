@@ -11,7 +11,7 @@
 | --- | --- |
 | [기능 안내](./FEATURES.md) | 데스크톱·모바일·프로그램·파일 시스템의 지원 범위와 제한 |
 | [게스트 공개와 Access 설정](./GUEST_ACCESS.md) | 게스트 공개 규칙, API, Cloudflare Access 경로와 요청 제한 |
-| [미디어 지원](./MEDIA_SUPPORT.md) | 이미지·영상 형식, 뷰어와 썸네일 정책 |
+| [파일 열람과 미디어 지원](./MEDIA_SUPPORT.md) | 텍스트 메모장, 이미지·영상 형식, 뷰어와 썸네일 정책 |
 | [이미지 수신 API](./IMAGE_UPLOAD_API.md) | 이미지 프로필, 업로드 계약, 수신 기록과 Service Auth 설정 |
 
 ## 개발과 운영

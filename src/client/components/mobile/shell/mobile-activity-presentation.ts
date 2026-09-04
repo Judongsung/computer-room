@@ -7,6 +7,7 @@ export function mobileActivityKey(activity: MobileActivity): string {
     case MOBILE_ACTIVITY_KIND.DIRECTORY:
       return `${activity.kind}:${activity.directoryId}`;
     case MOBILE_ACTIVITY_KIND.MEDIA:
+    case MOBILE_ACTIVITY_KIND.TEXT_FILE:
       return `${activity.kind}:${activity.file.id}`;
     case MOBILE_ACTIVITY_KIND.WIDGET_FILE:
       return `${activity.kind}:${activity.entryId}`;
@@ -27,6 +28,7 @@ export function mobileActivityTitle(activity: MobileActivity): string {
     case MOBILE_ACTIVITY_KIND.TRASH:
       return MOBILE_COPY.RECYCLE_BIN;
     case MOBILE_ACTIVITY_KIND.MEDIA:
+    case MOBILE_ACTIVITY_KIND.TEXT_FILE:
       return activity.file.name;
     case MOBILE_ACTIVITY_KIND.WIDGET_DRAFT:
       return MOBILE_COPY.DRAFT_EXISTS_TITLE;

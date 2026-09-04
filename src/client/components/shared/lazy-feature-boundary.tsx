@@ -20,11 +20,11 @@ export class LazyFeatureBoundary extends Component<
   render() {
     if (this.state.failed) {
       return (
-        <LazyFeatureStatus title={this.props.title} failed />
+        <LazyFeatureStatus title={this.props.title} inline={this.props.inline ?? false} failed />
       );
     }
     return (
-      <Suspense fallback={<LazyFeatureStatus title={this.props.title} />}>
+      <Suspense fallback={<LazyFeatureStatus title={this.props.title} inline={this.props.inline ?? false} />}>
         {this.props.children}
       </Suspense>
     );
@@ -34,10 +34,18 @@ export class LazyFeatureBoundary extends Component<
 function LazyFeatureStatus({
   title,
   failed = false,
+  inline = false,
 }: {
   readonly title: string;
   readonly failed?: boolean;
+  readonly inline?: boolean;
 }) {
+  if (inline) return (
+    <div role={failed ? "alert" : "status"}>
+      <p>{failed ? LAZY_FEATURE_LABEL.LOAD_FAILED : LAZY_FEATURE_LABEL.LOADING}</p>
+      {failed ? <button type="button" onClick={() => window.location.reload()}>{LAZY_FEATURE_LABEL.RELOAD}</button> : null}
+    </div>
+  );
   return (
     <div className={LAZY_FEATURE_CLASS_NAME.CONTAINER} role="status">
       <XpWindowFrame title={title}>

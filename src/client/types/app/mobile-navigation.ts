@@ -19,6 +19,10 @@ export type MobileActivity =
       readonly directoryId: string;
     }
   | {
+      readonly kind: typeof MOBILE_ACTIVITY_KIND.TEXT_FILE;
+      readonly file: FilesystemFileEntry;
+    }
+  | {
       readonly kind: typeof MOBILE_ACTIVITY_KIND.WIDGET_FILE;
       readonly entryId: string;
       readonly title: string;

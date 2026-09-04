@@ -14,7 +14,11 @@ import {
   FILESYSTEM_ROOT_NAME,
 } from "@/constants/filesystem/filesystem";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
-import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
+import { createFileOpener } from "@client/domain/filesystem/text/file-opening";
+import { useNotepadWindows } from "@client/hooks/filesystem/text/use-notepad-windows";
+import { useDownloadConfirmation } from "@client/hooks/filesystem/text/use-download-confirmation";
+import { NotepadWindowLayer } from "@client/components/desktop/notepad/notepad-window-layer";
+import { DesktopDownloadConfirmation } from "@client/components/desktop/notepad/download-confirmation";
 import {
   DESKTOP_ASSET_PATHS,
   DESKTOP_LAYOUT,
@@ -101,6 +105,8 @@ function GuestDesktopContent({ session, gateway }: GuestApplicationProps) {
   const explorer = useExplorerWindows();
   const system = useSystemWindows();
   const media = useMediaWindows();
+  const notepad = useNotepadWindows();
+  const downloadConfirmation = useDownloadConfirmation(gateway);
   const programs = useGuestProgramWindows(gateway);
   const contextMenu = useXpContextMenu();
   const [startMenuOpen, setStartMenuOpen] = useState(false);
@@ -118,6 +124,7 @@ function GuestDesktopContent({ session, gateway }: GuestApplicationProps) {
     explorer,
     system,
     media,
+    additionalWindows: notepad.registrations,
     onActivateWidget: programs.restore,
     onFocusWidget: () => undefined,
     onMinimizeWidget: programs.minimize,
@@ -144,23 +151,19 @@ function GuestDesktopContent({ session, gateway }: GuestApplicationProps) {
           windowManager.focus(id);
           return;
         }
-        const kind = mediaKindFromContentType(entry.contentType);
-        if (!kind) {
-          downloadFile(gateway.downloadUrl(entry.id));
-          return;
-        }
-        const id = media.open({ entry, directoryId, kind }, desktop);
-        windowManager.focus(id);
+        createFileOpener({
+          media: (request) => windowManager.focus(media.open({ ...request, directoryId }, desktop)),
+          text: (file) => windowManager.focus(notepad.open(file, desktop)),
+          download: downloadConfirmation.request,
+        })(entry);
       } catch {
         setError(GUEST_COPY.PROGRAM_LOAD_FAILED);
       }
     },
-    [desktop, gateway, media, openDirectory, programs, windowManager],
+    [desktop, media, notepad, downloadConfirmation.request, openDirectory, programs, windowManager],
   );
   const closeWindow = (id: string): void => {
-    if (explorer.windows.some((window) => window.id === id)) explorer.close(id);
-    else if (media.windows.some((window) => window.id === id)) media.close(id);
-    else if (programs.windows.some((window) => window.id === id)) programs.close(id);
+    if (!windowManager.closeRegisteredWindow(id) && programs.windows.some((window) => window.id === id)) programs.close(id);
     windowManager.clearActive(id);
   };
   useEffect(() => setDismissedOverflowCount(null), [overflowCount]);
@@ -266,7 +269,9 @@ function GuestDesktopContent({ session, gateway }: GuestApplicationProps) {
             onCommitBounds={(bounds) => programs.commitBounds(widget.id, bounds)}
           />
         ))}
+        <NotepadWindowLayer controller={notepad} gateway={gateway} desktop={desktop} manager={windowManager} />
       </main>
+      {downloadConfirmation.file ? <DesktopDownloadConfirmation file={downloadConfirmation.file} onConfirm={downloadConfirmation.confirm} onCancel={downloadConfirmation.cancel} /> : null}
       {error ?? entries.error ? (
         <DesktopNotification
           title={GUEST_COPY.PUBLIC_SPACE}

@@ -1,0 +1,1 @@
+export const DESKTOP_WINDOW_INITIAL_ORDER = 100;

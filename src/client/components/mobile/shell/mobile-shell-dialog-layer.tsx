@@ -1,5 +1,6 @@
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
+import { MobileDownloadConfirmation } from "@client/components/mobile/notepad/download-confirmation";
 import type { MobileShellController } from "@client/types/app/mobile-shell";
 
 interface MobileShellDialogLayerProps {
@@ -12,23 +13,7 @@ export function MobileShellDialogLayer({
   return (
     <>
       {controller.pendingDownload ? (
-        <MobileDialog
-          title={MOBILE_COPY.DOWNLOAD}
-          actions={
-            <>
-              <button type="button" onClick={controller.confirmPendingDownload}>
-                {MOBILE_COPY.DOWNLOAD}
-              </button>
-              <button type="button" onClick={controller.cancelPendingDownload}>
-                {MOBILE_COPY.CANCEL}
-              </button>
-            </>
-          }
-        >
-          <p>
-            {MOBILE_COPY.DOWNLOAD_CONFIRM(controller.pendingDownload.name)}
-          </p>
-        </MobileDialog>
+        <MobileDownloadConfirmation file={controller.pendingDownload} onConfirm={controller.confirmPendingDownload} onCancel={controller.cancelPendingDownload} />
       ) : null}
       {controller.draftConflictOpen ? (
         <MobileDialog

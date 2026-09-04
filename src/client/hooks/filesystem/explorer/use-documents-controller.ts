@@ -11,10 +11,6 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "@/constants/filesystem/filesystem";
-import {
-  isPotentialMediaContentType,
-  mediaKindFromContentType,
-} from "@/domain/filesystem/media-type";
 import type {
   FilesystemDirectorySort,
   FilesystemEntry,
@@ -45,7 +41,6 @@ import { useFilesystemSelection } from "@client/hooks/filesystem/use-filesystem-
 import { useFolderProperties } from "@client/hooks/filesystem/use-folder-properties";
 import { useXpContextMenu } from "@client/state/context-menu/context-menu-context";
 import type { DocumentsDialog, DocumentsWindowProps } from "@client/types/filesystem/explorer";
-import { downloadFile } from "@client/utils/download-file";
 
 const EMPTY_ENTRY_IDS: readonly string[] = [];
 
@@ -57,7 +52,7 @@ type DocumentsControllerOptions = Pick<
   | "filesystemRevision"
   | "onFilesystemChanged"
   | "onDirectoryChanged"
-  | "onOpenMedia"
+  | "onOpenFile"
   | "onOpenWidget"
   | "onEntryChanged"
   | "onWidgetsClosed"
@@ -85,7 +80,6 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
   const [mutationBusy, setMutationBusy] = useState(false);
   const [operationError, setOperationError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DocumentsDialog>(null);
-  const [unsupportedMedia, setUnsupportedMedia] = useState<FilesystemEntry | null>(null);
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
   const [batchResult, setBatchResult] = useState<FilesystemBatchResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -180,13 +174,10 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
       } else if (entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET) {
         options.onOpenWidget(entry.widgetId);
       } else {
-        const kind = mediaKindFromContentType(entry.contentType);
-        if (kind) options.onOpenMedia({ entry, directoryId: entry.parentId, kind });
-        else if (isPotentialMediaContentType(entry.contentType)) setUnsupportedMedia(entry);
-        else downloadFile(gateway.downloadUrl(entry.id));
+        options.onOpenFile(entry);
       }
     },
-    [explorer.navigate, gateway, options.onOpenMedia, options.onOpenWidget],
+    [explorer.navigate, options.onOpenFile, options.onOpenWidget],
   );
 
   const uploadSelection = useCallback(
@@ -299,7 +290,6 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
     error: operationError ?? explorer.error,
     busy,
     dialog,
-    unsupportedMedia,
     dropTargetId,
     batchResult,
     fileInputRef,
@@ -315,7 +305,6 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
     propertiesTarget,
     currentDirectoryId,
     setDialog,
-    setUnsupportedMedia,
     setDropTargetId,
     setBatchResult,
     runChange,

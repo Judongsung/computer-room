@@ -9,7 +9,6 @@ import type { ImageUploadLogGateway } from "@client/types/integrations/image-upl
 import type { GuestAccessGateway } from "@client/types/admin/guest-access";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/desktop";
-import type { MediaViewerOpenRequest } from "@client/types/media/media";
 import type { LocalUploadNode } from "@client/types/filesystem/upload";
 import type { useExplorerWindows } from "@client/hooks/desktop/use-explorer-windows";
 import type { useSystemWindows } from "@client/hooks/desktop/use-system-windows";
@@ -61,7 +60,6 @@ interface DesktopWindowLayerProps {
   readonly desktopCapacity: number;
   readonly filesystemRevision: number;
   readonly onFilesystemChanged: () => void;
-  readonly onOpenMedia: (request: MediaViewerOpenRequest) => void;
   readonly onOpenFilesystemEntry: (entry: FilesystemEntry) => void;
   readonly onOpenWidget: (widgetId: string) => void;
   readonly onEntryChanged: (entry: FilesystemEntry) => void;
@@ -100,7 +98,6 @@ export function DesktopWindowLayer({
   desktopCapacity,
   filesystemRevision,
   onFilesystemChanged,
-  onOpenMedia,
   onOpenFilesystemEntry,
   onOpenWidget,
   onEntryChanged,
@@ -196,7 +193,7 @@ export function DesktopWindowLayer({
           desktopCapacity={desktopCapacity}
           filesystemRevision={filesystemRevision}
           onFilesystemChanged={onFilesystemChanged}
-          onOpenMedia={onOpenMedia}
+          onOpenFile={onOpenFilesystemEntry}
           initialDirectoryId={window.directoryId}
           onDirectoryChanged={explorer.changeDirectory}
           onOpenWidget={onOpenWidget}

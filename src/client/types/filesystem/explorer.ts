@@ -1,11 +1,10 @@
-import type { FilesystemEntry } from "@/types/filesystem/filesystem";
+import type { FilesystemEntry, FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import type { DesktopAppWindowProps } from "@client/types/desktop/desktop";
 import type {
   FilesystemGateway,
   FilesystemWindowSyncProps,
 } from "@client/types/filesystem/filesystem";
 import type { LocalUploadNode } from "@client/types/filesystem/upload";
-import type { MediaViewerOpenRequest } from "@client/types/media/media";
 
 export type DocumentsDialog = "create" | "rename" | "move" | null;
 
@@ -26,7 +25,7 @@ export interface DocumentsWindowProps
   readonly windowId: string;
   readonly title: string;
   readonly iconPath: string;
-  readonly onOpenMedia: (request: MediaViewerOpenRequest) => void;
+  readonly onOpenFile: (entry: FilesystemFileEntry) => void;
   readonly initialDirectoryId: string;
   readonly onDirectoryChanged: (
     windowId: string,

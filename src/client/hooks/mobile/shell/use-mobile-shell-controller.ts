@@ -1,7 +1,7 @@
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useCallback, useEffect, useState } from "react";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
-import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
+import { createFileOpener } from "@client/domain/filesystem/text/file-opening";
 import type { FilesystemEntry, FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import type { WidgetFileDocument, WidgetFileType } from "@/types/widgets/widget-file";
 import {
@@ -69,15 +69,11 @@ export function useMobileShellController({
         });
         return;
       }
-      if (mediaKindFromContentType(entry.contentType)) {
-        navigation.push({
-          kind: MOBILE_ACTIVITY_KIND.MEDIA,
-          file: entry,
-          directoryId: entry.parentId,
-        });
-        return;
-      }
-      setPendingDownload(entry);
+      createFileOpener({
+        media: ({ entry: file, directoryId }) => navigation.push({ kind: MOBILE_ACTIVITY_KIND.MEDIA, file, directoryId }),
+        text: (file) => navigation.push({ kind: MOBILE_ACTIVITY_KIND.TEXT_FILE, file }),
+        download: setPendingDownload,
+      })(entry);
     },
     [navigation],
   );

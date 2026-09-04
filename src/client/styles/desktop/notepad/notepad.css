@@ -1,0 +1,43 @@
+.notepad-body {
+  display: flex;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.notepad-body .text-document {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.notepad-body .text-document__actions {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+  padding: 4px;
+}
+
+.notepad-body .text-document__text {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 8px;
+  resize: none;
+  overflow: auto;
+  background: #fff;
+  color: #000;
+  font-family: monospace;
+  font-size: inherit;
+  line-height: 1.5;
+}
+
+.notepad-body .text-document__status {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 8px;
+  overflow-wrap: anywhere;
+}

@@ -1,10 +1,10 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "@/constants/filesystem/filesystem";
-import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
-import type { FilesystemEntry } from "@/types/filesystem/filesystem";
+import type { FilesystemEntry, FilesystemFileEntry } from "@/types/filesystem/filesystem";
+import { createFileOpener } from "@client/domain/filesystem/text/file-opening";
 import type { WidgetType } from "@/types/widgets/widget";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import {
@@ -18,15 +18,14 @@ import type { useMediaWindows } from "@client/hooks/media/use-media-windows";
 import type { DesktopDimensions } from "@client/types/desktop/desktop";
 import type { SystemAppId } from "@client/types/desktop/system-app";
 import type { WidgetOpenResult } from "@client/types/widgets/dashboard";
-import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
-import { downloadFile } from "@client/utils/download-file";
 
 interface DesktopLauncherOptions {
   readonly desktop: DesktopDimensions;
   readonly system: ReturnType<typeof useSystemWindows>;
   readonly explorer: ReturnType<typeof useExplorerWindows>;
   readonly media: ReturnType<typeof useMediaWindows>;
-  readonly filesystem: Pick<FilesystemContentGateway, "downloadUrl">;
+  readonly onOpenText: (file: FilesystemFileEntry) => void;
+  readonly onRequestDownload: (file: FilesystemFileEntry) => void;
   readonly focusWindow: (id: string, persist?: () => void) => void;
   readonly closeStartMenu: () => void;
   readonly onAddWidget: (
@@ -41,7 +40,8 @@ export function useDesktopLauncher({
   system,
   explorer,
   media,
-  filesystem,
+  onOpenText,
+  onRequestDownload,
   focusWindow,
   closeStartMenu,
   onAddWidget,
@@ -110,6 +110,10 @@ export function useDesktopLauncher({
     [desktop, focusWindow, media],
   );
 
+  const openFile = useMemo(() => createFileOpener({
+    media: openMediaViewer, text: onOpenText, download: onRequestDownload,
+  }), [openMediaViewer, onOpenText, onRequestDownload]);
+
   const openFilesystemEntry = useCallback(
     (entry: FilesystemEntry): void => {
       if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
@@ -117,12 +121,10 @@ export function useDesktopLauncher({
       } else if (entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET) {
         openWidget(entry.widgetId);
       } else {
-        const kind = mediaKindFromContentType(entry.contentType);
-        if (kind) openMediaViewer({ entry, directoryId: entry.parentId, kind });
-        else downloadFile(filesystem.downloadUrl(entry.id));
+        openFile(entry);
       }
     },
-    [filesystem, openDocumentsDirectory, openMediaViewer, openWidget],
+    [openFile, openDocumentsDirectory, openWidget],
   );
 
   return {

@@ -27,10 +27,6 @@ export const MEDIA_VIEWER_COPY = {
   LOADING: "미디어를 불러오는 중입니다…",
   LOAD_FAILED: "미디어를 표시할 수 없습니다.",
   NAVIGATION_FAILED: "폴더의 미디어 목록을 불러오지 못했습니다.",
-  UNSUPPORTED_TITLE: "파일을 열 수 없음",
-  UNSUPPORTED_MESSAGE:
-    "이 이미지 또는 영상 형식은 브라우저 뷰어에서 지원하지 않습니다. 파일을 다운로드할까요?",
   DOWNLOAD_FILE: "파일 다운로드",
-  CANCEL: "취소",
   PLAYER_STATUS_READY: "준비",
 } as const;

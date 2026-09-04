@@ -1,5 +1,6 @@
 import { STORAGE_STATUS_COPY } from "@client/content/ko/storage/storage-status";
 import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
+import { NOTEPAD_COPY } from "@client/content/ko/filesystem/text/notepad";
 import { FILESYSTEM_SORT_COPY } from "@client/content/ko/filesystem/sort";
 import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
@@ -213,11 +214,11 @@ describe("App desktop media", () => {
       await within(documentsWindow).findByRole("button", { name: /photo\.heic/ }),
     );
     const dialog = screen.getByRole("dialog", {
-      name: MEDIA_VIEWER_COPY.UNSUPPORTED_TITLE,
+      name: NOTEPAD_COPY.DOWNLOAD_TITLE,
     });
     await user.click(
       within(dialog).getByRole("button", {
-        name: MEDIA_VIEWER_COPY.DOWNLOAD_FILE,
+        name: NOTEPAD_COPY.DOWNLOAD,
       }),
     );
     expect(click).toHaveBeenCalledOnce();

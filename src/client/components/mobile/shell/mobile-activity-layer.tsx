@@ -1,6 +1,7 @@
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
+import { MobileNotepad } from "@client/components/mobile/notepad/mobile-notepad";
 import { MobileHome } from "@client/components/mobile/launcher/mobile-home";
 import {
   MobileDirectory,
@@ -86,6 +87,8 @@ export function MobileActivityLayer({
           revision={controller.revision}
         />
       );
+    case MOBILE_ACTIVITY_KIND.TEXT_FILE:
+      return <MobileNotepad file={activity.file} gateway={filesystem} />;
     case MOBILE_ACTIVITY_KIND.MEDIA: {
       const kind = mediaKindFromContentType(activity.file.contentType);
       return kind ? (
