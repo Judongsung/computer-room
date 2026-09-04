@@ -1,9 +1,8 @@
 # D1 데이터베이스 명세
 
-기준 커밋: `de60aead682ce342efaf11c0957183786d610af0`
+[문서 목차로 돌아가기](./INDEX.md)
 
-이 기준 커밋 이후 현재 작업 트리의 `0014_image-upload-log-privacy` 마이그레이션을
-포함한다. 해당 변경을 커밋할 때 기준 커밋을 새 커밋으로 갱신해야 한다.
+기준 커밋: `65c25ee0d20cca840bc505ba41585bd5c3f95765`
 
 이 문서는 `migrations/0000_superb_hitman.sql`부터
 `migrations/0014_image-upload-log-privacy.sql`까지 모든 마이그레이션을 적용한
