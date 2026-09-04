@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { FILE_OPEN_KIND, TEXT_FILE_EXTENSIONS } from "@client/constants/filesystem/text/file-opening";
 import { createFileOpener, fileOpenKind } from "@client/domain/filesystem/text/file-opening";
-import { fileEntry } from "@test/support/mobile/mobile-app-test-helpers";
+import { fileEntry } from "@test/support/filesystem/file-entry";
 
 describe("file associations", () => {
   it.each(TEXT_FILE_EXTENSIONS)("opens .%s as plain text even with binary MIME", (extension) => {

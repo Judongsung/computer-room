@@ -12,7 +12,7 @@ import { useDashboard } from "@client/hooks/widgets/use-dashboard";
 import {
   checklistWidget,
   memoWidget,
-} from "@test/client/support/desktop/app-integration-helpers";
+} from "@test/support/widgets/dashboard-fixtures";
 import {
   FakeDashboardGateway,
   fakeWidgetFromLayout,

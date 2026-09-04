@@ -15,6 +15,7 @@
     "src/client",
     "test/client",
     "vite.config.ts",
-    "vitest.client.config.ts"
+    "vitest.client.config.ts",
+    "vitest.unit.config.ts"
   ]
 }

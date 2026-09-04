@@ -4,11 +4,11 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MOBILE_CSS_VARIABLE } from "@client/constants/mobile/launcher";
 import {
-  fileEntry,
   filesystemGateway,
   pictureEntry,
   renderMobile,
 } from "@test/support/mobile/mobile-app-test-helpers";
+import { fileEntry } from "@test/support/filesystem/file-entry";
 
 describe("mobile wallpaper flow", () => {
   beforeEach(() => {

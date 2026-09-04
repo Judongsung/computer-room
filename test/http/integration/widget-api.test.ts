@@ -1,33 +1,9 @@
 import { env, SELF } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  API_PATHS,
-  API_PATH_SEGMENTS,
-  API_QUERY_PARAMETERS,
-  FILESYSTEM_API_PATHS,
-  MOBILE_PREFERENCES_API_PATH,
-  NOVELAI_IMAGE_UPLOAD_API_PATH,
-} from "@/constants/platform/api";
-import { ACCESS_LOGOUT_PATH } from "@/constants/platform/auth";
+import { API_PATHS, API_PATH_SEGMENTS } from "@/constants/platform/api";
 import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
-import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import { WIDGET_ERRORS } from "@/constants/widgets/errors/widget";
-import { MOBILE_PREFERENCES_ERRORS } from "@/constants/platform/errors/mobile-preferences";
-import {
-  DEFAULT_CONTENT_TYPE,
-  FILE_OBJECT_KEY_PREFIX,
-  FILE_STATUS,
-  MAX_FILE_SIZE_BYTES,
-} from "@/constants/filesystem/file";
-import {
-  FILESYSTEM_ENTRY_KIND,
-  FILESYSTEM_ROOT_ID,
-} from "@/constants/filesystem/filesystem";
-import {
-  DEFAULT_FILESYSTEM_DIRECTORY_SORT,
-  FILESYSTEM_SORT_DIRECTION,
-  FILESYSTEM_SORT_FIELD,
-} from "@/constants/filesystem/sort";
+import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import {
   HTTP_HEADERS,
   HTTP_MEDIA_TYPE,
@@ -40,29 +16,8 @@ import {
   WINDOW_RESTORE_STATE,
   WINDOW_STATE,
 } from "@/constants/widgets/widget";
-import { THUMBNAIL_SPEC } from "@/constants/filesystem/thumbnail";
-import { filesystemNameKey } from "@/domain/filesystem/filesystem-name";
-import { thumbnailObjectKey } from "@/domain/filesystem/thumbnail";
-import type { DashboardWidget, WidgetLayout, WidgetType } from "@/types/widgets/widget";
-import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
-import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
-import {
-  MEMO_WINDOW_POLICY,
-  ONE_PIXEL_PNG_BASE64,
-  ORIGIN,
-  TEST_MEDIA_TYPE,
-  checklistPath,
-  createWidget,
-  decodeResponseBody,
-  discardWidget,
-  jsonRequest,
-  resetWorkerState,
-  saveWidgets,
-  toLayout,
-  uploadFile,
-  uploadNovelAiImage,
-  widgetPath,
-} from "@test/support/http/worker-api-harness";
+import type { DashboardWidget } from "@/types/widgets/widget";
+import { MEMO_WINDOW_POLICY, ORIGIN, checklistPath, createWidget, discardWidget, jsonRequest, resetWorkerState, saveWidgets, toLayout, widgetPath } from "@test/support/http/worker-api-harness";
 
 beforeEach(resetWorkerState);
 

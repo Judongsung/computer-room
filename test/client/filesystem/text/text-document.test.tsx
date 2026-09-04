@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { TextDocument } from "@client/components/shared/text/text-document";
 import { NOTEPAD_COPY, TEXT_FILE_ERROR_MESSAGE } from "@client/content/ko/filesystem/text/notepad";
 import { TEXT_FILE_ERROR_CODE } from "@client/constants/filesystem/text/text-file";
-import { fileEntry } from "@test/support/mobile/mobile-app-test-helpers";
+import { fileEntry } from "@test/support/filesystem/file-entry";
 
 const file = fileEntry("text", "file.md", "text/markdown");
 const gateway = { downloadUrl: (id: string) => `/download/${id}` };

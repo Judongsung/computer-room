@@ -12,10 +12,11 @@ describe("useDirectoryNavigation", () => {
       ["child", directoryPage("child", "root", ["root", "child"])],
     ]);
     const listDirectory = vi.fn(async (id?: string) => pages.get(id ?? "root")!);
+    const gateway = { listDirectory };
     const onDirectoryLoaded = vi.fn();
     const { result } = renderHook(() =>
       useDirectoryNavigation({
-        gateway: { listDirectory },
+        gateway,
         initialDirectoryId: "root",
         errorFallback: "조회 실패",
         onDirectoryLoaded,
@@ -32,6 +33,9 @@ describe("useDirectoryNavigation", () => {
     act(() => result.current.navigateBack());
     await waitFor(() => expect(result.current.page?.directory.id).toBe("child"));
     expect(onDirectoryLoaded).toHaveBeenLastCalledWith("child", "child");
+    expect(listDirectory.mock.calls.map(([id]) => id)).toEqual([
+      "root", "child", "root", "child",
+    ]);
   });
 });
 

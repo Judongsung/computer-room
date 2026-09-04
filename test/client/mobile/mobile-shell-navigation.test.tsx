@@ -5,11 +5,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { POINTER_TYPE } from "@client/constants/shared/pointer";
 import {
   dashboardGateway,
-  fileEntry,
   filesystemGateway,
   pictureEntry,
   renderMobile,
 } from "@test/support/mobile/mobile-app-test-helpers";
+import { fileEntry } from "@test/support/filesystem/file-entry";
 
 describe("mobile shell navigation", () => {
   beforeEach(() => {

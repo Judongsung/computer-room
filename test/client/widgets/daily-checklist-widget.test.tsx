@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
@@ -10,12 +10,11 @@ import type {
   DashboardWidget,
 } from "@/types/widgets/widget";
 import { DailyChecklistWidget } from "@client/components/widgets/daily-checklist-widget";
-import { CHECKLIST_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
 import type { DashboardGateway } from "@client/types/widgets/api";
 import type { WidgetWindowControls } from "@client/types/desktop/desktop";
-import { checklistWidget } from "@test/client/support/desktop/app-integration-helpers";
+import { checklistWidget } from "@test/support/widgets/dashboard-fixtures";
 import { FakeDashboardGateway } from "@test/support/widgets/fake-dashboard-gateway";
 
 describe("DailyChecklistWidget", () => {

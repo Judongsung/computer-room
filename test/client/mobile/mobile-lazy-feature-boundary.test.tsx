@@ -23,7 +23,7 @@ describe("MobileLazyFeatureBoundary", () => {
   });
 
   it("offers a retry after a mobile feature chunk fails", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const FailedFeature = lazy(() => Promise.reject(new Error("chunk failed")));
 
     render(
@@ -38,6 +38,10 @@ describe("MobileLazyFeatureBoundary", () => {
     expect(
       screen.getByRole("button", { name: MOBILE_COPY.RETRY }),
     ).toBeInTheDocument();
+    expect(error).toHaveBeenCalled();
+    for (const args of error.mock.calls) {
+      expect(args).toContainEqual(expect.objectContaining({ message: "chunk failed" }));
+    }
     vi.restoreAllMocks();
   });
 });

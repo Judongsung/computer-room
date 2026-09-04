@@ -21,7 +21,7 @@ describe("LazyFeatureBoundary", () => {
   });
 
   it("offers a page reload after a feature chunk fails", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
     const FailedFeature = lazy(() => Promise.reject(new Error("chunk failed")));
 
     render(
@@ -34,6 +34,10 @@ describe("LazyFeatureBoundary", () => {
     expect(
       screen.getByRole("button", { name: LAZY_FEATURE_LABEL.RELOAD }),
     ).toBeInTheDocument();
+    expect(error).toHaveBeenCalled();
+    for (const args of error.mock.calls) {
+      expect(args).toContainEqual(expect.objectContaining({ message: "chunk failed" }));
+    }
     vi.restoreAllMocks();
   });
 });

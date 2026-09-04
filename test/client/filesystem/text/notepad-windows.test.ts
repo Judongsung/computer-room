@@ -2,7 +2,7 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { WINDOW_STATE } from "@/constants/widgets/widget";
 import { useNotepadWindows } from "@client/hooks/filesystem/text/use-notepad-windows";
-import { fileEntry } from "@test/support/mobile/mobile-app-test-helpers";
+import { fileEntry } from "@test/support/filesystem/file-entry";
 
 const desktop = { width: 1024, height: 606 };
 const file = fileEntry("text", "notes.txt", "text/plain");

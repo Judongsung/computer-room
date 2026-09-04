@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { readTextFile } from "@client/api/filesystem/text/read-text-file";
 import { TEXT_FILE_ERROR_CODE, TEXT_FILE_MAX_BYTES } from "@client/constants/filesystem/text/text-file";
-import { fileEntry } from "@test/support/mobile/mobile-app-test-helpers";
+import { fileEntry } from "@test/support/filesystem/file-entry";
 
 const file = fileEntry("text", "문서.txt", "text/plain");
 const gateway = { downloadUrl: (id: string) => `/download/${id}` };

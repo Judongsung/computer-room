@@ -8,7 +8,6 @@ import { CLIENT_INTERFACE_MODE } from "@client/constants/shared/interface-mode";
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { GUEST_API_PATHS } from "@/constants/platform/api";
 import { NOTEPAD_COPY } from "@client/content/ko/filesystem/text/notepad";
-import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { DASHBOARD_COPY } from "@client/content/ko/widgets/content";
 import { FakeFilesystemGateway } from "@test/support/filesystem/fake-filesystem-gateway";
 import { FakeDashboardGateway } from "@test/support/widgets/fake-dashboard-gateway";
@@ -57,30 +56,13 @@ describe.each([
     expect(create).not.toHaveBeenCalled();
     if (mobile) {
       expect(screen.getByRole("heading", { name: NOTEPAD_COPY.WINDOW_TITLE(text.name) })).toBeInTheDocument();
-      await user.click(screen.getByRole("button", { name: MOBILE_COPY.BACK }));
-      expect(await screen.findByRole("button", { name: text.name })).toBeInTheDocument();
-      await user.click(screen.getByRole("button", { name: text.name }));
-      await screen.findByRole("textbox");
-      await user.click(screen.getByRole("button", { name: MOBILE_COPY.HOME }));
-      expect(await screen.findByRole("button", { name: text.name })).toBeInTheDocument();
-    } else {
-      await user.dblClick(shortcut);
-      expect(screen.getAllByRole("textbox")).toHaveLength(1);
-      const window = desktopWindowByTitle(NOTEPAD_COPY.WINDOW_TITLE(text.name));
-      await user.click(within(window).getByRole("button", { name: DASHBOARD_COPY.MINIMIZE }));
-      expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-      await user.click(screen.getByRole("button", { name: NOTEPAD_COPY.WINDOW_TITLE(text.name) }));
-      await screen.findByRole("textbox");
-      await user.click(within(desktopWindowByTitle(NOTEPAD_COPY.WINDOW_TITLE(text.name))).getByRole("button", { name: DASHBOARD_COPY.CLOSE }));
-      expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: NOTEPAD_COPY.WINDOW_TITLE(text.name) })).not.toBeInTheDocument();
     }
   });
 
   it("waits for confirmation before downloading unsupported files", async () => {
     const user = userEvent.setup();
     const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
-    const { binary, fetch } = setup(guest, mobile);
+    const { binary, fetch, filesystem, guestGateway } = setup(guest, mobile);
     const open = async () => {
       const shortcut = await screen.findByRole("button", { name: binary.name });
       if (mobile) await user.click(shortcut); else await user.dblClick(shortcut);
@@ -94,6 +76,9 @@ describe.each([
     dialog = await open();
     await user.click(within(dialog).getByRole("button", { name: NOTEPAD_COPY.DOWNLOAD }));
     expect(click).toHaveBeenCalledOnce();
+    expect(click.mock.contexts[0]).toHaveAttribute(
+      "href", (guest ? guestGateway : filesystem).downloadUrl(binary.id),
+    );
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });
@@ -111,7 +96,19 @@ it("uses the same opener inside a desktop folder and keeps it behind newly focus
   const firstWindow = desktopWindowByTitle(NOTEPAD_COPY.WINDOW_TITLE(text.name));
   const secondWindow = desktopWindowByTitle(NOTEPAD_COPY.WINDOW_TITLE(second.name));
   expect(Number(firstWindow.style.zIndex)).toBeGreaterThan(Number(secondWindow.style.zIndex));
+  await user.dblClick(screen.getByRole("button", { name: text.name }));
+  expect(screen.getAllByRole("textbox")).toHaveLength(2);
   const order = Array.from(document.querySelectorAll(".taskbar__window")).map((item) => item.textContent);
   await user.click(screen.getByRole("button", { name: NOTEPAD_COPY.WINDOW_TITLE(second.name) }));
   expect(Array.from(document.querySelectorAll(".taskbar__window")).map((item) => item.textContent)).toEqual(order);
+
+  // Check the shared desktop controls once, not in every access-mode scenario.
+  await user.click(within(secondWindow).getByRole("button", { name: DASHBOARD_COPY.MINIMIZE }));
+  expect(screen.getAllByRole("textbox")).toHaveLength(1);
+  await user.click(screen.getByRole("button", { name: NOTEPAD_COPY.WINDOW_TITLE(second.name) }));
+  const restoredWindow = await waitFor(() => desktopWindowByTitle(NOTEPAD_COPY.WINDOW_TITLE(second.name)));
+  expect(await within(restoredWindow).findByRole("textbox")).toBeInTheDocument();
+  await user.click(within(restoredWindow).getByRole("button", { name: DASHBOARD_COPY.CLOSE }));
+  expect(screen.queryByRole("button", { name: NOTEPAD_COPY.WINDOW_TITLE(second.name) })).not.toBeInTheDocument();
+  expect(screen.getAllByRole("textbox")).toHaveLength(1);
 });

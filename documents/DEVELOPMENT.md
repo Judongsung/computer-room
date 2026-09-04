@@ -69,7 +69,7 @@ Access 인증과 쓰기 요청의 same-origin 보호를 유지합니다.
 | 명령 | 검사 |
 | --- | --- |
 | `npm run check` | TypeScript, 마이그레이션 안전성, 구조, UI 콘텐츠와 HTTP 라우트 경계 |
-| `npm test` | Worker와 React 클라이언트 테스트 |
+| `npm test` | 전체 테스트 |
 | `npm run build` | 프로덕션 빌드와 초기 클라이언트 번들 제한 |
 | `git diff --check` | 공백 오류와 잘못된 패치 흔적 |
 

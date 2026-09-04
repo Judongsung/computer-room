@@ -1,0 +1,2 @@
+export const UI_TEST_TIMEOUT_MILLISECONDS = 10_000;
+export const TEST_MAX_WORKERS = 4;

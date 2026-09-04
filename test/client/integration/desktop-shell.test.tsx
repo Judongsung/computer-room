@@ -1,7 +1,4 @@
 import { STORAGE_STATUS_COPY } from "@client/content/ko/storage/storage-status";
-import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
-import { FILESYSTEM_SORT_COPY } from "@client/content/ko/filesystem/sort";
-import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import type { CSSProperties, ReactNode } from "react";
 import {
@@ -19,50 +16,8 @@ import {
   DASHBOARD_COPY,
   MEMO_WIDGET_COPY,
 } from "@client/content/ko/widgets/content";
-import type { DashboardGateway } from "@client/types/widgets/api";
-import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import { PROJECT_EXTERNAL_LINKS } from "@client/constants/platform/external-links";
-import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
-import { MAX_FILE_SIZE_BYTES } from "@/constants/filesystem/file";
-import {
-  FILESYSTEM_ENTRY_KIND,
-  FILESYSTEM_ROOT_ID,
-} from "@/constants/filesystem/filesystem";
-import { DEFAULT_FILESYSTEM_DIRECTORY_SORT } from "@/constants/filesystem/sort";
-import {
-  WIDGET_TYPE,
-  WIDGET_WINDOW_POLICY,
-  WINDOW_RESTORE_STATE,
-  WINDOW_STATE,
-} from "@/constants/widgets/widget";
-import { cloneDashboardWidgets } from "@/domain/widgets/widget-data";
-import type { SessionInfo } from "@/types/platform/auth";
-import type {
-  ChecklistItem,
-  ChecklistLogEvent,
-  ChecklistLogPage,
-  DailyChecklistData,
-  DashboardWidget,
-  CreateWidgetInput,
-  MemoData,
-  WidgetLayout,
-} from "@/types/widgets/widget";
-import type {
-  FilesystemDirectoryEntry,
-  FilesystemDirectoryPage,
-  FilesystemDirectorySort,
-  FilesystemEntry,
-  FilesystemFileEntry,
-  FilesystemTrashPage,
-  FilesystemWidgetEntry,
-  MoveFilesystemEntryInput,
-  SaveWidgetFileInput,
-  UpdateFilesystemEntryInput,
-} from "@/types/filesystem/filesystem";
-import type { FilesystemBatchResult } from "@/types/filesystem/batch";
-import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
-import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
-import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
+import { WIDGET_TYPE, WINDOW_STATE } from "@/constants/widgets/widget";
 
 vi.mock("react-rnd", () => ({
   Rnd: ({
@@ -77,19 +32,17 @@ vi.mock("react-rnd", () => ({
     </div>
   ),
 }));
-import { SESSION } from "@test/support/desktop/app-test-session";
 import { FakeDashboardGateway } from "@test/support/widgets/fake-dashboard-gateway";
 import { FakeFilesystemGateway } from "@test/support/filesystem/fake-filesystem-gateway";
 import {
-  checklistWidget,
   desktopWindowByTitle,
   desktopWindowTitles,
   emptyStorageStatusSnapshot,
   launchApplication,
-  memoWidget,
   openStartMenu,
 } from "@test/client/support/desktop/app-integration-helpers";
 import { APPLICATION_NAME_BY_TYPE } from "@client/content/ko/desktop/application";
+import { checklistWidget, memoWidget } from "@test/support/widgets/dashboard-fixtures";
 
 describe("App desktop shell", () => {
   beforeEach(() => {

@@ -1,72 +1,19 @@
 import { env, SELF } from "cloudflare:test";
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  API_PATHS,
-  API_PATH_SEGMENTS,
-  API_QUERY_PARAMETERS,
-  FILESYSTEM_API_PATHS,
-  IMAGE_UPLOAD_PROFILES_API_PATH,
-  MOBILE_PREFERENCES_API_PATH,
-  NOVELAI_IMAGE_UPLOAD_API_PATH,
-} from "@/constants/platform/api";
-import { ACCESS_LOGOUT_PATH } from "@/constants/platform/auth";
-import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
+import { API_PATHS, API_PATH_SEGMENTS, API_QUERY_PARAMETERS, IMAGE_UPLOAD_PROFILES_API_PATH, NOVELAI_IMAGE_UPLOAD_API_PATH } from "@/constants/platform/api";
 import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
-import { MOBILE_PREFERENCES_ERRORS } from "@/constants/platform/errors/mobile-preferences";
-import {
-  DEFAULT_CONTENT_TYPE,
-  FILE_OBJECT_KEY_PREFIX,
-  FILE_STATUS,
-  MAX_FILE_SIZE_BYTES,
-} from "@/constants/filesystem/file";
+import { FILE_OBJECT_KEY_PREFIX, MAX_FILE_SIZE_BYTES } from "@/constants/filesystem/file";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "@/constants/filesystem/filesystem";
-import {
-  DEFAULT_FILESYSTEM_DIRECTORY_SORT,
-  FILESYSTEM_SORT_DIRECTION,
-  FILESYSTEM_SORT_FIELD,
-} from "@/constants/filesystem/sort";
-import {
-  HTTP_HEADERS,
-  HTTP_MEDIA_TYPE,
-  HTTP_METHOD,
-  HTTP_STATUS,
-} from "@/constants/platform/http";
-import {
-  WIDGET_TYPE,
-  WIDGET_WINDOW_POLICY,
-  WINDOW_RESTORE_STATE,
-  WINDOW_STATE,
-} from "@/constants/widgets/widget";
+import { HTTP_HEADERS, HTTP_METHOD, HTTP_STATUS } from "@/constants/platform/http";
 import {
   DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE,
   IMAGE_UPLOAD_CONTENT_TYPE,
 } from "@/constants/integrations/image-upload-profile";
-import { THUMBNAIL_SPEC } from "@/constants/filesystem/thumbnail";
 import { filesystemNameKey } from "@/domain/filesystem/filesystem-name";
-import { thumbnailObjectKey } from "@/domain/filesystem/thumbnail";
-import type { DashboardWidget, WidgetLayout, WidgetType } from "@/types/widgets/widget";
-import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
-import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
-import {
-  MEMO_WINDOW_POLICY,
-  ONE_PIXEL_PNG_BASE64,
-  ORIGIN,
-  TEST_MEDIA_TYPE,
-  checklistPath,
-  createWidget,
-  decodeResponseBody,
-  discardWidget,
-  jsonRequest,
-  resetWorkerState,
-  saveWidgets,
-  toLayout,
-  uploadFile,
-  uploadNovelAiImage,
-  widgetPath,
-} from "@test/support/http/worker-api-harness";
+import { ORIGIN, TEST_MEDIA_TYPE, jsonRequest, resetWorkerState, uploadFile, uploadNovelAiImage } from "@test/support/http/worker-api-harness";
 
 beforeEach(resetWorkerState);
 

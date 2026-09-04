@@ -94,6 +94,9 @@ Treat API contracts, database schemas, storage conventions, and shared constants
 * Add regression tests for bug fixes when practical.
 * Test observable behavior rather than implementation details.
 * Keep domain tests independent of React, Cloudflare, D1, R2, and HTTP.
+* Run pure server tests and client `*.unit.test.ts` files in Node; reserve jsdom for UI and Workers for real binding integration.
+* Keep test data fixtures independent of React rendering helpers. Test shared behavior in focused tests and keep application-level scenarios focused on integration wiring.
+* UI tests fail on unexpected `console.error`; explicitly intercept and assert errors that a failure scenario is meant to produce.
 * Do not remove or weaken existing tests merely to make a change pass.
 * Run relevant tests, type checks, and lint checks after changes.
 * Run `npm run check:migrations` for schema changes and use the guarded `npm run deploy` pipeline for releases.

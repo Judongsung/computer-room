@@ -1,8 +1,21 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, configure } from "@testing-library/react";
-import { afterEach } from "vitest";
-import { CLIENT_TEST_TIMEOUT_MILLISECONDS } from "@test/support/platform/client-test-runtime";
+import { afterEach, beforeEach, expect } from "vitest";
+import { UI_TEST_TIMEOUT_MILLISECONDS } from "@test/support/platform/test-runtime";
 
-afterEach(() => cleanup());
+// Install once per isolated test file so restoring a test's explicit spy returns
+// to this guard. Expected errors must be intercepted and asserted by that test.
+const reportError = console.error.bind(console);
+let unexpectedErrors: unknown[][] = [];
+console.error = (...args: unknown[]): void => {
+  unexpectedErrors.push(args);
+  reportError(...args);
+};
 
-configure({ asyncUtilTimeout: CLIENT_TEST_TIMEOUT_MILLISECONDS });
+beforeEach(() => { unexpectedErrors = []; });
+afterEach(() => {
+  cleanup();
+  expect(unexpectedErrors, "Unexpected console.error during UI test").toEqual([]);
+});
+
+configure({ asyncUtilTimeout: UI_TEST_TIMEOUT_MILLISECONDS });

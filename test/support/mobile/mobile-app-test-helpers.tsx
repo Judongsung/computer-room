@@ -26,6 +26,7 @@ import type { DashboardGateway } from "@client/types/widgets/api";
 import type { WidgetFileGateway } from "@client/types/widgets/widget-file";
 import { FakeFilesystemGateway } from "@test/support/filesystem/fake-filesystem-gateway";
 import { FakeDashboardGateway } from "@test/support/widgets/fake-dashboard-gateway";
+import { fileEntry } from "@test/support/filesystem/file-entry";
 
 const SESSION: SessionInfo = {
   email: "owner@example.com",
@@ -94,24 +95,6 @@ export function mobilePreferencesGateway(): MobilePreferencesGateway {
 
 export function pictureEntry(): Extract<FilesystemEntry, { kind: "file" }> {
   return fileEntry("picture-file", "사진", "image/png");
-}
-
-export function fileEntry(
-  id: string,
-  name: string,
-  contentType: string,
-): Extract<FilesystemEntry, { kind: "file" }> {
-  return {
-    id,
-    parentId: FILESYSTEM_ROOT_ID.DESKTOP,
-    kind: FILESYSTEM_ENTRY_KIND.FILE,
-    name,
-    contentType,
-    size: 10,
-    createdAt: new Date(0).toISOString(),
-    updatedAt: new Date(0).toISOString(),
-    desktopOrder: 0,
-  };
 }
 
 export function widgetEntry(): Extract<

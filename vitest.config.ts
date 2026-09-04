@@ -1,6 +1,7 @@
 import { cloudflareTest, readD1Migrations } from "@cloudflare/vitest-pool-workers";
 import { defineConfig } from "vitest/config";
 import { SOURCE_ALIASES } from "./vite.aliases.ts";
+import { WORKER_TEST_PATTERNS } from "./test/support/platform/test-suites.ts";
 
 export default defineConfig(async () => {
   const migrations = await readD1Migrations("./migrations");
@@ -31,8 +32,7 @@ export default defineConfig(async () => {
       }),
     ],
     test: {
-      include: ["test/**/*.test.ts"],
-      exclude: ["test/client/**"],
+      include: [...WORKER_TEST_PATTERNS],
       setupFiles: ["./test/setup.ts"],
     },
   };
