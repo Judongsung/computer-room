@@ -41,7 +41,7 @@ function DailyChecklistWidgetView({
         bodyClassName="desktop-program-body"
         footer={<ProgramStatusBar
           primary={COPY.COMPLETED(widget.data.items.filter((item) => item.checked).length, widget.data.items.length)}
-          secondary={controller.isMutating ? COPY.SAVING : controller.isEditingItems ? COPY.EDITING : COPY.READY}
+          secondary={controller.isMutating ? COPY.SAVING : controller.isEditingItems ? COPY.EDITING : widget.data.businessDate}
         />}
         title={widget.file?.name ?? CHECKLIST_WIDGET_COPY.UNSAVED_TITLE}
         iconPath={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.DAILY_CHECKLIST]}

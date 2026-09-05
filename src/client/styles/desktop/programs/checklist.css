@@ -5,20 +5,6 @@
   min-height: 0;
 }
 
-.desktop-checklist-heading {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 4px 12px;
-  padding: 9px 10px;
-  border-bottom: 1px solid #9eb6ce;
-  background: linear-gradient(#fff, #e8eff8);
-  color: #003399;
-}
-
-.desktop-checklist-heading time { color: #52657b; font-size: 12px; }
 .desktop-program .checklist-items {
   flex: 1;
   min-height: 0;

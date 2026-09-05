@@ -1,5 +1,4 @@
 import { XpCheckbox } from "@client/components/shared/xp-checkbox";
-import { PROGRAM_DOCUMENT_COPY as COPY } from "@client/content/ko/desktop/program-documents";
 import type { ChecklistItem, DailyChecklistData } from "@/types/widgets/widget";
 import {
   CHECKLIST_CLASS_NAME,
@@ -19,7 +18,6 @@ export function DailyChecklistContent({
 }: DailyChecklistContentProps) {
   return (
     <div className={CHECKLIST_CLASS_NAME.ROOT}>
-      <header className="desktop-checklist-heading"><strong>{COPY.TODAY}</strong><time dateTime={data.businessDate}>{data.businessDate}</time></header>
       {data.items.length === 0 ? (
         <p className={CHECKLIST_CLASS_NAME.EMPTY}>
           {CHECKLIST_WIDGET_COPY.EMPTY_CONTENT}
