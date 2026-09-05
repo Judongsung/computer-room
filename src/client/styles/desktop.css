@@ -27,3 +27,5 @@
 @import "./widgets/admin.css";
 @import "./media/viewers.css";
 @import "./desktop/notepad/notepad.css";
+@import "./desktop/programs/documents.css";
+@import "./desktop/programs/checklist.css";

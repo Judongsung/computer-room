@@ -73,6 +73,25 @@ describe("App desktop widgets", () => {
     });
   });
 
+  it("preserves a memo draft across keyboard preview navigation and cancels edits", async () => {
+    const api = new FakeDashboardGateway();
+    const user = userEvent.setup();
+    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
+    await launchApplication(user, APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.MEMO]);
+    await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT);
+    await user.click(screen.getByRole("button", { name: MEMO_WIDGET_COPY.EDIT }));
+    await user.type(screen.getByRole("textbox", { name: MEMO_WIDGET_COPY.EDITOR_LABEL }), "# 초안 제목");
+    await user.click(screen.getByRole("tab", { name: MEMO_WIDGET_COPY.WRITE }));
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("tab", { name: MEMO_WIDGET_COPY.PREVIEW })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "초안 제목" })).toBeInTheDocument();
+    await user.keyboard("{ArrowLeft}");
+    expect(screen.getByRole("textbox", { name: MEMO_WIDGET_COPY.EDITOR_LABEL })).toHaveValue("# 초안 제목");
+    await user.click(screen.getByRole("button", { name: MEMO_WIDGET_COPY.CANCEL }));
+    expect(screen.getAllByText(MEMO_WIDGET_COPY.EMPTY_CONTENT)).toHaveLength(1);
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+  });
+
   it("creates a widget from My Computer", async () => {
     const api = new FakeDashboardGateway();
     const filesystem = new FakeFilesystemGateway();

@@ -14,6 +14,9 @@ export function WidgetCard({
   windowControls,
   toolbarActions,
   children,
+  className,
+  bodyClassName,
+  footer,
 }: WidgetCardProps) {
   const maximizeAction = windowControls.isMaximized
     ? XP_WINDOW_CONTROL_ACTION.RESTORE
@@ -24,12 +27,13 @@ export function WidgetCard({
 
   return (
     <XpWindowFrame
-      className="widget-card"
+      className={["widget-card", className].filter(Boolean).join(" ")}
       title={title}
       iconPath={iconPath}
       isActive={windowControls.isActive}
       titleBarClassName="widget-card__header widget-card__drag-handle"
-      bodyClassName="widget-card__body"
+      bodyClassName={["widget-card__body", bodyClassName].filter(Boolean).join(" ")}
+      footer={footer}
       toolbar={
         windowControls.canSaveFile || toolbarActions ? (
           <>

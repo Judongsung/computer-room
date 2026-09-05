@@ -1,3 +1,4 @@
+import { PROGRAM_DOCUMENT_COPY as COPY } from "@client/content/ko/desktop/program-documents";
 import { UI_LOCALE } from "@client/content/ko/shared/format";
 import { useEffect, useMemo, useState } from "react";
 import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
@@ -94,22 +95,16 @@ export function ChecklistLogDialog({
     <DesktopModal
       title={CHECKLIST_WIDGET_COPY.LOG_TITLE}
       iconPath={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.DAILY_CHECKLIST]}
-      windowClassName="checklist-log-dialog"
+      windowClassName="checklist-log-dialog desktop-program-history"
       bodyClassName="checklist-log-dialog__body"
       closeOnBackdrop
       onRequestClose={onClose}
       footer={
-        nextOffset !== null ? (
-          <footer className="dialog-footer">
-            <button
-              type="button"
-              onClick={() => void loadMore()}
-              disabled={isLoading}
-            >
-              {CHECKLIST_WIDGET_COPY.LOAD_MORE}
-            </button>
-          </footer>
-        ) : null
+        <footer className="desktop-history-footer">
+          <span role="status">{COPY.RECORD_COUNT(events.length)}</span>
+          {nextOffset !== null ? <button type="button" onClick={() => void loadMore()} disabled={isLoading}>{CHECKLIST_WIDGET_COPY.LOAD_MORE}</button> : null}
+          <button type="button" onClick={onClose}>{CHECKLIST_WIDGET_COPY.CLOSE}</button>
+        </footer>
       }
     >
       <ChecklistRetentionSettings />
@@ -122,17 +117,20 @@ export function ChecklistLogDialog({
       {groups.map(([businessDate, groupedEvents]) => (
         <section className="checklist-log-group" key={businessDate}>
           <h4>{businessDate}</h4>
-          <ol>
+          <table className="desktop-history-table">
+            <thead><tr><th scope="col">{COPY.TIME}</th><th scope="col">{COPY.ITEM}</th><th scope="col">{COPY.ACTION}</th></tr></thead>
+            <tbody>
             {groupedEvents.map((event) => (
-              <li key={event.id}>
-                <time dateTime={event.occurredAt}>
+              <tr key={event.id}>
+                <td><time dateTime={event.occurredAt}>
                   {LOG_TIME_FORMATTER.format(new Date(event.occurredAt))}
-                </time>
-                <span>{eventLabel(event)}</span>
-                <small>{CHECKLIST_EVENT_LABEL_BY_ACTION[event.action]}</small>
-              </li>
+                </time></td>
+                <td>{eventLabel(event)}</td>
+                <td>{CHECKLIST_EVENT_LABEL_BY_ACTION[event.action]}</td>
+              </tr>
             ))}
-          </ol>
+            </tbody>
+          </table>
         </section>
       ))}
       {error ? <p className="widget-error" role="alert">{error}</p> : null}

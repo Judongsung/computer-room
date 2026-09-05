@@ -1,3 +1,5 @@
+import { ProgramStatusBar } from "@client/components/desktop/application/program-status-bar";
+import { PROGRAM_DOCUMENT_COPY as COPY } from "@client/content/ko/desktop/program-documents";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { DailyChecklistWidget as DailyChecklistWidgetData } from "@/types/widgets/widget";
 import { DailyChecklistContent } from "@client/components/widgets/checklist/daily-checklist-content";
@@ -35,6 +37,12 @@ function DailyChecklistWidgetView({
   return (
     <>
       <WidgetCard
+        className="desktop-program desktop-program--checklist"
+        bodyClassName="desktop-program-body"
+        footer={<ProgramStatusBar
+          primary={COPY.COMPLETED(widget.data.items.filter((item) => item.checked).length, widget.data.items.length)}
+          secondary={controller.isMutating ? COPY.SAVING : controller.isEditingItems ? COPY.EDITING : COPY.READY}
+        />}
         title={widget.file?.name ?? CHECKLIST_WIDGET_COPY.UNSAVED_TITLE}
         iconPath={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.DAILY_CHECKLIST]}
         windowControls={windowControls}

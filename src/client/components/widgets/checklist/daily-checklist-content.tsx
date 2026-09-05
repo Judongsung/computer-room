@@ -1,3 +1,5 @@
+import { XpCheckbox } from "@client/components/shared/xp-checkbox";
+import { PROGRAM_DOCUMENT_COPY as COPY } from "@client/content/ko/desktop/program-documents";
 import type { ChecklistItem, DailyChecklistData } from "@/types/widgets/widget";
 import {
   CHECKLIST_CLASS_NAME,
@@ -17,6 +19,7 @@ export function DailyChecklistContent({
 }: DailyChecklistContentProps) {
   return (
     <div className={CHECKLIST_CLASS_NAME.ROOT}>
+      <header className="desktop-checklist-heading"><strong>{COPY.TODAY}</strong><time dateTime={data.businessDate}>{data.businessDate}</time></header>
       {data.items.length === 0 ? (
         <p className={CHECKLIST_CLASS_NAME.EMPTY}>
           {CHECKLIST_WIDGET_COPY.EMPTY_CONTENT}
@@ -110,18 +113,10 @@ function ChecklistItemRow({ item, controller }: ChecklistItemRowProps) {
   return (
     <li>
       <div className={CHECKLIST_CLASS_NAME.ITEM_LABEL}>
-        <input
-          id={inputId}
-          type="checkbox"
-          checked={item.checked}
+        <XpCheckbox id={inputId} checked={item.checked}
           disabled={controller.isMutating}
-          onChange={(event) =>
-            void controller.toggleItem(item, event.currentTarget.checked)
-          }
-        />
-        <label htmlFor={inputId}>
-          {item.checked ? <del>{item.label}</del> : <span>{item.label}</span>}
-        </label>
+          onCheckedChange={(checked) => void controller.toggleItem(item, checked)}
+          label={item.checked ? <del>{item.label}</del> : <span>{item.label}</span>} />
       </div>
       {controller.isEditingItems ? (
         <div className={CHECKLIST_CLASS_NAME.ITEM_ACTIONS}>

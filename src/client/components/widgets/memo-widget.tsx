@@ -1,15 +1,11 @@
-import {
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { XpTabs } from "@client/components/shared/xp-tabs";
+import { ProgramStatusBar } from "@client/components/desktop/application/program-status-bar";
+import { PROGRAM_DOCUMENT_COPY as COPY } from "@client/content/ko/desktop/program-documents";
+import { useEffect, useState } from "react";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { MemoWidget as MemoWidgetData } from "@/types/widgets/widget";
 import { MEMO_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
-import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import { MEMO_EDITOR_MODE } from "@client/constants/widgets/memo";
 import { messageFromError } from "@client/errors/error-message";
 import { XP_WIDGET_TOOLBAR_ACTION } from "@client/constants/shared/xp";
@@ -44,11 +40,6 @@ function MemoWidgetContent({
   const [draft, setDraft] = useState(widget.data.markdown);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const writeTabId = useId();
-  const previewTabId = useId();
-  const editorPanelId = useId();
-  const writeTabRef = useRef<HTMLButtonElement>(null);
-  const previewTabRef = useRef<HTMLButtonElement>(null);
   const isDirty = isEditingContent && draft !== widget.data.markdown;
 
   useUnsavedChangesWarning(isDirty);
@@ -76,35 +67,14 @@ function MemoWidgetContent({
     }
   };
 
-  const selectTabWithKeyboard = (
-    event: KeyboardEvent<HTMLButtonElement>,
-  ): void => {
-    let nextMode: (typeof MEMO_EDITOR_MODE)[keyof typeof MEMO_EDITOR_MODE];
-    if (event.key === KEYBOARD_KEY.HOME) {
-      nextMode = MEMO_EDITOR_MODE.WRITE;
-    } else if (event.key === KEYBOARD_KEY.END) {
-      nextMode = MEMO_EDITOR_MODE.PREVIEW;
-    } else if (
-      event.key === KEYBOARD_KEY.ARROW_LEFT ||
-      event.key === KEYBOARD_KEY.ARROW_RIGHT
-    ) {
-      nextMode =
-        editorMode === MEMO_EDITOR_MODE.WRITE
-          ? MEMO_EDITOR_MODE.PREVIEW
-          : MEMO_EDITOR_MODE.WRITE;
-    } else {
-      return;
-    }
-
-    event.preventDefault();
-    setEditorMode(nextMode);
-    const nextTab =
-      nextMode === MEMO_EDITOR_MODE.WRITE ? writeTabRef : previewTabRef;
-    nextTab.current?.focus();
-  };
-
   return (
     <WidgetCard
+      className="desktop-program desktop-program--memo"
+      bodyClassName="desktop-program-body"
+      footer={<ProgramStatusBar
+        primary={isEditingContent ? COPY.EDITING : COPY.READING}
+        secondary={isSaving ? COPY.SAVING : isDirty ? COPY.CHANGED : COPY.MARKDOWN}
+      />}
       title={widget.file?.name ?? MEMO_WIDGET_COPY.UNSAVED_TITLE}
       iconPath={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.MEMO]}
       windowControls={windowControls}
@@ -125,63 +95,24 @@ function MemoWidgetContent({
     >
       {isEditingContent ? (
         <div className="memo-editor">
-          <menu
-            className="memo-editor__tabs"
-            role="tablist"
-            aria-label={MEMO_WIDGET_COPY.TABS_LABEL}
-          >
-            <button
-              ref={writeTabRef}
-              id={writeTabId}
-              type="button"
-              role="tab"
-              aria-selected={editorMode === MEMO_EDITOR_MODE.WRITE}
-              aria-controls={editorPanelId}
-              tabIndex={editorMode === MEMO_EDITOR_MODE.WRITE ? 0 : -1}
-              onClick={() => setEditorMode(MEMO_EDITOR_MODE.WRITE)}
-              onKeyDown={selectTabWithKeyboard}
-              disabled={isSaving}
-            >
-              {MEMO_WIDGET_COPY.WRITE}
-            </button>
-            <button
-              ref={previewTabRef}
-              id={previewTabId}
-              type="button"
-              role="tab"
-              aria-selected={editorMode === MEMO_EDITOR_MODE.PREVIEW}
-              aria-controls={editorPanelId}
-              tabIndex={editorMode === MEMO_EDITOR_MODE.PREVIEW ? 0 : -1}
-              onClick={() => setEditorMode(MEMO_EDITOR_MODE.PREVIEW)}
-              onKeyDown={selectTabWithKeyboard}
-              disabled={isSaving}
-            >
-              {MEMO_WIDGET_COPY.PREVIEW}
-            </button>
-          </menu>
-
-          <div
-            className="memo-editor__panel"
-            id={editorPanelId}
-            role="tabpanel"
-            aria-labelledby={
-              editorMode === MEMO_EDITOR_MODE.WRITE
-                ? writeTabId
-                : previewTabId
-            }
-          >
-            {editorMode === MEMO_EDITOR_MODE.WRITE ? (
-              <textarea
-                className="memo-editor__textarea"
-                aria-label={MEMO_WIDGET_COPY.EDITOR_LABEL}
-                value={draft}
-                onChange={(event) => setDraft(event.currentTarget.value)}
-                disabled={isSaving}
-              />
-            ) : (
-              <MarkdownContent markdown={draft} />
-            )}
-          </div>
+          <XpTabs
+            className="desktop-memo-tabs"
+            ariaLabel={MEMO_WIDGET_COPY.TABS_LABEL}
+            activeTab={editorMode}
+            onChange={setEditorMode}
+            tabs={[
+              { id: MEMO_EDITOR_MODE.WRITE, label: MEMO_WIDGET_COPY.WRITE,
+                disabled: isSaving, panel: <textarea
+                  className="desktop-memo-input"
+                  aria-label={MEMO_WIDGET_COPY.EDITOR_LABEL}
+                  value={draft}
+                  onChange={(event) => setDraft(event.currentTarget.value)}
+                  disabled={isSaving}
+                /> },
+              { id: MEMO_EDITOR_MODE.PREVIEW, label: MEMO_WIDGET_COPY.PREVIEW,
+                disabled: isSaving, panel: <div className="desktop-document-paper"><MarkdownContent markdown={draft} /></div> },
+            ]}
+          />
 
           {error ? (
             <p role="alert" className="widget-error">
@@ -211,7 +142,7 @@ function MemoWidgetContent({
           </div>
         </div>
       ) : (
-        <ReadOnlyMemoContent markdown={widget.data.markdown} />
+        <div className="desktop-document-paper"><ReadOnlyMemoContent markdown={widget.data.markdown} /></div>
       )}
     </WidgetCard>
   );

@@ -1,38 +1,6 @@
-.memo-editor {
-  display: flex;
-  min-height: 100%;
-  flex-direction: column;
-}
-
-.memo-editor__tabs {
-  flex: none;
-}
-
-.memo-editor__panel {
-  display: flex;
-  overflow: auto;
-  min-height: 140px;
-  flex: 1;
-  padding: 8px;
-}
-
-.memo-editor__textarea {
-  width: 100%;
-  min-height: 140px;
-  flex: 1;
-  resize: none;
-  border: 1px solid var(--luna-border);
-  background: #fff;
-  box-shadow: inset 1px 1px 2px rgb(0 0 0 / 20%);
-}
-
 .markdown-content {
   min-width: 0;
   overflow-wrap: anywhere;
-}
-
-.memo-editor__panel > .markdown-content {
-  width: 100%;
 }
 
 .markdown-content > :first-child {

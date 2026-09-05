@@ -1,0 +1,15 @@
+export const PROGRAM_DOCUMENT_COPY = {
+  READING: "읽기",
+  EDITING: "편집 중",
+  READ_ONLY: "읽기 전용",
+  CHANGED: "저장하지 않은 변경 사항",
+  SAVING: "저장 중…",
+  READY: "준비",
+  MARKDOWN: "마크다운 문서",
+  TODAY: "오늘의 체크리스트",
+  COMPLETED: (checked: number, total: number) => `${total}개 중 ${checked}개 완료`,
+  TIME: "시간",
+  ITEM: "항목",
+  ACTION: "동작",
+  RECORD_COUNT: (count: number) => `${count}개 기록`,
+} as const;

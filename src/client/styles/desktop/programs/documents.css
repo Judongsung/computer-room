@@ -1,0 +1,101 @@
+.desktop-program .desktop-program-body {
+  display: flex;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  flex-direction: column;
+  background: var(--luna-surface);
+}
+
+.desktop-program-status {
+  display: flex;
+  flex: none;
+  min-width: 0;
+  gap: 3px;
+  padding: 3px;
+  border-top: 1px solid #aca899;
+  background: var(--luna-surface);
+  color: #333;
+  font-size: 12px;
+}
+
+.desktop-program-status > span {
+  min-width: 0;
+  padding: 3px 7px;
+  border: 1px solid;
+  border-color: #aca899 #fff #fff #aca899;
+  overflow-wrap: anywhere;
+}
+
+.desktop-program-status > span:first-child { flex: 1; }
+.desktop-program-status > span:last-child { max-width: 65%; }
+
+.desktop-document-paper {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid;
+  border-color: #7f9db9 #fff #fff #7f9db9;
+  background: #fff;
+  color: #111;
+  line-height: 1.6;
+}
+
+.desktop-program--memo .memo-editor {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 5px 5px 0;
+}
+
+.desktop-memo-tabs { flex: 1; }
+.desktop-memo-tabs .xp-tabs__panel { display: flex; padding: 0; overflow: hidden; }
+.desktop-memo-tabs .desktop-document-paper { border: 0; }
+
+.desktop-memo-input {
+  display: block;
+  box-sizing: border-box;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  resize: none;
+  padding: 12px;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  color: #111;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  box-shadow: none;
+}
+
+.desktop-program .widget-form-actions {
+  flex: none;
+  padding: 7px 0;
+}
+
+.desktop-program .widget-error { flex: none; margin: 0; padding: 5px 7px; }
+
+.guest-program-window.desktop-program .guest-program-window__body {
+  padding: 14px;
+  border: 1px solid #7f9db9;
+  line-height: 1.6;
+}
+
+.desktop-program .read-only-program__checklist-items { gap: 0; }
+.desktop-program .read-only-program__checklist-item {
+  padding: 8px 6px;
+  border-bottom: 1px solid #e4e6eb;
+  overflow-wrap: anywhere;
+}
+.desktop-program .read-only-program__checklist-item del { color: #777; }
+.desktop-program .read-only-program__checklist-date {
+  padding: 5px 0 10px;
+  color: #003399;
+  font-weight: bold;
+}

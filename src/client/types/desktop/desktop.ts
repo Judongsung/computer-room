@@ -98,6 +98,9 @@ export interface WidgetComponentProps {
 }
 
 export interface WidgetCardProps {
+  readonly className?: string;
+  readonly bodyClassName?: string;
+  readonly footer?: ReactNode;
   readonly title: string;
   readonly iconPath: string;
   readonly windowControls: WidgetWindowControls;

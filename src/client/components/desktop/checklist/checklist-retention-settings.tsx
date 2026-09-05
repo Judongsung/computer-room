@@ -7,7 +7,7 @@ import { XpCheckbox } from "@client/components/shared/xp-checkbox";
 export function ChecklistRetentionSettings() {
   const state = useChecklistRetention();
   const id = useId();
-  return <section>
+  return <section className="desktop-checklist-retention">
     <button type="button" aria-expanded={state.expanded}
       onClick={() => state.setExpanded(!state.expanded)}>
       {state.expanded ? COPY.CLOSE : COPY.OPEN}
@@ -17,6 +17,7 @@ export function ChecklistRetentionSettings() {
       <p>{COPY.WARNING}</p>
       {state.busy && !state.loaded ? <p role="status">{COPY.LOADING}</p> : null}
       <fieldset disabled={state.busy || !state.loaded}>
+        <legend>{COPY.OPEN}</legend>
         <XpCheckbox id={id} checked={state.unlimited} label={COPY.UNLIMITED}
           disabled={state.busy || !state.loaded} onCheckedChange={state.setUnlimited} />
         {!state.unlimited ? <p><label htmlFor={`${id}-days`}>{COPY.DAYS}</label>{" "}
