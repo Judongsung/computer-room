@@ -27,6 +27,7 @@ export function WidgetCard({
 
   return (
     <XpWindowFrame
+      style={XP_EXPLORER_HEADER_CSS_VARIABLES as CSSProperties}
       className={["widget-card", className].filter(Boolean).join(" ")}
       title={title}
       iconPath={iconPath}
@@ -74,3 +75,5 @@ export function WidgetCard({
     </XpWindowFrame>
   );
 }
+import type { CSSProperties } from "react";
+import { XP_EXPLORER_HEADER_CSS_VARIABLES } from "@client/constants/filesystem/explorer-header";
