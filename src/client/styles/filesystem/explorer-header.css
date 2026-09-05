@@ -48,7 +48,7 @@
   outline: none;
 }
 
-.xp-explorer-header__command-bar {
+:is(.xp-explorer-header__command-bar, .desktop-program .xp-window-frame__toolbar) {
   display: flex;
   overflow: hidden;
   height: var(--xp-explorer-command-bar-height);
@@ -61,7 +61,8 @@
   white-space: nowrap;
 }
 
-.xp-explorer-header__command {
+:is(.xp-explorer-header__command, .desktop-program .xp-widget-toolbar-button) {
+  height: auto;
   display: inline-flex;
   min-width: 0;
   min-height: 32px;
@@ -77,25 +78,26 @@
   font: inherit;
 }
 
-.xp-explorer-header__command:not(:disabled):hover,
-.xp-explorer-header__command:not(:disabled):focus-visible {
+:is(.xp-explorer-header__command, .desktop-program .xp-widget-toolbar-button):not(:disabled):hover,
+:is(.xp-explorer-header__command, .desktop-program .xp-widget-toolbar-button):not(:disabled):focus-visible {
   border-color: #316ac5;
   background: #dbeaff;
   box-shadow: inset 0 0 0 1px #fff;
   outline: none;
 }
 
-.xp-explorer-header__command:not(:disabled):active {
+:is(.xp-explorer-header__command, .desktop-program .xp-widget-toolbar-button):not(:disabled):active {
   background: #c6d9f1;
   box-shadow: inset 1px 1px #7f9db9;
 }
 
-.xp-explorer-header__command:disabled {
+:is(.xp-explorer-header__command, .desktop-program .xp-widget-toolbar-button):disabled {
   color: #929292;
   filter: grayscale(1);
   opacity: 0.62;
 }
 
+.desktop-program .xp-widget-toolbar-button svg,
 .xp-explorer-header__command-icon,
 .xp-explorer-header__command-icon svg {
   display: block;
