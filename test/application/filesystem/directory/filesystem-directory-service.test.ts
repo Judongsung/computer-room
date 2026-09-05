@@ -14,6 +14,33 @@ import { filesystemEntryRecord } from "@test/support/filesystem/filesystem-entry
 import { streamFromText } from "@test/support/platform/runtime-fakes";
 
 describe("filesystem directory use cases", () => {
+  it("defaults unsorted folders to newest first without replacing saved preferences", async () => {
+    const { directories, repository, directorySorts } = createFilesystemApplicationFixture();
+    for (const [id, kind, createdAt] of [
+      ["old-folder", FILESYSTEM_ENTRY_KIND.DIRECTORY, 1],
+      ["new-folder", FILESYSTEM_ENTRY_KIND.DIRECTORY, 5],
+      ["old-file", FILESYSTEM_ENTRY_KIND.FILE, 10],
+      ["new-file", FILESYSTEM_ENTRY_KIND.FILE, 20],
+    ] as const) {
+      repository.records.set(id, filesystemEntryRecord(id, kind, id, { createdAt }));
+    }
+    const first = await directories.listDirectory(null, 0, 3);
+    const next = await directories.listDirectory(null, first.nextOffset!, 3);
+    expect(first.sort).toEqual({ field: "createdAt", direction: "descending" });
+    expect([...first.items, ...next.items].map(({ id }) => id)).toEqual([
+      "new-folder", "old-folder", "new-file", "old-file",
+    ]);
+    expect(await directorySorts.find(FILESYSTEM_ROOT_ID.DOCUMENTS)).toBeNull();
+    const saved = { field: FILESYSTEM_SORT_FIELD.CREATED_AT, direction: FILESYSTEM_SORT_DIRECTION.ASCENDING };
+    await directories.updateDirectorySort(FILESYSTEM_ROOT_ID.DOCUMENTS, saved);
+    const custom = await directories.listDirectory(null, 0, 100);
+    expect(custom.sort).toEqual(saved);
+    expect(custom.items.map(({ id }) => id)).toEqual(["old-folder", "new-folder", "old-file", "new-file"]);
+    expect(await directories.listDirectory("old-folder", 0, 100)).toMatchObject({
+      sort: { field: "createdAt", direction: "descending" },
+    });
+  });
+
   it("lists nested folders with breadcrumbs and rejects a missing parent", async () => {
     const { directories } = createFilesystemApplicationFixture();
     const parent = await directories.createDirectory(null, "사진");

@@ -11,11 +11,13 @@ import type {
   FilesystemEntry,
 } from "@/types/filesystem/filesystem";
 import { FILESYSTEM_SELECTION_DATA_ATTRIBUTE } from "@client/constants/filesystem/filesystem";
+import { DIRECTORY_CONTENT_DROP_TARGET } from "@client/constants/filesystem/drag";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import { FilesystemEntryIcon } from "@client/components/filesystem/filesystem-entry-icon";
 import { FilesystemSelectionMarquee } from "@client/components/filesystem/filesystem-selection-marquee";
 import type { FilesystemMarqueeBounds } from "@client/hooks/filesystem/use-filesystem-marquee-selection";
 import { formatFileSize } from "@client/utils/format-file-size";
+import type { FilesystemDirectoryDropCapability } from "@client/types/filesystem/drag";
 
 type DirectoryEntry = Extract<
   FilesystemEntry,
@@ -41,10 +43,7 @@ interface ExplorerMarqueeCapability {
   readonly onPointerCancel: PointerEventHandler<HTMLDivElement>;
 }
 
-interface ExplorerDragCapability {
-  readonly targetId: string | null;
-  readonly onTargetChange: (id: string | null) => void;
-  readonly onDrop: (event: DragEvent, parentId: string) => void;
+interface ExplorerDragCapability extends FilesystemDirectoryDropCapability {
   readonly onDragStart: (
     entry: FilesystemEntry,
     event: DragEvent<HTMLButtonElement>,
@@ -100,30 +99,16 @@ export function ExplorerDirectoryView({
     <div
       ref={marquee?.contentRef}
       className="explorer-content"
-      data-drop-target={drag?.targetId === currentDirectoryId || undefined}
+      {...drag?.targets.getProps<HTMLDivElement>(
+        DIRECTORY_CONTENT_DROP_TARGET,
+        (event) => drag.onDrop(event, currentDirectoryId),
+        { disabled: drag.disabled },
+      )}
       onPointerDown={marquee?.onPointerDown}
       onPointerMove={marquee?.onPointerMove}
       onPointerUp={marquee?.onPointerUp}
       onPointerCancel={marquee?.onPointerCancel}
       onKeyDown={(event) => handleSelectionKeyDown(event, selection, properties)}
-      onDragEnter={
-        drag
-          ? (event) => {
-              if (event.target === event.currentTarget) {
-                drag.onTargetChange(currentDirectoryId);
-              }
-            }
-          : undefined
-      }
-      onDragLeave={
-        drag
-          ? (event) => {
-              if (event.target === event.currentTarget) drag.onTargetChange(null);
-            }
-          : undefined
-      }
-      onDragOver={drag ? (event) => event.preventDefault() : undefined}
-      onDrop={drag ? (event) => drag.onDrop(event, currentDirectoryId) : undefined}
       onContextMenu={contextMenu?.onDirectory}
     >
       {page.items.map((entry) => (
@@ -137,7 +122,13 @@ export function ExplorerDirectoryView({
           }
           aria-pressed={selection.selectedIds.has(entry.id)}
           {...{ [FILESYSTEM_SELECTION_DATA_ATTRIBUTE]: entry.id }}
-          data-drop-target={drag?.targetId === entry.id || undefined}
+          {...(drag && entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY
+            ? drag.targets.getProps<HTMLButtonElement>(
+                entry.id,
+                (event) => drag.onDrop(event, entry.id),
+                { disabled: drag.disabled },
+              )
+            : {})}
           draggable={Boolean(drag)}
           onClick={(event) => selection.onSelect(entry.id, event)}
           onDoubleClick={() => onOpenEntry(entry)}
@@ -147,29 +138,6 @@ export function ExplorerDirectoryView({
               : undefined
           }
           onDragStart={drag ? (event) => drag.onDragStart(entry, event) : undefined}
-          onDragOver={
-            drag && entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY
-              ? (event) => event.preventDefault()
-              : undefined
-          }
-          onDragEnter={
-            drag && entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY
-              ? (event) => {
-                  event.stopPropagation();
-                  drag.onTargetChange(entry.id);
-                }
-              : undefined
-          }
-          onDragLeave={
-            drag && entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY
-              ? () => drag.onTargetChange(null)
-              : undefined
-          }
-          onDrop={
-            drag && entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY
-              ? (event) => drag.onDrop(event, entry.id)
-              : undefined
-          }
           onKeyDown={(event) => {
             if (event.key !== KEYBOARD_KEY.ENTER) return;
             if (

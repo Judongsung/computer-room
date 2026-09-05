@@ -14,7 +14,7 @@ import type { DashboardWidget } from "@/types/widgets/widget";
 import { FILESYSTEM_DRAG_SOURCE } from "@client/constants/filesystem/filesystem";
 import { SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
 import { desktopIconLayout } from "@client/domain/desktop/desktop-icon-layout";
-import { readFilesystemDragPayload } from "@client/domain/filesystem/drag";
+import { hasInternalFilesystemDrag, readFilesystemDragPayload } from "@client/domain/filesystem/drag";
 import { collectDroppedUploadNodes } from "@client/domain/filesystem/local-file-tree";
 import { messageFromError } from "@client/errors/error-message";
 import { useDesktopEntries } from "@client/hooks/filesystem/use-desktop-entries";
@@ -56,7 +56,6 @@ export function useDesktopFilesystemController({
   const [batchResult, setBatchResult] = useState<FilesystemBatchResult | null>(null);
   const [dialog, setDialog] = useState<DesktopFilesystemDialog>(null);
   const [dialogBusy, setDialogBusy] = useState(false);
-  const [isDropTarget, setIsDropTarget] = useState(false);
   const notifyChanged = useCallback(() => setRevision((current) => current + 1), []);
   const entries = useDesktopEntries(gateway, revision);
   const iconLayout = useMemo(() => desktopIconLayout(desktop), [desktop]);
@@ -190,6 +189,8 @@ export function useDesktopFilesystemController({
         void runFilesystemChange(async () => {
           applyBatchResult(await movePayload(payload, parentId, targetIndex));
         });
+      } else if (hasInternalFilesystemDrag(event.dataTransfer)) {
+        setError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
       } else {
         void uploadDrop(event, parentId).catch(reportError);
       }
@@ -328,8 +329,6 @@ export function useDesktopFilesystemController({
     dialog,
     setDialog,
     dialogBusy,
-    isDropTarget,
-    setIsDropTarget,
     desktopPlacement,
     synchronizeWidgetFile,
     removeWidgetWindows,

@@ -11,4 +11,5 @@ export interface RecycleBinWindowProps
     FilesystemWindowSyncProps {
   readonly gateway: FilesystemGateway;
   readonly desktopCapacity: number;
+  readonly onWidgetsClosed: (widgetIds: readonly string[]) => void;
 }

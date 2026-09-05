@@ -88,6 +88,9 @@ Access 인증과 쓰기 요청의 same-origin 보호를 유지합니다.
 막지 않도록 하며, 실패는 비밀 정보가 없는 `background_task_failed` 이벤트와
 작업별 코드로 기록합니다.
 
-현재 등록된 작업은 이미지 수신 로그 정리입니다. 보관 규칙은
+현재 등록된 작업은 이미지 수신 로그 정리와 체크리스트 기록 정리입니다.
+체크리스트는 기본 무기한 보관이며 소유자가 기간을 지정한 경우에만 과거 상태와
+이력을 삭제합니다. 보관 경계와 API는 [DB 명세](./DATABASE_SCHEMA.md#checklist_settings)를
+참고하세요. 이미지 수신 로그 보관 규칙은
 [이미지 수신 API 문서](./IMAGE_UPLOAD_API.md), Cron 운영은
 [배포 문서](./DEPLOYMENT.md)를 참고하세요.

@@ -28,6 +28,7 @@ import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
 import { PROJECT_EXTERNAL_LINKS } from "@client/constants/platform/external-links";
 import { writeFilesystemDragPayload } from "@client/domain/filesystem/drag";
 import { useDesktopDimensions } from "@client/hooks/desktop/use-desktop-dimensions";
+import { useFilesystemDropTarget } from "@client/hooks/filesystem/drag/use-filesystem-drop-target";
 import { useDesktopFilesystemController } from "@client/hooks/desktop/filesystem/use-desktop-filesystem-controller";
 import { useDesktopContextMenus } from "@client/hooks/desktop/shell/use-desktop-context-menus";
 import { useDesktopLauncher } from "@client/hooks/desktop/shell/use-desktop-launcher";
@@ -78,6 +79,7 @@ export function DesktopShell(props: DesktopShellProps) {
     message,
   } = props;
   const workAreaRef = useRef<HTMLElement>(null);
+  const dropTargets = useFilesystemDropTarget();
   const desktop = useDesktopDimensions(workAreaRef);
   const system = useSystemWindows();
   const media = useMediaWindows();
@@ -167,7 +169,10 @@ export function DesktopShell(props: DesktopShellProps) {
       <main
         ref={workAreaRef}
         className="desktop-work-area"
-        data-drop-target={filesystem.isDropTarget}
+        {...dropTargets.getProps<HTMLElement>(
+          FILESYSTEM_ROOT_ID.DESKTOP,
+          (event) => filesystem.handleDrop(event, FILESYSTEM_ROOT_ID.DESKTOP),
+        )}
         aria-label={DASHBOARD_COPY.DESKTOP}
         onPointerDown={(event) => {
           closeStartMenu();
@@ -188,18 +193,6 @@ export function DesktopShell(props: DesktopShellProps) {
             filesystem.selection.clear();
             menus.contextMenu.close();
           }
-        }}
-        onDragEnter={(event) => {
-          if (event.target === event.currentTarget) filesystem.setIsDropTarget(true);
-        }}
-        onDragLeave={(event) => {
-          if (event.target === event.currentTarget) filesystem.setIsDropTarget(false);
-        }}
-        onDragOver={(event) => event.preventDefault()}
-        onDrop={(event) => {
-          event.preventDefault();
-          filesystem.setIsDropTarget(false);
-          filesystem.handleDrop(event, FILESYSTEM_ROOT_ID.DESKTOP);
         }}
         onContextMenu={(event) => {
           if (event.target === event.currentTarget) menus.openBlankMenu(event);

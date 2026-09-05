@@ -1,13 +1,28 @@
 import { DESKTOP_DRAG_DATA_TYPE } from "@client/constants/desktop/desktop";
 import { FILESYSTEM_DRAG_SOURCE } from "@client/constants/filesystem/filesystem";
+import { FILESYSTEM_DROP_EFFECT, NATIVE_FILE_DRAG_DATA_TYPE } from "@client/constants/filesystem/drag";
 import type { DragFilesystemEntryPayload } from "@client/types/filesystem/filesystem";
 
 export function writeFilesystemDragPayload(
   dataTransfer: DataTransfer,
   payload: DragFilesystemEntryPayload,
 ): void {
-  dataTransfer.effectAllowed = "move";
+  dataTransfer.effectAllowed = FILESYSTEM_DROP_EFFECT.MOVE;
   dataTransfer.setData(DESKTOP_DRAG_DATA_TYPE, JSON.stringify(payload));
+}
+
+export function hasInternalFilesystemDrag(dataTransfer: Pick<DataTransfer, "types">): boolean {
+  return Array.from(dataTransfer.types).includes(DESKTOP_DRAG_DATA_TYPE);
+}
+
+export function filesystemDropEffect(
+  dataTransfer: Pick<DataTransfer, "types">,
+  allowLocalFiles = true,
+): DataTransfer["dropEffect"] {
+  if (hasInternalFilesystemDrag(dataTransfer)) return FILESYSTEM_DROP_EFFECT.MOVE;
+  return allowLocalFiles && Array.from(dataTransfer.types).includes(NATIVE_FILE_DRAG_DATA_TYPE)
+    ? FILESYSTEM_DROP_EFFECT.COPY
+    : FILESYSTEM_DROP_EFFECT.NONE;
 }
 
 export function readFilesystemDragPayload(

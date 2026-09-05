@@ -43,6 +43,18 @@ beforeEach(async () => {
 });
 
 describe("D1FilesystemRepository queries", () => {
+  it("orders the default pages by creation date descending with folders first and stable ties", async () => {
+    const root = FILESYSTEM_ROOT_ID.DOCUMENTS;
+    await insertDirectory("old", root, "Old", 1);
+    await insertDirectory("new", root, "New", 2);
+    await insertReadyFile("a", root, "a.png", 100);
+    await insertReadyFile("b", root, "b.png", 100);
+    await insertReadyFile("z", root, "z.png", 200);
+    const first = await repository.listChildren(root, 0, 3, DEFAULT_FILESYSTEM_DIRECTORY_SORT);
+    const next = await repository.listChildren(root, 3, 3, DEFAULT_FILESYSTEM_DIRECTORY_SORT);
+    expect([...first, ...next].map(({ id }) => id)).toEqual(["new", "old", "z", "a", "b"]);
+  });
+
   it("maps active entries and traverses roots, children, and breadcrumbs", async () => {
     await insertDirectory("photos", FILESYSTEM_ROOT_ID.DOCUMENTS, "Photos", 10);
     await insertDirectory("archive", "photos", "Archive", 20);

@@ -15,6 +15,11 @@
   align-items: center;
 }
 
+.recycle-list[data-drop-target="true"] {
+  outline: 2px solid #316ac5;
+  outline-offset: -2px;
+}
+
 .recycle-list__header {
   position: sticky;
   z-index: 1;

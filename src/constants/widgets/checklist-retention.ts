@@ -1,0 +1,6 @@
+export const CHECKLIST_RETENTION = {
+  SETTINGS_ID: 1,
+  MIN_DAYS: 1,
+  MAX_DAYS: 3650,
+  SUGGESTED_DAYS: 30,
+} as const;

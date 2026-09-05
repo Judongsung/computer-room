@@ -2,6 +2,7 @@ import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { UI_LOCALE } from "@client/content/ko/shared/format";
 import type { DragEvent, MouseEvent } from "react";
 import type { TrashedFilesystemEntry } from "@/types/filesystem/filesystem";
+import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import {
   FILESYSTEM_DRAG_SOURCE,
   FILESYSTEM_SELECTION_DATA_ATTRIBUTE,
@@ -29,6 +30,7 @@ export function RecycleBinWindow({
   desktopCapacity,
   filesystemRevision,
   onFilesystemChanged,
+  onWidgetsClosed,
   ...chrome
 }: RecycleBinWindowProps) {
   const controller = useRecycleBinController({
@@ -36,6 +38,7 @@ export function RecycleBinWindow({
     desktopCapacity,
     filesystemRevision,
     onFilesystemChanged,
+    onWidgetsClosed,
   });
   const { page, selectedItems, selection } = controller;
   const model = buildRecycleExplorerHeaderModel(
@@ -82,6 +85,11 @@ export function RecycleBinWindow({
         <div
           ref={controller.listRef}
           className="recycle-list"
+          {...controller.dropTargets.getProps<HTMLDivElement>(
+            FILESYSTEM_ROOT_ID.RECYCLE_BIN,
+            controller.dropIntoTrash,
+            { disabled: controller.busy, allowLocalFiles: false },
+          )}
           onPointerDown={controller.marquee.onPointerDown}
           onPointerMove={controller.marquee.onPointerMove}
           onPointerUp={controller.marquee.onPointerUp}

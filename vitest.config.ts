@@ -23,6 +23,7 @@ export default defineConfig(async () => {
           d1Databases: [
             "DB",
             "MIGRATION_REGRESSION_DB",
+            "INDEX_RETENTION_TEST_DB",
             "FILESYSTEM_REPOSITORY_TEST_DB",
             "GUEST_ACCESS_TEST_DB",
             "IMAGE_UPLOAD_LOG_TEST_DB",

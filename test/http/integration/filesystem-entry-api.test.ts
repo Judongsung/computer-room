@@ -184,10 +184,10 @@ describe("computer-room filesystem entry API", () => {
     await expect(listDocuments()).resolves.toMatchObject({
       sort: DEFAULT_FILESYSTEM_DIRECTORY_SORT,
       items: [
-        { name: "A 폴더" },
         { name: "B 폴더" },
-        { name: "a-video.mp4" },
+        { name: "A 폴더" },
         { name: "b-image.png" },
+        { name: "a-video.mp4" },
       ],
     });
 

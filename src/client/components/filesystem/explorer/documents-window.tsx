@@ -72,7 +72,7 @@ export function DocumentsWindow({
           canGoBack={controller.explorer.history.length > 0}
           selectedEntries={selectedEntries}
           propertiesTarget={propertiesTarget}
-          dropTargetId={controller.dropTargetId}
+          dropTargets={controller.dropTargets}
           fileInputRef={controller.fileInputRef}
           folderInputRef={controller.folderInputRef}
           onBack={controller.explorer.navigateBack}
@@ -97,7 +97,6 @@ export function DocumentsWindow({
           onChangeSort={controller.changeSort}
           onClose={chrome.onClose}
           onNavigateDirect={controller.explorer.navigateDirect}
-          onDropTargetChange={controller.setDropTargetId}
           onDropIntoDirectory={controller.dropIntoDirectory}
         />
       }
@@ -128,8 +127,8 @@ export function DocumentsWindow({
             ...controller.marquee,
           }}
           drag={{
-            targetId: controller.dropTargetId,
-            onTargetChange: controller.setDropTargetId,
+            targets: controller.dropTargets,
+            disabled: controller.busy,
             onDrop: controller.dropIntoDirectory,
             onDragStart: (entry, event) => {
               const ids = controller.selection.dragIds(entry.id);

@@ -11,6 +11,7 @@ import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { messageFromError } from "@client/errors/error-message";
 import type { ChecklistGateway } from "@client/types/widgets/ports/checklist";
 import { DesktopModal } from "@client/components/desktop/desktop-modal";
+import { ChecklistRetentionSettings } from "@client/components/desktop/checklist/checklist-retention-settings";
 
 const LOG_TIME_FORMATTER = new Intl.DateTimeFormat(
   UI_LOCALE,
@@ -111,6 +112,7 @@ export function ChecklistLogDialog({
         ) : null
       }
     >
+      <ChecklistRetentionSettings />
       {isLoading && events.length === 0 ? (
         <p className="widget-empty">{CHECKLIST_WIDGET_COPY.LOG_LOADING}</p>
       ) : null}

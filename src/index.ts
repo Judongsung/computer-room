@@ -1,3 +1,7 @@
+import { ChecklistRetentionApiHandler } from "@/http/widgets/checklist-retention-api-handler";
+import { ChecklistRetentionService } from "@/application/widgets/checklist-retention-service";
+import { ChecklistRetentionJob } from "@/application/widgets/checklist-retention-job";
+import { D1ChecklistRetentionRepository } from "@/infrastructure/widgets/d1-checklist-retention-repository";
 import { ChecklistService } from "@/application/widgets/checklist-service";
 import { FileService } from "@/application/filesystem/file-service";
 import { FilesystemDirectoryService } from "@/application/filesystem/directory/filesystem-directory-service";
@@ -267,6 +271,9 @@ export default {
         widgetApiHandler,
         storageStatusApiHandler,
         mobilePreferencesApiHandler,
+        new ChecklistRetentionApiHandler(new ChecklistRetentionService(
+          new D1ChecklistRetentionRepository(env.DB),
+        )),
         imageUploadProfileApiHandler,
         imageUploadLogApiHandler,
         imageUploadLogSettingsApiHandler,
@@ -294,6 +301,7 @@ export default {
 
 function createScheduledJobs(env: Env): readonly ScheduledJob[] {
   return [
+    new ChecklistRetentionJob(new D1ChecklistRetentionRepository(env.DB)),
     new ImageUploadLogPurgeJob(
       new D1ImageUploadLogRepository(env.DB),
       new D1ImageUploadLogSettingsRepository(env.DB),

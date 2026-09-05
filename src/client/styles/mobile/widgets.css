@@ -6,6 +6,17 @@
   padding: 12px;
 }
 
+.android-checklist-logs-body {
+  max-height: 60dvh;
+  overflow: auto;
+  overflow-wrap: anywhere;
+}
+
+.android-checklist-logs-body input[type="number"] {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
 .android-widget__toolbar {
   display: flex;
   flex-wrap: wrap;

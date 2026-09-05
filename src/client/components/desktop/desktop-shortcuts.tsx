@@ -1,7 +1,6 @@
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { SYSTEM_APP_TITLE_BY_ID } from "@client/content/ko/desktop/system-app";
 import {
-  useState,
   type DragEvent,
   type KeyboardEvent,
   type MouseEvent,
@@ -18,6 +17,8 @@ import {
 import type { SystemAppId } from "@client/types/desktop/system-app";
 import { FilesystemEntryIcon } from "@client/components/filesystem/filesystem-entry-icon";
 import { FILESYSTEM_SELECTION_DATA_ATTRIBUTE } from "@client/constants/filesystem/filesystem";
+import { useFilesystemDropTarget } from "@client/hooks/filesystem/drag/use-filesystem-drop-target";
+import type { FilesystemDropTargetProps } from "@client/types/filesystem/drag";
 
 interface DesktopShortcutsProps {
   readonly entries: readonly FilesystemEntry[];
@@ -79,7 +80,7 @@ export function DesktopShortcuts({
   onShowEntryProperties,
   onShowSystemProperties,
 }: DesktopShortcutsProps) {
-  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  const dropTargets = useFilesystemDropTarget();
 
   return (
     <nav className="desktop-shortcuts" aria-label={FILESYSTEM_COPY.DESKTOP_SHORTCUTS}>
@@ -91,18 +92,20 @@ export function DesktopShortcuts({
             title={SYSTEM_APP_TITLE_BY_ID[id]}
             icon={<img src={app.iconPath} alt="" draggable={false} />}
             selected={selectedSystemId === id}
-            dropTarget={dropTargetId === id}
-            canHighlightDrop={id !== SYSTEM_APP_ID.MY_COMPUTER}
+            dropProps={dropTargets.getProps<HTMLButtonElement>(
+              id,
+              (event) => onDropSystem(id, event),
+              {
+                disabled: id === SYSTEM_APP_ID.MY_COMPUTER,
+                allowLocalFiles: id !== SYSTEM_APP_ID.RECYCLE_BIN,
+              },
+            )}
             onSelect={() => onSelectSystem(id)}
             onOpen={() => onOpenSystem(id)}
             onContextMenu={(event) => onContextMenuSystem(id, event)}
             {...(id === SYSTEM_APP_ID.DOCUMENTS
               ? { onShowProperties: () => onShowSystemProperties(id) }
               : {})}
-            onDrop={(event) => onDropSystem(id, event)}
-            onDropTargetChange={(active) =>
-              setDropTargetId(active ? id : null)
-            }
           />
         );
       })}
@@ -117,7 +120,10 @@ export function DesktopShortcuts({
             />
           }
           selected={selectedEntryIds.has(entry.id)}
-          dropTarget={dropTargetId === entry.id}
+          dropProps={dropTargets.getProps<HTMLButtonElement>(
+            entry.id,
+            (event) => onDropEntry(entry, index, event),
+          )}
           draggable
           selectionId={entry.id}
           onSelect={(event) => onSelectEntry(entry.id, event)}
@@ -127,10 +133,6 @@ export function DesktopShortcuts({
             ? { onShowProperties: () => onShowEntryProperties(entry) }
             : {})}
           onDragStart={(event) => onDragEntry(entry, event)}
-          onDrop={(event) => onDropEntry(entry, index, event)}
-          onDropTargetChange={(active) =>
-            setDropTargetId(active ? entry.id : null)
-          }
         />
       ))}
     </nav>
@@ -141,8 +143,7 @@ function ShortcutButton({
   title,
   icon,
   selected,
-  dropTarget,
-  canHighlightDrop = true,
+  dropProps,
   draggable = false,
   selectionId,
   onSelect,
@@ -150,14 +151,11 @@ function ShortcutButton({
   onContextMenu,
   onShowProperties,
   onDragStart,
-  onDrop,
-  onDropTargetChange,
 }: {
   readonly title: string;
   readonly icon: ReactNode;
   readonly selected: boolean;
-  readonly dropTarget: boolean;
-  readonly canHighlightDrop?: boolean;
+  readonly dropProps: FilesystemDropTargetProps<HTMLButtonElement>;
   readonly draggable?: boolean;
   readonly selectionId?: string;
   readonly onSelect: (event: SelectionModifiers) => void;
@@ -165,8 +163,6 @@ function ShortcutButton({
   readonly onContextMenu?: (event: MouseEvent<HTMLButtonElement>) => void;
   readonly onShowProperties?: () => void;
   readonly onDragStart?: (event: DragEvent<HTMLButtonElement>) => void;
-  readonly onDrop: (event: DragEvent<HTMLButtonElement>) => void;
-  readonly onDropTargetChange: (active: boolean) => void;
 }) {
   return (
     <button
@@ -180,24 +176,13 @@ function ShortcutButton({
       {...(selectionId
         ? { [FILESYSTEM_SELECTION_DATA_ATTRIBUTE]: selectionId }
         : {})}
-      data-drop-target={dropTarget && canHighlightDrop}
+      {...dropProps}
       draggable={draggable}
       onMouseDown={(event) => event.stopPropagation()}
       onClick={onSelect}
       onDoubleClick={onOpen}
       onContextMenu={onContextMenu}
       onDragStart={onDragStart}
-      onDragEnter={() => {
-        if (canHighlightDrop) onDropTargetChange(true);
-      }}
-      onDragLeave={() => onDropTargetChange(false)}
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={(event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        onDropTargetChange(false);
-        onDrop(event);
-      }}
       onKeyDown={(event: KeyboardEvent<HTMLButtonElement>) => {
         if (
           event.altKey &&

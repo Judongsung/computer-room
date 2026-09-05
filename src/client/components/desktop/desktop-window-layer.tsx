@@ -219,6 +219,7 @@ export function DesktopWindowLayer({
             desktopCapacity={desktopCapacity}
             filesystemRevision={filesystemRevision}
             onFilesystemChanged={onFilesystemChanged}
+            onWidgetsClosed={onWidgetsClosed}
           />
         </LazyFeatureBoundary>
       ) : null}

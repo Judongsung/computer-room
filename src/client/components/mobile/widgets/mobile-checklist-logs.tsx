@@ -1,4 +1,5 @@
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
+import { MobileChecklistRetentionSettings } from "@client/components/mobile/widgets/mobile-checklist-retention-settings";
 import { useEffect, useState } from "react";
 import type { ChecklistLogEvent } from "@/types/widgets/widget";
 import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
@@ -66,6 +67,8 @@ export function MobileChecklistLogs({ widgetId, gateway, onClose }: MobileCheckl
         </>
       }
     >
+      <div className="android-checklist-logs-body">
+      <MobileChecklistRetentionSettings />
       {loading && events.length === 0 ? <p>{MOBILE_COPY.LOADING}</p> : null}
       {!loading && events.length === 0 ? <p>{MOBILE_COPY.NO_LOGS}</p> : null}
       <ol className={MOBILE_CLASS_NAME.LIST}>
@@ -79,6 +82,7 @@ export function MobileChecklistLogs({ widgetId, gateway, onClose }: MobileCheckl
         ))}
       </ol>
       {error ? <p className={MOBILE_CLASS_NAME.ERROR} role="alert">{error}</p> : null}
+      </div>
     </MobileDialog>
   );
 }

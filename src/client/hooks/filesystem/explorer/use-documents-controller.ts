@@ -28,7 +28,9 @@ import {
 } from "@client/domain/filesystem/local-file-tree";
 import {
   readFilesystemDragPayload,
+  hasInternalFilesystemDrag,
 } from "@client/domain/filesystem/drag";
+import { useFilesystemDropTarget } from "@client/hooks/filesystem/drag/use-filesystem-drop-target";
 import {
   buildExplorerDirectoryContextMenu,
   buildExplorerEntryContextMenu,
@@ -80,7 +82,7 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
   const [mutationBusy, setMutationBusy] = useState(false);
   const [operationError, setOperationError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<DocumentsDialog>(null);
-  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
+  const dropTargets = useFilesystemDropTarget();
   const [batchResult, setBatchResult] = useState<FilesystemBatchResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
@@ -212,9 +214,7 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
 
   const dropIntoDirectory = useCallback(
     (event: DragEvent, parentId: string): void => {
-      event.preventDefault();
-      event.stopPropagation();
-      setDropTargetId(null);
+      if (busy) return;
       const payload = readFilesystemDragPayload(event.dataTransfer);
       if (payload) {
         void runBatchChange(() =>
@@ -222,6 +222,10 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
             ? gateway.restoreEntries(payload.ids, moveInput(parentId, desktopCapacity))
             : gateway.moveEntries(payload.ids, moveInput(parentId, desktopCapacity)),
         );
+        return;
+      }
+      if (hasInternalFilesystemDrag(event.dataTransfer)) {
+        setOperationError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
         return;
       }
       void collectDroppedUploadNodes(event.dataTransfer.items)
@@ -236,7 +240,7 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
           setOperationError(messageFromError(reason, FILESYSTEM_COPY.CHANGE_FAILED)),
         );
     },
-    [desktopCapacity, gateway, options.onUploadNodes, runBatchChange],
+    [busy, desktopCapacity, gateway, options.onUploadNodes, runBatchChange],
   );
 
   const openEntryContextMenu = useCallback(
@@ -290,7 +294,7 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
     error: operationError ?? explorer.error,
     busy,
     dialog,
-    dropTargetId,
+    dropTargets,
     batchResult,
     fileInputRef,
     folderInputRef,
@@ -305,7 +309,6 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
     propertiesTarget,
     currentDirectoryId,
     setDialog,
-    setDropTargetId,
     setBatchResult,
     runChange,
     runBatchChange,

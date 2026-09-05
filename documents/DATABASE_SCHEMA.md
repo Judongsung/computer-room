@@ -2,14 +2,12 @@
 
 [문서 목차로 돌아가기](./INDEX.md)
 
-기준 커밋: `65c25ee0d20cca840bc505ba41585bd5c3f95765`
-
 이 문서는 `migrations/0000_superb_hitman.sql`부터
-`migrations/0014_image-upload-log-privacy.sql`까지 모든 마이그레이션을 적용한
+`migrations/0015_db-indexes-checklist-retention.sql`까지 모든 마이그레이션을 적용한
 최종 애플리케이션 스키마를 설명한다.
 
 Wrangler가 관리하는 마이그레이션 이력 등의 내부 테이블은 제외한다.
-애플리케이션이 직접 관리하는 테이블은 총 16개다.
+애플리케이션이 직접 관리하는 테이블은 총 17개다.
 
 ## 공통 규칙
 
@@ -36,6 +34,7 @@ Wrangler가 관리하는 마이그레이션 이력 등의 내부 테이블은 �
 | 체크리스트 | `checklist_items` | 일일 체크리스트 항목을 저장한다. |
 | 체크리스트 | `checklist_daily_states` | 날짜별 체크 상태를 저장한다. |
 | 체크리스트 | `checklist_events` | 체크리스트 변경 이력을 저장한다. |
+| 체크리스트 | `checklist_settings` | 계정 공통 기록 보관 기간을 저장한다. 기본값은 무기한이다. |
 | 모바일 | `mobile_preferences` | 계정 공용 모바일 설정을 저장한다. |
 | 관리자 | `guest_access_settings` | 게스트 접속 마스터 설정을 저장한다. |
 | 관리자 | `guest_publications` | 게스트에게 공개하도록 선택한 파일 시스템 항목을 저장한다. |
@@ -143,7 +142,8 @@ integration_image_upload_log_settings
 | `filesystem_entries_file_id_unique` | `file_id` | UNIQUE | 하나의 파일 메타데이터가 최대 한 항목에만 속하게 한다. |
 | `filesystem_entries_widget_id_unique` | `widget_id` | UNIQUE | 하나의 프로그램이 최대 한 프로그램 문서에만 속하게 한다. |
 | `uq_filesystem_entries_active_parent_name` | `parent_id`, `name_key` | `trashed_at IS NULL`인 행의 부분 UNIQUE | 활성 상태인 형제 항목의 이름 충돌을 막는다. |
-| `idx_filesystem_entries_parent_kind_name` | `parent_id`, `kind`, `name_key` | 일반 | 폴더 목록과 이름순 조회를 지원한다. |
+| `idx_filesystem_entries_active_name` | `parent_id`, 폴더 우선 CASE 식, `name_key`, `id` | 활성 행 부분 인덱스 | 폴더 우선 이름 오름차순 조회를 추가 정렬 없이 지원한다. |
+| `idx_filesystem_entries_restore_parent` | `restore_parent_id` | NULL이 아닌 행 부분 인덱스 | 폴더 영구 삭제 시 복원 위치 참조를 찾는다. |
 | `idx_filesystem_entries_trash` | `parent_id`, `trashed_at` | 일반 | 휴지통 목록 조회를 지원한다. |
 
 ## `desktop_entry_order`
@@ -160,8 +160,7 @@ integration_image_upload_log_settings
 
 | 인덱스 | 컬럼 | 종류 | 목적 |
 |---|---|---|---|
-| `desktop_entry_order_sort_order_unique` | `sort_order` | UNIQUE | 두 항목이 같은 순서를 차지하지 못하게 한다. |
-| `idx_desktop_entry_order_sort` | `sort_order` | 일반 | 정렬된 바탕 화면 조회를 지원한다. |
+| `desktop_entry_order_sort_order_unique` | `sort_order` | UNIQUE | 순서 중복 방지와 정렬된 조회를 함께 지원한다. |
 
 ## `filesystem_directory_preferences`
 
@@ -277,6 +276,32 @@ integration_image_upload_log_settings
 | 인덱스 | 컬럼 | 종류 | 목적 |
 |---|---|---|---|
 | `idx_checklist_events_widget_time` | `widget_id`, `occurred_at`, `id` | 일반 | 프로그램별 최신순 이력 조회를 지원한다. |
+| `idx_checklist_events_item` | `item_id` | 일반 | 항목 영구 삭제 시 종속 이력 탐색을 지원한다. |
+| `idx_checklist_events_time` | `occurred_at` | 일반 | 보관 기한이 지난 이력 정리를 지원한다. |
+
+## `checklist_settings`
+
+계정 전체 체크리스트에 공통으로 적용하는 기록 보관 설정이다.
+
+| 컬럼 | 타입 | Nullable | 기본값 | 키·제약조건 | 설명 |
+|---|---|---:|---|---|---|
+| `singleton_id` | `INTEGER` | NO | `1` | 기본 키, 값은 반드시 `1` | 단일 설정 행이다. |
+| `retention_days` | `INTEGER` | YES | `NULL` | NULL 또는 1~3650 정수 | NULL이면 무기한 보관한다. |
+
+마이그레이션은 `(1, NULL)`을 생성하며 기존 기록을 삭제하지 않는다.
+데스크톱·모바일 체크리스트 상세 기록의 `기록 보관 설정`에서 소유자가 기간을
+설정할 수 있다. `GET`/`PATCH /api/preferences/checklist`는
+`{ settings: { retentionDays } }`를 반환하고 PATCH 본문은
+`{ retentionDays: number | null }`이다. 소유자 인증과 쓰기 요청의 same-origin
+검사를 적용한다.
+
+유한한 기간을 설정하면 매일 `00:00 KST` 정기 작업이 오늘과 직전 지정 일수를
+보존하고 그 경계보다 오래된 `checklist_daily_states`와 `checklist_events` 행을
+같은 D1 batch에서 삭제한다. 예를 들어 9월 5일에 1일 설정이면 9월 4일 00시
+이전 기록을 삭제한다. 날짜별 상태는 `business_date`, 변경 이력은 `occurred_at`을
+기준으로 한다. 경계에 있는 행, 현재 항목 정의, 오늘의 체크 상태는 유지한다.
+설정 저장은 기록을 즉시 삭제하지 않으며 다음 정기 작업부터 적용한다.
+무기한으로 되돌려도 이미 삭제된 기록은 복원되지 않는다.
 
 ## `mobile_preferences`
 
@@ -300,7 +325,8 @@ integration_image_upload_log_settings
 | `enabled` | `INTEGER` | NO | `0` | `0` 또는 `1` | 게스트 접속 마스터 허용 여부다. |
 
 마이그레이션은 `(singleton_id = 1, enabled = 0)` 행을 기본으로 생성한다.
-현재 버전은 소유자용 설정만 저장하며 실제 비로그인 공개 경로는 제공하지 않는다.
+게스트 API는 매 요청마다 이 설정과 항목별 공개 정책을 검사한다. 비로그인 공개
+경로와 소유자 인증 경계는 [게스트 공개 문서](./GUEST_ACCESS.md)를 따른다.
 
 ## `guest_publications`
 
@@ -329,12 +355,6 @@ Cloudflare Access audience 값은 이 테이블에 저장하지 않는다.
 | `enabled` | `INTEGER` | NO | `1` | `0` 또는 `1` | 업로드 엔드포인트 활성 여부다. |
 | `created_at` | `INTEGER` | NO | - | - | 프로필 생성 시각이다. |
 | `updated_at` | `INTEGER` | NO | - | - | 마지막 프로필 수정 시각이다. |
-
-### 인덱스
-
-| 인덱스 | 컬럼 | 종류 | 목적 |
-|---|---|---|---|
-| `idx_integration_image_profiles_enabled` | `enabled` | 일반 | 활성 프로필 필터링을 지원한다. |
 
 ### 기본 프로필
 

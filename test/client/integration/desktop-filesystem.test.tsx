@@ -38,6 +38,10 @@ describe("App desktop filesystem", () => {
     const api = new FakeDashboardGateway();
     const filesystem = new FakeFilesystemGateway();
     await filesystem.createDirectory(FILESYSTEM_ROOT_ID.DOCUMENTS, "사진");
+    await filesystem.updateDirectorySort(FILESYSTEM_ROOT_ID.DOCUMENTS, {
+      field: FILESYSTEM_SORT_FIELD.NAME,
+      direction: FILESYSTEM_SORT_DIRECTION.ASCENDING,
+    });
     const updateSort = vi.spyOn(filesystem, "updateDirectorySort");
     const listDirectory = vi.spyOn(filesystem, "listDirectory");
     const user = userEvent.setup();
@@ -106,11 +110,11 @@ describe("App desktop filesystem", () => {
     viewMenu = screen.getByRole("menu", {
       name: XP_EXPLORER_HEADER_COPY.VIEW_MENU,
     });
-    const nameLabel = FILESYSTEM_SORT_FIELD_OPTIONS.find(
-      ({ value }) => value === FILESYSTEM_SORT_FIELD.NAME,
-    )!.label;
     expect(
-      within(viewMenu).getByRole("menuitemradio", { name: nameLabel }),
+      within(viewMenu).getByRole("menuitemradio", { name: createdAtLabel }),
+    ).toHaveAttribute("aria-checked", "true");
+    expect(
+      within(viewMenu).getByRole("menuitemradio", { name: newestFirst }),
     ).toHaveAttribute("aria-checked", "true");
     await user.keyboard("{Escape}");
 

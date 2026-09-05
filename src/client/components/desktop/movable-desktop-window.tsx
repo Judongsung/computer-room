@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type DragEvent } from "react";
 import { Rnd } from "react-rnd";
 import { WINDOW_STATE } from "@/constants/widgets/widget";
 import { DESKTOP_WINDOW_CLASS_NAME } from "@client/constants/desktop/desktop";
@@ -7,6 +7,12 @@ import {
   XP_WINDOW_INTERACTION_SELECTOR,
 } from "@client/constants/shared/xp";
 import { clampWindowBounds } from "@client/domain/desktop/window-layout";
+import { filesystemDropEffect } from "@client/domain/filesystem/drag";
+import {
+  FILESYSTEM_DRAG_EVENT,
+  FILESYSTEM_DROP_ATTRIBUTE,
+  FILESYSTEM_DROP_EFFECT,
+} from "@client/constants/filesystem/drag";
 import type {
   MovableDesktopWindowProps,
   WindowBounds,
@@ -56,6 +62,11 @@ export function MovableDesktopWindow({
 
   return (
     <Rnd
+      {...{ [FILESYSTEM_DROP_ATTRIBUTE.BOUNDARY]: true }}
+      onDragEnter={containFileDrag}
+      onDragOver={containFileDrag}
+      onDragLeave={containFileDrag}
+      onDrop={containFileDrag}
       className={
         isMaximized
           ? `${DESKTOP_WINDOW_CLASS_NAME.ROOT} ${DESKTOP_WINDOW_CLASS_NAME.MAXIMIZED}`
@@ -110,4 +121,10 @@ export function MovableDesktopWindow({
       {children}
     </Rnd>
   );
+}
+
+function containFileDrag(event: DragEvent): void {
+  if (filesystemDropEffect(event.dataTransfer) === FILESYSTEM_DROP_EFFECT.NONE) return;
+  event.stopPropagation();
+  if (event.type === FILESYSTEM_DRAG_EVENT.DROP) event.preventDefault();
 }

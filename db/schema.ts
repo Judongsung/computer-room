@@ -49,6 +49,7 @@ import {
   WINDOW_STATE_VALUES,
 } from "@/constants/widgets/widget";
 import { GUEST_ACCESS_SETTINGS_SINGLETON_ID } from "@/constants/admin/guest-access";
+import { CHECKLIST_RETENTION } from "@/constants/widgets/checklist-retention";
 
 const FILE_STATUS_SQL = FILE_STATUS_VALUES.map((status) => `'${status}'`).join(", ");
 const FILESYSTEM_ENTRY_KIND_SQL = FILESYSTEM_ENTRY_KIND_VALUES.map(
@@ -145,11 +146,17 @@ export const filesystemEntries = sqliteTable(
     uniqueIndex("uq_filesystem_entries_active_parent_name")
       .on(table.parentId, table.nameKey)
       .where(sql`${table.trashedAt} IS NULL`),
-    index("idx_filesystem_entries_parent_kind_name").on(
-      table.parentId,
-      table.kind,
-      table.nameKey,
-    ),
+    index("idx_filesystem_entries_active_name")
+      .on(
+        table.parentId,
+        sql`CASE ${table.kind} WHEN ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.DIRECTORY}'`)} THEN 0 ELSE 1 END`,
+        table.nameKey,
+        table.id,
+      )
+      .where(sql`${table.trashedAt} IS NULL`),
+    index("idx_filesystem_entries_restore_parent")
+      .on(table.restoreParentId)
+      .where(sql`${table.restoreParentId} IS NOT NULL`),
     index("idx_filesystem_entries_trash").on(
       table.parentId,
       table.trashedAt,
@@ -245,7 +252,6 @@ export const integrationImageProfiles = sqliteTable(
       "integration_image_profiles_enabled_check",
       sql`${table.enabled} IN (0, 1)`,
     ),
-    index("idx_integration_image_profiles_enabled").on(table.enabled),
   ],
 );
 
@@ -420,7 +426,6 @@ export const desktopEntryOrder = sqliteTable(
   },
   (table) => [
     check("desktop_entry_order_value_check", sql`${table.sortOrder} >= 0`),
-    index("idx_desktop_entry_order_sort").on(table.sortOrder),
   ],
 );
 
@@ -508,6 +513,28 @@ export const checklistEvents = sqliteTable(
       table.widgetId,
       table.occurredAt,
       table.id,
+    ),
+    index("idx_checklist_events_item").on(table.itemId),
+    index("idx_checklist_events_time").on(table.occurredAt),
+  ],
+);
+
+export const checklistSettings = sqliteTable(
+  "checklist_settings",
+  {
+    singletonId: integer("singleton_id")
+      .primaryKey()
+      .default(CHECKLIST_RETENTION.SETTINGS_ID),
+    retentionDays: integer("retention_days"),
+  },
+  (table) => [
+    check(
+      "checklist_settings_singleton_check",
+      sql`${table.singletonId} = ${sql.raw(String(CHECKLIST_RETENTION.SETTINGS_ID))}`,
+    ),
+    check(
+      "checklist_settings_retention_check",
+      sql`${table.retentionDays} IS NULL OR (${table.retentionDays} BETWEEN ${sql.raw(String(CHECKLIST_RETENTION.MIN_DAYS))} AND ${sql.raw(String(CHECKLIST_RETENTION.MAX_DAYS))} AND typeof(${table.retentionDays}) = 'integer')`,
     ),
   ],
 );

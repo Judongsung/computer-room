@@ -369,6 +369,8 @@ describe("App desktop widgets", () => {
   });
 
   it("edits checklist items only in edit state and opens the event log", async () => {
+    // Keep CRUD within the fake gateway's business date; reset behavior has separate coverage.
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-08-20T00:00:00.000Z"));
     const api = new FakeDashboardGateway();
     const user = userEvent.setup();
     render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);

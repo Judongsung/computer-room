@@ -12,6 +12,7 @@ import type {
 import { ExplorerBreadcrumbs } from "@client/components/filesystem/header/explorer-breadcrumbs";
 import { XpExplorerHeader } from "@client/components/filesystem/header/xp-explorer-header";
 import { buildDocumentsExplorerHeaderModel } from "@client/domain/filesystem/explorer-header-menu";
+import type { FilesystemDropTargets } from "@client/types/filesystem/drag";
 
 interface DocumentsExplorerHeaderProps {
   readonly page: FilesystemDirectoryPage | null;
@@ -21,7 +22,7 @@ interface DocumentsExplorerHeaderProps {
   readonly canGoBack: boolean;
   readonly selectedEntries: readonly FilesystemEntry[];
   readonly propertiesTarget: Extract<FilesystemEntry, { readonly kind: "directory" }> | null;
-  readonly dropTargetId: string | null;
+  readonly dropTargets: FilesystemDropTargets;
   readonly fileInputRef: RefObject<HTMLInputElement | null>;
   readonly folderInputRef: RefObject<HTMLInputElement | null>;
   readonly onBack: () => void;
@@ -40,7 +41,6 @@ interface DocumentsExplorerHeaderProps {
   readonly onChangeSort: (sort: FilesystemDirectorySort) => void | Promise<unknown>;
   readonly onClose: () => void;
   readonly onNavigateDirect: (directoryId: string) => void;
-  readonly onDropTargetChange: (id: string | null) => void;
   readonly onDropIntoDirectory: (event: DragEvent, parentId: string) => void;
 }
 export function DocumentsExplorerHeader({
@@ -51,7 +51,7 @@ export function DocumentsExplorerHeader({
   canGoBack,
   selectedEntries,
   propertiesTarget,
-  dropTargetId,
+  dropTargets,
   fileInputRef,
   folderInputRef,
   onBack,
@@ -70,7 +70,6 @@ export function DocumentsExplorerHeader({
   onChangeSort,
   onClose,
   onNavigateDirect,
-  onDropTargetChange,
   onDropIntoDirectory,
 }: DocumentsExplorerHeaderProps) {
   const selected = selectedEntries.length === 1 ? selectedEntries[0] ?? null : null;
@@ -119,8 +118,8 @@ export function DocumentsExplorerHeader({
               items={page.breadcrumbs}
               onNavigate={(item) => onNavigateDirect(item.id)}
               drop={{
-                targetId: dropTargetId,
-                onTargetChange: onDropTargetChange,
+                targets: dropTargets,
+                disabled: busy,
                 onDrop: onDropIntoDirectory,
               }}
             />

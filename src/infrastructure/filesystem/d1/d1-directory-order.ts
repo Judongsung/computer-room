@@ -31,11 +31,12 @@ const SORT_EXPRESSION_SQL = {
 export function directoryOrderClause(sort: FilesystemDirectorySort): string {
   const direction = SORT_DIRECTION_SQL[sort.direction];
   const expression = SORT_EXPRESSION_SQL[sort.field];
+  const nameTieBreak = sort.field === FILESYSTEM_SORT_FIELD.NAME ? "" : "e.name_key ASC,";
   const sizePresenceOrder =
     sort.field === FILESYSTEM_SORT_FIELD.SIZE
       ? `CASE WHEN e.kind = '${FILESYSTEM_ENTRY_KIND.FILE}' THEN 0 ELSE 1 END ASC,`
       : "";
   return `CASE e.kind WHEN '${FILESYSTEM_ENTRY_KIND.DIRECTORY}' THEN 0 ELSE 1 END ASC,
           ${sizePresenceOrder}
-          ${expression} ${direction}, e.name_key ASC, e.id ASC`;
+          ${expression} ${direction}, ${nameTieBreak} e.id ASC`;
 }
