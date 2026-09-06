@@ -21,7 +21,6 @@
 @import "./filesystem/application-catalog.css";
 @import "./widgets/frame.css";
 @import "./widgets/memo.css";
-@import "./widgets/checklist.css";
 @import "./widgets/storage-status.css";
 @import "./widgets/image-upload-profiles.css";
 @import "./widgets/admin.css";
@@ -29,3 +28,4 @@
 @import "./desktop/notepad/notepad.css";
 @import "./desktop/programs/documents.css";
 @import "./desktop/programs/checklist.css";
+@import "./desktop/forms.css";

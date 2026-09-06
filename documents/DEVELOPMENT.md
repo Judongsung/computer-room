@@ -25,6 +25,11 @@ src/
 분리합니다. API, 상태, 훅, 도메인, 상수와 타입은 기능별 공용 모듈을 우선
 사용합니다. 두 화면의 CSS·JavaScript는 별도 청크로 지연 로딩됩니다.
 
+데스크톱 폼의 배경, 대화상자 버튼 간격과 드롭다운 스타일은
+`src/client/styles/desktop/forms.css`에서 공통 관리합니다. `appearance: base-select`를
+지원하는 브라우저에는 파란 메뉴 강조색과 선택 상자에 붙는 메뉴를 적용하며,
+미지원 브라우저와 모바일은 기본 선택 메뉴를 사용합니다.
+
 정적 한국어 UI 문구는 `src/client/content/ko`, 기술 상수는 각 기능의
 `constants`에서 관리합니다. 전체 코드 변경 규칙은 [AGENTS.md](../AGENTS.md)를
 참고하세요.
