@@ -1,7 +1,7 @@
 import { XP_EXPLORER_HEADER_COPY } from "@client/content/ko/filesystem/explorer-header";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import type { CSSProperties, ReactNode } from "react";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "@client/app";
@@ -81,6 +81,11 @@ describe("App desktop widgets", () => {
     await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT);
     await user.click(screen.getByRole("button", { name: MEMO_WIDGET_COPY.EDIT }));
     await user.type(screen.getByRole("textbox", { name: MEMO_WIDGET_COPY.EDITOR_LABEL }), "# 초안 제목");
+    const editor = screen.getByRole<HTMLTextAreaElement>("textbox", { name: MEMO_WIDGET_COPY.EDITOR_LABEL });
+    await user.keyboard("{Control>}a{/Control}");
+    expect(editor.selectionStart).toBe(0);
+    expect(editor.selectionEnd).toBe(editor.value.length);
+    expect(fireEvent.keyDown(editor, { key: "a", metaKey: true })).toBe(true);
     await user.click(screen.getByRole("tab", { name: MEMO_WIDGET_COPY.WRITE }));
     await user.keyboard("{ArrowRight}");
     expect(screen.getByRole("tab", { name: MEMO_WIDGET_COPY.PREVIEW })).toHaveFocus();

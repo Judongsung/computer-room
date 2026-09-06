@@ -99,6 +99,7 @@
   min-height: 0;
   flex: none;
   align-items: center;
+  padding-left: 3px;
   color: #fff;
   font-family: var(--luna-font-family-title);
   font-size: var(--luna-font-size-title);

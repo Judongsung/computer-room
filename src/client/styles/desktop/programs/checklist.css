@@ -58,28 +58,31 @@
   background: var(--luna-surface);
 }
 .desktop-checklist-retention { margin-bottom: 12px; }
-.desktop-checklist-retention p { font-size: 12px; line-height: 1.55; }
+.desktop-checklist-retention p { font-size: var(--luna-font-size-small); line-height: 1.55; }
 .desktop-checklist-retention fieldset { min-width: 0; padding: 10px; }
 .desktop-checklist-retention input[type="number"] { width: 90px; }
 .desktop-program-history .checklist-log-group { margin-top: 12px; }
-.desktop-program-history .checklist-log-group h4 { margin: 0 0 5px; font-size: 13px; color: #003399; }
-.desktop-history-table { width: 100%; table-layout: fixed; border-collapse: collapse; background: #fff; }
+.desktop-program-history .checklist-log-group h4 { margin: 0 0 5px; font-size: calc(var(--luna-font-size-ui) - 1px); color: #003399; }
+.desktop-history-table { width: 100%; min-width: 320px; table-layout: fixed; border-collapse: collapse; background: #fff; }
 .desktop-history-table th {
-  padding: 5px 7px;
+  padding: 6px 7px;
+  height: auto;
+  line-height: 1.4;
+  vertical-align: middle;
   border: 1px solid #aca899;
   background: #ece9d8;
   box-shadow: inset 1px 1px #fff;
-  font-size: 12px;
+  font-size: var(--luna-font-size-small);
   font-weight: normal;
   text-align: left;
 }
-.desktop-history-table th:first-child { width: 78px; }
-.desktop-history-table th:last-child { width: 64px; }
-.desktop-history-table td { padding: 6px 7px; border: 1px solid #e1e3e8; overflow-wrap: anywhere; vertical-align: top; }
+.desktop-history-table th:first-child { width: 8.5em; }
+.desktop-history-table th:last-child { width: 7em; }
+.desktop-history-table td { padding: 6px 7px; border: 1px solid #e1e3e8; overflow-wrap: anywhere; vertical-align: middle; line-height: 1.4; }
 .desktop-history-table td:first-child,
-.desktop-history-table td:last-child { font-size: 12px; color: #555; }
+.desktop-history-table td:last-child { font-size: var(--luna-font-size-small); color: #555; white-space: nowrap; overflow-wrap: normal; }
 .desktop-history-footer { display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: 6px; padding: 7px; border-top: 1px solid #aca899; background: var(--luna-surface); }
-.desktop-history-footer > span { flex: 1; font-size: 12px; }
+.desktop-history-footer > span { flex: 1; font-size: var(--luna-font-size-small); }
 
 .desktop-program .checklist-item-label { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .desktop-program .checklist-item-label .xp-checkbox { min-width: 0; flex: 1; }

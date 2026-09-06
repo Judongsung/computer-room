@@ -19,7 +19,7 @@
 
 .storage-status-widget__panel h3 {
   margin: 0 0 6px;
-  font-size: 16px;
+  font-size: calc(var(--luna-font-size-ui) + 2px);
 }
 
 .storage-status-widget__meter {

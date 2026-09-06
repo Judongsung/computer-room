@@ -1,5 +1,17 @@
 /* Desktop-wide form controls; mobile keeps its platform-native picker. */
-html[data-interface-mode="desktop"] fieldset {
+/* Loaded after XP.css so native controls keep the shared typography. */
+:where(html[data-interface-mode="desktop"]) body {
+  font-family: var(--luna-font-family-ui);
+  font-size: var(--luna-font-size-page);
+}
+
+:where(html[data-interface-mode="desktop"]) :is(button, input, label, textarea, option),
+:where(html[data-interface-mode="desktop"]) ul.tree-view {
+  font-family: var(--luna-font-family-ui);
+  font-size: var(--luna-font-size-ui);
+}
+
+.desktop-modal__body fieldset {
   background: var(--luna-surface);
 }
 
@@ -33,15 +45,19 @@ html[data-interface-mode="desktop"] select + p {
   html[data-interface-mode="desktop"] select:not([multiple]):not([size]),
   html[data-interface-mode="desktop"] select:not([multiple]):not([size])::picker(select) {
     appearance: base-select;
-    font: inherit;
+    font-family: var(--luna-font-family-ui);
+    font-size: var(--luna-font-size-ui);
+    line-height: 1.4;
   }
 
   html[data-interface-mode="desktop"] select:not([multiple]):not([size]) {
-    min-height: 23px;
+    width: 16em;
+    min-width: 0;
+    max-width: 100%;
     height: auto;
     border-radius: 0;
     align-items: center;
-    padding-block: 2px;
+    padding: 3px 26px 3px 6px;
   }
 
   html[data-interface-mode="desktop"] select::picker-icon {
@@ -58,12 +74,16 @@ html[data-interface-mode="desktop"] select + p {
     box-shadow: none;
     top: anchor(bottom);
     left: anchor(left);
+    width: anchor-size(width);
     min-width: anchor-size(width);
+    max-width: anchor-size(width);
   }
 
   html[data-interface-mode="desktop"] select option {
-    padding: 4px 7px;
-    min-height: 24px;
+    padding: 3px 6px;
+    min-height: 27px;
+    white-space: normal;
+    overflow-wrap: anywhere;
     font: inherit;
     background: #fff;
     color: #111;
@@ -77,4 +97,27 @@ html[data-interface-mode="desktop"] select + p {
   html[data-interface-mode="desktop"] select option:disabled {
     color: #808080;
   }
+
+  html[data-interface-mode="desktop"] select option:checked:not(:disabled) {
+    background: #d4d0c8;
+    color: #111;
+  }
+
+  html[data-interface-mode="desktop"] select option::checkmark {
+    display: none;
+  }
+}
+
+html[data-interface-mode="desktop"] select {
+  font-family: var(--luna-font-family-ui);
+  font-size: var(--luna-font-size-ui);
+  min-height: 27px;
+  background-image: url("/assets/computer-room/select-arrow.svg");
+  background-repeat: no-repeat;
+  background-position: right 2px center;
+  background-size: 18px 21px;
+}
+
+html[data-interface-mode="desktop"] .checklist-checked-at {
+  font-size: var(--luna-font-size-small);
 }

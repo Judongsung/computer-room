@@ -184,6 +184,10 @@ export function DesktopShell(props: DesktopShellProps) {
         onPointerUp={filesystem.marquee.onPointerUp}
         onPointerCancel={filesystem.marquee.onPointerCancel}
         onKeyDown={(event) => {
+          if (event.defaultPrevented || (
+            event.target !== event.currentTarget &&
+            !(event.target instanceof Element && event.target.closest(".desktop-shortcuts"))
+          )) return;
           if ((event.ctrlKey || event.metaKey) && event.key.toLocaleLowerCase() === KEYBOARD_KEY.A) {
             event.preventDefault();
             setSelectedSystemShortcutId(null);

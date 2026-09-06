@@ -12,19 +12,19 @@
 }
 
 .markdown-content h1 {
-  font-size: 23px;
+  font-size: calc(var(--luna-font-size-ui) + 9px);
 }
 
 .markdown-content h2 {
-  font-size: 20px;
+  font-size: calc(var(--luna-font-size-ui) + 6px);
 }
 
 .markdown-content h3 {
-  font-size: 18px;
+  font-size: calc(var(--luna-font-size-ui) + 4px);
 }
 
 .markdown-content h4 {
-  font-size: 16px;
+  font-size: calc(var(--luna-font-size-ui) + 2px);
 }
 
 .markdown-content img {
@@ -34,7 +34,7 @@
 .markdown-content pre {
   overflow: auto;
   padding: 9px;
-  font-size: 15px;
+  font-size: calc(var(--luna-font-size-ui) + 1px);
 }
 
 .markdown-content table {

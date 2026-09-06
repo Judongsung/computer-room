@@ -16,7 +16,7 @@
   border-top: 1px solid #aca899;
   background: var(--luna-surface);
   color: #333;
-  font-size: 12px;
+  font-size: var(--luna-font-size-small);
 }
 
 .desktop-program-status > span {
@@ -69,7 +69,7 @@
   background: #fff;
   color: #111;
   font-family: Consolas, "Courier New", monospace;
-  font-size: 14px;
+  font-size: var(--luna-font-size-ui);
   line-height: 1.6;
   box-shadow: none;
 }

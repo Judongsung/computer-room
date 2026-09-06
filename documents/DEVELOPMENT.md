@@ -25,6 +25,9 @@ src/
 분리합니다. API, 상태, 훅, 도메인, 상수와 타입은 기능별 공용 모듈을 우선
 사용합니다. 두 화면의 CSS·JavaScript는 별도 청크로 지연 로딩됩니다.
 
+데스크톱 글자 크기는 `shared/base.css`의 PC 전용 Luna 변수로 관리합니다.
+기본 UI는 15px, 본문은 16px, 제목은 17px, 보조 문구는 13px이며 모바일과 분리합니다.
+
 데스크톱 폼의 배경, 대화상자 버튼 간격과 드롭다운 스타일은
 `src/client/styles/desktop/forms.css`에서 공통 관리합니다. `appearance: base-select`를
 지원하는 브라우저에는 파란 메뉴 강조색과 선택 상자에 붙는 메뉴를 적용하며,

@@ -67,7 +67,7 @@
   min-width: 0;
   overflow: hidden;
   font-family: var(--luna-font-family-title);
-  font-size: 17px;
+  font-size: calc(var(--luna-font-size-ui) + 3px);
   text-overflow: ellipsis;
 }
 
@@ -170,7 +170,7 @@
 .start-menu__system-item small {
   margin-top: 2px;
   color: #35548c;
-  font-size: 11px;
+  font-size: var(--luna-font-size-small);
   line-height: 1.25;
   word-break: keep-all;
 }

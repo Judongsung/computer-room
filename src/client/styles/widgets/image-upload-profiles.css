@@ -225,8 +225,16 @@
 
 .image-upload-logs__filters label {
   display: flex;
+  min-width: 0;
+  max-width: 100%;
   align-items: center;
+  flex-wrap: wrap;
   gap: 5px;
+}
+
+.image-upload-logs__filters label > span {
+  flex: none;
+  white-space: nowrap;
 }
 
 .image-upload-logs__notice {
