@@ -1,6 +1,7 @@
 import type { ChecklistEventAction } from "@/types/widgets/widget";
 
 export interface ChecklistItemRecord {
+  readonly checkedAt?: number | null;
   readonly id: string;
   readonly widgetId: string;
   readonly label: string;

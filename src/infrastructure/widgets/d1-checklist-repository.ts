@@ -1,3 +1,6 @@
+import { KOREA_UTC_OFFSET_MILLISECONDS } from "@/constants/platform/date";
+import { D1ChecklistRepeat } from "@/infrastructure/widgets/d1-checklist-repeat";
+import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
 import {
   CHECKLIST_EVENT_ACTION,
   CHECKLIST_EVENT_ACTION_VALUES,
@@ -21,6 +24,11 @@ import type {
 
 export class D1ChecklistRepository implements ChecklistRepository {
   constructor(private readonly database: D1Database) {}
+
+  listRepeatSettings() { return new D1ChecklistRepeat(this.database).list(); }
+  changeRepeatCycle(widgetId: string, cycle: ChecklistRepeatCycle, now: number) {
+    return new D1ChecklistRepeat(this.database).change(widgetId, cycle, now);
+  }
 
   async listAllActiveItems(
     businessDate: string,
@@ -80,15 +88,17 @@ export class D1ChecklistRepository implements ChecklistRepository {
     const row = await this.database
       .prepare(
         `SELECT item.id, item.widget_id, item.label, item.sort_order,
-           COALESCE(state.checked, 0) AS checked
+           COALESCE(state.checked, 0) AS checked, state.checked_at
          FROM checklist_items AS item
-         LEFT JOIN checklist_daily_states AS state
-           ON state.item_id = item.id AND state.business_date = ?3
+         LEFT JOIN checklist_repeat_settings AS repeat ON repeat.widget_id = item.widget_id
+         LEFT JOIN checklist_period_states AS state
+           ON state.item_id = item.id AND state.settings_version = COALESCE(repeat.version, 0)
+           AND state.period_start <= ?3 AND state.period_end > unixepoch(?3) * 1000 - ${KOREA_UTC_OFFSET_MILLISECONDS}
          WHERE item.widget_id = ?1 AND item.id = ?2
            AND item.archived_at IS NULL`,
       )
       .bind(widgetId, itemId, businessDate)
-      .first<ChecklistItemRow>();
+      .first<ChecklistItemRow & { checked_at: number | null }>();
 
     return row ? mapChecklistItemRow(row) : null;
   }
@@ -139,63 +149,7 @@ export class D1ChecklistRepository implements ChecklistRepository {
   }
 
   async setChecked(record: SetChecklistStateRecord): Promise<boolean> {
-    const checkedValue = record.checked ? 1 : 0;
-    const action = record.checked
-      ? CHECKLIST_EVENT_ACTION.CHECKED
-      : CHECKLIST_EVENT_ACTION.UNCHECKED;
-    const itemExists = `EXISTS (
-      SELECT 1 FROM checklist_items
-      WHERE id = ?3 AND widget_id = ?2 AND archived_at IS NULL
-    )`;
-    const stateChanged = `COALESCE((
-      SELECT checked FROM checklist_daily_states
-      WHERE item_id = ?3 AND business_date = ?6
-    ), 0) <> ?5`;
-
-    const results = await this.database.batch([
-      this.database
-        .prepare(
-          `INSERT INTO checklist_events (
-             id, widget_id, item_id, item_label, previous_item_label,
-             action, business_date, occurred_at
-           )
-           SELECT ?1, ?2, ?3, ?4, NULL, ?7, ?6, ?8
-           WHERE ${itemExists} AND ${stateChanged}`,
-        )
-        .bind(
-          record.eventId,
-          record.widgetId,
-          record.itemId,
-          record.itemLabel,
-          checkedValue,
-          record.businessDate,
-          action,
-          record.occurredAt,
-        ),
-      this.database
-        .prepare(
-          `INSERT INTO checklist_daily_states (
-             item_id, business_date, checked, updated_at
-           )
-           SELECT ?3, ?6, ?5, ?8
-           WHERE ${itemExists} AND ${stateChanged}
-           ON CONFLICT(item_id, business_date) DO UPDATE SET
-             checked = excluded.checked,
-             updated_at = excluded.updated_at`,
-        )
-        .bind(
-          record.eventId,
-          record.widgetId,
-          record.itemId,
-          record.itemLabel,
-          checkedValue,
-          record.businessDate,
-          action,
-          record.occurredAt,
-        ),
-    ]);
-
-    return (results[0]?.meta.changes ?? 0) > 0;
+    return new D1ChecklistRepeat(this.database).setChecked(record);
   }
 
   async listEvents(
@@ -234,29 +188,32 @@ export class D1ChecklistRepository implements ChecklistRepository {
     const widgetFilter = widgetId === undefined ? "" : "AND item.widget_id = ?2";
     const statement = this.database.prepare(
       `SELECT item.id, item.widget_id, item.label, item.sort_order,
-         COALESCE(state.checked, 0) AS checked
+         COALESCE(state.checked, 0) AS checked, state.checked_at
        FROM checklist_items AS item
-       LEFT JOIN checklist_daily_states AS state
-         ON state.item_id = item.id AND state.business_date = ?1
+       LEFT JOIN checklist_repeat_settings AS repeat ON repeat.widget_id = item.widget_id
+         LEFT JOIN checklist_period_states AS state
+         ON state.item_id = item.id AND state.settings_version = COALESCE(repeat.version, 0)
+         AND state.period_start <= ?1 AND state.period_end > unixepoch(?1) * 1000 - ${KOREA_UTC_OFFSET_MILLISECONDS}
        WHERE item.archived_at IS NULL ${widgetFilter}
        ORDER BY item.widget_id ASC, item.sort_order ASC, item.id ASC`,
     );
     const result = await (widgetId === undefined
       ? statement.bind(businessDate)
       : statement.bind(businessDate, widgetId)
-    ).all<ChecklistItemRow>();
+    ).all<ChecklistItemRow & { checked_at: number | null }>();
 
     return result.results.map(mapChecklistItemRow);
   }
 }
 
-function mapChecklistItemRow(row: ChecklistItemRow): ChecklistItemRecord {
+function mapChecklistItemRow(row: ChecklistItemRow & { checked_at?: number | null }): ChecklistItemRecord {
   return {
     id: row.id,
     widgetId: row.widget_id,
     label: row.label,
     sortOrder: row.sort_order,
     checked: row.checked === 1,
+    checkedAt: row.checked_at ?? null,
   };
 }
 

@@ -50,6 +50,12 @@ it("preserves records and constraints while improving index plans and applying o
   expect(await snapshot()).toEqual(before);
   expect((await db.prepare("PRAGMA foreign_key_check").all()).results).toEqual([]);
 
+  expect((await db.prepare("SELECT period_start, checked_at FROM checklist_period_states WHERE item_id = 'retention-item' ORDER BY period_start").all()).results).toEqual([
+    { period_start: "2026-09-03", checked_at: cutoff - 1 },
+    { period_start: "2026-09-04", checked_at: cutoff },
+    { period_start: "2026-09-05", checked_at: cutoff + 86_400_000 },
+  ]);
+
   const plan = async (sql: string, bindings: (string | number)[] = []) =>
     (await db.prepare(`EXPLAIN QUERY PLAN ${sql}`).bind(...bindings)
       .all<{ detail: string }>()).results.map((row) => row.detail).join("\n");
@@ -76,7 +82,7 @@ it("preserves records and constraints while improving index plans and applying o
   expect(await job.run(now)).toBe(0);
   expect(await snapshot()).toEqual(before);
   await repository.saveRetentionDays(1);
-  expect(await job.run(now)).toBe(2);
+  expect(await job.run(now)).toBe(3);
   expect((await db.prepare("SELECT id FROM checklist_events ORDER BY occurred_at").all()).results)
     .toEqual([{ id: "boundary" }, { id: "today" }]);
   expect((await db.prepare("SELECT business_date FROM checklist_daily_states ORDER BY business_date").all()).results)

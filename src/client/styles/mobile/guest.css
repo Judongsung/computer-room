@@ -32,3 +32,6 @@
   gap: 8px;
   border-bottom: 1px solid var(--android-line);
 }
+
+.guest-mobile-program .read-only-program__checklist-item { flex-wrap: wrap; }
+.guest-mobile-program .checklist-checked-at { flex-basis: 100%; color: var(--android-muted); }

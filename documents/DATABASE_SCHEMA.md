@@ -241,7 +241,7 @@ integration_image_upload_log_settings
 
 ## `checklist_daily_states`
 
-각 체크리스트 항목의 한국 날짜별 체크 여부를 저장한다.
+기존 한국 날짜별 체크 이력이다. 0016에서 기간별 상태로 복사했으며 새 쓰기는 하지 않는다.
 
 | 컬럼 | 타입 | Nullable | 기본값 | 키·제약조건 | 설명 |
 |---|---|---:|---|---|---|
@@ -438,3 +438,21 @@ Cloudflare Access audience 값은 이 테이블에 저장하지 않는다.
 최종 스키마는 [`migrations`](../migrations)의 변경 불가능한 SQL 파일을 기준으로 한다.
 스키마를 변경할 때는 이미 적용된 마이그레이션을 수정하지 않고 새 마이그레이션을
 추가한 뒤 이 문서를 함께 갱신한다.
+
+## `checklist_repeat_settings`
+
+문서별 반복 설정. `widget_id`는 dashboard_widgets를 참조하는 기본 키이며 삭제 시 연쇄 삭제한다.
+`repeat_cycle`은 daily·weekly·monthly(기본 daily), `version`은 0 이상의 설정 버전이다.
+행이 없으면 daily·버전 0으로 읽으며 조회 시 행을 생성하지 않는다.
+주기가 달라질 때만 버전을 증가시키고 현재 유효 상태를 새 기간으로 원자적으로 복사한다.
+
+## `checklist_period_states`
+
+`item_id`(항목 FK), `settings_version`, `period_start`(한국 날짜)의 복합 기본 키를 사용한다.
+`period_end`는 종료 경계의 Unix 밀리초, `checked`는 0 또는 1,
+`checked_at`은 체크 시각의 Unix 밀리초이며 미체크일 때 null이다.
+현재 설정 버전이며 현재 기간에 속한 행만 읽는다. 행이 없으면 미체크로 해석한다.
+0016에서 기존 일간 상태와 체크된 행의 updated_at을 복사하며 원본·이벤트 이력은 보존한다.
+`idx_checklist_period_states_end`는 보관 정리를 지원한다. 기존 보관 작업에서
+종료 시각이 보관 경계 이하인 기간 상태만 삭제하여 진행 중인 월간 상태를 보호한다.
+초기화를 위한 Cron이나 조회 시 DB 쓰기는 없다.

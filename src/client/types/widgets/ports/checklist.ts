@@ -1,3 +1,4 @@
+import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
 import type {
   ChecklistItem,
   ChecklistLogPage,
@@ -5,6 +6,7 @@ import type {
 } from "@/types/widgets/widget";
 
 export interface ChecklistGateway {
+  changeChecklistRepeatCycle(widgetId: string, repeatCycle: ChecklistRepeatCycle): Promise<DailyChecklistData>;
   getChecklist(widgetId: string): Promise<DailyChecklistData>;
   addChecklistItem(widgetId: string, label: string): Promise<ChecklistItem>;
   updateChecklistItem(

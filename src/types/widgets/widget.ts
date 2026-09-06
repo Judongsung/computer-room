@@ -1,3 +1,4 @@
+import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
 import type {
   WIDGET_TYPE,
   WINDOW_RESTORE_STATE,
@@ -65,12 +66,14 @@ export interface MemoData {
 }
 
 export interface ChecklistItem {
+  readonly checkedAt?: string | null;
   readonly id: string;
   readonly label: string;
   readonly checked: boolean;
 }
 
 export interface DailyChecklistData {
+  readonly repeatCycle?: ChecklistRepeatCycle;
   readonly businessDate: string;
   readonly nextResetAt: string;
   readonly items: readonly ChecklistItem[];

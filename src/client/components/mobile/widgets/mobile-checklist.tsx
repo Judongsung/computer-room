@@ -1,3 +1,6 @@
+import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
+import { CHECKLIST_REPEAT_COPY } from "@client/content/ko/widgets/checklist-repeat";
+import { formatKoreaDateTime } from "@client/utils/format-date-time";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useState } from "react";
 import { MAX_ACTIVE_CHECKLIST_ITEMS } from "@/constants/widgets/checklist";
@@ -7,6 +10,7 @@ import { CHECKLIST_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { messageFromError } from "@client/errors/error-message";
 
 interface MobileChecklistProps {
+  readonly repeatCycle?: ChecklistRepeatCycle;
   readonly items: readonly ChecklistItem[];
   readonly onAdd: (label: string) => Promise<void>;
   readonly onRename: (item: ChecklistItem, label: string) => Promise<void>;
@@ -18,6 +22,7 @@ interface MobileChecklistProps {
 
 export function MobileChecklist({
   items,
+  repeatCycle = "daily",
   onAdd,
   onRename,
   onDelete,
@@ -47,6 +52,7 @@ export function MobileChecklist({
 
   return (
     <div className={MOBILE_CLASS_NAME.WIDGET}>
+      <p>{CHECKLIST_REPEAT_COPY.LABELS[repeatCycle]}</p>
       <div className={MOBILE_CLASS_NAME.TOOLBAR}>
         {onShowLogs ? <button type="button" onClick={onShowLogs}>{MOBILE_COPY.HISTORY}</button> : null}
         <button
@@ -106,6 +112,7 @@ export function MobileChecklist({
                     />
                     {item.checked ? <del>{item.label}</del> : <span>{item.label}</span>}
                   </label>
+                  {item.checked && item.checkedAt ? <time className="checklist-checked-at" dateTime={item.checkedAt}>{formatKoreaDateTime(item.checkedAt)}</time> : null}
                   {editing ? (
                     <div className={MOBILE_CLASS_NAME.BUTTON_ROW}>
                       <button

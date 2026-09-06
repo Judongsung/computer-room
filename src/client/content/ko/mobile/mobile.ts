@@ -33,7 +33,7 @@ export const MOBILE_COPY = {
   DELETED_AT: "삭제한 날짜",
   WIDGET_CATALOG_DESCRIPTION: "사용할 기능을 선택하세요.",
   CREATE_MEMO: "새 메모",
-  CREATE_CHECKLIST: "새 일일 체크리스트",
+  CREATE_CHECKLIST: "새 체크리스트",
   OPEN_STORAGE_STATUS: "저장소 상태",
   DRAFT_EXISTS_TITLE: "작성 중인 프로그램",
   DRAFT_EXISTS_MESSAGE:

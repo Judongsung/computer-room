@@ -1,3 +1,4 @@
+import { CHECKLIST_REPEAT_CYCLES, DEFAULT_CHECKLIST_REPEAT_CYCLE } from "@/constants/widgets/checklist-repeat";
 import { sql } from "drizzle-orm";
 import {
   type AnySQLiteColumn,
@@ -538,3 +539,26 @@ export const checklistSettings = sqliteTable(
     ),
   ],
 );
+
+export const checklistRepeatSettings = sqliteTable("checklist_repeat_settings", {
+  widgetId: text("widget_id").primaryKey().notNull().references(() => dashboardWidgets.id, { onDelete: "cascade" }),
+  repeatCycle: text("repeat_cycle", { enum: CHECKLIST_REPEAT_CYCLES }).notNull().default(DEFAULT_CHECKLIST_REPEAT_CYCLE),
+  version: integer("version").notNull().default(0),
+}, (table) => [
+  check("checklist_repeat_cycle_check", sql`${table.repeatCycle} IN ('daily','weekly','monthly')`),
+  check("checklist_repeat_version_check", sql`${table.version} >= 0`),
+]);
+
+export const checklistPeriodStates = sqliteTable("checklist_period_states", {
+  itemId: text("item_id").notNull().references(() => checklistItems.id, { onDelete: "cascade" }),
+  settingsVersion: integer("settings_version").notNull(),
+  periodStart: text("period_start").notNull(),
+  periodEnd: integer("period_end").notNull(),
+  checked: integer("checked", { mode: "boolean" }).notNull(),
+  checkedAt: integer("checked_at"),
+}, (table) => [
+  primaryKey({ columns: [table.itemId, table.settingsVersion, table.periodStart] }),
+  index("idx_checklist_period_states_end").on(table.periodEnd),
+  check("checklist_period_checked_check", sql`${table.checked} IN (0,1)`),
+  check("checklist_period_time_check", sql`(${table.checked} = 0 AND ${table.checkedAt} IS NULL) OR (${table.checked} = 1 AND ${table.checkedAt} IS NOT NULL)`),
+]);

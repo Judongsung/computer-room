@@ -1,3 +1,4 @@
+import { checklistPeriod } from "@/domain/widgets/checklist-period";
 import { EMPTY_MEMO_MARKDOWN } from "@/constants/widgets/memo";
 import { WIDGET_ERRORS } from "@/constants/widgets/errors/widget";
 import {
@@ -218,13 +219,14 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
   private async hydrate(
     layouts: readonly StoredWidgetLayout[],
   ): Promise<DashboardWidget[]> {
-    const { businessDate, nextResetAt } = getKoreaDateContext(this.clock.now());
+    const { businessDate } = getKoreaDateContext(this.clock.now());
     const widgetTypes = new Set(layouts.map((layout) => layout.type));
-    const [memos, checklistItems] = await Promise.all([
+    const [memos, checklistItems, repeatSettings] = await Promise.all([
       widgetTypes.has(WIDGET_TYPE.MEMO) ? this.memos.listAll() : [],
       widgetTypes.has(WIDGET_TYPE.DAILY_CHECKLIST)
         ? this.checklists.listAllActiveItems(businessDate)
         : [],
+      this.checklists.listRepeatSettings(),
     ]);
     const memoByWidgetId = new Map(
       memos.map((memo) => [memo.widgetId, memo] as const),
@@ -263,7 +265,8 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
         file: layout.file,
         data: {
           businessDate,
-          nextResetAt: new Date(nextResetAt).toISOString(),
+          repeatCycle: repeatSettings.find((row) => row.widgetId === layout.id)?.repeatCycle ?? "daily",
+          nextResetAt: new Date(checklistPeriod(this.clock.now(), repeatSettings.find((row) => row.widgetId === layout.id)?.repeatCycle ?? "daily").end).toISOString(),
           items: (checklistItemsByWidgetId.get(layout.id) ?? []).map(
             toChecklistItem,
           ),
@@ -342,6 +345,7 @@ function toChecklistItem(item: {
   readonly id: string;
   readonly label: string;
   readonly checked: boolean;
+  readonly checkedAt?: number | null;
 }) {
-  return { id: item.id, label: item.label, checked: item.checked };
+  return { id: item.id, label: item.label, checked: item.checked, checkedAt: item.checkedAt == null ? null : new Date(item.checkedAt).toISOString() };
 }

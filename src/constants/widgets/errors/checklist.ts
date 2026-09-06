@@ -7,6 +7,8 @@ import { CHECKLIST_LOG_PAGE_LIMIT } from "@/constants/filesystem/pagination";
 import { HTTP_STATUS } from "@/constants/platform/http";
 
 export const CHECKLIST_ERRORS = {
+  INVALID_REPEAT_CYCLE: { status: HTTP_STATUS.BAD_REQUEST, code: "INVALID_CHECKLIST_REPEAT_CYCLE", message: "반복 주기가 올바르지 않습니다." },
+  CONCURRENT_CHANGE: { status: HTTP_STATUS.CONFLICT, code: "CHECKLIST_CONCURRENT_CHANGE", message: "체크리스트가 변경되었습니다. 다시 시도해 주세요." },
   INVALID_LOG_LIMIT: {
     status: HTTP_STATUS.BAD_REQUEST,
     code: "INVALID_CHECKLIST_LOG_LIMIT",

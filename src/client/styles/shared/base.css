@@ -113,3 +113,5 @@ small {
   height: 100%;
   place-items: center;
 }
+
+.checklist-checked-at { display: inline-block; margin-left: 8px; color: #666; font-size: 11px; white-space: nowrap; }

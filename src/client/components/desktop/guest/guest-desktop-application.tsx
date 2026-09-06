@@ -272,12 +272,12 @@ function GuestDesktopContent({ session, gateway }: GuestApplicationProps) {
         <NotepadWindowLayer controller={notepad} gateway={gateway} desktop={desktop} manager={windowManager} />
       </main>
       {downloadConfirmation.file ? <DesktopDownloadConfirmation file={downloadConfirmation.file} onConfirm={downloadConfirmation.confirm} onCancel={downloadConfirmation.cancel} /> : null}
-      {error ?? entries.error ? (
+      {error ?? programs.error ?? entries.error ? (
         <DesktopNotification
           title={GUEST_COPY.PUBLIC_SPACE}
-          message={error ?? entries.error ?? GUEST_COPY.LOAD_FAILED}
+          message={error ?? programs.error ?? entries.error ?? GUEST_COPY.LOAD_FAILED}
           actionLabel={GUEST_COPY.CLOSE}
-          onAction={() => setError(null)}
+          onAction={() => { setError(null); programs.clearError(); }}
         />
       ) : overflowCount > 0 && dismissedOverflowCount !== overflowCount ? (
         <DesktopNotification

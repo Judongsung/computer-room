@@ -94,7 +94,7 @@ describe("widget file API", () => {
       .bind(document.widget.id)
       .first<{ count: number }>();
     const stateCount = await env.DB
-      .prepare("SELECT COUNT(*) AS count FROM checklist_daily_states")
+      .prepare("SELECT COUNT(*) AS count FROM checklist_period_states")
       .first<{ count: number }>();
     expect(eventCount?.count).toBe(0);
     expect(stateCount?.count).toBe(1);

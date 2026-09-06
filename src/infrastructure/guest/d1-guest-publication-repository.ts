@@ -1,3 +1,4 @@
+import { D1ChecklistRepository } from "@/infrastructure/widgets/d1-checklist-repository";
 import { GUEST_ACCESS_SETTINGS_SINGLETON_ID } from "@/constants/admin/guest-access";
 import { FILE_STATUS } from "@/constants/filesystem/file";
 import {
@@ -15,7 +16,6 @@ import type {
 } from "@/types/filesystem/filesystem";
 import type { GuestPublicationRepository } from "@/types/guest/guest-repository";
 import type {
-  ChecklistItemRow,
   FilesystemEntryRow,
   MemoRow,
 } from "@/types/platform/database";
@@ -200,24 +200,9 @@ export class D1GuestPublicationRepository
     widgetId: string,
     businessDate: string,
   ): Promise<ChecklistItemRecord[]> {
-    const result = await this.database
-      .prepare(
-        `SELECT item.id, item.widget_id, item.label, item.sort_order,
-           COALESCE(state.checked, 0) AS checked
-         FROM checklist_items item
-         LEFT JOIN checklist_daily_states state
-           ON state.item_id = item.id AND state.business_date = ?2
-         WHERE item.widget_id = ?1 AND item.archived_at IS NULL
-         ORDER BY item.sort_order ASC, item.id ASC`,
-      )
-      .bind(widgetId, businessDate)
-      .all<ChecklistItemRow>();
-    return result.results.map((row) => ({
-      id: row.id,
-      widgetId: row.widget_id,
-      label: row.label,
-      sortOrder: row.sort_order,
-      checked: row.checked === 1,
-    }));
+    return new D1ChecklistRepository(this.database).listActiveItems(widgetId, businessDate);
+  }
+  async checklistRepeatCycle(widgetId: string) {
+    return (await new D1ChecklistRepository(this.database).listRepeatSettings()).find((row) => row.widgetId === widgetId)?.repeatCycle ?? "daily";
   }
 }

@@ -80,3 +80,7 @@
   justify-content: space-between;
   gap: 10px;
 }
+
+.android-mobile .checklist-checked-at { color: var(--android-muted); margin-left: 31px; }
+.android-widget__checklist input[type="checkbox"] { flex: none; }
+.android-widget__checklist label > span, .android-widget__checklist label > del { min-width: 0; overflow-wrap: anywhere; }

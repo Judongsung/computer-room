@@ -1,3 +1,4 @@
+import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
 import type {
   FilesystemBreadcrumb,
   FilesystemDirectorySort,
@@ -17,6 +18,7 @@ export interface GuestPublicationRepository {
     sort: FilesystemDirectorySort,
   ): Promise<FilesystemEntryRecord[]>;
   listBreadcrumbs(directoryId: string): Promise<FilesystemBreadcrumb[]>;
+  checklistRepeatCycle(widgetId: string): Promise<ChecklistRepeatCycle>;
   findMemo(widgetId: string): Promise<MemoRecord | null>;
   listChecklistItems(
     widgetId: string,

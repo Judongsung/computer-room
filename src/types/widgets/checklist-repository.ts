@@ -1,3 +1,5 @@
+import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
+import type { ChecklistRepeatSettings } from "@/types/widgets/checklist/repeat";
 import type {
   ArchiveChecklistItemRecord,
   ChecklistEventRecord,
@@ -8,6 +10,8 @@ import type {
 } from "@/types/widgets/checklist";
 
 export interface ChecklistRepository {
+  listRepeatSettings(): Promise<ChecklistRepeatSettings[]>;
+  changeRepeatCycle(widgetId: string, cycle: ChecklistRepeatCycle, now: number): Promise<void>;
   listAllActiveItems(businessDate: string): Promise<ChecklistItemRecord[]>;
   listActiveItems(
     widgetId: string,

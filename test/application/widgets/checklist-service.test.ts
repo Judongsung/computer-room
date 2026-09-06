@@ -56,13 +56,13 @@ describe("ChecklistService", () => {
     );
 
     const item = await service.addItem(WIDGET_ID, { label: "  물 마시기  " });
-    expect(item).toEqual({ id: ITEM_ID, label: "물 마시기", checked: false });
+    expect(item).toEqual({ id: ITEM_ID, label: "물 마시기", checked: false, checkedAt: null });
 
     await service.setItemChecked(WIDGET_ID, ITEM_ID, { checked: true });
     await service.setItemChecked(WIDGET_ID, ITEM_ID, { checked: true });
     await expect(service.getChecklist(WIDGET_ID)).resolves.toMatchObject({
       businessDate: "2026-08-20",
-      items: [{ ...item, checked: true }],
+      items: [{ ...item, checked: true, checkedAt: "2026-08-20T14:59:59.000Z" }],
     });
     expect(repository.events).toHaveLength(2);
 

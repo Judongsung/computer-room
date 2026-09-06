@@ -1,3 +1,4 @@
+import { formatKoreaDateTime } from "@client/utils/format-date-time";
 import { XpCheckbox } from "@client/components/shared/xp-checkbox";
 import type { ChecklistItem, DailyChecklistData } from "@/types/widgets/widget";
 import {
@@ -115,6 +116,7 @@ function ChecklistItemRow({ item, controller }: ChecklistItemRowProps) {
           disabled={controller.isMutating}
           onCheckedChange={(checked) => void controller.toggleItem(item, checked)}
           label={item.checked ? <del>{item.label}</del> : <span>{item.label}</span>} />
+        {item.checked && item.checkedAt ? <time className="checklist-checked-at" dateTime={item.checkedAt}>{formatKoreaDateTime(item.checkedAt)}</time> : null}
       </div>
       {controller.isEditingItems ? (
         <div className={CHECKLIST_CLASS_NAME.ITEM_ACTIONS}>

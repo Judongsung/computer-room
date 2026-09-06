@@ -99,3 +99,5 @@
   color: #003399;
   font-weight: bold;
 }
+
+.desktop-program .xp-window-frame__toolbar { flex-wrap: wrap; height: auto; overflow: visible; }

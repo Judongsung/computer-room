@@ -9,6 +9,7 @@ import type {
 } from "@/types/widgets/widget";
 
 export interface ChecklistUseCases {
+  changeRepeatCycle(widgetId: string, value: unknown): Promise<DailyChecklistData>;
   getChecklist(widgetId: string): Promise<DailyChecklistData>;
   addItem(
     widgetId: string,

@@ -1,3 +1,4 @@
+import { checklistPeriod } from "@/domain/widgets/checklist-period";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type {
@@ -117,14 +118,14 @@ const WIDGET_FILE_STATEMENT_BUILDERS = {
         .bind(widgetId, createdAt, items),
       database
         .prepare(
-          `INSERT INTO checklist_daily_states (
-             item_id, business_date, checked, updated_at
+          `INSERT INTO checklist_period_states (
+             item_id, settings_version, period_start, period_end, checked, checked_at
            )
-           SELECT json_extract(value, '$.id'), ?1, 1, ?2
+           SELECT json_extract(value, '$.id'), 0, ?1, ?4, 1, ?2
            FROM json_each(?3)
            WHERE json_extract(value, '$.checked') = 1`,
         )
-        .bind(content.businessDate, createdAt, items),
+        .bind(content.businessDate, createdAt, items, checklistPeriod(createdAt, "daily").end),
     ];
   },
 } satisfies WidgetFileStatementBuilderMap;

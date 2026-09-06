@@ -1,3 +1,4 @@
+import { isChecklistRepeatCycle } from "@/domain/widgets/checklist-period";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import { toWidgetLayout } from "@/domain/widgets/widget-layout";
 import type {
@@ -86,6 +87,7 @@ export function isDailyChecklistData(
     isRecord(value) &&
     typeof value.businessDate === "string" &&
     typeof value.nextResetAt === "string" &&
+    (value.repeatCycle === undefined || isChecklistRepeatCycle(value.repeatCycle)) &&
     Array.isArray(value.items) &&
     value.items.every(isChecklistItem)
   );
@@ -96,7 +98,8 @@ export function isChecklistItem(value: unknown): value is ChecklistItem {
     isRecord(value) &&
     typeof value.id === "string" &&
     typeof value.label === "string" &&
-    typeof value.checked === "boolean"
+    typeof value.checked === "boolean" &&
+    (value.checkedAt === undefined || value.checkedAt === null || (typeof value.checkedAt === "string" && Number.isFinite(Date.parse(value.checkedAt))))
   );
 }
 

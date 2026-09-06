@@ -1,3 +1,7 @@
+import { KOREA_UTC_OFFSET_MILLISECONDS } from "@/constants/platform/date";
+import { checklistPeriod } from "@/domain/widgets/checklist-period";
+import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
+import type { ChecklistRepeatSettings } from "@/types/widgets/checklist/repeat";
 import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
 import type { ChecklistRepository } from "@/types/widgets/checklist-repository";
 import type { ArchiveChecklistItemRecord, ChecklistEventRecord, ChecklistItemRecord, CreateChecklistItemRecord, SetChecklistStateRecord, UpdateChecklistItemRecord } from "@/types/widgets/checklist";
@@ -5,6 +9,25 @@ import type { ArchiveChecklistItemRecord, ChecklistEventRecord, ChecklistItemRec
 export class MemoryChecklistRepository implements ChecklistRepository {
   readonly items: ChecklistItemRecord[] = [];
   readonly events: ChecklistEventRecord[] = [];
+  readonly repeatSettings: ChecklistRepeatSettings[] = [];
+  readonly times = new Map<string, number | null>();
+  async listRepeatSettings() { return this.repeatSettings; }
+  async changeRepeatCycle(widgetId: string, cycle: ChecklistRepeatCycle, now: number) {
+    const old = this.repeatSettings.find(r => r.widgetId === widgetId) ?? {widgetId, repeatCycle: "daily" as const, version: 0};
+    if (old.repeatCycle === cycle) return;
+    const date = new Date(now + KOREA_UTC_OFFSET_MILLISECONDS).toISOString().slice(0,10);
+    const items = await this.listActiveItems(widgetId, date);
+    const next = {widgetId, repeatCycle: cycle, version: old.version + 1};
+    const index = this.repeatSettings.findIndex(r => r.widgetId === widgetId);
+    if (index < 0) this.repeatSettings.push(next); else this.repeatSettings[index] = next;
+    for (const item of items) { const key = this.key(item.id, date); this.states.set(key, item.checked); this.times.set(key, item.checkedAt ?? null); }
+  }
+  private key(itemId: string, date: string) {
+    const item = this.items.find(i => i.id === itemId);
+    const setting = this.repeatSettings.find(r => r.widgetId === item?.widgetId);
+    const start = checklistPeriod(Date.parse(date + "T00:00:00+09:00"), setting?.repeatCycle ?? "daily").start;
+    return setting ? `${itemId}:${setting.version}:${start}` : stateKey(itemId, start);
+  }
   readonly states = new Map<string, boolean>();
 
   async listAllActiveItems(
@@ -60,7 +83,8 @@ export class MemoryChecklistRepository implements ChecklistRepository {
     return item
       ? {
           ...item,
-          checked: this.states.get(stateKey(item.id, businessDate)) ?? false,
+          checked: this.states.get(this.key(item.id, businessDate)) ?? false,
+          checkedAt: this.times.get(this.key(item.id, businessDate)) ?? null,
         }
       : null;
   }
@@ -107,12 +131,13 @@ export class MemoryChecklistRepository implements ChecklistRepository {
   }
 
   async setChecked(record: SetChecklistStateRecord): Promise<boolean> {
-    const key = stateKey(record.itemId, record.businessDate);
+    const key = this.key(record.itemId, record.businessDate);
     const previous = this.states.get(key) ?? false;
     if (previous === record.checked) {
       return false;
     }
     this.states.set(key, record.checked);
+    this.times.set(key, record.checked ? record.occurredAt : null);
     this.events.push({
       id: record.eventId,
       widgetId: record.widgetId,
@@ -151,7 +176,8 @@ export class MemoryChecklistRepository implements ChecklistRepository {
     return items
       .map((item) => ({
         ...item,
-        checked: this.states.get(stateKey(item.id, businessDate)) ?? false,
+        checked: this.states.get(this.key(item.id, businessDate)) ?? false,
+          checkedAt: this.times.get(this.key(item.id, businessDate)) ?? null,
       }))
       .sort(
         (left, right) =>

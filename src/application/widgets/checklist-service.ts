@@ -1,3 +1,4 @@
+import { checklistPeriod, isChecklistRepeatCycle } from "@/domain/widgets/checklist-period";
 import {
   MAX_ACTIVE_CHECKLIST_ITEMS,
 } from "@/constants/widgets/checklist";
@@ -38,11 +39,20 @@ export class ChecklistService implements ChecklistUseCases {
       context.businessDate,
     );
 
+    const repeatCycle = (await this.checklists.listRepeatSettings()).find((row) => row.widgetId === widgetId)?.repeatCycle ?? "daily";
     return {
+      repeatCycle,
       businessDate: context.businessDate,
-      nextResetAt: new Date(context.nextResetAt).toISOString(),
+      nextResetAt: new Date(checklistPeriod(this.clock.now(), repeatCycle).end).toISOString(),
       items: items.map(toChecklistItem),
     };
+  }
+
+  async changeRepeatCycle(widgetId: string, value: unknown): Promise<DailyChecklistData> {
+    await this.requireChecklist(widgetId);
+    if (!isChecklistRepeatCycle(value)) throw new AppError(CHECKLIST_ERRORS.INVALID_REPEAT_CYCLE);
+    await this.checklists.changeRepeatCycle(widgetId, value, this.clock.now());
+    return this.getChecklist(widgetId);
   }
 
   async addItem(
@@ -65,7 +75,7 @@ export class ChecklistService implements ChecklistUseCases {
     };
     const { businessDate } = getKoreaDateContext(item.createdAt);
     await this.checklists.insertItem({ ...item, businessDate });
-    return { id: item.id, label, checked: false };
+    return { id: item.id, label, checked: false, checkedAt: null };
   }
 
   async updateItem(
@@ -79,7 +89,7 @@ export class ChecklistService implements ChecklistUseCases {
     const { businessDate } = getKoreaDateContext(now);
     const item = await this.requireItem(widgetId, itemId, businessDate);
     if (item.label === label) {
-      return { id: item.id, label, checked: item.checked };
+      return toChecklistItem({ ...item, label });
     }
     await this.checklists.updateItemLabel({
       eventId: this.ids.generate(),
@@ -90,7 +100,7 @@ export class ChecklistService implements ChecklistUseCases {
       businessDate,
       updatedAt: now,
     });
-    return { id: item.id, label, checked: item.checked };
+    return toChecklistItem({ ...item, label });
   }
 
   async deleteItem(widgetId: string, itemId: string): Promise<void> {
@@ -130,7 +140,7 @@ export class ChecklistService implements ChecklistUseCases {
       occurredAt,
     });
 
-    return { id: item.id, label: item.label, checked: input.checked };
+    return toChecklistItem(await this.requireItem(widgetId, itemId, businessDate));
   }
 
   async listLogs(
@@ -182,5 +192,5 @@ export class ChecklistService implements ChecklistUseCases {
 }
 
 function toChecklistItem(item: ChecklistItemRecord): ChecklistItem {
-  return { id: item.id, label: item.label, checked: item.checked };
+  return { id: item.id, label: item.label, checked: item.checked, checkedAt: item.checkedAt == null ? null : new Date(item.checkedAt).toISOString() };
 }

@@ -37,7 +37,7 @@ describe("read-only program content", () => {
     );
 
     expect(
-      screen.getByText(CHECKLIST_WIDGET_COPY.DATE("2026-09-01")),
+      screen.getByText(`일간 · ${CHECKLIST_WIDGET_COPY.DATE("2026-09-01")}`),
     ).toBeInTheDocument();
     const checkboxes = screen.getAllByRole("checkbox");
     expect(checkboxes[0]).toBeChecked();

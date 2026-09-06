@@ -1,3 +1,4 @@
+import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
 import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import {
@@ -133,6 +134,10 @@ export class FakeDashboardGateway implements DashboardGateway {
     return data;
   }
 
+  async changeChecklistRepeatCycle(widgetId: string, repeatCycle: ChecklistRepeatCycle): Promise<DailyChecklistData> {
+    const data = await this.getChecklist(widgetId);
+    return { ...data, repeatCycle };
+  }
   async getChecklist(widgetId: string): Promise<DailyChecklistData> {
     const widget = this.savedWidgets.find(
       (candidate) =>

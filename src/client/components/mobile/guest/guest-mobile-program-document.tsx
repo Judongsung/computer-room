@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { WIDGET_TYPE } from "@/constants/widgets/widget";
+import { useChecklistRefresh } from "@client/hooks/widgets/checklist/use-checklist-refresh";
+import { useCallback, useEffect, useState } from "react";
 import type { GuestProgramDocument } from "@/types/guest/guest";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
 import { ReadOnlyProgramContent } from "@client/components/widgets/read-only-program-content";
@@ -37,6 +39,12 @@ export function GuestMobileProgramDocument({
       active = false;
     };
   }, [entryId, gateway]);
+
+  const refresh = useCallback(async (): Promise<void> => {
+    try { setDocument(await gateway.getProgramDocument(entryId)); setError(null); }
+    catch { setError(GUEST_COPY.PROGRAM_LOAD_FAILED); }
+  }, [entryId, gateway]);
+  useChecklistRefresh({ nextResetAt: document?.type === WIDGET_TYPE.DAILY_CHECKLIST ? document.data.nextResetAt : "", refresh });
 
   return (
     <MobileActivity title={document?.entry.name ?? title}>

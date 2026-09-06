@@ -42,6 +42,21 @@ describe("DailyChecklistWidget", () => {
     expect(checkbox).not.toBeChecked();
   });
 
+  it("changes repeat cycle and preserves the displayed completion timestamp", async () => {
+    const widget = widgetWithData({items:[{id:"dated", label:"기록", checked:true, checkedAt:"2026-09-06T05:35:00Z"}]});
+    const gateway = new FakeDashboardGateway();
+    gateway.changeChecklistRepeatCycle = vi.fn(async (_id, repeatCycle) => ({...widget.data, repeatCycle}));
+    const user = userEvent.setup();
+    render(<ChecklistHarness widget={widget} gateway={gateway} />);
+    expect(screen.getByText("2026-09-06 14:35")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", {name:"반복 설정"}));
+    await user.selectOptions(screen.getByRole("combobox", {name:"반복 주기"}), "monthly");
+    await user.click(screen.getByRole("button", {name:"저장"}));
+    expect(gateway.changeChecklistRepeatCycle).toHaveBeenCalledWith(widget.id,"monthly");
+    expect(await screen.findByText("월간")).toBeInTheDocument();
+    expect(screen.getByText("2026-09-06 14:35")).toBeInTheDocument();
+  });
+
   it("refreshes checklist data when the page regains focus", async () => {
     const item = { id: "focused", label: "다시 불러온 항목", checked: false } as const;
     const widget = widgetWithData({ items: [] });
@@ -58,6 +73,21 @@ describe("DailyChecklistWidget", () => {
       await screen.findByRole("checkbox", { name: item.label }),
     ).toBeInTheDocument();
     expect(gateway.getChecklist).toHaveBeenCalledWith(widget.id);
+  });
+
+  it("waits through the browser timer limit before a monthly boundary", async () => {
+    vi.useFakeTimers();
+    const now = Date.parse("2026-10-01T00:00:00+09:00");
+    vi.setSystemTime(now);
+    const day = 86_400_000;
+    const widget = widgetWithData({ repeatCycle: "monthly", nextResetAt: new Date(now + 31 * day).toISOString() });
+    const gateway = new FakeDashboardGateway();
+    gateway.getChecklist = vi.fn(async () => ({ ...widget.data, nextResetAt: new Date(now + 61 * day).toISOString() }));
+    render(<ChecklistHarness widget={widget} gateway={gateway} />);
+    await act(async () => vi.advanceTimersByTimeAsync(25 * day));
+    expect(gateway.getChecklist).not.toHaveBeenCalled();
+    await act(async () => vi.advanceTimersByTimeAsync(6 * day + 1000));
+    expect(gateway.getChecklist).toHaveBeenCalledTimes(1);
   });
 
   it("refreshes after the configured reset time", async () => {

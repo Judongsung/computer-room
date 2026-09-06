@@ -1,3 +1,5 @@
+import { useChecklistRefresh } from "@client/hooks/widgets/checklist/use-checklist-refresh";
+import { GUEST_COPY } from "@client/content/ko/guest/guest";
 import { useCallback, useRef, useState } from "react";
 import {
   WIDGET_TYPE,
@@ -28,6 +30,7 @@ import type { GuestGateway } from "@client/types/guest/guest";
 
 export function useGuestProgramWindows(gateway: GuestGateway) {
   const [windows, setWindows] = useState<readonly DashboardWidget[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const windowsRef = useRef(windows);
   const nextWindowNumber = useRef(1);
 
@@ -59,6 +62,19 @@ export function useGuestProgramWindows(gateway: GuestGateway) {
     },
     [replace],
   );
+
+  const refresh = useCallback(async (): Promise<void> => {
+    for (const window of windowsRef.current) {
+      if (window.type !== WIDGET_TYPE.DAILY_CHECKLIST || !window.file) continue;
+      try {
+        const doc = await gateway.getProgramDocument(window.file.entryId);
+        if (doc.type === WIDGET_TYPE.DAILY_CHECKLIST) update(window.id, current => ({ ...current, type: doc.type, data: doc.data }));
+        setError(null);
+      } catch { setError(GUEST_COPY.PROGRAM_LOAD_FAILED); }
+    }
+  }, [gateway, update]);
+  const nextResetAt = windows.flatMap(window => window.type === WIDGET_TYPE.DAILY_CHECKLIST ? [window.data.nextResetAt] : []).sort()[0] ?? "";
+  useChecklistRefresh({ nextResetAt, refresh });
 
   const open = useCallback(
     async (
@@ -126,6 +142,8 @@ export function useGuestProgramWindows(gateway: GuestGateway) {
 
   return {
     windows,
+    error,
+    clearError: () => setError(null),
     open,
     close,
     minimize,

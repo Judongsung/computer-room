@@ -1,3 +1,4 @@
+import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
 import {
   API_PATHS,
   API_PATH_SEGMENTS,
@@ -126,6 +127,12 @@ export class DashboardApiClient implements DashboardGateway {
     if (!isMemoData(value)) {
       throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
+    return value;
+  }
+
+  async changeChecklistRepeatCycle(widgetId: string, repeatCycle: ChecklistRepeatCycle): Promise<DailyChecklistData> {
+    const value = await requestJson(checklistPath(widgetId), jsonRequest(HTTP_METHOD.PATCH, { repeatCycle }));
+    if (!isDailyChecklistData(value)) throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     return value;
   }
 

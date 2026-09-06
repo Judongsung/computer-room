@@ -77,6 +77,10 @@ export class ChecklistApiRoutes {
     }
     const checklistMatch = CHECKLIST_PATH.exec(url.pathname);
     if (!checklistMatch) return null;
+    if (request.method === HTTP_METHOD.PATCH) {
+      const input = await readJsonBody(request);
+      return jsonResponse(await this.checklists.changeRepeatCycle(readApiRouteSegment(checklistMatch), input && typeof input === "object" && "repeatCycle" in input ? input.repeatCycle : undefined));
+    }
     assertMethod(request, HTTP_METHOD.GET);
     return jsonResponse(
       await this.checklists.getChecklist(readApiRouteSegment(checklistMatch)),

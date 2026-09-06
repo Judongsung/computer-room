@@ -1,3 +1,4 @@
+import { useChecklistRefresh } from "@client/hooks/widgets/checklist/use-checklist-refresh";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useCallback, useEffect, useState } from "react";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
@@ -47,6 +48,8 @@ export function MobileWidgetFileScreen({
   }, [entryId, widgetFiles]);
   useEffect(() => void load(), [load]);
 
+  useChecklistRefresh({ nextResetAt: widget?.type === WIDGET_TYPE.DAILY_CHECKLIST ? widget.data.nextResetAt : "", refresh: load });
+
   const replaceItem = (item: ChecklistItem): void => {
     setWidget((current) =>
       current?.type === WIDGET_TYPE.DAILY_CHECKLIST
@@ -82,6 +85,7 @@ export function MobileWidgetFileScreen({
       ) : null}
       {widget?.type === WIDGET_TYPE.DAILY_CHECKLIST ? (
         <MobileChecklist
+          repeatCycle={widget.data.repeatCycle ?? "daily"}
           items={widget.data.items}
           onAdd={async (label) => {
             const item = await dashboard.addChecklistItem(widget.id, label);

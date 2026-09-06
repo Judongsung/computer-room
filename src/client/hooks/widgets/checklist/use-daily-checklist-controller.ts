@@ -1,3 +1,4 @@
+import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
 import { useCallback, useRef, useState } from "react";
 import { MAX_ACTIVE_CHECKLIST_ITEMS } from "@/constants/widgets/checklist";
 import type {
@@ -34,6 +35,7 @@ export function useDailyChecklistController({
   const [showLogs, setShowLogs] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mutationInFlight = useRef(false);
+  const mutationVersion = useRef(0);
 
   const publish = useCallback(
     (data: DailyChecklistData): void => {
@@ -44,7 +46,11 @@ export function useDailyChecklistController({
 
   const refresh = useCallback(async (): Promise<void> => {
     try {
-      publish(await gateway.getChecklist(widget.id));
+      if (mutationInFlight.current) return;
+      const version = mutationVersion.current;
+      const data = await gateway.getChecklist(widget.id);
+      if (mutationInFlight.current || mutationVersion.current !== version) return;
+      publish(data);
       setError(null);
     } catch (loadError) {
       setError(messageFromError(loadError, CHECKLIST_WIDGET_COPY.LOAD_FAILED));
@@ -58,6 +64,7 @@ export function useDailyChecklistController({
       return false;
     }
     mutationInFlight.current = true;
+    mutationVersion.current++;
     setIsMutating(true);
     setError(null);
     return true;
@@ -67,6 +74,13 @@ export function useDailyChecklistController({
     mutationInFlight.current = false;
     setIsMutating(false);
   }, []);
+
+  const changeRepeatCycle = async (cycle: ChecklistRepeatCycle): Promise<boolean> => {
+    if (!beginMutation()) return false;
+    try { publish(await gateway.changeChecklistRepeatCycle(widget.id, cycle)); return true; }
+    catch (caught) { setError(messageFromError(caught, CHECKLIST_WIDGET_COPY.CHANGE_FAILED)); return false; }
+    finally { finishMutation(); }
+  };
 
   const addItem = useCallback(async (): Promise<void> => {
     if (!isEditingItems || !beginMutation()) {
@@ -220,6 +234,7 @@ export function useDailyChecklistController({
   }, []);
 
   return {
+    changeRepeatCycle,
     isEditingItems,
     newLabel,
     editingItemId,

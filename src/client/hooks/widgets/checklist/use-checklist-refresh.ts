@@ -18,18 +18,26 @@ export function useChecklistRefresh({
     if (!Number.isFinite(resetAt)) {
       return undefined;
     }
-    const delay = Math.min(
-      Math.max(
-        resetAt - Date.now() + CHECKLIST_RESET_BUFFER_MILLISECONDS,
-        CHECKLIST_RESET_BUFFER_MILLISECONDS,
-      ),
-      MAX_BROWSER_TIMER_DELAY_MILLISECONDS,
-    );
-    const timeout = window.setTimeout(() => void refresh(), delay);
+    let timeout: ReturnType<typeof window.setTimeout>;
+    const schedule = (): void => {
+      const delay = Math.min(
+        Math.max(
+          resetAt - Date.now() + CHECKLIST_RESET_BUFFER_MILLISECONDS,
+          CHECKLIST_RESET_BUFFER_MILLISECONDS,
+        ),
+        MAX_BROWSER_TIMER_DELAY_MILLISECONDS,
+      );
+      timeout = window.setTimeout(() => {
+        if (Date.now() < resetAt) schedule();
+        else void refresh();
+      }, delay);
+    };
+    schedule();
     return () => window.clearTimeout(timeout);
   }, [nextResetAt, refresh]);
 
   useEffect(() => {
+    if (!Number.isFinite(Date.parse(nextResetAt))) return;
     const refreshWhenVisible = (): void => {
       if (document.visibilityState === "visible") {
         void refresh();
@@ -41,5 +49,5 @@ export function useChecklistRefresh({
       document.removeEventListener("visibilitychange", refreshWhenVisible);
       window.removeEventListener("focus", refreshWhenVisible);
     };
-  }, [refresh]);
+  }, [nextResetAt, refresh]);
 }

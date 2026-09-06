@@ -26,6 +26,7 @@ export class D1ChecklistRetentionRepository implements ChecklistRetentionReposit
 
   async purgeBefore(businessDate: string, timestamp: number): Promise<number> {
     const results = await this.database.batch([
+      this.database.prepare("DELETE FROM checklist_period_states WHERE period_end <= ?1").bind(timestamp),
       this.database.prepare("DELETE FROM checklist_daily_states WHERE business_date < ?1").bind(businessDate),
       this.database.prepare("DELETE FROM checklist_events WHERE occurred_at < ?1").bind(timestamp),
     ]);

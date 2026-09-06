@@ -412,6 +412,7 @@ describe("computer-room widget API", () => {
 
     const checklist = await SELF.fetch(`${ORIGIN}${checklistPath(widgetId)}`);
     await expect(checklist.json()).resolves.toEqual({
+      repeatCycle: "daily",
       businessDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
       nextResetAt: expect.any(String),
       items: [
@@ -419,6 +420,7 @@ describe("computer-room widget API", () => {
           id: created.item.id,
           label: "물 두 잔 마시기",
           checked: false,
+          checkedAt: null,
         },
       ],
     });

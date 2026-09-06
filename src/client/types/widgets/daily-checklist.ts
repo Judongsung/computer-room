@@ -1,6 +1,8 @@
+import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
 import type { ChecklistItem } from "@/types/widgets/widget";
 
 export interface DailyChecklistController {
+  readonly changeRepeatCycle: (cycle: ChecklistRepeatCycle) => Promise<boolean>;
   readonly isEditingItems: boolean;
   readonly newLabel: string;
   readonly editingItemId: string | null;

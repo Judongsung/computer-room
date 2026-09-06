@@ -1,3 +1,5 @@
+import { CHECKLIST_REPEAT_COPY } from "@client/content/ko/widgets/checklist-repeat";
+import { formatKoreaDateTime } from "@client/utils/format-date-time";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { DailyChecklistData, MemoData } from "@/types/widgets/widget";
 import { MarkdownContent } from "@client/components/widgets/markdown-content";
@@ -44,7 +46,7 @@ export function ReadOnlyChecklistContent({
   return (
     <div className={READ_ONLY_PROGRAM_CLASS_NAME.CHECKLIST}>
       <p className={READ_ONLY_PROGRAM_CLASS_NAME.CHECKLIST_DATE}>
-        {CHECKLIST_WIDGET_COPY.DATE(data.businessDate)}
+        {CHECKLIST_REPEAT_COPY.LABELS[data.repeatCycle ?? "daily"]} · {CHECKLIST_WIDGET_COPY.DATE(data.businessDate)}
       </p>
       <ul className={READ_ONLY_PROGRAM_CLASS_NAME.CHECKLIST_ITEMS}>
         {data.items.map((item) => (
@@ -53,7 +55,7 @@ export function ReadOnlyChecklistContent({
             className={READ_ONLY_PROGRAM_CLASS_NAME.CHECKLIST_ITEM}
           >
             <input type="checkbox" checked={item.checked} readOnly />
-            {item.checked ? <del>{item.label}</del> : <span>{item.label}</span>}
+            {item.checked ? <del>{item.label}</del> : <span>{item.label}</span>} {item.checked && item.checkedAt ? <time className="checklist-checked-at" dateTime={item.checkedAt}>{formatKoreaDateTime(item.checkedAt)}</time> : null}
           </li>
         ))}
       </ul>
