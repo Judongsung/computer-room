@@ -1,4 +1,4 @@
-import { checklistPeriod } from "@/domain/widgets/checklist-period";
+import { toChecklistData } from "@/application/widgets/checklist-data-mapper";
 import { EMPTY_MEMO_MARKDOWN } from "@/constants/widgets/memo";
 import { WIDGET_ERRORS } from "@/constants/widgets/errors/widget";
 import {
@@ -219,7 +219,8 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
   private async hydrate(
     layouts: readonly StoredWidgetLayout[],
   ): Promise<DashboardWidget[]> {
-    const { businessDate } = getKoreaDateContext(this.clock.now());
+    const now = this.clock.now();
+    const { businessDate } = getKoreaDateContext(now);
     const widgetTypes = new Set(layouts.map((layout) => layout.type));
     const [memos, checklistItems, repeatSettings] = await Promise.all([
       widgetTypes.has(WIDGET_TYPE.MEMO) ? this.memos.listAll() : [],
@@ -230,6 +231,9 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
     ]);
     const memoByWidgetId = new Map(
       memos.map((memo) => [memo.widgetId, memo] as const),
+    );
+    const repeatCycleByWidgetId = new Map(
+      repeatSettings.map((setting) => [setting.widgetId, setting.repeatCycle] as const),
     );
     const checklistItemsByWidgetId = new Map<
       string,
@@ -263,14 +267,11 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
         ...toPublicLayout(layout),
         type: WIDGET_TYPE.DAILY_CHECKLIST,
         file: layout.file,
-        data: {
-          businessDate,
-          repeatCycle: repeatSettings.find((row) => row.widgetId === layout.id)?.repeatCycle ?? "daily",
-          nextResetAt: new Date(checklistPeriod(this.clock.now(), repeatSettings.find((row) => row.widgetId === layout.id)?.repeatCycle ?? "daily").end).toISOString(),
-          items: (checklistItemsByWidgetId.get(layout.id) ?? []).map(
-            toChecklistItem,
-          ),
-        },
+        data: toChecklistData(
+          now,
+          repeatCycleByWidgetId.get(layout.id) ?? "daily",
+          checklistItemsByWidgetId.get(layout.id) ?? [],
+        ),
       }),
       [WIDGET_TYPE.STORAGE_STATUS]: (
         layout: StoredWidgetLayout,
@@ -339,13 +340,4 @@ function toPublicLayout(layout: StoredWidgetLayout): WidgetLayout {
     restoreState: layout.restoreState,
     stackOrder: layout.stackOrder,
   };
-}
-
-function toChecklistItem(item: {
-  readonly id: string;
-  readonly label: string;
-  readonly checked: boolean;
-  readonly checkedAt?: number | null;
-}) {
-  return { id: item.id, label: item.label, checked: item.checked, checkedAt: item.checkedAt == null ? null : new Date(item.checkedAt).toISOString() };
 }

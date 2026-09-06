@@ -1,4 +1,5 @@
-import { checklistPeriod, isChecklistRepeatCycle } from "@/domain/widgets/checklist-period";
+import { isChecklistRepeatCycle } from "@/domain/widgets/checklist-period";
+import { toChecklistData, toChecklistItem } from "@/application/widgets/checklist-data-mapper";
 import {
   MAX_ACTIVE_CHECKLIST_ITEMS,
 } from "@/constants/widgets/checklist";
@@ -33,19 +34,15 @@ export class ChecklistService implements ChecklistUseCases {
 
   async getChecklist(widgetId: string): Promise<DailyChecklistData> {
     await this.requireChecklist(widgetId);
-    const context = getKoreaDateContext(this.clock.now());
+    const now = this.clock.now();
+    const context = getKoreaDateContext(now);
     const items = await this.checklists.listActiveItems(
       widgetId,
       context.businessDate,
     );
 
     const repeatCycle = (await this.checklists.listRepeatSettings()).find((row) => row.widgetId === widgetId)?.repeatCycle ?? "daily";
-    return {
-      repeatCycle,
-      businessDate: context.businessDate,
-      nextResetAt: new Date(checklistPeriod(this.clock.now(), repeatCycle).end).toISOString(),
-      items: items.map(toChecklistItem),
-    };
+    return toChecklistData(now, repeatCycle, items);
   }
 
   async changeRepeatCycle(widgetId: string, value: unknown): Promise<DailyChecklistData> {
@@ -189,8 +186,4 @@ export class ChecklistService implements ChecklistUseCases {
     }
     return item;
   }
-}
-
-function toChecklistItem(item: ChecklistItemRecord): ChecklistItem {
-  return { id: item.id, label: item.label, checked: item.checked, checkedAt: item.checkedAt == null ? null : new Date(item.checkedAt).toISOString() };
 }

@@ -1,4 +1,4 @@
-import { checklistPeriod } from "@/domain/widgets/checklist-period";
+import { toChecklistData } from "@/application/widgets/checklist-data-mapper";
 import { assembleFilesystemDirectoryPage } from "@/application/filesystem/directory/filesystem-directory-page";
 import { toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper";
 import { ACCESS_LOGIN_PATH } from "@/constants/platform/auth";
@@ -123,7 +123,8 @@ export class GuestService implements GuestUseCases {
       };
     }
     if (record.widgetType === WIDGET_TYPE.DAILY_CHECKLIST) {
-      const date = getKoreaDateContext(this.clock.now());
+      const now = this.clock.now();
+      const date = getKoreaDateContext(now);
       const repeatCycle = await this.publications.checklistRepeatCycle(record.widgetId);
       const items = await this.publications.listChecklistItems(
         record.widgetId,
@@ -132,17 +133,7 @@ export class GuestService implements GuestUseCases {
       return {
         entry,
         type: WIDGET_TYPE.DAILY_CHECKLIST,
-        data: {
-          businessDate: date.businessDate,
-          repeatCycle,
-          nextResetAt: new Date(checklistPeriod(this.clock.now(), repeatCycle).end).toISOString(),
-          items: items.map((item) => ({
-            id: item.id,
-            label: item.label,
-            checked: item.checked,
-            checkedAt: item.checkedAt == null ? null : new Date(item.checkedAt).toISOString(),
-          })),
-        },
+        data: toChecklistData(now, repeatCycle, items),
       };
     }
     throw this.notFound();
