@@ -1,18 +1,12 @@
 import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { MAX_ACTIVE_CHECKLIST_ITEMS } from "@/constants/widgets/checklist";
-import type {
-  ChecklistItem,
-  DailyChecklistData,
-  DailyChecklistWidget,
-} from "@/types/widgets/widget";
+import type { ChecklistItem, DailyChecklistData, DailyChecklistWidget } from "@/types/widgets/widget";
 import { CHECKLIST_WIDGET_COPY } from "@client/content/ko/widgets/content";
-import {
-  removeChecklistItem,
-  replaceChecklistItem,
-} from "@client/domain/widgets/checklist-items";
+import { removeChecklistItem, replaceChecklistItem } from "@client/domain/widgets/checklist-items";
 import { messageFromError } from "@client/errors/error-message";
 import { useChecklistRefresh } from "@client/hooks/widgets/checklist/use-checklist-refresh";
+import { useWidgetRequestCoordinator } from "@client/hooks/widgets/use-widget-request-coordinator";
 import type { DailyChecklistController } from "@client/types/widgets/daily-checklist";
 import type { ChecklistGateway } from "@client/types/widgets/ports/checklist";
 
@@ -23,232 +17,107 @@ interface DailyChecklistControllerOptions {
 }
 
 export function useDailyChecklistController({
-  widget,
-  gateway,
-  onWidgetChange,
+  widget, gateway, onWidgetChange,
 }: DailyChecklistControllerOptions): DailyChecklistController {
   const [isEditingItems, setIsEditingItems] = useState(false);
   const [newLabel, setNewLabel] = useState("");
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editingLabel, setEditingLabel] = useState("");
-  const [isMutating, setIsMutating] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const mutationInFlight = useRef(false);
-  const mutationVersion = useRef(0);
-
-  const publish = useCallback(
-    (data: DailyChecklistData): void => {
-      onWidgetChange({ ...widget, data });
-    },
-    [onWidgetChange, widget],
-  );
-
-  const refresh = useCallback(async (): Promise<void> => {
-    try {
-      if (mutationInFlight.current) return;
-      const version = mutationVersion.current;
-      const data = await gateway.getChecklist(widget.id);
-      if (mutationInFlight.current || mutationVersion.current !== version) return;
-      publish(data);
-      setError(null);
-    } catch (loadError) {
-      setError(messageFromError(loadError, CHECKLIST_WIDGET_COPY.LOAD_FAILED));
-    }
-  }, [gateway, publish, widget.id]);
-
-  useChecklistRefresh({ nextResetAt: widget.data.nextResetAt, refresh });
-
-  const beginMutation = useCallback((): boolean => {
-    if (mutationInFlight.current) {
-      return false;
-    }
-    mutationInFlight.current = true;
-    mutationVersion.current++;
-    setIsMutating(true);
-    setError(null);
-    return true;
+  const latest = useRef({ widget, onWidgetChange });
+  useLayoutEffect(() => { latest.current = { widget, onWidgetChange }; });
+  const scope = useMemo(() => ({}), [widget.id, gateway]);
+  const publish = useCallback((update: (data: DailyChecklistData) => DailyChecklistData): void => {
+    const current = latest.current;
+    const next = { ...current.widget, data: update(current.widget.data) };
+    latest.current = { ...current, widget: next };
+    current.onWidgetChange(next);
   }, []);
+  const requests = useWidgetRequestCoordinator({
+    scope,
+    read: () => gateway.getChecklist(widget.id),
+    onRead: (data) => publish(() => data),
+  });
+  const { mutate, isMutating, clearMutationError } = requests;
+  useChecklistRefresh({ nextResetAt: widget.data.nextResetAt, refresh: requests.refresh });
 
-  const finishMutation = useCallback((): void => {
-    mutationInFlight.current = false;
-    setIsMutating(false);
-  }, []);
+  const changeRepeatCycle = (cycle: ChecklistRepeatCycle): Promise<boolean> => mutate({
+    operation: () => gateway.changeChecklistRepeatCycle(widget.id, cycle),
+    onSuccess: (data) => publish(() => data),
+  });
 
-  const changeRepeatCycle = async (cycle: ChecklistRepeatCycle): Promise<boolean> => {
-    if (!beginMutation()) return false;
-    try { publish(await gateway.changeChecklistRepeatCycle(widget.id, cycle)); return true; }
-    catch (caught) { setError(messageFromError(caught, CHECKLIST_WIDGET_COPY.CHANGE_FAILED)); return false; }
-    finally { finishMutation(); }
+  const addItem = async (): Promise<void> => {
+    if (!isEditingItems) return;
+    await mutate({
+      operation: () => gateway.addChecklistItem(widget.id, newLabel),
+      onSuccess: (item) => {
+        publish((data) => ({ ...data, items: [...data.items, item] }));
+        setNewLabel("");
+      },
+    });
   };
 
-  const addItem = useCallback(async (): Promise<void> => {
-    if (!isEditingItems || !beginMutation()) {
-      return;
-    }
-    try {
-      const item = await gateway.addChecklistItem(widget.id, newLabel);
-      publish({ ...widget.data, items: [...widget.data.items, item] });
-      setNewLabel("");
-    } catch (mutationError) {
-      setError(
-        messageFromError(mutationError, CHECKLIST_WIDGET_COPY.CHANGE_FAILED),
-      );
-    } finally {
-      finishMutation();
-    }
-  }, [
-    beginMutation,
-    finishMutation,
-    gateway,
-    isEditingItems,
-    newLabel,
-    publish,
-    widget,
-  ]);
-
-  const updateItem = useCallback(
-    async (item: ChecklistItem): Promise<void> => {
-      if (!isEditingItems || !beginMutation()) {
-        return;
-      }
-      try {
-        const updated = await gateway.updateChecklistItem(
-          widget.id,
-          item.id,
-          editingLabel,
-        );
-        publish({
-          ...widget.data,
-          items: replaceChecklistItem(widget.data.items, updated),
-        });
+  const updateItem = async (item: ChecklistItem): Promise<void> => {
+    if (!isEditingItems) return;
+    await mutate({
+      operation: () => gateway.updateChecklistItem(widget.id, item.id, editingLabel),
+      onSuccess: (updated) => {
+        publish((data) => ({ ...data, items: replaceChecklistItem(data.items, updated) }));
         setEditingItemId(null);
         setEditingLabel("");
-      } catch (mutationError) {
-        setError(
-          messageFromError(mutationError, CHECKLIST_WIDGET_COPY.CHANGE_FAILED),
-        );
-      } finally {
-        finishMutation();
-      }
-    },
-    [
-      beginMutation,
-      editingLabel,
-      finishMutation,
-      gateway,
-      isEditingItems,
-      publish,
-      widget,
-    ],
-  );
+      },
+    });
+  };
 
-  const deleteItem = useCallback(
-    async (item: ChecklistItem): Promise<void> => {
-      if (
-        !isEditingItems ||
-        mutationInFlight.current ||
-        !window.confirm(CHECKLIST_WIDGET_COPY.DELETE_ITEM_CONFIRM) ||
-        !beginMutation()
-      ) {
-        return;
-      }
-      try {
-        await gateway.deleteChecklistItem(widget.id, item.id);
-        publish({
-          ...widget.data,
-          items: removeChecklistItem(widget.data.items, item.id),
-        });
-      } catch (mutationError) {
-        setError(
-          messageFromError(mutationError, CHECKLIST_WIDGET_COPY.CHANGE_FAILED),
-        );
-      } finally {
-        finishMutation();
-      }
-    },
-    [
-      beginMutation,
-      finishMutation,
-      gateway,
-      isEditingItems,
-      publish,
-      widget,
-    ],
-  );
+  const deleteItem = async (item: ChecklistItem): Promise<void> => {
+    if (!isEditingItems || isMutating() || !window.confirm(CHECKLIST_WIDGET_COPY.DELETE_ITEM_CONFIRM)) return;
+    await mutate({
+      operation: () => gateway.deleteChecklistItem(widget.id, item.id),
+      onSuccess: () => publish((data) => ({ ...data, items: removeChecklistItem(data.items, item.id) })),
+    });
+  };
 
-  const toggleItem = useCallback(
-    async (item: ChecklistItem, checked: boolean): Promise<void> => {
-      if (!beginMutation()) {
-        return;
-      }
-      const previous = widget.data;
-      const optimistic = {
-        ...previous,
-        items: replaceChecklistItem(previous.items, { ...item, checked }),
-      };
-      publish(optimistic);
-      try {
-        const updated = await gateway.setChecklistItemChecked(
-          widget.id,
-          item.id,
-          checked,
-        );
-        publish({
-          ...optimistic,
-          items: replaceChecklistItem(optimistic.items, updated),
-        });
-      } catch (mutationError) {
-        publish(previous);
-        setError(
-          messageFromError(mutationError, CHECKLIST_WIDGET_COPY.CHANGE_FAILED),
-        );
-      } finally {
-        finishMutation();
-      }
-    },
-    [beginMutation, finishMutation, gateway, publish, widget],
-  );
+  const toggleItem = async (item: ChecklistItem, checked: boolean): Promise<void> => {
+    const previous = latest.current.widget.data.items.find((candidate) => candidate.id === item.id);
+    if (!previous) return;
+    await mutate({
+      onStart: () => publish((data) => ({
+        ...data, items: replaceChecklistItem(data.items, { ...previous, checked }),
+      })),
+      operation: () => gateway.setChecklistItemChecked(widget.id, item.id, checked),
+      onSuccess: (updated) => publish((data) => ({ ...data, items: replaceChecklistItem(data.items, updated) })),
+      onError: () => publish((data) => ({ ...data, items: replaceChecklistItem(data.items, previous) })),
+    });
+  };
 
-  const toggleEditing = useCallback((): void => {
-    if (mutationInFlight.current) {
-      return;
-    }
+  const toggleEditing = (): void => {
+    if (isMutating()) return;
     if (isEditingItems) {
       setNewLabel("");
       setEditingItemId(null);
       setEditingLabel("");
     } else {
-      setError(null);
+      clearMutationError();
     }
     setIsEditingItems((current) => !current);
-  }, [isEditingItems]);
-
-  const beginEditingItem = useCallback((item: ChecklistItem): void => {
-    setEditingItemId(item.id);
-    setEditingLabel(item.label);
-  }, []);
-
-  const cancelEditingItem = useCallback((): void => {
-    setEditingItemId(null);
-  }, []);
-
+  };
+  const failure = requests.mutationError ?? requests.readError;
   return {
     changeRepeatCycle,
     isEditingItems,
     newLabel,
     editingItemId,
     editingLabel,
-    isMutating,
+    isMutating: requests.mutating,
     showLogs,
-    error,
-    canAddItem:
-      !isMutating && widget.data.items.length < MAX_ACTIVE_CHECKLIST_ITEMS,
+    error: failure ? messageFromError(failure.cause, requests.mutationError
+      ? CHECKLIST_WIDGET_COPY.CHANGE_FAILED : CHECKLIST_WIDGET_COPY.LOAD_FAILED) : null,
+    canAddItem: !requests.mutating && widget.data.items.length < MAX_ACTIVE_CHECKLIST_ITEMS,
     setNewLabel,
     setEditingLabel,
     toggleEditing,
-    beginEditingItem,
-    cancelEditingItem,
+    beginEditingItem: (item) => { setEditingItemId(item.id); setEditingLabel(item.label); },
+    cancelEditingItem: () => setEditingItemId(null),
     addItem,
     updateItem,
     deleteItem,

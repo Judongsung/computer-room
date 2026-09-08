@@ -2,7 +2,7 @@ import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat"
 import { CHECKLIST_REPEAT_COPY } from "@client/content/ko/widgets/checklist-repeat";
 import { formatKoreaDateTime } from "@client/utils/format-date-time";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { MAX_ACTIVE_CHECKLIST_ITEMS } from "@/constants/widgets/checklist";
 import type { ChecklistItem } from "@/types/widgets/widget";
 import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
@@ -12,10 +12,10 @@ import { messageFromError } from "@client/errors/error-message";
 interface MobileChecklistProps {
   readonly repeatCycle?: ChecklistRepeatCycle;
   readonly items: readonly ChecklistItem[];
-  readonly onAdd: (label: string) => Promise<void>;
-  readonly onRename: (item: ChecklistItem, label: string) => Promise<void>;
-  readonly onDelete: (item: ChecklistItem) => Promise<void>;
-  readonly onToggle: (item: ChecklistItem, checked: boolean) => Promise<void>;
+  readonly onAdd: (label: string) => Promise<void | boolean>;
+  readonly onRename: (item: ChecklistItem, label: string) => Promise<void | boolean>;
+  readonly onDelete: (item: ChecklistItem) => Promise<void | boolean>;
+  readonly onToggle: (item: ChecklistItem, checked: boolean) => Promise<void | boolean>;
   readonly onShowLogs?: () => void;
   readonly onRequestFileSave?: () => void;
 }
@@ -37,8 +37,11 @@ export function MobileChecklist({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const run = async (operation: () => Promise<void>): Promise<void> => {
-    if (busy) return;
+  const busyRef = useRef(false);
+
+  const run = async (operation: () => Promise<void | boolean>): Promise<void> => {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
     setError(null);
     try {
@@ -46,6 +49,7 @@ export function MobileChecklist({
     } catch (caught) {
       setError(messageFromError(caught, CHECKLIST_WIDGET_COPY.CHANGE_FAILED));
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   };
@@ -81,7 +85,7 @@ export function MobileChecklist({
                   onSubmit={(event) => {
                     event.preventDefault();
                     void run(async () => {
-                      await onRename(item, editingLabel);
+                      if (await onRename(item, editingLabel) === false) return;
                       setEditingId(null);
                     });
                   }}
@@ -150,7 +154,7 @@ export function MobileChecklist({
           onSubmit={(event) => {
             event.preventDefault();
             void run(async () => {
-              await onAdd(newLabel);
+              if (await onAdd(newLabel) === false) return;
               setNewLabel("");
             });
           }}

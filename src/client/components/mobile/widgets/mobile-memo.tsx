@@ -10,7 +10,7 @@ import { useUnsavedChangesWarning } from "@client/hooks/shared/use-unsaved-chang
 interface MobileMemoProps {
   readonly markdown: string;
   readonly startEditing?: boolean;
-  readonly onSave: (markdown: string) => Promise<void>;
+  readonly onSave: (markdown: string) => Promise<void | boolean>;
   readonly onRequestFileSave?: (markdown: string) => void;
   readonly onDirtyChange?: (dirty: boolean) => void;
 }
@@ -41,7 +41,7 @@ export function MobileMemo({
     setSaving(true);
     setError(null);
     try {
-      await onSave(draft);
+      if (await onSave(draft) === false) return;
       setEditing(false);
       setPreview(false);
     } catch (caught) {
