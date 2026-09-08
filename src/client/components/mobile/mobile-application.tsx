@@ -1,3 +1,5 @@
+
+import { checklistRetentionApi as defaultChecklistRetentionApi } from "@client/api/widgets/checklist-retention-api-client";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useCallback, useEffect, useState } from "react";
 import "@client/styles/mobile.css";
@@ -20,6 +22,7 @@ import type { DashboardGateway } from "@client/types/widgets/api";
 import type { WidgetFileGateway } from "@client/types/widgets/widget-file";
 
 export function MobileApplication({
+  checklistRetentionApi,
   api,
   filesystemApi,
   storageStatusApi,
@@ -27,6 +30,7 @@ export function MobileApplication({
   mobilePreferencesApi,
   initialSession,
 }: AppProps) {
+  const checklistRetentionGateway = checklistRetentionApi ?? defaultChecklistRetentionApi;
   const [dashboard] = useState<DashboardGateway>(() => api ?? new DashboardApiClient());
   const [filesystem] = useState<FilesystemGateway>(() => filesystemApi ?? new FilesystemApiClient());
   const [storageStatus] = useState<StorageStatusGateway>(() => storageStatusApi ?? new StorageStatusApiClient());
@@ -73,6 +77,7 @@ export function MobileApplication({
         session={session}
         dashboard={dashboard}
         filesystem={filesystem}
+        checklistRetentionGateway={checklistRetentionGateway}
         storageStatus={storageStatus}
         widgetFiles={widgetFiles}
         mobilePreferences={mobilePreferences}

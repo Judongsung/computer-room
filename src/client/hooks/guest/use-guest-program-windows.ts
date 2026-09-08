@@ -22,10 +22,7 @@ import {
   toggleMaximizeWindow,
 } from "@client/domain/desktop/window-layout";
 import { GUEST_DESKTOP_WINDOW_ID_PREFIX } from "@client/constants/guest/guest";
-import type {
-  DesktopDimensions,
-  WindowBounds,
-} from "@client/types/desktop/desktop";
+import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/window";
 import type { GuestGateway } from "@client/types/guest/guest";
 
 interface OpenRequest { promise: Promise<string | null> }

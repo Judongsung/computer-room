@@ -8,7 +8,7 @@ import type { SaveWidgetFileInput } from "@/types/filesystem/filesystem";
 import type { DashboardWidget, WidgetType } from "@/types/widgets/widget";
 import { bringWidgetToFront, cascadeWindowPosition } from "@client/domain/desktop/window-layout";
 import { UI_MESSAGES } from "@client/content/ko/widgets/dashboard";
-import type { DesktopDimensions } from "@client/types/desktop/desktop";
+import type { DesktopDimensions } from "@client/types/desktop/window";
 import type {
   DashboardWidgetCollectionController,
   WidgetOpenResult,

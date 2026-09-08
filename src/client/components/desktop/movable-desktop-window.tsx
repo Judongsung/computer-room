@@ -13,10 +13,8 @@ import {
   FILESYSTEM_DROP_ATTRIBUTE,
   FILESYSTEM_DROP_EFFECT,
 } from "@client/constants/filesystem/drag";
-import type {
-  MovableDesktopWindowProps,
-  WindowBounds,
-} from "@client/types/desktop/desktop";
+import type { MovableDesktopWindowProps } from "@client/types/desktop/desktop";
+import type { WindowBounds } from "@client/types/desktop/window";
 
 const RESIZE_HANDLES = {
   top: true,

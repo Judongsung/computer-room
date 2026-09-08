@@ -11,7 +11,7 @@ import {
   MEDIA_WINDOW_CONFIG,
   MEDIA_WINDOW_ID_PREFIX,
 } from "@client/constants/media/media";
-import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/desktop";
+import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/window";
 import type {
   MediaViewerOpenRequest,
   MediaWindowState,

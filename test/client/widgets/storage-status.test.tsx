@@ -13,12 +13,7 @@ import type { StorageStatusGateway } from "@client/types/storage/storage-status"
 import {
   STORAGE_FREE_REFERENCE_BYTES,
 } from "@/constants/storage/storage-status";
-import {
-  WIDGET_TYPE,
-  WIDGET_WINDOW_POLICY,
-  WINDOW_RESTORE_STATE,
-  WINDOW_STATE,
-} from "@/constants/widgets/widget";
+
 import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
 
 describe("storage status presentation", () => {
@@ -64,20 +59,8 @@ describe("storage status presentation", () => {
 });
 
 function renderWidget(storageStatusGateway: StorageStatusGateway): void {
-  const policy = WIDGET_WINDOW_POLICY[WIDGET_TYPE.STORAGE_STATUS];
   render(
     <StorageStatusWidget
-      widget={{
-        id: "storage-status-widget",
-        type: WIDGET_TYPE.STORAGE_STATUS,
-        position: { x: 32, y: 32 },
-        size: { width: policy.DEFAULT_WIDTH, height: policy.DEFAULT_HEIGHT },
-        windowState: WINDOW_STATE.NORMAL,
-        restoreState: WINDOW_RESTORE_STATE.NORMAL,
-        stackOrder: 0,
-        file: null,
-        data: null,
-      }}
       windowControls={{
         isActive: true,
         isMaximized: false,
@@ -88,13 +71,7 @@ function renderWidget(storageStatusGateway: StorageStatusGateway): void {
         onSaveFile: vi.fn(),
         canSaveFile: false,
       }}
-      gateway={{} as never}
       storageStatusGateway={storageStatusGateway}
-      imageUploadProfileGateway={{} as never}
-      imageUploadLogGateway={{} as never}
-      guestAccessGateway={{} as never}
-      onOpenFilesystemEntry={vi.fn()}
-      onWidgetChange={vi.fn()}
     />,
   );
 }

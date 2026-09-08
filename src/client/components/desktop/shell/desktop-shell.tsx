@@ -73,7 +73,8 @@ export function DesktopShell(props: DesktopShellProps) {
     storageStatusGateway,
     imageUploadProfileGateway,
     imageUploadLogGateway,
-    guestAccessGateway,
+    checklistRetentionGateway,
+  guestAccessGateway,
     layoutSaveStatus,
     layoutSaveError,
     message,
@@ -265,6 +266,7 @@ export function DesktopShell(props: DesktopShellProps) {
           storageStatusGateway={storageStatusGateway}
           imageUploadProfileGateway={imageUploadProfileGateway}
           imageUploadLogGateway={imageUploadLogGateway}
+          checklistRetentionGateway={checklistRetentionGateway}
           guestAccessGateway={guestAccessGateway}
           explorer={explorer}
           system={system}

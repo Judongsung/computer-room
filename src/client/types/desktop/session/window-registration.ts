@@ -1,4 +1,4 @@
-import type { ManagedDesktopWindowState } from "@client/types/desktop/desktop";
+import type { ManagedDesktopWindowState } from "@client/types/desktop/window";
 
 export interface DesktopWindowRegistration {
   readonly id: string;

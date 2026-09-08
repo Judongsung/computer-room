@@ -1,3 +1,4 @@
+import type { ChecklistRetentionUseCases } from "@/types/widgets/checklist/retention";
 import { useState } from "react";
 import { ChecklistRepeatDialog } from "@client/components/desktop/checklist/checklist-repeat-dialog";
 import { CHECKLIST_REPEAT_COPY } from "@client/content/ko/widgets/checklist-repeat";
@@ -12,25 +13,24 @@ import { WidgetCard } from "@client/components/widgets/widget-card";
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { CHECKLIST_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { useDailyChecklistController } from "@client/hooks/widgets/checklist/use-daily-checklist-controller";
-import type { WidgetComponentProps } from "@client/types/desktop/desktop";
+import type { WidgetWindowControls } from "@client/types/desktop/window";
+import type { ChecklistGateway } from "@client/types/widgets/ports/checklist";
 
-export function DailyChecklistWidget(props: WidgetComponentProps) {
-  if (props.widget.type !== WIDGET_TYPE.DAILY_CHECKLIST) {
-    return null;
-  }
-  return <DailyChecklistWidgetView {...props} widget={props.widget} />;
+export interface DailyChecklistWidgetProps {
+  readonly widget: DailyChecklistWidgetData;
+  readonly windowControls: WidgetWindowControls;
+  readonly gateway: ChecklistGateway;
+  readonly onWidgetChange: (widget: DailyChecklistWidgetData) => void;
+  readonly checklistRetentionGateway: ChecklistRetentionUseCases;
 }
 
-type DailyChecklistWidgetViewProps = Omit<WidgetComponentProps, "widget"> & {
-  readonly widget: DailyChecklistWidgetData;
-};
-
-function DailyChecklistWidgetView({
+export function DailyChecklistWidget({
   widget,
   windowControls,
   gateway,
   onWidgetChange,
-}: DailyChecklistWidgetViewProps) {
+  checklistRetentionGateway,
+}: DailyChecklistWidgetProps) {
   const [showRepeat, setShowRepeat] = useState(false);
   const controller = useDailyChecklistController({
     widget,
@@ -60,6 +60,7 @@ function DailyChecklistWidgetView({
         <ChecklistLogDialog
           widgetId={widget.id}
           gateway={gateway}
+          checklistRetentionGateway={checklistRetentionGateway}
           onClose={controller.closeLogs}
         />
       ) : null}

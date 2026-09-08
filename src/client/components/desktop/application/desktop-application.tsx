@@ -1,3 +1,5 @@
+
+import { checklistRetentionApi as defaultChecklistRetentionApi } from "@client/api/widgets/checklist-retention-api-client";
 import { UI_MESSAGES } from "@client/content/ko/widgets/dashboard";
 import { useState, type CSSProperties } from "react";
 import "xp.css/dist/XP.css";
@@ -39,6 +41,7 @@ export function DesktopApplication(props: AppProps) {
 }
 
 function DesktopApplicationContent({
+  checklistRetentionApi,
   api,
   filesystemApi,
   storageStatusApi,
@@ -47,6 +50,7 @@ function DesktopApplicationContent({
   guestAccessApi,
   initialSession,
 }: AppProps) {
+  const checklistRetentionGateway = checklistRetentionApi ?? defaultChecklistRetentionApi;
   const [gateway] = useState<DashboardGateway>(
     () => api ?? new DashboardApiClient(),
   );
@@ -110,6 +114,7 @@ function DesktopApplicationContent({
       activeWidgetId={dashboard.activeWidgetId}
       gateway={dashboard.gateway}
       filesystemGateway={filesystemGateway}
+      checklistRetentionGateway={checklistRetentionGateway}
       storageStatusGateway={storageStatusGateway}
       imageUploadProfileGateway={imageUploadProfileGateway}
       imageUploadLogGateway={imageUploadLogGateway}

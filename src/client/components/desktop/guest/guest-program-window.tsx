@@ -7,10 +7,7 @@ import { ReadOnlyProgramContent } from "@client/components/widgets/read-only-pro
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { GUEST_DESKTOP_CLASS_NAME } from "@client/constants/guest/guest";
 import { GUEST_COPY } from "@client/content/ko/guest/guest";
-import type {
-  DesktopDimensions,
-  WindowBounds,
-} from "@client/types/desktop/desktop";
+import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/window";
 
 interface GuestProgramWindowProps {
   readonly widget: DashboardWidget;

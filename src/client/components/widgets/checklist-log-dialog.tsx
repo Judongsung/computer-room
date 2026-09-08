@@ -1,3 +1,4 @@
+import type { ChecklistRetentionUseCases } from "@/types/widgets/checklist/retention";
 import { PROGRAM_DOCUMENT_COPY as COPY } from "@client/content/ko/desktop/program-documents";
 import { UI_LOCALE } from "@client/content/ko/shared/format";
 import { useEffect, useMemo, useState } from "react";
@@ -28,12 +29,14 @@ const CHECKLIST_EVENT_LABEL_BY_ACTION = {
 } as const;
 
 interface ChecklistLogDialogProps {
+  readonly checklistRetentionGateway: ChecklistRetentionUseCases;
   readonly widgetId: string;
   readonly gateway: ChecklistGateway;
   readonly onClose: () => void;
 }
 
 export function ChecklistLogDialog({
+  checklistRetentionGateway,
   widgetId,
   gateway,
   onClose,
@@ -107,7 +110,7 @@ export function ChecklistLogDialog({
         </footer>
       }
     >
-      <ChecklistRetentionSettings />
+      <ChecklistRetentionSettings gateway={checklistRetentionGateway} />
       {isLoading && events.length === 0 ? (
         <p className="widget-empty">{CHECKLIST_WIDGET_COPY.LOG_LOADING}</p>
       ) : null}

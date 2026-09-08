@@ -7,12 +7,7 @@ import {
   FILESYSTEM_ROOT_ID,
   FILESYSTEM_ROOT_NAME,
 } from "@/constants/filesystem/filesystem";
-import {
-  WIDGET_TYPE,
-  WIDGET_WINDOW_POLICY,
-  WINDOW_RESTORE_STATE,
-  WINDOW_STATE,
-} from "@/constants/widgets/widget";
+
 import type {
   GuestAccessDirectoryPage,
   GuestAccessSettings,
@@ -148,20 +143,8 @@ class FakeGuestAccessGateway implements GuestAccessGateway {
 }
 
 function renderAdmin(guestAccessGateway: GuestAccessGateway): void {
-  const policy = WIDGET_WINDOW_POLICY[WIDGET_TYPE.ADMIN];
   render(
     <AdminApplication
-      widget={{
-        id: "admin",
-        type: WIDGET_TYPE.ADMIN,
-        position: { x: 32, y: 32 },
-        size: { width: policy.DEFAULT_WIDTH, height: policy.DEFAULT_HEIGHT },
-        windowState: WINDOW_STATE.NORMAL,
-        restoreState: WINDOW_RESTORE_STATE.NORMAL,
-        stackOrder: 0,
-        file: null,
-        data: null,
-      }}
       windowControls={{
         isActive: true,
         isMaximized: false,
@@ -172,13 +155,7 @@ function renderAdmin(guestAccessGateway: GuestAccessGateway): void {
         onSaveFile: vi.fn(),
         canSaveFile: false,
       }}
-      gateway={{} as never}
-      storageStatusGateway={{} as never}
-      imageUploadProfileGateway={{} as never}
-      imageUploadLogGateway={{} as never}
       guestAccessGateway={guestAccessGateway}
-      onOpenFilesystemEntry={vi.fn()}
-      onWidgetChange={vi.fn()}
     />,
   );
 }

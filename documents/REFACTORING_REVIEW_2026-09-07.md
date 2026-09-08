@@ -8,7 +8,7 @@
 
 범위: SOLID, 중복 제거, 비동기 상태, 조회 효율, 타입 계약, 오류 처리와 검증 도구
 
-상태: **진단 완료 · 단계별 개선 진행 중 (R1·R2·R3·R7 및 1·2단계 완료)**
+상태: **진단 완료 · 단계별 개선 진행 중 (R1·R2·R3·R4·R7·R9·R11 및 1·2·3단계 완료)**
 
 ## 1. 종합 판단
 
@@ -59,14 +59,14 @@ import 조사는 문자열 기반이며 type import도 포함했다. 완전한 �
 | R1 | P1 | 체크리스트 응답의 시각 기준과 데이터 조립 통일 — **완료 (1-A)** | 정확성, DRY |
 | R2 | P1 | 모바일 프로그램의 조회·수정 충돌 방지 — **완료 (1-B)** | 상태 일관성 |
 | R3 | P2 | 프로그램 데이터 조회를 요청 ID 범위로 제한 — **완료 (2단계)** | 성능, SRP |
-| R4 | P2 | 프로그램별 props와 gateway 계약 분리 | ISP, OCP |
+| R4 | P2 | 프로그램별 props와 gateway 계약 분리 — **완료 (3단계)** | ISP, OCP |
 | R5 | P2 | 파일 변경 명령의 중복과 중복 실행 정책 정리 | DRY, SRP |
 | R6 | P2 | 공통 화면 상태를 기능별 훅으로 공유 | DRY |
 | R7 | P2 | 게스트 새로고침의 요청 순서와 부분 실패 처리 — **완료 (1-C)** | 오류 처리 |
 | R8 | P2 | 이미지 로그 훅의 의존성과 요청 수명 명시 | React 상태 관리 |
-| R9 | P3 | 보관 설정 훅에 API 포트 주입 | DIP, 테스트 용이성 |
+| R9 | P3 | 보관 설정 훅에 API 포트 주입 — **완료 (3단계)** | DIP, 테스트 용이성 |
 | R10 | P2 | 예기치 않은 API 오류의 로그 형식 통일 | 운영 관측, 정보 최소화 |
-| R11 | P3 | 타입 순환과 과도한 제네릭 보장 축소 | 타입 계약 |
+| R11 | P3 | 타입 순환과 과도한 제네릭 보장 축소 — **완료 (3단계)** | 타입 계약 |
 | R12 | P2 | 구조 검사를 실제 의존 방향과 훅 규칙까지 확장 | 재발 방지 |
 
 P1은 관찰 가능한 동작의 일관성을 먼저 보강할 항목, P2는 다음 리팩토링에서 다룰 항목, P3는 관련 코드를 수정할 때 함께 처리할 항목이다.
@@ -116,6 +116,8 @@ P1은 관찰 가능한 동작의 일관성을 먼저 보강할 항목, P2는 다
 완료 기준: 무관한 메모·체크리스트를 많이 넣어도 대상 ID의 자료만 읽고 응답은 동일해야 한다. 빈 레이아웃이나 상태 없는 프로그램에서 체크리스트 쿼리를 하지 않아야 한다. 포트 변경 후 D1 구현과 fake를 함께 검증한다. 외부 API 형식과 스키마를 바꿀 필요는 없다.
 
 ### R4. 공통 프로그램 props가 모든 기능의 의존성을 전파한다
+
+**완료: 2026-09-09, 3단계.** 아래 근거는 진단 당시 상태이며, 구현·검증 결과는 10절 참조.
 
 근거: [WidgetComponentProps](../src/client/types/desktop/desktop.ts) 88–98행, [WidgetRenderer](../src/client/components/widgets/widget-renderer.tsx), [MemoWidget](../src/client/components/widgets/memo-widget.tsx), [StorageStatusWidget](../src/client/components/widgets/storage-status-widget.tsx).
 
@@ -171,6 +173,8 @@ UI의 disabled 상태만으로 모든 호출 경로의 중복 실행이 차단�
 
 ### R9. 체크리스트 보관 설정의 구체 API 의존을 좁힌다
 
+**완료: 2026-09-09, 3단계.** 아래 근거는 진단 당시 상태이며, 구현·검증 결과는 10절 참조.
+
 근거: [useChecklistRetention](../src/client/hooks/widgets/checklist/use-checklist-retention.ts) 4행 및 8행, [설정 API](../src/client/api/widgets/checklist-retention-api-client.ts), [설정 UI 테스트](../test/client/widgets/checklist-retention-settings.test.tsx).
 
 **확인:** 다른 기능의 gateway 주입 패턴과 달리 이 훅은 `checklistRetentionApi`를 직접 호출한다. 테스트도 전역 `fetch`를 대체해야 한다. 동작 오류라고 볼 수는 없지만 상태 관리와 transport를 따로 검증하기 어렵다.
@@ -190,6 +194,8 @@ UI의 disabled 상태만으로 모든 호출 경로의 중복 실행이 차단�
 완료 기준: 민감한 문자열을 message/cause에 넣은 예외를 전달해도 로그와 HTTP 응답에 나타나지 않고, 정해진 오류 분류는 관찰할 수 있어야 한다.
 
 ### R11. 타입 순환과 실제보다 강한 타입 보장을 줄인다
+
+**완료: 2026-09-09, 3단계.** 아래 근거는 진단 당시 상태이며, 구현·검증 결과는 10절 참조.
 
 근거: [desktop 타입](../src/client/types/desktop/desktop.ts), [filesystem 타입](../src/client/types/filesystem/filesystem.ts), [dashboard 타입](../src/client/types/widgets/dashboard.ts), [widget-data](../src/domain/widgets/widget-data.ts) 48–55행 및 106행 이후, [초안 factory](../src/application/widgets/widget-file-service.ts) 229행 이후, [D1 초안 저장소](../src/infrastructure/widgets/d1-widget-file-draft-repository.ts) 141행.
 
@@ -250,7 +256,7 @@ UI의 disabled 상태만으로 모든 호출 경로의 중복 실행이 차단�
 | 1-B | R2 | 모바일 조회·수정 충돌 방지 | **완료 · 2026-09-08** |
 | 1-C | R7 | 게스트 새로고침과 부분 실패 처리 | **완료 · 2026-09-08** |
 | 2 | R3 | 요청한 프로그램 ID 범위로 조회 제한 | **완료 · 2026-09-08** |
-| 3 | R4·R9·R11 | 프로그램별 인터페이스·API 주입·타입 계약 정리 | 예정 |
+| 3 | R4·R9·R11 | 프로그램별 인터페이스·API 주입·타입 계약 정리 | **완료 · 2026-09-09** |
 | 4 | R5·R6·R8 | 파일 명령과 화면 상태의 중복 제거 | 예정 |
 | 5 | R10·R12 | 오류 로그와 자동 검사 보강 | 예정 |
 
@@ -393,3 +399,33 @@ UI의 disabled 상태만으로 모든 호출 경로의 중복 실행이 차단�
 | 운영 성능 측정 | 미실행: 조회 대상·반환 자료·쿼리 수로 검증했으며 운영 지연 개선 수치를 추정하지 않음 |
 
 **R3와 2단계 추가 완료.** 다음 구현 단위는 3단계(R4·R9·R11)이며, 다른 미완료 항목과 추가 검토 후보는 그대로 남겨 두었다. 배포와 원격 push는 수행하지 않았다.
+
+### 3단계 · R4·R9·R11: 프로그램별 의존성과 타입 계약 정리
+
+- 완료일: **2026-09-09 (KST)**
+- 커밋 제목: `refactor(widgets): 프로그램별 의존성과 타입 계약 정리`
+- 공통 `WidgetComponentProps`를 제거하고 메모·체크리스트·저장소 상태·이미지 업로드 관리·관리자에 필요한 필수 props만 정의했다. 메모와 체크리스트는 구체 프로그램 타입과 해당 종류의 변경 콜백을 받는다. 종류 검사만 하던 래퍼와 상태 없는 프로그램의 불필요한 `widget` prop을 제거했다.
+- `WidgetRenderer`의 exhaustive switch에서 종류를 좁혀 필요한 포트만 연결한다. 다섯 프로그램의 lazy import 및 기존 로딩·오류 경계를 유지했다.
+- `useChecklistRetention(gateway)`와 데스크톱·모바일 설정 UI는 필수 `ChecklistRetentionUseCases`를 받는다. `AppProps.checklistRetentionApi`만 선택적이며 기본 API 선택은 데스크톱·모바일 application 조립 경계에 있다. 주입 값 변경도 하위로 전달한다.
+- 설정 조회 effect에 gateway 의존성을 추가해 닫기·gateway 변경·unmount 시 이전 요청 세대를 무효화한다. 보관 일수 검증, 저장 실패 메시지·입력 보존을 유지했다. UI 테스트의 전역 fetch 대체는 좁은 fake 주입으로 교체하고 HTTP 검증은 별도 Node API 클라이언트 테스트로 분리했다.
+- 창 크기·bounds·수명·컨트롤 타입을 [독립 창 타입](../src/client/types/desktop/window.ts)으로 옮기고 모든 소비자가 직접 import하도록 바꿨다. 호환용 재수출은 추가하지 않았다. DOM 타입이 필요하지만 기존 desktop 타입의 전이 import에 의존하던 drag-transfer 테스트 helper는 `.tsx`로 분류해 클라이언트 컴파일 범위에 두었다.
+- `cloneDashboardWidget`은 입력 종류에 대응하는 공개 타입만 반환한다. 추가 최상위 필드 보존을 약속하지 않으며 레이아웃·file·data 및 체크 항목의 복제 동작은 유지한다. `as T`를 제거하고 데이터 전략에 명시적인 mapped type을 적용했다.
+- application 초안 factory와 D1 SQL builder는 메모·체크리스트 union을 exhaustive switch로 좁혀 이중 타입 단언을 제거했다. 기존 이름·본문·항목 검증, ID 생성 순서, 업무 날짜, SQL 및 batch 저장 방식은 유지했다.
+- UI 스타일·저장 동작·HTTP 형식·DB 스키마·인증·게스트 공개 판정은 변경하지 않았다. R5·R6·R8의 상태 관리 변경과 R12의 범용 아키텍처 검사는 이번 범위에서 제외했다.
+
+| 검증 | 결과 |
+| --- | --- |
+| 프로그램 의존성 | 다섯 종류의 렌더러 연결 테스트 통과. 메모 저장·체크리스트 수정·저장소 조회·관리 화면 단독 테스트에서 무관한 gateway props 제거 |
+| 보관 설정 | 주입 fake로 조회·저장 실패, 입력 보존·재시도, 닫기·gateway 변경·unmount 후 오래된 응답 무시 및 새 조회의 busy 상태 보호 확인 |
+| HTTP 계약 | 기존 경로의 GET·PATCH, settings 응답, 잘못된 응답 및 HTTP 실패를 별도 API 클라이언트 테스트로 확인 |
+| 타입 계약·초안 | 프로그램별 props·콜백 및 clone 공개 반환 타입 검사, 잘못된 종류/payload 조합의 컴파일 거부 확인. 기존 clone 중첩 참조 분리, 메모·체크리스트 초안 검증 및 실제 D1 저장 회귀 통과 |
+| import 관계 | 소스 import 그래프에서 filesystem ↔ desktop 및 dashboard ↔ desktop 순환 없음 확인. 새 window 모듈의 유일한 의존은 도메인 프로그램 타입 |
+| `npm run check` | 통과: TypeScript, 불변 마이그레이션 17개, 구조·문구·라우트 검사 |
+| `npm run test:unit` | 62개 파일 · 281개 테스트 통과 |
+| `npm run test:client` | 50개 파일 · 209개 테스트 통과. 다른 무거운 검사와 동시에 실행하지 않음 |
+| `npm run test:worker` | 25개 파일 · 89개 테스트 통과 |
+| `npm run build` | 통과. 초기 JS desktop 391,220 bytes / mobile 280,012 bytes로 각각 500 KiB 예산 이내. 다섯 프로그램 지연 청크 유지 |
+| `git diff --check` 및 staged diff 검사 | 통과 |
+| 수동 브라우저 검사 | 미실행: UI·훅 회귀는 jsdom 테스트로 검증. 필수 자동 검사는 모두 실행 |
+
+**R4·R9·R11과 3단계 완료.** 다음 구현 단위는 4단계(R5·R6·R8)이다. 다른 미완료 항목과 추가 검토 후보는 그대로 남겼으며 배포·원격 push는 수행하지 않았다.

@@ -1,3 +1,4 @@
+import { assertNever } from "@/domain/shared/assert-never";
 import { checklistPeriod } from "@/domain/widgets/checklist-period";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
@@ -130,19 +131,18 @@ const WIDGET_FILE_STATEMENT_BUILDERS = {
   },
 } satisfies WidgetFileStatementBuilderMap;
 
-function buildWidgetFileContentStatements<T extends WidgetFileType>(
+function buildWidgetFileContentStatements(
   database: D1Database,
   widgetId: string,
   createdAt: number,
-  content: WidgetFileDraftContentByType<T>,
+  content: NewWidgetFileDraft["content"],
 ): D1PreparedStatement[] {
-  const builder = WIDGET_FILE_STATEMENT_BUILDERS[
-    content.type
-  ] as unknown as (
-    target: D1Database,
-    id: string,
-    timestamp: number,
-    candidate: WidgetFileDraftContentByType<T>,
-  ) => D1PreparedStatement[];
-  return builder(database, widgetId, createdAt, content);
+  switch (content.type) {
+    case WIDGET_TYPE.MEMO:
+      return WIDGET_FILE_STATEMENT_BUILDERS[WIDGET_TYPE.MEMO](database, widgetId, createdAt, content);
+    case WIDGET_TYPE.DAILY_CHECKLIST:
+      return WIDGET_FILE_STATEMENT_BUILDERS[WIDGET_TYPE.DAILY_CHECKLIST](database, widgetId, createdAt, content);
+    default:
+      return assertNever(content);
+  }
 }

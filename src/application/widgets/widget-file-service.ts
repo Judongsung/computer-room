@@ -1,3 +1,4 @@
+import { assertNever } from "@/domain/shared/assert-never";
 import { nextDesktopOrder } from "@/application/filesystem/desktop-placement";
 import { toPublicEntry } from "@/application/filesystem/filesystem-entry-mapper";
 import { MAX_ACTIVE_CHECKLIST_ITEMS } from "@/constants/widgets/checklist";
@@ -226,13 +227,16 @@ const WIDGET_FILE_DRAFT_FACTORIES = {
   },
 } satisfies WidgetFileDraftFactoryMap;
 
-function createWidgetFileDraftContent<T extends WidgetFileType>(
-  input: CreateWidgetFileInputByType<T>,
+function createWidgetFileDraftContent(
+  input: CreateWidgetFileInput,
   context: WidgetFileDraftFactoryContext,
-): WidgetFileDraftContentByType<T> {
-  const factory = WIDGET_FILE_DRAFT_FACTORIES[input.type] as unknown as (
-    candidate: CreateWidgetFileInputByType<T>,
-    factoryContext: WidgetFileDraftFactoryContext,
-  ) => WidgetFileDraftContentByType<T>;
-  return factory(input, context);
+): NewWidgetFileDraft["content"] {
+  switch (input.type) {
+    case WIDGET_TYPE.MEMO:
+      return WIDGET_FILE_DRAFT_FACTORIES[WIDGET_TYPE.MEMO](input);
+    case WIDGET_TYPE.DAILY_CHECKLIST:
+      return WIDGET_FILE_DRAFT_FACTORIES[WIDGET_TYPE.DAILY_CHECKLIST](input, context);
+    default:
+      return assertNever(input);
+  }
 }

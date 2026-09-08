@@ -23,7 +23,7 @@ import { useFilesystemMarqueeSelection } from "@client/hooks/filesystem/use-file
 import { useFilesystemSelection } from "@client/hooks/filesystem/use-filesystem-selection";
 import { useFilesystemUpload } from "@client/hooks/filesystem/use-filesystem-upload";
 import { useFolderProperties } from "@client/hooks/filesystem/use-folder-properties";
-import type { DesktopDimensions } from "@client/types/desktop/desktop";
+import type { DesktopDimensions } from "@client/types/desktop/window";
 import type { SystemAppId } from "@client/types/desktop/system-app";
 import type {
   DesktopFilesystemDialog,

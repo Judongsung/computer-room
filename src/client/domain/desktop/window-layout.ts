@@ -10,11 +10,7 @@ import type {
   WindowSize,
 } from "@/types/widgets/widget";
 import { DESKTOP_LAYOUT } from "@client/constants/desktop/desktop";
-import type {
-  DesktopDimensions,
-  WindowBounds,
-  WindowLifecycleState,
-} from "@client/types/desktop/desktop";
+import type { DesktopDimensions, WindowBounds, WindowLifecycleState } from "@client/types/desktop/window";
 
 export function activeWidgetId(
   widgets: readonly WidgetLayout[],

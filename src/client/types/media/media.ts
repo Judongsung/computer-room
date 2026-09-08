@@ -1,11 +1,7 @@
 import type { FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import type { MediaKind } from "@/types/filesystem/media";
 import type { IMAGE_VIEWER_ZOOM_MODE } from "@client/constants/media/media";
-import type {
-  DesktopDimensions,
-  ManagedDesktopWindowState,
-  WindowBounds,
-} from "@client/types/desktop/desktop";
+import type { DesktopDimensions, ManagedDesktopWindowState, WindowBounds } from "@client/types/desktop/window";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
 import type { MouseEvent } from "react";

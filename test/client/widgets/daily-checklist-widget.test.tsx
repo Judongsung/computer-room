@@ -1,19 +1,14 @@
+import { fakeChecklistRetentionGateway } from "@test/support/widgets/checklist-retention-gateway";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
-import type {
-  ChecklistItem,
-  DailyChecklistData,
-  DailyChecklistWidget as DailyChecklistWidgetData,
-  DashboardWidget,
-} from "@/types/widgets/widget";
+import type { ChecklistItem, DailyChecklistData, DailyChecklistWidget as DailyChecklistWidgetData } from "@/types/widgets/widget";
 import { DailyChecklistWidget } from "@client/components/widgets/daily-checklist-widget";
-import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
-import type { StorageStatusGateway } from "@client/types/storage/storage-status";
-import type { DashboardGateway } from "@client/types/widgets/api";
-import type { WidgetWindowControls } from "@client/types/desktop/desktop";
+
+import type { ChecklistGateway } from "@client/types/widgets/ports/checklist";
+import type { WidgetWindowControls } from "@client/types/desktop/window";
 import { checklistWidget } from "@test/support/widgets/dashboard-fixtures";
 import { FakeDashboardGateway } from "@test/support/widgets/fake-dashboard-gateway";
 
@@ -113,21 +108,15 @@ function ChecklistHarness({
   gateway,
 }: {
   readonly widget: DailyChecklistWidgetData;
-  readonly gateway: DashboardGateway;
+  readonly gateway: ChecklistGateway;
 }) {
   const [widget, setWidget] = useState(initialWidget);
-  const updateWidget = (next: DashboardWidget): void => {
-    if (next.type === WIDGET_TYPE.DAILY_CHECKLIST) setWidget(next);
-  };
+  const updateWidget = (next: DailyChecklistWidgetData): void => setWidget(next);
   return (
     <DailyChecklistWidget
       widget={widget}
       gateway={gateway}
-      storageStatusGateway={STORAGE_STATUS_GATEWAY}
-      imageUploadProfileGateway={IMAGE_UPLOAD_PROFILE_GATEWAY}
-      imageUploadLogGateway={{} as never}
-      guestAccessGateway={{} as never}
-      onOpenFilesystemEntry={vi.fn()}
+      checklistRetentionGateway={fakeChecklistRetentionGateway()}
       windowControls={WINDOW_CONTROLS}
       onWidgetChange={updateWidget}
     />
@@ -171,23 +160,4 @@ const WINDOW_CONTROLS: WidgetWindowControls = {
   onClose: vi.fn(),
   onSaveFile: vi.fn(),
   canSaveFile: false,
-};
-
-const STORAGE_STATUS_GATEWAY: StorageStatusGateway = {
-  getStatus: async () => {
-    throw new Error("Unexpected storage status request.");
-  },
-};
-
-const IMAGE_UPLOAD_PROFILE_GATEWAY: ImageUploadProfileGateway = {
-  listProfiles: async () => [],
-  createProfile: async () => {
-    throw new Error("Unexpected profile creation.");
-  },
-  updateProfile: async () => {
-    throw new Error("Unexpected profile update.");
-  },
-  deleteProfile: async () => {
-    throw new Error("Unexpected profile deletion.");
-  },
 };

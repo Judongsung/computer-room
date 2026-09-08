@@ -3,7 +3,7 @@ import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "@/constants/filesystem/filesystem";
-import { WIDGET_TYPE } from "@/constants/widgets/widget";
+
 import type { GuestAccessEntry } from "@/types/admin/guest-access";
 import {
   ADMIN_APPLICATION_COPY,
@@ -18,7 +18,9 @@ import {
   WIDGET_ICON_PATH_BY_TYPE,
 } from "@client/constants/desktop/desktop";
 import { useGuestAccessAdmin } from "@client/hooks/admin/use-guest-access-admin";
-import type { WidgetComponentProps } from "@client/types/desktop/desktop";
+import type { WidgetWindowControls } from "@client/types/desktop/window";
+import type { GuestAccessGateway } from "@client/types/admin/guest-access";
+
 import { ConfirmDialog } from "@client/components/filesystem/filesystem-dialogs";
 import { XpTabs } from "@client/components/shared/xp-tabs";
 import { XpCheckbox } from "@client/components/shared/xp-checkbox";
@@ -26,13 +28,16 @@ import { XpExplorerAddressBar } from "@client/components/filesystem/header/xp-ex
 import { XP_EXPLORER_HEADER_CLASS_NAME } from "@client/constants/filesystem/explorer-header";
 import { WidgetCard } from "@client/components/widgets/widget-card";
 
+export interface AdminApplicationProps {
+  readonly windowControls: WidgetWindowControls;
+  readonly guestAccessGateway: GuestAccessGateway;
+}
+
 export function AdminApplication({
-  widget,
   windowControls,
   guestAccessGateway,
-}: WidgetComponentProps) {
+}: AdminApplicationProps) {
   const controller = useGuestAccessAdmin(guestAccessGateway);
-  if (widget.type !== WIDGET_TYPE.ADMIN) return null;
 
   const panel = (
     <div className={GUEST_ACCESS_CLASS_NAME.ROOT} aria-busy={controller.loading}>

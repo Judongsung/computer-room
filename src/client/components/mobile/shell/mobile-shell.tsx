@@ -1,3 +1,4 @@
+import type { ChecklistRetentionUseCases } from "@/types/widgets/checklist/retention";
 import type { SessionInfo } from "@/types/platform/auth";
 import { MobileLazyFeatureBoundary } from "@client/components/mobile/shared/mobile-lazy-feature-boundary";
 import { MobileNavigationBar } from "@client/components/mobile/shared/mobile-navigation-bar";
@@ -22,6 +23,7 @@ interface MobileShellProps {
   readonly dashboard: DashboardGateway;
   readonly filesystem: FilesystemGateway;
   readonly storageStatus: StorageStatusGateway;
+  readonly checklistRetentionGateway: ChecklistRetentionUseCases;
   readonly widgetFiles: WidgetFileGateway;
   readonly mobilePreferences: MobilePreferencesGateway;
 }
@@ -31,6 +33,7 @@ export function MobileShell({
   dashboard,
   filesystem,
   storageStatus,
+  checklistRetentionGateway,
   widgetFiles,
   mobilePreferences,
 }: MobileShellProps) {
@@ -48,6 +51,7 @@ export function MobileShell({
           title={mobileActivityTitle(activity)}
         >
           <MobileActivityLayer
+            checklistRetentionGateway={checklistRetentionGateway}
             controller={controller}
             dashboard={dashboard}
             filesystem={filesystem}

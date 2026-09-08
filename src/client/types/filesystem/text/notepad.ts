@@ -1,5 +1,5 @@
 import type { FilesystemFileEntry } from "@/types/filesystem/filesystem";
-import type { DesktopDimensions, ManagedDesktopWindowState, WindowBounds } from "@client/types/desktop/desktop";
+import type { DesktopDimensions, ManagedDesktopWindowState, WindowBounds } from "@client/types/desktop/window";
 import type { DesktopWindowRegistration } from "@client/types/desktop/session/window-registration";
 import type { FileDownloadSource } from "@client/types/filesystem/text/files";
 

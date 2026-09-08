@@ -5,7 +5,7 @@ import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
 import { NOTEPAD_WINDOW } from "@client/constants/filesystem/text/notepad";
 import { NOTEPAD_COPY } from "@client/content/ko/filesystem/text/notepad";
 import { cascadeWindowPosition, minimizeWindow, restoreWindow, toggleMaximizeWindow } from "@client/domain/desktop/window-layout";
-import type { DesktopDimensions } from "@client/types/desktop/desktop";
+import type { DesktopDimensions } from "@client/types/desktop/window";
 import type { NotepadWindowController, NotepadWindowState } from "@client/types/filesystem/text/notepad";
 
 export function useNotepadWindows(): NotepadWindowController {

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { CHECKLIST_RETENTION } from "@/constants/widgets/checklist-retention";
 import { isChecklistRetentionDays } from "@/domain/widgets/checklist-retention";
-import { checklistRetentionApi } from "@client/api/widgets/checklist-retention-api-client";
+import type { ChecklistRetentionUseCases } from "@/types/widgets/checklist/retention";
 import { CHECKLIST_RETENTION_COPY as COPY } from "@client/content/ko/widgets/checklist-retention";
 import { messageFromError } from "@client/errors/error-message";
 
-export function useChecklistRetention() {
+export function useChecklistRetention(gateway: ChecklistRetentionUseCases) {
   const [expanded, setExpanded] = useState(false);
   const [unlimited, setUnlimited] = useState(true);
   const [days, setDays] = useState(String(CHECKLIST_RETENTION.SUGGESTED_DAYS));
@@ -22,7 +22,7 @@ export function useChecklistRetention() {
     setLoaded(false);
     setError(null);
     setSaved(false);
-    void checklistRetentionApi.getSettings().then((settings) => {
+    void gateway.getSettings().then((settings) => {
       if (request !== sequence.current) return;
       setUnlimited(settings.retentionDays === null);
       setDays(String(settings.retentionDays ?? CHECKLIST_RETENTION.SUGGESTED_DAYS));
@@ -33,7 +33,7 @@ export function useChecklistRetention() {
       if (request === sequence.current) setBusy(false);
     });
     return () => { sequence.current++; };
-  }, [expanded]);
+  }, [expanded, gateway]);
 
   const save = async (): Promise<void> => {
     if (busy || !loaded) return;
@@ -47,7 +47,7 @@ export function useChecklistRetention() {
     setError(null);
     setSaved(false);
     try {
-      await checklistRetentionApi.updateRetentionDays(retentionDays);
+      await gateway.updateRetentionDays(retentionDays);
       if (request === sequence.current) setSaved(true);
     } catch (caught) {
       if (request === sequence.current) setError(messageFromError(caught, COPY.FAILED));

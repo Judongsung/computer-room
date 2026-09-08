@@ -1,3 +1,4 @@
+import { assertNever } from "@/domain/shared/assert-never";
 import { isChecklistRepeatCycle } from "@/domain/widgets/checklist-period";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import { toWidgetLayout } from "@/domain/widgets/widget-layout";
@@ -26,7 +27,7 @@ const STATELESS_WIDGET_DATA_STRATEGY = {
   supportsFileReference: false,
 } satisfies WidgetDataStrategy<null>;
 
-const WIDGET_DATA_STRATEGIES = {
+const WIDGET_DATA_STRATEGIES: WidgetDataStrategyMap = {
   [WIDGET_TYPE.MEMO]: {
     isData: isMemoData,
     cloneData: (data: MemoData): MemoData => ({ ...data }),
@@ -43,16 +44,23 @@ const WIDGET_DATA_STRATEGIES = {
   [WIDGET_TYPE.STORAGE_STATUS]: STATELESS_WIDGET_DATA_STRATEGY,
   [WIDGET_TYPE.IMAGE_UPLOAD_PROFILES]: STATELESS_WIDGET_DATA_STRATEGY,
   [WIDGET_TYPE.ADMIN]: STATELESS_WIDGET_DATA_STRATEGY,
-} satisfies WidgetDataStrategyMap;
+};
 
-export function cloneDashboardWidget<T extends DashboardWidget>(widget: T): T {
-  const strategy = widgetDataStrategy(widget.type);
-  return {
-    ...toWidgetLayout(widget),
-    type: widget.type,
-    file: widget.file ? { ...widget.file } : null,
-    data: strategy.cloneData(widget.data),
-  } as T;
+export function cloneDashboardWidget<T extends DashboardWidget>(widget: T): WidgetByType<T["type"]>;
+export function cloneDashboardWidget(widget: DashboardWidget): DashboardWidget {
+  const base = { ...toWidgetLayout(widget), file: widget.file ? { ...widget.file } : null };
+  switch (widget.type) {
+    case WIDGET_TYPE.MEMO:
+      return { ...base, type: widget.type, data: WIDGET_DATA_STRATEGIES[widget.type].cloneData(widget.data) };
+    case WIDGET_TYPE.DAILY_CHECKLIST:
+      return { ...base, type: widget.type, data: WIDGET_DATA_STRATEGIES[widget.type].cloneData(widget.data) };
+    case WIDGET_TYPE.STORAGE_STATUS:
+    case WIDGET_TYPE.IMAGE_UPLOAD_PROFILES:
+    case WIDGET_TYPE.ADMIN:
+      return { ...base, type: widget.type, file: null, data: null };
+    default:
+      return assertNever(widget);
+  }
 }
 
 export function cloneDashboardWidgets(
@@ -65,11 +73,11 @@ export function isWidgetDataForType<T extends WidgetType>(
   type: T,
   value: unknown,
 ): value is WidgetByType<T>["data"] {
-  return widgetDataStrategy(type).isData(value);
+  return WIDGET_DATA_STRATEGIES[type].isData(value);
 }
 
 export function widgetTypeSupportsFileReference(type: WidgetType): boolean {
-  return widgetDataStrategy(type).supportsFileReference;
+  return WIDGET_DATA_STRATEGIES[type].supportsFileReference;
 }
 
 export function isMemoData(value: unknown): value is MemoData {
@@ -101,14 +109,6 @@ export function isChecklistItem(value: unknown): value is ChecklistItem {
     typeof value.checked === "boolean" &&
     (value.checkedAt === undefined || value.checkedAt === null || (typeof value.checkedAt === "string" && Number.isFinite(Date.parse(value.checkedAt))))
   );
-}
-
-function widgetDataStrategy<T extends WidgetType>(
-  type: T,
-): WidgetDataStrategy<WidgetByType<T>["data"]> {
-  return WIDGET_DATA_STRATEGIES[type] as unknown as WidgetDataStrategy<
-    WidgetByType<T>["data"]
-  >;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

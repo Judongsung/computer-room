@@ -18,6 +18,7 @@ export function DesktopWindow({
   storageStatusGateway,
   imageUploadProfileGateway,
   imageUploadLogGateway,
+  checklistRetentionGateway,
   guestAccessGateway,
   onOpenFilesystemEntry,
   onFocus,
@@ -72,6 +73,7 @@ export function DesktopWindow({
         storageStatusGateway={storageStatusGateway}
         imageUploadProfileGateway={imageUploadProfileGateway}
         imageUploadLogGateway={imageUploadLogGateway}
+        checklistRetentionGateway={checklistRetentionGateway}
         guestAccessGateway={guestAccessGateway}
         onOpenFilesystemEntry={onOpenFilesystemEntry}
         onWidgetChange={onWidgetChange}

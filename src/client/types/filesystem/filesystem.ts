@@ -1,10 +1,6 @@
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import type { FILESYSTEM_DRAG_SOURCE } from "@client/constants/filesystem/filesystem";
-import type {
-  DesktopDimensions,
-  ManagedDesktopWindowState,
-  WindowBounds,
-} from "@client/types/desktop/desktop";
+import type { DesktopDimensions, ManagedDesktopWindowState, WindowBounds } from "@client/types/desktop/window";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 import type { FilesystemEntryGateway } from "@client/types/filesystem/ports/entry";
 import type { FilesystemRecycleBinGateway } from "@client/types/filesystem/ports/recycle-bin";

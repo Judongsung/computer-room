@@ -16,7 +16,6 @@ import type {
   StorageStatusSnapshot,
   StorageUsageValue,
 } from "@/types/storage/storage-status";
-import { WIDGET_TYPE as DASHBOARD_WIDGET_TYPE } from "@/constants/widgets/widget";
 import {
   STORAGE_MIME_CATEGORY_COLOR,
   STORAGE_STATUS_CLASS_NAME,
@@ -31,16 +30,22 @@ import {
   storageUsagePercent,
 } from "@client/domain/storage/storage-status";
 import { messageFromError } from "@client/errors/error-message";
-import type { WidgetComponentProps } from "@client/types/desktop/desktop";
+import type { WidgetWindowControls } from "@client/types/desktop/window";
+import type { StorageStatusGateway } from "@client/types/storage/storage-status";
+
 import { formatFileSize } from "@client/utils/format-file-size";
 import { XpWidgetToolbarButton } from "@client/components/shared/xp-widget-toolbar-button";
 import { WidgetCard } from "@client/components/widgets/widget-card";
 
+export interface StorageStatusWidgetProps {
+  readonly windowControls: WidgetWindowControls;
+  readonly storageStatusGateway: StorageStatusGateway;
+}
+
 export function StorageStatusWidget({
-  widget,
   windowControls,
   storageStatusGateway,
-}: WidgetComponentProps) {
+}: StorageStatusWidgetProps) {
   const [status, setStatus] = useState<StorageStatusSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,8 +65,6 @@ export function StorageStatusWidget({
   useEffect(() => {
     void load();
   }, [load]);
-
-  if (widget.type !== DASHBOARD_WIDGET_TYPE.STORAGE_STATUS) return null;
 
   return (
     <WidgetCard

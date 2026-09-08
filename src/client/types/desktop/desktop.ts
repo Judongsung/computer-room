@@ -1,8 +1,7 @@
+import type { ChecklistRetentionUseCases } from "@/types/widgets/checklist/retention";
+import type { DesktopDimensions, WindowBounds, ManagedDesktopWindowState, WidgetWindowControls } from "@client/types/desktop/window";
 import type {
   DashboardWidget,
-  WindowPosition,
-  WindowRestoreState,
-  WindowSize,
   WindowState,
 } from "@/types/widgets/widget";
 import type { SessionInfo } from "@/types/platform/auth";
@@ -20,25 +19,6 @@ import type { ImageUploadProfileGateway } from "@client/types/integrations/image
 import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import type { GuestAccessGateway } from "@client/types/admin/guest-access";
-
-export interface DesktopDimensions {
-  readonly width: number;
-  readonly height: number;
-}
-
-export interface WindowBounds {
-  readonly position: WindowPosition;
-  readonly size: WindowSize;
-}
-
-export interface WindowLifecycleState {
-  readonly windowState: WindowState;
-  readonly restoreState: WindowRestoreState;
-}
-
-export interface ManagedDesktopWindowState
-  extends WindowBounds,
-    WindowLifecycleState {}
 
 export interface DesktopAppWindowProps {
   readonly title: string;
@@ -74,29 +54,6 @@ export interface MovableDesktopWindowProps extends WindowBounds {
   readonly children: ReactNode;
 }
 
-export interface WidgetWindowControls {
-  readonly isActive: boolean;
-  readonly isMaximized: boolean;
-  readonly onFocus: () => void;
-  readonly onMinimize: () => void;
-  readonly onToggleMaximize: () => void;
-  readonly onClose: () => void;
-  readonly onSaveFile: () => void;
-  readonly canSaveFile: boolean;
-}
-
-export interface WidgetComponentProps {
-  readonly widget: DashboardWidget;
-  readonly windowControls: WidgetWindowControls;
-  readonly gateway: DashboardGateway;
-  readonly storageStatusGateway: StorageStatusGateway;
-  readonly imageUploadProfileGateway: ImageUploadProfileGateway;
-  readonly imageUploadLogGateway: ImageUploadLogGateway;
-  readonly guestAccessGateway: GuestAccessGateway;
-  readonly onOpenFilesystemEntry: (entry: FilesystemEntry) => void;
-  readonly onWidgetChange: (widget: DashboardWidget) => void;
-}
-
 export interface WidgetCardProps {
   readonly className?: string;
   readonly bodyClassName?: string;
@@ -117,6 +74,7 @@ export interface DesktopShellProps {
   readonly storageStatusGateway: StorageStatusGateway;
   readonly imageUploadProfileGateway: ImageUploadProfileGateway;
   readonly imageUploadLogGateway: ImageUploadLogGateway;
+  readonly checklistRetentionGateway: ChecklistRetentionUseCases;
   readonly guestAccessGateway: GuestAccessGateway;
   readonly layoutSaveStatus: LayoutSaveStatus;
   readonly layoutSaveError: string | null;
@@ -155,6 +113,7 @@ export interface DesktopWindowProps {
   readonly storageStatusGateway: StorageStatusGateway;
   readonly imageUploadProfileGateway: ImageUploadProfileGateway;
   readonly imageUploadLogGateway: ImageUploadLogGateway;
+  readonly checklistRetentionGateway: ChecklistRetentionUseCases;
   readonly guestAccessGateway: GuestAccessGateway;
   readonly onOpenFilesystemEntry: (entry: FilesystemEntry) => void;
   readonly onFocus: () => void;

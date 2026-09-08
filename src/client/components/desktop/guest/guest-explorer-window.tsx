@@ -19,10 +19,7 @@ import { useXpContextMenu } from "@client/state/context-menu/context-menu-contex
 import { GUEST_COPY } from "@client/content/ko/guest/guest";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { XP_EXPLORER_HEADER_COPY } from "@client/content/ko/filesystem/explorer-header";
-import type {
-  DesktopDimensions,
-  WindowBounds,
-} from "@client/types/desktop/desktop";
+import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/window";
 import type { ExplorerWindowState } from "@client/types/filesystem/filesystem";
 import type { XpExplorerMenu, XpExplorerToolbarItem } from "@client/types/filesystem/explorer-header";
 import type { GuestGateway } from "@client/types/guest/guest";

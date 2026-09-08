@@ -1,3 +1,4 @@
+import type { ChecklistRetentionUseCases } from "@/types/widgets/checklist/retention";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { MobileChecklistRetentionSettings } from "@client/components/mobile/widgets/mobile-checklist-retention-settings";
 import { useEffect, useState } from "react";
@@ -9,12 +10,13 @@ import { messageFromError } from "@client/errors/error-message";
 import type { ChecklistGateway } from "@client/types/widgets/ports/checklist";
 
 interface MobileChecklistLogsProps {
+  readonly checklistRetentionGateway: ChecklistRetentionUseCases;
   readonly widgetId: string;
   readonly gateway: ChecklistGateway;
   readonly onClose: () => void;
 }
 
-export function MobileChecklistLogs({ widgetId, gateway, onClose }: MobileChecklistLogsProps) {
+export function MobileChecklistLogs({ widgetId, gateway, checklistRetentionGateway, onClose }: MobileChecklistLogsProps) {
   const [events, setEvents] = useState<readonly ChecklistLogEvent[]>([]);
   const [nextOffset, setNextOffset] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,7 @@ export function MobileChecklistLogs({ widgetId, gateway, onClose }: MobileCheckl
       }
     >
       <div className="android-checklist-logs-body">
-      <MobileChecklistRetentionSettings />
+      <MobileChecklistRetentionSettings gateway={checklistRetentionGateway} />
       {loading && events.length === 0 ? <p>{MOBILE_COPY.LOADING}</p> : null}
       {!loading && events.length === 0 ? <p>{MOBILE_COPY.NO_LOGS}</p> : null}
       <ol className={MOBILE_CLASS_NAME.LIST}>

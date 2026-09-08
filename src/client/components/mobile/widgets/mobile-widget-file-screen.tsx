@@ -1,3 +1,4 @@
+import type { ChecklistRetentionUseCases } from "@/types/widgets/checklist/retention";
 import { useChecklistRefresh } from "@client/hooks/widgets/checklist/use-checklist-refresh";
 import { useWidgetRequestCoordinator } from "@client/hooks/widgets/use-widget-request-coordinator";
 import { CHECKLIST_WIDGET_COPY, MEMO_WIDGET_COPY } from "@client/content/ko/widgets/content";
@@ -22,6 +23,7 @@ interface MobileWidgetFileScreenProps {
   readonly entryId: string;
   readonly title: string;
   readonly dashboard: DashboardGateway;
+  readonly checklistRetentionGateway: ChecklistRetentionUseCases;
   readonly widgetFiles: WidgetFileGateway;
   readonly onDirtyChange: (dirty: boolean) => void;
 }
@@ -30,6 +32,7 @@ export function MobileWidgetFileScreen({
   entryId,
   title,
   dashboard,
+  checklistRetentionGateway,
   widgetFiles,
   onDirtyChange,
 }: MobileWidgetFileScreenProps) {
@@ -106,7 +109,7 @@ export function MobileWidgetFileScreen({
         />
       ) : null}
       {showLogs && widget?.type === WIDGET_TYPE.DAILY_CHECKLIST ? (
-        <MobileChecklistLogs widgetId={widget.id} gateway={dashboard} onClose={() => setShowLogs(false)} />
+        <MobileChecklistLogs checklistRetentionGateway={checklistRetentionGateway} widgetId={widget.id} gateway={dashboard} onClose={() => setShowLogs(false)} />
       ) : null}
     </MobileActivity>
   );

@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
 import { DESKTOP_FALLBACK_WORK_AREA } from "@client/constants/desktop/desktop";
-import type { DesktopDimensions } from "@client/types/desktop/desktop";
+import type { DesktopDimensions } from "@client/types/desktop/window";
 
 const FALLBACK_DIMENSIONS: DesktopDimensions = {
   width: DESKTOP_FALLBACK_WORK_AREA.WIDTH_PX,

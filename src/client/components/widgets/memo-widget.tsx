@@ -10,29 +10,26 @@ import { MEMO_EDITOR_MODE } from "@client/constants/widgets/memo";
 import { messageFromError } from "@client/errors/error-message";
 import { XP_WIDGET_TOOLBAR_ACTION } from "@client/constants/shared/xp";
 import { useUnsavedChangesWarning } from "@client/hooks/shared/use-unsaved-changes-warning";
-import type { WidgetComponentProps } from "@client/types/desktop/desktop";
+import type { WidgetWindowControls } from "@client/types/desktop/window";
+import type { MemoGateway } from "@client/types/widgets/ports/memo";
 import { XpWidgetToolbarButton } from "@client/components/shared/xp-widget-toolbar-button";
 import { WidgetCard } from "@client/components/widgets/widget-card";
 import { MarkdownContent } from "@client/components/widgets/markdown-content";
 import { ReadOnlyMemoContent } from "@client/components/widgets/read-only-program-content";
 
-export function MemoWidget(props: WidgetComponentProps) {
-  if (props.widget.type !== WIDGET_TYPE.MEMO) {
-    return null;
-  }
-  return <MemoWidgetContent {...props} widget={props.widget} />;
+export interface MemoWidgetProps {
+  readonly widget: MemoWidgetData;
+  readonly windowControls: WidgetWindowControls;
+  readonly gateway: MemoGateway;
+  readonly onWidgetChange: (widget: MemoWidgetData) => void;
 }
 
-type MemoWidgetContentProps = Omit<WidgetComponentProps, "widget"> & {
-  readonly widget: MemoWidgetData;
-};
-
-function MemoWidgetContent({
+export function MemoWidget({
   widget,
   windowControls,
   gateway,
   onWidgetChange,
-}: MemoWidgetContentProps) {
+}: MemoWidgetProps) {
   const [isEditingContent, setIsEditingContent] = useState(false);
   const [editorMode, setEditorMode] = useState<
     (typeof MEMO_EDITOR_MODE)[keyof typeof MEMO_EDITOR_MODE]

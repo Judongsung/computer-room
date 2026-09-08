@@ -1,5 +1,5 @@
 import { DESKTOP_LAYOUT } from "@client/constants/desktop/desktop";
-import type { DesktopDimensions } from "@client/types/desktop/desktop";
+import type { DesktopDimensions } from "@client/types/desktop/window";
 
 export interface DesktopIconLayout {
   readonly rowCount: number;

@@ -1,10 +1,7 @@
 import type { WindowRestoreState, WindowState } from "@/types/widgets/widget";
 import type { SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
-import type {
-  DesktopAppWindowProps,
-  DesktopDimensions,
-  WindowBounds,
-} from "@client/types/desktop/desktop";
+import type { DesktopAppWindowProps } from "@client/types/desktop/desktop";
+import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/window";
 
 export type SystemAppId =
   (typeof SYSTEM_APP_ID)[keyof typeof SYSTEM_APP_ID];

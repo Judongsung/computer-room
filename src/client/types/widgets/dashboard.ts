@@ -3,8 +3,7 @@ import type { LAYOUT_SAVE_STATUS } from "@client/constants/desktop/layout-save";
 import type { SessionInfo } from "@/types/platform/auth";
 import type { DashboardWidget, WidgetLayout } from "@/types/widgets/widget";
 import type { SaveWidgetFileInput } from "@/types/filesystem/filesystem";
-import type { DesktopDimensions } from "@client/types/desktop/desktop";
-import type { WindowBounds } from "@client/types/desktop/desktop";
+import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/window";
 import type { DashboardGateway } from "@client/types/widgets/api";
 
 export type LoadStatus = (typeof LOAD_STATUS)[keyof typeof LOAD_STATUS];

@@ -15,7 +15,7 @@ import { SYSTEM_APP_TITLE_BY_ID } from "@client/content/ko/desktop/system-app";
 import type { useExplorerWindows } from "@client/hooks/desktop/use-explorer-windows";
 import type { useSystemWindows } from "@client/hooks/desktop/use-system-windows";
 import type { useMediaWindows } from "@client/hooks/media/use-media-windows";
-import type { DesktopDimensions } from "@client/types/desktop/desktop";
+import type { DesktopDimensions } from "@client/types/desktop/window";
 import type { SystemAppId } from "@client/types/desktop/system-app";
 import type { WidgetOpenResult } from "@client/types/widgets/dashboard";
 

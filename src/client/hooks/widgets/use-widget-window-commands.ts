@@ -9,7 +9,7 @@ import {
   restoreWindow as restoreWindowState,
   toggleMaximizeWindow as toggleMaximizeWindowState,
 } from "@client/domain/desktop/window-layout";
-import type { WindowBounds } from "@client/types/desktop/desktop";
+import type { WindowBounds } from "@client/types/desktop/window";
 import type {
   DashboardWidgetCollectionController,
   WidgetWindowCommands,

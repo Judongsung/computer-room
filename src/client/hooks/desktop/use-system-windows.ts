@@ -8,7 +8,7 @@ import {
   SYSTEM_APP_CONFIG,
   SYSTEM_APP_ID_VALUES,
 } from "@client/constants/desktop/system-app";
-import type { WindowBounds } from "@client/types/desktop/desktop";
+import type { WindowBounds } from "@client/types/desktop/window";
 import type {
   SystemAppId,
   SystemWindowStateMap,

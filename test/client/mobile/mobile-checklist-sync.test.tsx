@@ -1,3 +1,4 @@
+import { fakeChecklistRetentionGateway } from "@test/support/widgets/checklist-retention-gateway";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
@@ -27,7 +28,7 @@ describe("mobile checklist synchronization", () => {
       .mockResolvedValueOnce(original).mockImplementationOnce(() => stale.promise);
     const dashboard = new FakeDashboardGateway();
     dashboard.setChecklistItemChecked = vi.fn(async () => ({ ...item, checked: true }));
-    render(<MobileWidgetFileScreen entryId={original.entry.id} title={original.entry.name}
+    render(<MobileWidgetFileScreen checklistRetentionGateway={fakeChecklistRetentionGateway()} entryId={original.entry.id} title={original.entry.name}
       dashboard={dashboard} widgetFiles={{ getWidgetFile, createWidgetFile: vi.fn() }} onDirtyChange={vi.fn()} />);
     const checkbox = await screen.findByRole("checkbox", { name: item.label });
     act(() => window.dispatchEvent(new Event("focus")));
@@ -47,7 +48,7 @@ describe("mobile checklist synchronization", () => {
     const save = deferred<never>();
     getWidgetFile.mockImplementationOnce(() => load.promise);
     dashboard.addChecklistItem = vi.fn(() => save.promise);
-    render(<MobileWidgetFileScreen {...props} />);
+    render(<MobileWidgetFileScreen checklistRetentionGateway={fakeChecklistRetentionGateway()} {...props} />);
     act(() => { window.dispatchEvent(new Event("focus")); document.dispatchEvent(new Event("visibilitychange")); });
     expect(getWidgetFile).toHaveBeenCalledTimes(1);
     await act(async () => load.resolve(original));
@@ -72,7 +73,7 @@ describe("mobile checklist synchronization", () => {
     dashboard.updateChecklistItem = vi.fn(async (_id, id, label) => ({ ...added, id, label }));
     dashboard.deleteChecklistItem = vi.fn(async () => undefined);
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
-    render(<MobileWidgetFileScreen {...props} />);
+    render(<MobileWidgetFileScreen checklistRetentionGateway={fakeChecklistRetentionGateway()} {...props} />);
     const user = userEvent.setup();
     await user.click(await screen.findByRole("button", { name: "편집" }));
     const input = screen.getByRole("textbox", { name: "새 체크 항목" });
@@ -96,12 +97,12 @@ describe("mobile checklist synchronization", () => {
     const { props, original, dashboard, getWidgetFile } = setup();
     const save = deferred<{ id: string; label: string; checked: boolean }>();
     dashboard.setChecklistItemChecked = vi.fn(() => save.promise);
-    const { rerender } = render(<MobileWidgetFileScreen {...props} />);
+    const { rerender } = render(<MobileWidgetFileScreen checklistRetentionGateway={fakeChecklistRetentionGateway()} {...props} />);
     await userEvent.setup().click(await screen.findByRole("checkbox", { name: "기존" }));
     const fresh = deferred<WidgetFileDocument>();
     const nextFiles = { ...props.widgetFiles, getWidgetFile: vi.fn(() => fresh.promise) };
     if (change === "target") getWidgetFile.mockImplementation(() => fresh.promise);
-    rerender(<MobileWidgetFileScreen {...props} entryId={change === "target" ? "next" : props.entryId}
+    rerender(<MobileWidgetFileScreen checklistRetentionGateway={fakeChecklistRetentionGateway()} {...props} entryId={change === "target" ? "next" : props.entryId}
       widgetFiles={change === "target" ? props.widgetFiles : nextFiles} />);
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
     await act(async () => save.resolve({ id: "item", label: "오래된 항목", checked: true }));

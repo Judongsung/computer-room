@@ -8,7 +8,7 @@ import {
 } from "@client/domain/desktop/window-layout";
 import { EXPLORER_WINDOW_ID_PREFIX } from "@client/constants/filesystem/filesystem";
 import { SYSTEM_APP_CONFIG, SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
-import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/desktop";
+import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/window";
 import type {
   ExplorerWindowController,
   ExplorerWindowOpenRequest,

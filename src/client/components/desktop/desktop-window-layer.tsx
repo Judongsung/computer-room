@@ -1,5 +1,6 @@
+import type { ChecklistRetentionUseCases } from "@/types/widgets/checklist/retention";
 import { lazy } from "react";
-import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
+
 import type { DashboardWidget, WidgetType } from "@/types/widgets/widget";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import type { DashboardGateway } from "@client/types/widgets/api";
@@ -8,15 +9,12 @@ import type { ImageUploadProfileGateway } from "@client/types/integrations/image
 import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
 import type { GuestAccessGateway } from "@client/types/admin/guest-access";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
-import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/desktop";
+import type { DesktopDimensions, WindowBounds } from "@client/types/desktop/window";
 import type { LocalUploadNode } from "@client/types/filesystem/upload";
 import type { useExplorerWindows } from "@client/hooks/desktop/use-explorer-windows";
 import type { useSystemWindows } from "@client/hooks/desktop/use-system-windows";
 import type { useMediaWindows } from "@client/hooks/media/use-media-windows";
-import {
-  SYSTEM_APP_CONFIG,
-  SYSTEM_APP_ID,
-} from "@client/constants/desktop/system-app";
+import { SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
 import { SYSTEM_APP_TITLE_BY_ID } from "@client/content/ko/desktop/system-app";
 import { DESKTOP_LAYOUT } from "@client/constants/desktop/desktop";
 import { DesktopWindow } from "@client/components/desktop/desktop-window";
@@ -53,6 +51,7 @@ interface DesktopWindowLayerProps {
   readonly storageStatusGateway: StorageStatusGateway;
   readonly imageUploadProfileGateway: ImageUploadProfileGateway;
   readonly imageUploadLogGateway: ImageUploadLogGateway;
+  readonly checklistRetentionGateway: ChecklistRetentionUseCases;
   readonly guestAccessGateway: GuestAccessGateway;
   readonly explorer: ReturnType<typeof useExplorerWindows>;
   readonly system: ReturnType<typeof useSystemWindows>;
@@ -91,6 +90,7 @@ export function DesktopWindowLayer({
   storageStatusGateway,
   imageUploadProfileGateway,
   imageUploadLogGateway,
+  checklistRetentionGateway,
   guestAccessGateway,
   explorer,
   system,
@@ -148,6 +148,7 @@ export function DesktopWindowLayer({
           storageStatusGateway={storageStatusGateway}
           imageUploadProfileGateway={imageUploadProfileGateway}
           imageUploadLogGateway={imageUploadLogGateway}
+          checklistRetentionGateway={checklistRetentionGateway}
           guestAccessGateway={guestAccessGateway}
           onOpenFilesystemEntry={onOpenFilesystemEntry}
           onFocus={() => onFocusWindow(widget.id, () => onFocusWidget(widget.id))}

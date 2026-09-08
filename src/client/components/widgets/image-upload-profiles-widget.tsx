@@ -1,6 +1,6 @@
 import { IMAGE_UPLOAD_PROFILE_COPY } from "@client/content/ko/integrations/image-upload-profile";
 import { useState } from "react";
-import { WIDGET_TYPE } from "@/constants/widgets/widget";
+
 import {
   IMAGE_UPLOAD_PROFILE_CLASS_NAME,
 } from "@client/constants/integrations/image-upload-profile";
@@ -13,20 +13,30 @@ import {
   type ImageUploadProfilesTab,
 } from "@client/constants/integrations/image-upload-log";
 import { IMAGE_UPLOAD_LOG_COPY } from "@client/content/ko/integrations/image-upload-log";
-import type { WidgetComponentProps } from "@client/types/desktop/desktop";
+import type { WidgetWindowControls } from "@client/types/desktop/window";
+import type { ImageUploadProfileGateway } from "@client/types/integrations/image-upload-profile";
+import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
+import type { FilesystemEntry } from "@/types/filesystem/filesystem";
+
 import { ConfirmDialog } from "@client/components/filesystem/filesystem-dialogs";
 import { ImageUploadProfileEditor } from "@client/components/widgets/image-upload-profile-editor";
 import { WidgetCard } from "@client/components/widgets/widget-card";
 import { XpTabs } from "@client/components/shared/xp-tabs";
 import { ImageUploadLogList } from "@client/components/widgets/image-upload-log-list";
 
+export interface ImageUploadProfilesWidgetProps {
+  readonly windowControls: WidgetWindowControls;
+  readonly imageUploadProfileGateway: ImageUploadProfileGateway;
+  readonly imageUploadLogGateway: ImageUploadLogGateway;
+  readonly onOpenFilesystemEntry: (entry: FilesystemEntry) => void;
+}
+
 export function ImageUploadProfilesWidget({
-  widget,
   windowControls,
   imageUploadProfileGateway,
   imageUploadLogGateway,
   onOpenFilesystemEntry,
-}: WidgetComponentProps) {
+}: ImageUploadProfilesWidgetProps) {
   const profiles = useImageUploadProfiles(imageUploadProfileGateway);
   const [activeTab, setActiveTab] = useState<ImageUploadProfilesTab>(
     IMAGE_UPLOAD_PROFILES_TAB.PROFILES,
@@ -40,8 +50,6 @@ export function ImageUploadProfilesWidget({
     activeTab === IMAGE_UPLOAD_PROFILES_TAB.LOGS,
   );
   const [confirmDelete, setConfirmDelete] = useState(false);
-
-  if (widget.type !== WIDGET_TYPE.IMAGE_UPLOAD_PROFILES) return null;
 
   const remove = async (): Promise<void> => {
     if (await profiles.remove()) setConfirmDelete(false);

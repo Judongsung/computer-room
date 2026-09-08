@@ -15,12 +15,7 @@ import {
   FILESYSTEM_ROOT_ID,
 } from "@/constants/filesystem/filesystem";
 import { IMAGE_UPLOAD_LOG_OUTCOME } from "@/constants/integrations/image-upload-log";
-import {
-  WIDGET_TYPE,
-  WIDGET_WINDOW_POLICY,
-  WINDOW_RESTORE_STATE,
-  WINDOW_STATE,
-} from "@/constants/widgets/widget";
+
 import type {
   CreateImageUploadProfileInput,
   ImageUploadProfile,
@@ -252,20 +247,8 @@ function renderWidget(
   logGateway: ImageUploadLogGateway = EMPTY_LOG_GATEWAY,
   onOpenFilesystemEntry = vi.fn(),
 ): void {
-  const policy = WIDGET_WINDOW_POLICY[WIDGET_TYPE.IMAGE_UPLOAD_PROFILES];
   render(
     <ImageUploadProfilesWidget
-      widget={{
-        id: "image-upload-profiles-widget",
-        type: WIDGET_TYPE.IMAGE_UPLOAD_PROFILES,
-        position: { x: 32, y: 32 },
-        size: { width: policy.DEFAULT_WIDTH, height: policy.DEFAULT_HEIGHT },
-        windowState: WINDOW_STATE.NORMAL,
-        restoreState: WINDOW_RESTORE_STATE.NORMAL,
-        stackOrder: 0,
-        file: null,
-        data: null,
-      }}
       windowControls={{
         isActive: true,
         isMaximized: false,
@@ -276,13 +259,9 @@ function renderWidget(
         onSaveFile: vi.fn(),
         canSaveFile: false,
       }}
-      gateway={{} as never}
-      storageStatusGateway={{} as never}
       imageUploadProfileGateway={gateway}
       imageUploadLogGateway={logGateway}
-      guestAccessGateway={{} as never}
       onOpenFilesystemEntry={onOpenFilesystemEntry}
-      onWidgetChange={vi.fn()}
     />,
   );
 }

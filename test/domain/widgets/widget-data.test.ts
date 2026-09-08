@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import type { CreateWidgetFileInput, WidgetFileDraftContent } from "@/types/widgets/widget-file";
+import type { MemoWidget } from "@/types/widgets/widget";
+import { describe, expect, expectTypeOf, it } from "vitest";
 import {
   WIDGET_TYPE,
   WIDGET_WINDOW_POLICY,
@@ -14,6 +16,21 @@ import { isDashboardWidget } from "@/domain/widgets/widget-contract";
 import type { DashboardWidget, WidgetType } from "@/types/widgets/widget";
 
 describe("widget data strategies", () => {
+  it("returns the public kind instead of promising arbitrary subtype metadata", () => {
+    const original = { ...widget(WIDGET_TYPE.MEMO, { file: null, data: { markdown: "memo", updatedAt: null } }), extra: "private" };
+    const copy = cloneDashboardWidget(original);
+    expectTypeOf(copy).toEqualTypeOf<MemoWidget>();
+    // @ts-expect-error Arbitrary subtype fields are not part of the clone contract.
+    expect(copy.extra).toBeUndefined();
+    expect(original.extra).toBe("private");
+    expect(original.data.markdown).toBe("memo");
+    // @ts-expect-error A memo draft cannot carry checklist data.
+    const invalidInput: CreateWidgetFileInput = { parentId: "documents", name: "memo", type: WIDGET_TYPE.MEMO, data: { items: [] } };
+    // @ts-expect-error A stored checklist draft must carry checklist content.
+    const invalidContent: WidgetFileDraftContent = { type: WIDGET_TYPE.DAILY_CHECKLIST, markdown: "memo" };
+    void invalidInput;
+    void invalidContent;
+  });
   it("deeply clones every stateful widget and reuses the stateless policy", () => {
     const memo = widget(WIDGET_TYPE.MEMO, {
       file: { entryId: "memo-entry", parentId: "documents", name: "메모" },

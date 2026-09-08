@@ -1,3 +1,4 @@
+import type { ChecklistRetentionUseCases } from "@/types/widgets/checklist/retention";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
@@ -25,6 +26,7 @@ interface MobileActivityLayerProps {
   readonly dashboard: DashboardGateway;
   readonly filesystem: FilesystemGateway;
   readonly storageStatus: StorageStatusGateway;
+  readonly checklistRetentionGateway: ChecklistRetentionUseCases;
   readonly widgetFiles: WidgetFileGateway;
 }
 
@@ -33,6 +35,7 @@ export function MobileActivityLayer({
   dashboard,
   filesystem,
   storageStatus,
+  checklistRetentionGateway,
   widgetFiles,
 }: MobileActivityLayerProps) {
   const activity = controller.currentActivity;
@@ -105,6 +108,7 @@ export function MobileActivityLayer({
     case MOBILE_ACTIVITY_KIND.WIDGET_FILE:
       return (
         <MobileWidgetFileScreen
+          checklistRetentionGateway={checklistRetentionGateway}
           entryId={activity.entryId}
           title={activity.title}
           dashboard={dashboard}

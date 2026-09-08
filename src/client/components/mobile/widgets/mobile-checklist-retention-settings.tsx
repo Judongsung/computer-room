@@ -1,10 +1,11 @@
+import type { ChecklistRetentionUseCases } from "@/types/widgets/checklist/retention";
 import { useId } from "react";
 import { CHECKLIST_RETENTION } from "@/constants/widgets/checklist-retention";
 import { CHECKLIST_RETENTION_COPY as COPY } from "@client/content/ko/widgets/checklist-retention";
 import { useChecklistRetention } from "@client/hooks/widgets/checklist/use-checklist-retention";
 
-export function MobileChecklistRetentionSettings() {
-  const state = useChecklistRetention();
+export function MobileChecklistRetentionSettings({ gateway }: { readonly gateway: ChecklistRetentionUseCases }) {
+  const state = useChecklistRetention(gateway);
   const id = useId();
   return <section>
     <button type="button" aria-expanded={state.expanded}
