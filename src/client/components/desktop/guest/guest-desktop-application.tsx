@@ -148,7 +148,7 @@ function GuestDesktopContent({ session, gateway }: GuestApplicationProps) {
         }
         if (entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET) {
           const id = await programs.open(entry, desktop);
-          windowManager.focus(id);
+          if (id !== null) windowManager.focus(id);
           return;
         }
         createFileOpener({

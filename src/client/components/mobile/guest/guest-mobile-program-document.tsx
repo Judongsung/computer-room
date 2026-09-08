@@ -1,6 +1,7 @@
+import { useWidgetRequestCoordinator } from "@client/hooks/widgets/use-widget-request-coordinator";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import { useChecklistRefresh } from "@client/hooks/widgets/checklist/use-checklist-refresh";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { GuestProgramDocument } from "@/types/guest/guest";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
 import { ReadOnlyProgramContent } from "@client/components/widgets/read-only-program-content";
@@ -21,34 +22,30 @@ export function GuestMobileProgramDocument({
   title,
   gateway,
 }: GuestMobileProgramDocumentProps) {
-  const [document, setDocument] = useState<GuestProgramDocument | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const scope = useMemo(() => ({}), [entryId, gateway]);
+  const [stored, setStored] = useState<{ scope: object; document: GuestProgramDocument | null; failed: boolean } | null>(null);
+  const document = stored?.scope === scope ? stored.document : null;
+  const requests = useWidgetRequestCoordinator({
+    scope,
+    read: () => gateway.getProgramDocument(entryId),
+    onRead: document => setStored({ scope, document, failed: false }),
+  });
+  useEffect(() => { void requests.refresh(); }, [requests.refresh]);
+  // Keep the last failure visible during retries, until a valid read succeeds.
   useEffect(() => {
-    let active = true;
-    setDocument(null);
-    setError(null);
-    void gateway.getProgramDocument(entryId).then(
-      (value) => {
-        if (active) setDocument(value);
-      },
-      () => {
-        if (active) setError(GUEST_COPY.PROGRAM_LOAD_FAILED);
-      },
-    );
-    return () => {
-      active = false;
-    };
-  }, [entryId, gateway]);
-
-  const refresh = useCallback(async (): Promise<void> => {
-    try { setDocument(await gateway.getProgramDocument(entryId)); setError(null); }
-    catch { setError(GUEST_COPY.PROGRAM_LOAD_FAILED); }
-  }, [entryId, gateway]);
-  useChecklistRefresh({ nextResetAt: document?.type === WIDGET_TYPE.DAILY_CHECKLIST ? document.data.nextResetAt : "", refresh });
+    if (requests.readError) setStored(current => ({ scope,
+      document: current?.scope === scope ? current.document : null, failed: true }));
+  }, [requests.readError, scope]);
+  const error = requests.readError || (stored?.scope === scope && stored.failed)
+    ? GUEST_COPY.PROGRAM_LOAD_FAILED : null;
+  useChecklistRefresh({ nextResetAt: document?.type === WIDGET_TYPE.DAILY_CHECKLIST ? document.data.nextResetAt : "", refresh: requests.refresh });
 
   return (
     <MobileActivity title={document?.entry.name ?? title}>
-      {error ? <p className={MOBILE_CLASS_NAME.ERROR} role="alert">{error}</p> : null}
+      {error ? <div className={MOBILE_CLASS_NAME.ERROR} role="alert">
+        <p>{error}</p>
+        <button type="button" onClick={() => void requests.refresh()}>{MOBILE_COPY.RETRY}</button>
+      </div> : null}
       {!document && !error ? (
         <p className={MOBILE_CLASS_NAME.MESSAGE}>{MOBILE_COPY.LOADING}</p>
       ) : null}
