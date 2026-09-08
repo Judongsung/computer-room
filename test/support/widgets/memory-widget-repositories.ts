@@ -78,8 +78,9 @@ export class MemoryWidgetLayoutRepository implements WidgetLayoutRepository {
 export class MemoryMemoRepository implements MemoRepository {
   readonly records = new Map<string, MemoRecord>();
 
-  async listAll(): Promise<MemoRecord[]> {
-    return [...this.records.values()].map((record) => ({ ...record }));
+  async listByWidgetIds(widgetIds: readonly string[]): Promise<MemoRecord[]> {
+    const ids = new Set(widgetIds);
+    return [...this.records.values()].filter(record => ids.has(record.widgetId)).map((record) => ({ ...record }));
   }
 
   async upsert(record: MemoRecord): Promise<void> {

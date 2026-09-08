@@ -41,7 +41,7 @@ export class ChecklistService implements ChecklistUseCases {
       context.businessDate,
     );
 
-    const repeatCycle = (await this.checklists.listRepeatSettings()).find((row) => row.widgetId === widgetId)?.repeatCycle ?? "daily";
+    const repeatCycle = (await this.checklists.listRepeatSettings([widgetId])).find((row) => row.widgetId === widgetId)?.repeatCycle ?? "daily";
     return toChecklistData(now, repeatCycle, items);
   }
 

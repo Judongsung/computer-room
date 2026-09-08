@@ -1,3 +1,4 @@
+import { readWidgetIdChunks } from "@/infrastructure/widgets/d1-widget-id-query";
 import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
 import { CHECKLIST_WRITE_RETRY_LIMIT, type ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
 import { CHECKLIST_ERRORS } from "@/constants/widgets/errors/checklist";
@@ -9,12 +10,15 @@ import type { SetChecklistStateRecord } from "@/types/widgets/checklist";
 export class D1ChecklistRepeat {
   constructor(private readonly db: D1Database) {}
 
-  async list(): Promise<ChecklistRepeatSettings[]> {
-    const rows = await this.db.prepare("SELECT widget_id, repeat_cycle, version FROM checklist_repeat_settings")
-      .all<{ widget_id: string; repeat_cycle: string; version: number }>();
-    return rows.results.map((row) => {
-      if (!isChecklistRepeatCycle(row.repeat_cycle)) throw new AppError(CHECKLIST_ERRORS.INVALID_REPEAT_CYCLE);
-      return { widgetId: row.widget_id, repeatCycle: row.repeat_cycle, version: row.version };
+  async list(widgetIds: readonly string[]): Promise<ChecklistRepeatSettings[]> {
+    return readWidgetIdChunks(widgetIds, async ids => {
+      const rows = await this.db.prepare(`SELECT widget_id, repeat_cycle, version FROM checklist_repeat_settings WHERE widget_id IN (${ids.map((_, index) => `?${index + 1}`).join(", ")})`)
+        .bind(...ids)
+        .all<{ widget_id: string; repeat_cycle: string; version: number }>();
+      return rows.results.map((row) => {
+        if (!isChecklistRepeatCycle(row.repeat_cycle)) throw new AppError(CHECKLIST_ERRORS.INVALID_REPEAT_CYCLE);
+        return { widgetId: row.widget_id, repeatCycle: row.repeat_cycle, version: row.version };
+      });
     });
   }
 

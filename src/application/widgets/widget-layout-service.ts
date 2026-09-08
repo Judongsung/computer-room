@@ -221,13 +221,14 @@ export class WidgetLayoutService implements WidgetLayoutUseCases {
   ): Promise<DashboardWidget[]> {
     const now = this.clock.now();
     const { businessDate } = getKoreaDateContext(now);
-    const widgetTypes = new Set(layouts.map((layout) => layout.type));
+    const memoIds = [...new Set(layouts.filter(layout => layout.type === WIDGET_TYPE.MEMO).map(layout => layout.id))];
+    const checklistIds = [...new Set(layouts.filter(layout => layout.type === WIDGET_TYPE.DAILY_CHECKLIST).map(layout => layout.id))];
     const [memos, checklistItems, repeatSettings] = await Promise.all([
-      widgetTypes.has(WIDGET_TYPE.MEMO) ? this.memos.listAll() : [],
-      widgetTypes.has(WIDGET_TYPE.DAILY_CHECKLIST)
-        ? this.checklists.listAllActiveItems(businessDate)
+      memoIds.length ? this.memos.listByWidgetIds(memoIds) : [],
+      checklistIds.length
+        ? this.checklists.listActiveItemsByWidgetIds(checklistIds, businessDate)
         : [],
-      this.checklists.listRepeatSettings(),
+      checklistIds.length ? this.checklists.listRepeatSettings(checklistIds) : [],
     ]);
     const memoByWidgetId = new Map(
       memos.map((memo) => [memo.widgetId, memo] as const),

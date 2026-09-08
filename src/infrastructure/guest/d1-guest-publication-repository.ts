@@ -203,6 +203,6 @@ export class D1GuestPublicationRepository
     return new D1ChecklistRepository(this.database).listActiveItems(widgetId, businessDate);
   }
   async checklistRepeatCycle(widgetId: string) {
-    return (await new D1ChecklistRepository(this.database).listRepeatSettings()).find((row) => row.widgetId === widgetId)?.repeatCycle ?? "daily";
+    return (await new D1ChecklistRepository(this.database).listRepeatSettings([widgetId])).find((row) => row.widgetId === widgetId)?.repeatCycle ?? "daily";
   }
 }

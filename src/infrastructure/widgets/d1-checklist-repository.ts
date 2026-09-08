@@ -1,3 +1,4 @@
+import { readWidgetIdChunks } from "@/infrastructure/widgets/d1-widget-id-query";
 import { KOREA_UTC_OFFSET_MILLISECONDS } from "@/constants/platform/date";
 import { D1ChecklistRepeat } from "@/infrastructure/widgets/d1-checklist-repeat";
 import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
@@ -25,22 +26,23 @@ import type {
 export class D1ChecklistRepository implements ChecklistRepository {
   constructor(private readonly database: D1Database) {}
 
-  listRepeatSettings() { return new D1ChecklistRepeat(this.database).list(); }
+  listRepeatSettings(widgetIds: readonly string[]) { return new D1ChecklistRepeat(this.database).list(widgetIds); }
   changeRepeatCycle(widgetId: string, cycle: ChecklistRepeatCycle, now: number) {
     return new D1ChecklistRepeat(this.database).change(widgetId, cycle, now);
   }
 
-  async listAllActiveItems(
+  async listActiveItemsByWidgetIds(
+    widgetIds: readonly string[],
     businessDate: string,
   ): Promise<ChecklistItemRecord[]> {
-    return this.listActiveItemsByQuery(businessDate);
+    return readWidgetIdChunks(widgetIds, ids => this.listActiveItemsByQuery(businessDate, ids));
   }
 
   async listActiveItems(
     widgetId: string,
     businessDate: string,
   ): Promise<ChecklistItemRecord[]> {
-    return this.listActiveItemsByQuery(businessDate, widgetId);
+    return this.listActiveItemsByWidgetIds([widgetId], businessDate);
   }
 
   async countActiveItems(widgetId: string): Promise<number> {
@@ -183,9 +185,9 @@ export class D1ChecklistRepository implements ChecklistRepository {
 
   private async listActiveItemsByQuery(
     businessDate: string,
-    widgetId?: string,
+    widgetIds: readonly string[],
   ): Promise<ChecklistItemRecord[]> {
-    const widgetFilter = widgetId === undefined ? "" : "AND item.widget_id = ?2";
+    const widgetFilter = `AND item.widget_id IN (${widgetIds.map((_, index) => `?${index + 2}`).join(", ")})`;
     const statement = this.database.prepare(
       `SELECT item.id, item.widget_id, item.label, item.sort_order,
          COALESCE(state.checked, 0) AS checked, state.checked_at
@@ -197,10 +199,7 @@ export class D1ChecklistRepository implements ChecklistRepository {
        WHERE item.archived_at IS NULL ${widgetFilter}
        ORDER BY item.widget_id ASC, item.sort_order ASC, item.id ASC`,
     );
-    const result = await (widgetId === undefined
-      ? statement.bind(businessDate)
-      : statement.bind(businessDate, widgetId)
-    ).all<ChecklistItemRow & { checked_at: number | null }>();
+    const result = await statement.bind(businessDate, ...widgetIds).all<ChecklistItemRow & { checked_at: number | null }>();
 
     return result.results.map(mapChecklistItemRow);
   }

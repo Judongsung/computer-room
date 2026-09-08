@@ -29,9 +29,9 @@ it("preserves checks across cycle changes without resurrecting old versions", as
   await new D1ChecklistRetentionRepository(db).purgeBefore("2026-09-20",Date.parse("2026-09-19T15:00:00Z"));
   expect((await repo.listActiveItems(widgetId,"2026-09-25"))[0]).toMatchObject({checked:true,checkedAt:now+2000});
   expect((await repo.listActiveItems(widgetId,"2026-10-01"))[0]?.checked).toBe(false);
-  const before = await repo.listRepeatSettings();
+  const before = await repo.listRepeatSettings([widgetId]);
   await repo.changeRepeatCycle(widgetId,"monthly",now);
-  expect(await repo.listRepeatSettings()).toEqual(before);
+  expect(await repo.listRepeatSettings([widgetId])).toEqual(before);
   await Promise.all([repo.changeRepeatCycle(widgetId,"weekly",now),check(false)]);
   expect((await repo.listActiveItems(widgetId,"2026-09-08"))[0]?.checked).toBe(false);
   await db.prepare("DELETE FROM dashboard_widgets WHERE id = ?1").bind(widgetId).run();

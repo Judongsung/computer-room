@@ -10,9 +10,9 @@ import type {
 } from "@/types/widgets/checklist";
 
 export interface ChecklistRepository {
-  listRepeatSettings(): Promise<ChecklistRepeatSettings[]>;
+  listRepeatSettings(widgetIds: readonly string[]): Promise<ChecklistRepeatSettings[]>;
   changeRepeatCycle(widgetId: string, cycle: ChecklistRepeatCycle, now: number): Promise<void>;
-  listAllActiveItems(businessDate: string): Promise<ChecklistItemRecord[]>;
+  listActiveItemsByWidgetIds(widgetIds: readonly string[], businessDate: string): Promise<ChecklistItemRecord[]>;
   listActiveItems(
     widgetId: string,
     businessDate: string,

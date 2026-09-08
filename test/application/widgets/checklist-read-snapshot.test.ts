@@ -28,9 +28,9 @@ describe("checklist read snapshots", () => {
     const second = { ...widget, id: "00000000-0000-4000-8000-000000000102", stackOrder: 1 };
     layouts.records.push(second);
     // The second window has no setting and must keep the daily default.
-    const list = checklists.listAllActiveItems.bind(checklists);
-    const read = vi.spyOn(checklists, "listAllActiveItems").mockImplementation(async (date) => {
-      const items = await list(date);
+    const list = checklists.listActiveItemsByWidgetIds.bind(checklists);
+    const read = vi.spyOn(checklists, "listActiveItemsByWidgetIds").mockImplementation(async (ids, date) => {
+      const items = await list(ids, date);
       clock.timestamp = Date.parse(boundary);
       return items;
     });
@@ -41,7 +41,7 @@ describe("checklist read snapshots", () => {
       { type: WIDGET_TYPE.DAILY_CHECKLIST, data: { repeatCycle: cycle, businessDate, nextResetAt: boundary, items: [publicItem] } },
       { type: WIDGET_TYPE.DAILY_CHECKLIST, data: { repeatCycle: "daily", businessDate, nextResetAt: boundary, items: [] } },
     ]);
-    expect(read).toHaveBeenCalledWith(businessDate);
+    expect(read).toHaveBeenCalledWith([widget.id, second.id], businessDate);
   });
 
   it("keeps the daily default when a single checklist has no repeat setting", async () => {

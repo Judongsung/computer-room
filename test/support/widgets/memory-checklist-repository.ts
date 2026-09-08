@@ -11,7 +11,7 @@ export class MemoryChecklistRepository implements ChecklistRepository {
   readonly events: ChecklistEventRecord[] = [];
   readonly repeatSettings: ChecklistRepeatSettings[] = [];
   readonly times = new Map<string, number | null>();
-  async listRepeatSettings() { return this.repeatSettings; }
+  async listRepeatSettings(widgetIds: readonly string[]) { const ids = new Set(widgetIds); return this.repeatSettings.filter(row => ids.has(row.widgetId)); }
   async changeRepeatCycle(widgetId: string, cycle: ChecklistRepeatCycle, now: number) {
     const old = this.repeatSettings.find(r => r.widgetId === widgetId) ?? {widgetId, repeatCycle: "daily" as const, version: 0};
     if (old.repeatCycle === cycle) return;
@@ -30,20 +30,19 @@ export class MemoryChecklistRepository implements ChecklistRepository {
   }
   readonly states = new Map<string, boolean>();
 
-  async listAllActiveItems(
+  async listActiveItemsByWidgetIds(
+    widgetIds: readonly string[],
     businessDate: string,
   ): Promise<ChecklistItemRecord[]> {
-    return this.listItemsForDate(this.items, businessDate);
+    const ids = new Set(widgetIds);
+    return this.listItemsForDate(this.items.filter(item => ids.has(item.widgetId)), businessDate);
   }
 
   async listActiveItems(
     widgetId: string,
     businessDate: string,
   ): Promise<ChecklistItemRecord[]> {
-    return this.listItemsForDate(
-      this.items.filter((item) => item.widgetId === widgetId),
-      businessDate,
-    );
+    return this.listActiveItemsByWidgetIds([widgetId], businessDate);
   }
 
   async countActiveItems(widgetId: string): Promise<number> {
