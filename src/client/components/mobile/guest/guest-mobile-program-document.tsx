@@ -22,7 +22,7 @@ export function GuestMobileProgramDocument({
   title,
   gateway,
 }: GuestMobileProgramDocumentProps) {
-  const scope = useMemo(() => ({}), [entryId, gateway]);
+  const scope = useMemo(() => ({ entryId, gateway }), [entryId, gateway]);
   const [stored, setStored] = useState<{ scope: object; document: GuestProgramDocument | null; failed: boolean } | null>(null);
   const document = stored?.scope === scope ? stored.document : null;
   const requests = useWidgetRequestCoordinator({
@@ -30,7 +30,8 @@ export function GuestMobileProgramDocument({
     read: () => gateway.getProgramDocument(entryId),
     onRead: document => setStored({ scope, document, failed: false }),
   });
-  useEffect(() => { void requests.refresh(); }, [requests.refresh]);
+  const { refresh } = requests;
+  useEffect(() => { void refresh(); }, [refresh]);
   // Keep the last failure visible during retries, until a valid read succeeds.
   useEffect(() => {
     if (requests.readError) setStored(current => ({ scope,

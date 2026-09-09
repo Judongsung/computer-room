@@ -5,6 +5,10 @@ import { messageFromError } from "@client/errors/error-message";
 import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
 
 interface LogSession {
+  readonly gateway: ImageUploadLogGateway;
+  readonly enabled: boolean;
+  readonly outcome: ImageUploadLogOutcome | null;
+  readonly profileId: string | null;
   active: boolean;
   first: { promise: Promise<void> } | null;
   append: object | null;
@@ -22,12 +26,12 @@ export function useImageUploadLogs(gateway: ImageUploadLogGateway, enabled: bool
   const [profileId, setProfileId] = useState<string | null>(null);
   const [outcome, setOutcome] = useState<ImageUploadLogOutcome | null>(null);
   const session = useMemo<LogSession>(
-    () => ({ active: false, first: null, append: null }),
+    () => ({ gateway, enabled, outcome, profileId, active: false, first: null, append: null }),
     [enabled, gateway, outcome, profileId],
   );
-  const initial = (): LogState => ({
+  const initial = useCallback((): LogState => ({
     session, items: [], nextCursor: null, loading: false, error: null,
-  });
+  }), [session]);
   const [state, setState] = useState<LogState>(initial);
   const current = state.session === session ? state : initial();
 
@@ -39,14 +43,14 @@ export function useImageUploadLogs(gateway: ImageUploadLogGateway, enabled: bool
       session.first = null;
       session.append = null;
     };
-  }, [enabled, session]);
+  }, [enabled, initial, session]);
 
   const update = useCallback((patch: Partial<Omit<LogState, "session">>) => {
     setState((value) => ({
       ...(value.session === session ? value : initial()),
       ...patch,
     }));
-  }, [session]);
+  }, [initial, session]);
 
   const refresh = useCallback((): Promise<void> => {
     if (!session.active) return Promise.resolve();

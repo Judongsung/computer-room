@@ -44,7 +44,8 @@ export function useMobileShellController({
   const menuEnabled =
     MOBILE_ACTIVITY_MENU_AVAILABILITY[navigation.current.kind];
 
-  useEffect(() => setMenuOpen(false), [navigation.current]);
+  const currentActivity = navigation.current;
+  useEffect(() => setMenuOpen(false), [currentActivity]);
 
   const refresh = useCallback((): void => {
     setRevision((current) => current + 1);
@@ -144,10 +145,10 @@ export function useMobileShellController({
   );
 
   const downloadCurrentMedia = useCallback((): void => {
-    if (navigation.current.kind !== MOBILE_ACTIVITY_KIND.MEDIA) return;
-    downloadFile(filesystem.downloadUrl(navigation.current.file.id));
+    if (currentActivity.kind !== MOBILE_ACTIVITY_KIND.MEDIA) return;
+    downloadFile(filesystem.downloadUrl(currentActivity.file.id));
     setMenuOpen(false);
-  }, [filesystem, navigation.current]);
+  }, [filesystem, currentActivity]);
 
   const discardCurrentDraft = useCallback((): void => {
     if (!window.confirm(MOBILE_COPY.DELETE_DRAFT_CONFIRM)) return;

@@ -53,6 +53,7 @@ export function useDesktopFilesystemController({
 }: DesktopFilesystemControllerOptions) {
   const [revision, setRevision] = useState(0);
   const mutation = useFilesystemMutation(gateway);
+  const { run: runMutation, reportError, setError: setMutationError } = mutation;
   const [batchResult, setBatchResult] = useState<FilesystemBatchResult | null>(null);
   const [dialog, setDialog] = useState<DesktopFilesystemDialog>(null);
   const notifyChanged = useCallback(() => setRevision((current) => current + 1), []);
@@ -67,10 +68,11 @@ export function useDesktopFilesystemController({
     [visibleEntries],
   );
   const selection = useFilesystemSelection(visibleEntryIds);
+  const { replace: replaceSelection } = selection;
   const marquee = useFilesystemMarqueeSelection(
     workAreaRef,
     selection.selectedIds,
-    selection.replace,
+    replaceSelection,
   );
   const selectedEntries = useMemo(
     () => visibleEntries.filter((entry) => selection.selectedIds.has(entry.id)),
@@ -129,9 +131,9 @@ export function useDesktopFilesystemController({
       result.entries.forEach(synchronizeWidgetFile);
       removeWidgetWindows(result.closedWidgetIds);
       setBatchResult(result.failures.length > 0 ? result : null);
-      selection.replace(result.failures.map((failure) => failure.id));
+      replaceSelection(result.failures.map((failure) => failure.id));
     },
-    [removeWidgetWindows, selection.replace, synchronizeWidgetFile],
+    [removeWidgetWindows, replaceSelection, synchronizeWidgetFile],
   );
 
   const runFilesystemChange = useCallback(
@@ -139,12 +141,12 @@ export function useDesktopFilesystemController({
       operation: () => Promise<T>,
       onSuccess: (value: T) => void = () => undefined,
     ): Promise<void> => {
-      await mutation.run(operation, (value) => {
+      await runMutation(operation, (value) => {
         onSuccess(value);
         notifyChanged();
       });
     },
-    [mutation.run, notifyChanged],
+    [runMutation, notifyChanged],
   );
 
   const movePayload = useCallback(
@@ -192,12 +194,12 @@ export function useDesktopFilesystemController({
           applyBatchResult,
         );
       } else if (hasInternalFilesystemDrag(event.dataTransfer)) {
-        mutation.setError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
+        setMutationError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
       } else {
-        void uploadDrop(event, parentId).catch(mutation.reportError);
+        void uploadDrop(event, parentId).catch(reportError);
       }
     },
-    [applyBatchResult, movePayload, mutation.reportError, mutation.setError, runFilesystemChange, uploadDrop],
+    [applyBatchResult, movePayload, reportError, setMutationError, runFilesystemChange, uploadDrop],
   );
 
   const trashEntries = useCallback(
@@ -211,13 +213,13 @@ export function useDesktopFilesystemController({
   const dropOnSystemApp = useCallback(
     (id: SystemAppId, event: DragEvent<HTMLButtonElement>): void => {
       if (id === SYSTEM_APP_ID.MY_COMPUTER) {
-        mutation.setError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
+        setMutationError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
         return;
       }
       const payload = readFilesystemDragPayload(event.dataTransfer);
       if (id === SYSTEM_APP_ID.RECYCLE_BIN) {
         if (!payload || payload.source === FILESYSTEM_DRAG_SOURCE.TRASH) {
-          mutation.setError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
+          setMutationError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
           return;
         }
         void runFilesystemChange(
@@ -228,7 +230,7 @@ export function useDesktopFilesystemController({
         handleDrop(event, FILESYSTEM_ROOT_ID.DOCUMENTS);
       }
     },
-    [applyBatchResult, gateway, handleDrop, mutation.setError, runFilesystemChange],
+    [applyBatchResult, gateway, handleDrop, setMutationError, runFilesystemChange],
   );
 
   const dropOnEntry = useCallback(
@@ -314,7 +316,7 @@ export function useDesktopFilesystemController({
     folderProperties,
     overflowCount,
     error: mutation.error,
-    reportError: mutation.reportError,
+    reportError: reportError,
     clearError: mutation.clearError,
     batchResult,
     setBatchResult,

@@ -74,9 +74,14 @@ Access 인증과 쓰기 요청의 same-origin 보호를 유지합니다.
 
 ## 검증
 
+개발 검사는 Node.js 22.18 이상 22.x 또는 24.11 이상에서 실행합니다.
+ESLint 10과 Babel 8 parser를 사용하며, TypeScript 7의 타입 검사는 기존 `tsc`가 담당합니다.
+
 | 명령 | 검사 |
 | --- | --- |
-| `npm run check` | TypeScript, 마이그레이션 안전성, 구조, UI 콘텐츠와 HTTP 라우트 경계 |
+| `npm run check` | TypeScript, 마이그레이션 안전성, 구조, UI 콘텐츠·HTTP 라우트·의존 경계와 React 훅 |
+| `npm run check:architecture` | domain/application의 직접 의존 방향 |
+| `npm run check:hooks` | 클라이언트 전체의 훅 호출 규칙과 의존성 배열 |
 | `npm test` | 전체 테스트 |
 | `npm run build` | 프로덕션 빌드와 초기 클라이언트 번들 제한 |
 | `git diff --check` | 공백 오류와 잘못된 패치 흔적 |
@@ -84,6 +89,20 @@ Access 인증과 쓰기 요청의 same-origin 보호를 유지합니다.
 개별 검사 명령과 최신 실행 순서는 [package.json](../package.json)을 기준으로
 합니다. 스키마 변경은 마이그레이션 회귀 테스트와 안전성 검사를 추가하며,
 적용된 마이그레이션을 수정하지 않습니다.
+
+의존 검사는 별칭과 상대 경로를 정규화하여 타입·런타임 import, 재수출,
+동적 import와 require를 검사합니다. domain은 domain·constants·공용 types만,
+application은 여기에 application을 더한 영역만 참조할 수 있습니다.
+두 영역의 외부 패키지·Node 내장 모듈·생성된 Worker 타입·계산된 모듈 경로는 금지합니다.
+조립 진입점의 infrastructure 참조는 허용하며, 전이 의존이나 전체 순환 검사는 하지 않습니다.
+
+클라이언트에는 `rules-of-hooks`와 `exhaustive-deps`만 오류 수준으로 적용합니다.
+검사를 우회하거나 의존성을 기계적으로 추가하지 않고, 실제 수명과 콜백 책임을 정리합니다.
+검사 설정의 회귀 테스트는 Node의 `test:unit`에 포함됩니다.
+
+예기치 않은 API 오류는 `event`·`errorType` 두 필드만 JSON 로그로 기록합니다.
+원본 오류의 message·stack·cause·임의 속성과 요청 정보는 기록하지 않습니다.
+예상된 `AppError`의 비기록 정책과 공개 HTTP 오류 계약은 유지합니다.
 
 ## 자정 정기 작업 확장
 

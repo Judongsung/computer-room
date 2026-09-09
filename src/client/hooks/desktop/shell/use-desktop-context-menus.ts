@@ -49,6 +49,7 @@ export function useDesktopContextMenus({
   setSelectedSystemShortcutId,
 }: DesktopContextMenuOptions) {
   const contextMenu = useXpContextMenu();
+  const { clear: clearSelection } = selection;
 
   const openEntryMenu = useCallback(
     (entry: FilesystemEntry, event: ContextMenuEvent): void => {
@@ -93,7 +94,7 @@ export function useDesktopContextMenus({
   const openSystemMenu = useCallback(
     (id: SystemAppId, event: ContextMenuEvent): void => {
       setSelectedSystemShortcutId(id);
-      selection.clear();
+      clearSelection();
       contextMenu.openFromEvent(
         event,
         buildDesktopSystemContextMenu(id, {
@@ -106,7 +107,7 @@ export function useDesktopContextMenus({
         }),
       );
     },
-    [contextMenu, folderProperties, openSystemShortcut, selection.clear, setSelectedSystemShortcutId],
+    [contextMenu, folderProperties, openSystemShortcut, clearSelection, setSelectedSystemShortcutId],
   );
 
   const openRootMenu = useCallback(

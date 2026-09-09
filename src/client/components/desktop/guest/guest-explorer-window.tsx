@@ -74,11 +74,11 @@ export function GuestExplorerWindow({
   useEffect(() => setSelectedId(null), [explorer.directoryId]);
 
   const parent = page?.breadcrumbs.at(-2) ?? null;
-  const downloadSelected = (): void => {
+  const downloadSelected = useCallback((): void => {
     if (selected?.kind === FILESYSTEM_ENTRY_KIND.FILE) {
       downloadFile(gateway.downloadUrl(selected.id));
     }
-  };
+  }, [gateway, selected]);
   const menus = useMemo<readonly XpExplorerMenu[]>(
     () => [
       {
@@ -112,7 +112,7 @@ export function GuestExplorerWindow({
         ],
       },
     ],
-    [explorer.reload, onClose, selected],
+    [downloadSelected, explorer.reload, onClose, selected],
   );
   const toolbarItems = useMemo<readonly XpExplorerToolbarItem[]>(
     () => [
@@ -136,7 +136,7 @@ export function GuestExplorerWindow({
         onSelect: downloadSelected,
       },
     ],
-    [explorer.history.length, explorer.navigateBack, explorer.navigateUp, parent, selected],
+    [downloadSelected, explorer.history.length, explorer.navigateBack, explorer.navigateUp, parent, selected],
   );
 
   const openContextMenu = (

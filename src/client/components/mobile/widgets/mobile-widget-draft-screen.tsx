@@ -36,7 +36,7 @@ export function MobileWidgetDraftScreen({
   onSavedFile,
   onDirtyChange,
 }: MobileWidgetDraftScreenProps) {
-  const memoScope = useMemo(() => ({}), [draft.id]);
+  const memoScope = useMemo(() => ({ draftId: draft.id }), [draft.id]);
   const [fileDraft, setFileDraft] = useState<LocalWidgetDraft | null>(null);
   const title =
     draft.type === WIDGET_TYPE.MEMO

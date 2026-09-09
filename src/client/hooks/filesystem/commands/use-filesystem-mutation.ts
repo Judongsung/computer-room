@@ -8,6 +8,7 @@ export type FilesystemMutationResult<T> =
   | { readonly status: "ignored" };
 
 interface MutationSession {
+  readonly gateway: object;
   active: boolean;
   pending: object | null;
 }
@@ -20,7 +21,7 @@ interface MutationState {
 
 export function useFilesystemMutation(gateway: object) {
   const session = useMemo<MutationSession>(
-    () => ({ active: false, pending: null }),
+    () => ({ gateway, active: false, pending: null }),
     [gateway],
   );
   const [state, setState] = useState<MutationState>({

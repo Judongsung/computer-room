@@ -8,6 +8,7 @@ export const WORKER_TEST_PATTERNS = [
 ] as const;
 
 export const UNIT_TEST_PATTERNS = [
+  "test/tooling/**/*.test.mjs",
   "test/{application,domain,http,infrastructure}/**/*.test.ts",
   CLIENT_UNIT_TEST_PATTERN,
 ] as const;

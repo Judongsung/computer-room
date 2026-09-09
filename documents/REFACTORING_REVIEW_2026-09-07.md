@@ -189,6 +189,8 @@ UI의 disabled 상태만으로 모든 호출 경로의 중복 실행이 차단�
 
 ### R10. API 오류 로그에도 허용된 필드만 기록하는 정책을 적용한다
 
+**완료: 2026-09-09, 5단계.** 아래 근거는 진단 당시 상태이며, 구현·검증 결과는 10절 참조.
+
 근거: [errorResponse](../src/http/shared/responses.ts) 39–46행, [보상 실패 observer](../src/infrastructure/filesystem/console-file-upload-compensation-observer.ts), [백그라운드 작업 scheduler](../src/infrastructure/platform/cloudflare-background-task-scheduler.ts).
 
 **확인:** 공개 응답은 오류 정의로 변환하지만 예상하지 못한 오류는 `console.error(..., error)`로 원본 객체를 넘긴다. 보상·백그라운드 작업은 제한된 구조화 필드를 기록하므로 정책이 일관되지 않다.
@@ -216,6 +218,8 @@ UI의 disabled 상태만으로 모든 호출 경로의 중복 실행이 차단�
 완료 기준: 타입 순환을 해소하고, 종류와 payload가 잘못 조합된 입력이 컴파일되지 않으며, clone의 실제 보존 범위와 반환 타입이 일치해야 한다.
 
 ### R12. 검사 통과가 아키텍처 경계까지 보장하도록 한다
+
+**완료: 2026-09-09, 5단계.** 아래 근거는 진단 당시 상태이며, 구현·검증 결과는 10절 참조.
 
 근거: [package.json](../package.json), [구조 검사](../scripts/check-source-structure.mjs), [구조 정책](../scripts/constants/source-structure-policy.mjs), [테스트 분류](../test/support/platform/test-suites.ts).
 
@@ -264,7 +268,7 @@ UI의 disabled 상태만으로 모든 호출 경로의 중복 실행이 차단�
 | 2 | R3 | 요청한 프로그램 ID 범위로 조회 제한 | **완료 · 2026-09-08** |
 | 3 | R4·R9·R11 | 프로그램별 인터페이스·API 주입·타입 계약 정리 | **완료 · 2026-09-09** |
 | 4 | R5·R6·R8 | 파일 명령과 화면 상태의 중복 제거 | **완료 · 2026-09-09** |
-| 5 | R10·R12 | 오류 로그와 자동 검사 보강 | 예정 |
+| 5 | R10·R12 | 오류 로그와 자동 검사 보강 | **완료 · 2026-09-09** |
 
 상위 1단계 상태: **완료 · 2026-09-08**. 1-A·1-B·1-C의 구현과 검증을 모두 마쳤다.
 코드·테스트와 해당 단계의 완료 날짜, 변경 요약, 검증 결과, 남은 범위를 같은
@@ -462,3 +466,28 @@ UI의 disabled 상태만으로 모든 호출 경로의 중복 실행이 차단�
 | 수동 브라우저 검사 | 미실행: UI와 비동기 수명 검증은 jsdom 회귀 테스트로 수행 |
 
 **R5·R6·R8과 4단계 완료.** 다음 구현 단위는 5단계(R10·R12)다. 추가 검토 후보는 미완료로 유지한다. 배포와 원격 push는 수행하지 않았다.
+
+### 5단계 · R10·R12: 오류 로그와 자동 검사 보강
+
+- 완료일: **2026-09-09 (KST)**
+- 커밋 제목: `fix(quality): API 오류 로그 제한과 의존성·훅 검사 보강`
+- `errorResponse`의 원본 오류 출력을 작은 HTTP reporter로 교체했다. 기존 이벤트 값과 고정된 오류 분류인 `event`·`errorType`만 JSON으로 기록한다. 표준 오류는 종류별 고정 문자열, 사용자 정의 오류는 `Error`, 그 외 값은 `typeof`와 별도 `null`로 분류한다. name·message·stack·cause·임의 속성·toJSON은 읽거나 직렬화하지 않는다. 예상된 `AppError` 비기록, 공개 HTTP 상태·오류·추가 헤더와 보상/백그라운드 작업의 별도 로그는 유지했다.
+- ESLint flat config와 `check:architecture`, `check:hooks`를 `npm run check`에 추가했다. domain은 domain·constants·공용 types만, application은 여기에 application을 더한 영역만 직접 참조한다. 외부 패키지·Node 내장 모듈·생성 Worker 타입·계산된 모듈 경로를 금지한다. 별칭은 tsconfig에서 읽고 상대 경로와 정규화하며, 타입/런타임 import·재수출·동적 import·require·TypeScript import 구문을 구분해 진단한다. 조립 진입점은 이 제한의 대상이 아니다.
+- 클라이언트 전체에 `rules-of-hooks`·`exhaustive-deps`만 오류 수준으로 적용했다. 세션에 수명 기준을 명시하고 초기 상태 callback을 안정화했으며, 명령·선택 callback을 구조 분해하여 필요한 함수에 의존하도록 정리했다. 메모 초기화는 세션 변경에만 반응하고 최신 원문·저장 callback·편집 중 입력을 보존한다. 창 크기·폴더 제목의 원시 값 의존, 모바일 현재 화면, 게스트 다운로드 callback과 보관 설정 cleanup도 정리했다. disable·경고 완화·전체 포맷 변경은 없다.
+- 도구는 **ESLint 10.10.0·Babel core/parser 8.0.1·React Hooks plugin 7.1.1**을 개발 의존성으로 추가했다. TypeScript 7.0.2는 유지했다. 확인한 typescript-eslint 공식 문서의 지원 범위가 `<6.1.0`이므로 Babel의 TS·JSX 구문 파싱을 사용하고 타입 검사는 기존 tsc에 맡겼다. 최초 ESLint 9 설치의 지원 종료 경고를 확인하고 호환되는 Babel 8·ESLint 10으로 변경했다. Node 개발 환경 요구사항은 개발 안내에 기록했다.
+- 테스트는 로그 계약 18개와 실제 ESLint 설정의 허용·금지 구문/훅 위반 20개를 두 개의 짧은 파일에 추가했다. 초기 도구 테스트의 설정 지연 로딩이 5초를 넘겨, 설정을 테스트 모듈 준비 시 불러오도록 수정했다. 제한 시간을 늘리거나 플러그인 전체 규칙을 재검증하지 않았다. 기존 UI 테스트·fake·deferred와 테스트 수는 그대로 유지했다.
+
+| 검증 | 결과 |
+| --- | --- |
+| 도구 호환성·회귀 | 실제 TS·TSX 파싱, 허용/금지 의존, 타입/런타임 진단, 계산된 경로 거부, 주석 오탐 방지, 조건부 훅·누락 의존성 탐지 통과 |
+| 로그 계약 | 민감한 message·중첩 cause·사용자 속성·toJSON의 비기록, 임의 getter 비접근, 분류·AppError 비기록·공개 응답과 헤더 보존 통과 |
+| `npm run check` | TypeScript·17개 불변 마이그레이션·구조·문구·라우트·의존 방향·클라이언트 전체 훅 검사 통과 |
+| `npm run test:unit` | 64개 파일 · 319개 테스트 통과 |
+| `npm run test:client` | 최초 기본 4워커 실행은 220개 통과·5개 시간 초과(4개 통합 테스트 파일), 약 196초. 다른 무거운 검사는 동시에 실행하지 않음 |
+| `npm run test:client -- --maxWorkers=1` | 전체 55개 파일 · 225개 테스트 통과, 약 228초. 코드·테스트·10초 제한을 바꾸지 않고 워커 수만 CLI에서 줄여 재검증. 초기 시간 초과의 자원 경합 가능성이 있으나 원인을 확정하지는 않음. 기본 워커 설정은 유지 |
+| `npm run test:worker` | 로컬 D1·R2·HTTP 통합 25개 파일 · 89개 테스트 통과 |
+| `npm run build` | desktop 초기 JS 392,455 bytes / mobile 280,078 bytes, 각각 500 KiB 예산 이내. 다섯 프로그램 dynamic entry 유지 |
+| `git diff --check` 및 staged diff 검사 | 통과 |
+| 미실행 검사 | 수동 브라우저 검사·운영 로그 관측은 미실행. 필수 자동 검사는 모두 수행 |
+
+**합의된 범위의 R1~R12와 1~5단계 완료.** R3의 별도 reader 분리, R6의 페이지 훅 통합, 전이 의존·전체 순환 검사와 추가 검토 후보 4개(영구 삭제 복구·업로드 세션·대형 트리 메모리·조립부 분리)는 포함하지 않았다. HTTP·DB·인증·게스트 공개 판정과 화면 스타일을 유지했다. 배포와 원격 push는 수행하지 않았다.

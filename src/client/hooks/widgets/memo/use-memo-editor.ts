@@ -11,6 +11,7 @@ interface MemoEditorOptions<TResult> {
 }
 
 interface MemoEditorSession {
+  readonly scope: object;
   active: boolean;
   pending: object | null;
 }
@@ -23,6 +24,10 @@ interface MemoEditorState {
   readonly error: string | null;
 }
 
+function initialState(session: MemoEditorSession, markdown: string, editing: boolean): MemoEditorState {
+  return { session, editing, draft: markdown, saving: false, error: null };
+}
+
 export function useMemoEditor<TResult>({
   scope,
   markdown,
@@ -30,27 +35,20 @@ export function useMemoEditor<TResult>({
   onSave,
   onSaved,
 }: MemoEditorOptions<TResult>) {
-  const handlers = useRef({ markdown, onSave, onSaved });
+  const handlers = useRef({ markdown, startEditing, onSave, onSaved });
   const session = useMemo<MemoEditorSession>(
-    () => ({ active: false, pending: null }),
+    () => ({ scope, active: false, pending: null }),
     [scope],
   );
-  const initial = (): MemoEditorState => ({
-    session,
-    editing: startEditing,
-    draft: markdown,
-    saving: false,
-    error: null,
-  });
-  const [state, setState] = useState<MemoEditorState>(initial);
-  const current = state.session === session ? state : initial();
+  const [state, setState] = useState(() => initialState(session, markdown, startEditing));
+  const current = state.session === session ? state : initialState(session, markdown, startEditing);
 
   useLayoutEffect(() => {
-    handlers.current = { markdown, onSave, onSaved };
+    handlers.current = { markdown, startEditing, onSave, onSaved };
   });
   useLayoutEffect(() => {
     session.active = true;
-    setState(initial());
+    setState(initialState(session, handlers.current.markdown, handlers.current.startEditing));
     return () => {
       session.active = false;
       session.pending = null;
@@ -59,7 +57,7 @@ export function useMemoEditor<TResult>({
 
   const update = useCallback((patch: Partial<Omit<MemoEditorState, "session">>) => {
     setState((value) => ({
-      ...(value.session === session ? value : initial()),
+      ...(value.session === session ? value : initialState(session, handlers.current.markdown, handlers.current.startEditing)),
       ...patch,
     }));
   }, [session]);

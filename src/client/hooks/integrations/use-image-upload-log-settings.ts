@@ -6,6 +6,8 @@ import { messageFromError } from "@client/errors/error-message";
 import type { ImageUploadLogGateway } from "@client/types/integrations/image-upload-log";
 
 interface SettingsSession {
+  readonly gateway: ImageUploadLogGateway;
+  readonly enabled: boolean;
   active: boolean;
   pending: object | null;
 }
@@ -26,10 +28,10 @@ export function useImageUploadLogSettings(
   enabled: boolean,
 ) {
   const session = useMemo<SettingsSession>(
-    () => ({ active: false, pending: null }),
+    () => ({ gateway, enabled, active: false, pending: null }),
     [enabled, gateway],
   );
-  const initial = (): SettingsState => ({
+  const initial = useCallback((): SettingsState => ({
     session,
     retentionDays: IMAGE_UPLOAD_LOG_RETENTION.DEFAULT_DAYS,
     draft: String(IMAGE_UPLOAD_LOG_RETENTION.DEFAULT_DAYS),
@@ -38,7 +40,7 @@ export function useImageUploadLogSettings(
     error: null,
     loadFailed: false,
     loaded: false,
-  });
+  }), [session]);
   const [state, setState] = useState<SettingsState>(initial);
   const current = state.session === session ? state : initial();
 
@@ -49,14 +51,14 @@ export function useImageUploadLogSettings(
       session.active = false;
       session.pending = null;
     };
-  }, [enabled, session]);
+  }, [enabled, initial, session]);
 
   const update = useCallback((patch: Partial<Omit<SettingsState, "session">>) => {
     setState((value) => ({
       ...(value.session === session ? value : initial()),
       ...patch,
     }));
-  }, [session]);
+  }, [initial, session]);
 
   const load = useCallback(async (): Promise<void> => {
     if (!session.active || session.pending) return;

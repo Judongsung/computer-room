@@ -36,7 +36,7 @@ export function MobileWidgetFileScreen({
   widgetFiles,
   onDirtyChange,
 }: MobileWidgetFileScreenProps) {
-  const scope = useMemo(() => ({}), [entryId, dashboard, widgetFiles]);
+  const scope = useMemo(() => ({ entryId, dashboard, widgetFiles }), [entryId, dashboard, widgetFiles]);
   const [stored, setStored] = useState<{ scope: object; widget: DashboardWidget } | null>(null);
   const widget = stored?.scope === scope ? stored.widget : null;
   const [showLogs, setShowLogs] = useState(false);
@@ -45,7 +45,8 @@ export function MobileWidgetFileScreen({
     read: () => widgetFiles.getWidgetFile(entryId),
     onRead: (document) => setStored({ scope, widget: document.widget }),
   });
-  useEffect(() => { void requests.refresh(); setShowLogs(false); }, [requests.refresh]);
+  const { refresh } = requests;
+  useEffect(() => { void refresh(); setShowLogs(false); }, [refresh]);
   useChecklistRefresh({ nextResetAt: widget?.type === WIDGET_TYPE.DAILY_CHECKLIST ? widget.data.nextResetAt : "", refresh: requests.refresh });
 
   const updateWidget = useCallback((id: string, update: (current: DashboardWidget) => DashboardWidget) => {

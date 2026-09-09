@@ -32,7 +32,7 @@ export function useChecklistRetention(gateway: ChecklistRetentionUseCases) {
     }).finally(() => {
       if (request === sequence.current) setBusy(false);
     });
-    return () => { sequence.current++; };
+    return () => { sequence.current = request + 1; };
   }, [expanded, gateway]);
 
   const save = async (): Promise<void> => {

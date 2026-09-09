@@ -5,6 +5,7 @@ import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 
 interface StorageStatusSession {
+  readonly gateway: StorageStatusGateway;
   active: boolean;
   request: { promise: Promise<void> } | null;
 }
@@ -18,15 +19,15 @@ interface StorageStatusState {
 
 export function useStorageStatus(gateway: StorageStatusGateway) {
   const session = useMemo<StorageStatusSession>(
-    () => ({ active: false, request: null }),
+    () => ({ gateway, active: false, request: null }),
     [gateway],
   );
-  const initial = (): StorageStatusState => ({
+  const initial = useCallback((): StorageStatusState => ({
     session,
     status: null,
     loading: true,
     error: null,
-  });
+  }), [session]);
   const [state, setState] = useState<StorageStatusState>(initial);
   const current = state.session === session ? state : initial();
 
@@ -37,14 +38,14 @@ export function useStorageStatus(gateway: StorageStatusGateway) {
       session.active = false;
       session.request = null;
     };
-  }, [session]);
+  }, [initial, session]);
 
   const update = useCallback((patch: Partial<Omit<StorageStatusState, "session">>) => {
     setState((value) => ({
       ...(value.session === session ? value : initial()),
       ...patch,
     }));
-  }, [session]);
+  }, [initial, session]);
 
   const refresh = useCallback((): Promise<void> => {
     if (!session.active) return Promise.resolve();

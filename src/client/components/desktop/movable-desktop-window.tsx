@@ -45,7 +45,11 @@ export function MovableDesktopWindow({
   const isMaximized = windowState === WINDOW_STATE.MAXIMIZED;
 
   useEffect(() => {
-    setDraftBounds(clampWindowBounds(position, size, desktop));
+    setDraftBounds(clampWindowBounds(
+      { x: position.x, y: position.y },
+      { width: size.width, height: size.height },
+      { width: desktop.width, height: desktop.height },
+    ));
   }, [desktop.height, desktop.width, position.x, position.y, size.height, size.width]);
 
   if (windowState === WINDOW_STATE.MINIMIZED) {

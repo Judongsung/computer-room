@@ -33,6 +33,7 @@ export function useWidgetRequestCoordinator<T>(options: RequestOptions<T>) {
   const handlers = useRef(options);
   // Tokens belong to one screen/gateway lifetime; old network requests may still finish.
   const session = useMemo(() => ({
+    scope,
     active: false,
     read: null as ReadRequest | null,
     mutation: null as object | null,

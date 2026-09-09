@@ -26,7 +26,7 @@ export function useDailyChecklistController({
   const [showLogs, setShowLogs] = useState(false);
   const latest = useRef({ widget, onWidgetChange });
   useLayoutEffect(() => { latest.current = { widget, onWidgetChange }; });
-  const scope = useMemo(() => ({}), [widget.id, gateway]);
+  const scope = useMemo(() => ({ widgetId: widget.id, gateway }), [widget.id, gateway]);
   const publish = useCallback((update: (data: DailyChecklistData) => DailyChecklistData): void => {
     const current = latest.current;
     const next = { ...current.widget, data: update(current.widget.data) };

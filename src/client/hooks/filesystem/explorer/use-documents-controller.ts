@@ -67,6 +67,7 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
   const {
     gateway,
     desktopCapacity,
+    onOpenFile, onOpenWidget, onUploadNodes,
   } = options;
   const contextMenu = useXpContextMenu();
   const explorer = useDirectoryExplorer({
@@ -76,7 +77,9 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
     windowId: options.windowId,
     onDirectoryChanged: options.onDirectoryChanged,
   });
+  const { navigate } = explorer;
   const mutation = useFilesystemMutation(gateway);
+  const { run: runMutation, reportError, setError: setMutationError } = mutation;
   const [dialog, setDialog] = useState<DocumentsDialog>(null);
   const dropTargets = useFilesystemDropTarget();
   const [batchResult, setBatchResult] = useState<FilesystemBatchResult | null>(null);
@@ -88,10 +91,11 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
     [explorer.page?.items],
   );
   const selection = useFilesystemSelection(itemIds);
+  const { clear: clearSelection, replace: replaceSelection } = selection;
   const marquee = useFilesystemMarqueeSelection(
     contentRef,
     selection.selectedIds,
-    selection.replace,
+    replaceSelection,
   );
   const download = useFilesystemDownload(gateway);
   const folderProperties = useFolderProperties(gateway);
@@ -125,16 +129,16 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
   const runChange = useCallback(
     async <T,>(operation: () => Promise<T>, onSuccess?: (value: T) => void): Promise<void> => {
       const originDirectoryId = latest.current.currentDirectoryId;
-      await mutation.run(operation, (value) => {
+      await runMutation(operation, (value) => {
         onSuccess?.(value);
         if (latest.current.currentDirectoryId === originDirectoryId) {
           setDialog(null);
-          selection.clear();
+          clearSelection();
         }
         latest.current.onFilesystemChanged();
       });
     },
-    [mutation.run, selection.clear],
+    [runMutation, clearSelection],
   );
 
   const renameEntry = useCallback((id: string, name: string): Promise<void> =>
@@ -145,49 +149,49 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
   const runBatchChange = useCallback(
     async (operation: () => Promise<FilesystemBatchResult>): Promise<void> => {
       const originDirectoryId = latest.current.currentDirectoryId;
-      await mutation.run(operation, (result) => {
+      await runMutation(operation, (result) => {
         result.entries.forEach(latest.current.onEntryChanged);
         latest.current.onWidgetsClosed(result.closedWidgetIds);
         setBatchResult(result.failures.length > 0 ? result : null);
         if (latest.current.currentDirectoryId === originDirectoryId) {
           setDialog(null);
-          selection.replace(result.failures.map((failure) => failure.id));
+          replaceSelection(result.failures.map((failure) => failure.id));
         }
         latest.current.onFilesystemChanged();
       });
     },
-    [mutation.run, selection.replace],
+    [runMutation, replaceSelection],
   );
 
   const changeSort = useCallback(
     async (sort: FilesystemDirectorySort): Promise<void> => {
       if (!currentDirectoryId) return;
       const originDirectoryId = currentDirectoryId;
-      await mutation.run(
+      await runMutation(
         () => gateway.updateDirectorySort(originDirectoryId, sort),
         () => {
           if (latest.current.currentDirectoryId === originDirectoryId) {
-            selection.clear();
+            clearSelection();
             if (contentRef.current) contentRef.current.scrollTop = 0;
           }
           latest.current.onFilesystemChanged();
         },
       );
     },
-    [currentDirectoryId, gateway, mutation.run, selection.clear],
+    [currentDirectoryId, gateway, runMutation, clearSelection],
   );
 
   const openEntry = useCallback(
     (entry: FilesystemEntry): void => {
       if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
-        explorer.navigate(entry.id);
+        navigate(entry.id);
       } else if (entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET) {
-        options.onOpenWidget(entry.widgetId);
+        onOpenWidget(entry.widgetId);
       } else {
-        options.onOpenFile(entry);
+        onOpenFile(entry);
       }
     },
-    [explorer.navigate, options.onOpenFile, options.onOpenWidget],
+    [navigate, onOpenFile, onOpenWidget],
   );
 
   const uploadSelection = useCallback(
@@ -195,10 +199,10 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
       const files = event.target.files;
       event.target.value = "";
       if (files && files.length > 0 && currentDirectoryId) {
-        void options.onUploadNodes(collectSelectedUploadNodes(files), currentDirectoryId);
+        void onUploadNodes(collectSelectedUploadNodes(files), currentDirectoryId);
       }
     },
-    [currentDirectoryId, options.onUploadNodes],
+    [currentDirectoryId, onUploadNodes],
   );
 
   const selectFolder = useCallback((): void => {
@@ -210,15 +214,15 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
     void selectDirectoryUploadNode()
       .then((node) =>
         node
-          ? options.onUploadNodes([node], currentDirectoryId)
+          ? onUploadNodes([node], currentDirectoryId)
           : folderInputRef.current?.click(),
       )
       .catch((reason: unknown) => {
         if (!isPickerCancellation(reason)) {
-          mutation.reportError(reason);
+          reportError(reason);
         }
       });
-  }, [currentDirectoryId, mutation.reportError, options.onUploadNodes]);
+  }, [currentDirectoryId, reportError, onUploadNodes]);
 
   const dropIntoDirectory = useCallback(
     (event: DragEvent, parentId: string): void => {
@@ -233,26 +237,26 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
         return;
       }
       if (hasInternalFilesystemDrag(event.dataTransfer)) {
-        mutation.setError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
+        setMutationError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
         return;
       }
       void collectDroppedUploadNodes(event.dataTransfer.items)
         .then((upload) =>
-          options.onUploadNodes(
+          onUploadNodes(
             upload.nodes,
             parentId,
             upload.folderDropUnsupported ? FILESYSTEM_COPY.FOLDER_DROP_UNSUPPORTED : null,
           ),
         )
-        .catch(mutation.reportError);
+        .catch(reportError);
     },
-    [busy, desktopCapacity, gateway, mutation.reportError, mutation.setError, options.onUploadNodes, runBatchChange],
+    [busy, desktopCapacity, gateway, reportError, setMutationError, onUploadNodes, runBatchChange],
   );
 
   const openEntryContextMenu = useCallback(
     (entry: FilesystemEntry, event: ContextMenuEvent): void => {
       const entries = selection.selectedIds.has(entry.id) ? selectedEntries : [entry];
-      if (!selection.selectedIds.has(entry.id)) selection.replace([entry.id]);
+      if (!selection.selectedIds.has(entry.id)) replaceSelection([entry.id]);
       contextMenu.openFromEvent(
         event,
         buildExplorerEntryContextMenu(entries, {
@@ -270,7 +274,7 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
         }),
       );
     },
-    [contextMenu, download, folderProperties, gateway, openEntry, runBatchChange, selectedEntries, selection],
+    [contextMenu, download, folderProperties, gateway, openEntry, replaceSelection, runBatchChange, selectedEntries, selection],
   );
 
   const openDirectoryContextMenu = useCallback(

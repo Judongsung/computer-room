@@ -33,7 +33,7 @@ export function MemoWidget({
   const [editorMode, setEditorMode] = useState<
     (typeof MEMO_EDITOR_MODE)[keyof typeof MEMO_EDITOR_MODE]
   >(MEMO_EDITOR_MODE.WRITE);
-  const scope = useMemo(() => ({}), [gateway, widget.id]);
+  const scope = useMemo(() => ({ gateway, widgetId: widget.id }), [gateway, widget.id]);
   const editor = useMemoEditor({
     scope,
     markdown: widget.data.markdown,

@@ -30,16 +30,18 @@ export function useDirectoryNavigation({
     errorFallback,
   });
   const page = query.page;
+  const loadedDirectoryId = page?.directory.id;
+  const loadedDirectoryName = page?.directory.name;
 
   useEffect(() => {
     onDirectoryLoadedRef.current = onDirectoryLoaded;
   }, [onDirectoryLoaded]);
 
   useEffect(() => {
-    if (page) {
-      onDirectoryLoadedRef.current?.(page.directory.id, page.directory.name);
+    if (loadedDirectoryId !== undefined && loadedDirectoryName !== undefined) {
+      onDirectoryLoadedRef.current?.(loadedDirectoryId, loadedDirectoryName);
     }
-  }, [page?.directory.id, page?.directory.name]);
+  }, [loadedDirectoryId, loadedDirectoryName]);
 
   const navigate = useCallback(
     (nextDirectoryId: string): void => {

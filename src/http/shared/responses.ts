@@ -1,4 +1,3 @@
-import { HTTP_LOG_MESSAGES } from "@/constants/platform/errors/http";
 import {
   API_RESPONSE_HEADERS,
   EMPTY_RESPONSE_HEADERS,
@@ -6,6 +5,7 @@ import {
 } from "@/constants/platform/http";
 import { AppError } from "@/domain/shared/errors";
 import { publicErrorDefinition } from "@/http/shared/public-error";
+import { reportUnexpectedApiError } from "@/http/shared/unexpected-error-reporter";
 
 export function jsonResponse(
   data: unknown,
@@ -41,7 +41,7 @@ export function errorResponse(
   additionalHeaders?: HeadersInit,
 ): Response {
   if (!(error instanceof AppError)) {
-    console.error(HTTP_LOG_MESSAGES.UNHANDLED_API_ERROR, error);
+    reportUnexpectedApiError(error);
   }
   const publicError = publicErrorDefinition(error);
   return jsonResponse(

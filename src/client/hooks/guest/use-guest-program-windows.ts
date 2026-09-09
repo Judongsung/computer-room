@@ -30,6 +30,7 @@ interface RefreshRequest { promise: Promise<void> }
 
 export function useGuestProgramWindows(gateway: GuestGateway) {
   const session = useMemo(() => ({
+    gateway,
     active: false,
     windows: [] as readonly DashboardWidget[],
     tokens: new Map<string, object>(),

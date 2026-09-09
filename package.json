@@ -7,7 +7,7 @@
     "dev": "vite",
     "preview": "vite preview",
     "typegen": "wrangler types src/types/platform/generated/worker-configuration.d.ts --env-file .dev.vars.example",
-    "check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.node.json --noEmit && npm run check:migrations && npm run check:structure && npm run check:content && npm run check:http-routes",
+    "check": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.node.json --noEmit && npm run check:migrations && npm run check:structure && npm run check:content && npm run check:http-routes && npm run check:architecture && npm run check:hooks",
     "check:migrations": "node scripts/check-migration-safety.mjs",
     "check:structure": "node scripts/check-source-structure.mjs",
     "check:content": "node scripts/check-client-content-boundary.mjs",
@@ -24,7 +24,9 @@
     "test:client": "vitest run --config vitest.client.config.ts",
     "build": "vite build && npm run check:bundle",
     "deploy": "npm run check && npm test && npm run build && npm run db:bookmark:remote && npm run db:migrate:remote && wrangler deploy",
-    "deploy:worker": "vite build && wrangler deploy"
+    "deploy:worker": "vite build && wrangler deploy",
+    "check:architecture": "eslint src/domain src/application --max-warnings 0",
+    "check:hooks": "eslint src/client --max-warnings 0"
   },
   "dependencies": {
     "client-zip": "2.5.0",
@@ -39,6 +41,8 @@
     "xp.css": "0.2.6"
   },
   "devDependencies": {
+    "@babel/core": "^8.0.1",
+    "@babel/eslint-parser": "^8.0.1",
     "@cloudflare/vite-plugin": "^1.53.0",
     "@cloudflare/vitest-pool-workers": "^0.22.0",
     "@testing-library/dom": "^10.4.1",
@@ -50,6 +54,8 @@
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.1.0",
     "drizzle-kit": "^0.31.10",
+    "eslint": "^10.10.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "jsdom": "^29.1.1",
     "typescript": "^7.0.2",
     "vite": "^8.2.2",
