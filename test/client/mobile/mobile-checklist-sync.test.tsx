@@ -31,6 +31,8 @@ describe("mobile checklist synchronization", () => {
     render(<MobileWidgetFileScreen checklistRetentionGateway={fakeChecklistRetentionGateway()} entryId={original.entry.id} title={original.entry.name}
       dashboard={dashboard} widgetFiles={{ getWidgetFile, createWidgetFile: vi.fn() }} onDirtyChange={vi.fn()} />);
     const checkbox = await screen.findByRole("checkbox", { name: item.label });
+    // The checkbox can appear before the refresh effect installs its listener.
+    await act(async () => {});
     act(() => window.dispatchEvent(new Event("focus")));
     await waitFor(() => expect(getWidgetFile).toHaveBeenCalledTimes(2));
     await userEvent.setup().click(checkbox);

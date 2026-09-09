@@ -1,9 +1,10 @@
+import { deferred } from "@test/support/widgets/deferred";
 import {
   IMAGE_UPLOAD_CONTENT_TYPE_LABEL,
   IMAGE_UPLOAD_PROFILE_COPY,
 } from "@client/content/ko/integrations/image-upload-profile";
 import { IMAGE_UPLOAD_LOG_COPY } from "@client/content/ko/integrations/image-upload-log";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -333,3 +334,22 @@ function validatedConfiguration(
     ) as ImageUploadProfile["contentTypes"],
   };
 }
+
+it("refreshes the current filter after a delayed settings save", async () => {
+  const saving = deferred<{ retentionDays: number }>();
+  const logGateway: ImageUploadLogGateway = {
+    listImageUploadLogs: vi.fn(async () => ({ items: [], nextCursor: null })),
+    getImageUploadLogSettings: vi.fn(async () => ({ retentionDays: 30 })),
+    updateImageUploadLogRetentionDays: vi.fn(() => saving.promise),
+  };
+  const user = userEvent.setup();
+  renderWidget(fakeGateway([]), logGateway);
+  await user.click(screen.getByRole("tab", { name: IMAGE_UPLOAD_LOG_COPY.LOGS_TAB }));
+  await waitFor(() => expect(screen.getByRole("button", { name: IMAGE_UPLOAD_LOG_COPY.SAVE_SETTINGS })).toBeEnabled());
+  await user.click(screen.getByRole("button", { name: IMAGE_UPLOAD_LOG_COPY.SAVE_SETTINGS }));
+  await user.selectOptions(screen.getByRole("combobox", { name: IMAGE_UPLOAD_LOG_COPY.FILTER_RESULT }), IMAGE_UPLOAD_LOG_OUTCOME.FAILURE);
+  expect(logGateway.listImageUploadLogs).toHaveBeenCalledTimes(2);
+  await act(async () => saving.resolve({ retentionDays: 1 }));
+  expect(logGateway.listImageUploadLogs).toHaveBeenCalledTimes(3);
+  expect(logGateway.listImageUploadLogs).toHaveBeenLastCalledWith({ outcome: IMAGE_UPLOAD_LOG_OUTCOME.FAILURE });
+});

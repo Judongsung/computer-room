@@ -1,15 +1,15 @@
 import { XpTabs } from "@client/components/shared/xp-tabs";
 import { ProgramStatusBar } from "@client/components/desktop/application/program-status-bar";
 import { PROGRAM_DOCUMENT_COPY as COPY } from "@client/content/ko/desktop/program-documents";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { MemoWidget as MemoWidgetData } from "@/types/widgets/widget";
 import { MEMO_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { WIDGET_ICON_PATH_BY_TYPE } from "@client/constants/desktop/desktop";
 import { MEMO_EDITOR_MODE } from "@client/constants/widgets/memo";
-import { messageFromError } from "@client/errors/error-message";
 import { XP_WIDGET_TOOLBAR_ACTION } from "@client/constants/shared/xp";
 import { useUnsavedChangesWarning } from "@client/hooks/shared/use-unsaved-changes-warning";
+import { useMemoEditor } from "@client/hooks/widgets/memo/use-memo-editor";
 import type { WidgetWindowControls } from "@client/types/desktop/window";
 import type { MemoGateway } from "@client/types/widgets/ports/memo";
 import { XpWidgetToolbarButton } from "@client/components/shared/xp-widget-toolbar-button";
@@ -30,67 +30,44 @@ export function MemoWidget({
   gateway,
   onWidgetChange,
 }: MemoWidgetProps) {
-  const [isEditingContent, setIsEditingContent] = useState(false);
   const [editorMode, setEditorMode] = useState<
     (typeof MEMO_EDITOR_MODE)[keyof typeof MEMO_EDITOR_MODE]
   >(MEMO_EDITOR_MODE.WRITE);
-  const [draft, setDraft] = useState(widget.data.markdown);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const isDirty = isEditingContent && draft !== widget.data.markdown;
+  const scope = useMemo(() => ({}), [gateway, widget.id]);
+  const editor = useMemoEditor({
+    scope,
+    markdown: widget.data.markdown,
+    onSave: (draft) => gateway.updateMemo(widget.id, draft),
+    onSaved: (data) => onWidgetChange({ ...widget, data }),
+  });
 
-  useUnsavedChangesWarning(isDirty);
-
-  useEffect(() => {
-    if (!isEditingContent) {
-      setDraft(widget.data.markdown);
-    }
-  }, [isEditingContent, widget.data.markdown]);
-
-  const save = async (): Promise<void> => {
-    if (isSaving) {
-      return;
-    }
-    setIsSaving(true);
-    setError(null);
-    try {
-      const data = await gateway.updateMemo(widget.id, draft);
-      onWidgetChange({ ...widget, data });
-      setIsEditingContent(false);
-    } catch (saveError) {
-      setError(messageFromError(saveError, MEMO_WIDGET_COPY.SAVE_FAILED));
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  useUnsavedChangesWarning(editor.dirty);
 
   return (
     <WidgetCard
       className="desktop-program desktop-program--memo"
       bodyClassName="desktop-program-body"
       footer={<ProgramStatusBar
-        primary={isEditingContent ? COPY.EDITING : COPY.READING}
-        secondary={isSaving ? COPY.SAVING : isDirty ? COPY.CHANGED : COPY.MARKDOWN}
+        primary={editor.editing ? COPY.EDITING : COPY.READING}
+        secondary={editor.saving ? COPY.SAVING : editor.dirty ? COPY.CHANGED : COPY.MARKDOWN}
       />}
       title={widget.file?.name ?? MEMO_WIDGET_COPY.UNSAVED_TITLE}
       iconPath={WIDGET_ICON_PATH_BY_TYPE[WIDGET_TYPE.MEMO]}
       windowControls={windowControls}
       toolbarActions={
-        !isEditingContent ? (
+        !editor.editing ? (
           <XpWidgetToolbarButton
             action={XP_WIDGET_TOOLBAR_ACTION.EDIT}
             label={MEMO_WIDGET_COPY.EDIT}
             onClick={() => {
-              setDraft(widget.data.markdown);
               setEditorMode(MEMO_EDITOR_MODE.WRITE);
-              setError(null);
-              setIsEditingContent(true);
+              editor.beginEditing();
             }}
           />
         ) : null
       }
     >
-      {isEditingContent ? (
+      {editor.editing ? (
         <div className="memo-editor">
           <XpTabs
             className="desktop-memo-tabs"
@@ -99,40 +76,39 @@ export function MemoWidget({
             onChange={setEditorMode}
             tabs={[
               { id: MEMO_EDITOR_MODE.WRITE, label: MEMO_WIDGET_COPY.WRITE,
-                disabled: isSaving, panel: <textarea
+                disabled: editor.saving, panel: <textarea
                   className="desktop-memo-input"
                   aria-label={MEMO_WIDGET_COPY.EDITOR_LABEL}
-                  value={draft}
-                  onChange={(event) => setDraft(event.currentTarget.value)}
-                  disabled={isSaving}
+                  value={editor.draft}
+                  onChange={(event) => editor.setDraft(event.currentTarget.value)}
+                  disabled={editor.saving}
                 /> },
               { id: MEMO_EDITOR_MODE.PREVIEW, label: MEMO_WIDGET_COPY.PREVIEW,
-                disabled: isSaving, panel: <div className="desktop-document-paper"><MarkdownContent markdown={draft} /></div> },
+                disabled: editor.saving, panel: <div className="desktop-document-paper"><MarkdownContent markdown={editor.draft} /></div> },
             ]}
           />
 
-          {error ? (
+          {editor.error ? (
             <p role="alert" className="widget-error">
-              {error}
+              {editor.error}
             </p>
           ) : null}
           <div className="widget-form-actions">
             <button
               type="button"
-              onClick={() => void save()}
-              disabled={isSaving}
+              onClick={() => void editor.save()}
+              disabled={editor.saving}
             >
-              {isSaving ? MEMO_WIDGET_COPY.SAVING : MEMO_WIDGET_COPY.SAVE}
+              {editor.saving ? MEMO_WIDGET_COPY.SAVING : MEMO_WIDGET_COPY.SAVE}
             </button>
             <button
               className="secondary-button"
               type="button"
               onClick={() => {
-                setDraft(widget.data.markdown);
-                setError(null);
-                setIsEditingContent(false);
+                editor.cancel();
+                setEditorMode(MEMO_EDITOR_MODE.WRITE);
               }}
-              disabled={isSaving}
+              disabled={editor.saving}
             >
               {MEMO_WIDGET_COPY.CANCEL}
             </button>

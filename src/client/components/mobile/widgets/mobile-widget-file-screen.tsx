@@ -75,6 +75,7 @@ export function MobileWidgetFileScreen({
       {mutationError ? <p className={MOBILE_CLASS_NAME.ERROR} role="alert">{mutationError}</p> : null}
       {widget?.type === WIDGET_TYPE.MEMO ? (
         <MobileMemo
+          scope={scope}
           markdown={widget.data.markdown}
           onDirtyChange={onDirtyChange}
           onSave={(markdown) => requests.mutate({

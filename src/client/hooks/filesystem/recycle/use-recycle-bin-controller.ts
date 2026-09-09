@@ -1,5 +1,5 @@
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
-import { useCallback, useMemo, useRef, useState, type DragEvent } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { FILESYSTEM_DRAG_SOURCE } from "@client/constants/filesystem/filesystem";
 import { readFilesystemDragPayload } from "@client/domain/filesystem/drag";
 import { useFilesystemDropTarget } from "@client/hooks/filesystem/drag/use-filesystem-drop-target";
@@ -9,7 +9,7 @@ import {
   buildRecycleContextMenu,
   buildRecycleItemContextMenu,
 } from "@client/domain/filesystem/recycle-context-menu";
-import { messageFromError } from "@client/errors/error-message";
+import { useFilesystemMutation } from "@client/hooks/filesystem/commands/use-filesystem-mutation";
 import { usePaginatedTrash } from "@client/hooks/filesystem/recycle/use-paginated-trash";
 import { useFilesystemMarqueeSelection } from "@client/hooks/filesystem/use-filesystem-marquee-selection";
 import { useFilesystemSelection } from "@client/hooks/filesystem/use-filesystem-selection";
@@ -40,10 +40,8 @@ export function useRecycleBinController({
     revision: filesystemRevision,
     errorFallback: FILESYSTEM_COPY.CHANGE_FAILED,
   });
-  const [mutationBusy, setMutationBusy] = useState(false);
-  const mutationPending = useRef(false);
+  const mutation = useFilesystemMutation(gateway);
   const dropTargets = useFilesystemDropTarget();
-  const [mutationError, setMutationError] = useState<string | null>(null);
   const [dialog, setDialog] = useState<RecycleBinDialog>(null);
   const [batchResult, setBatchResult] = useState<FilesystemBatchResult | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -62,61 +60,45 @@ export function useRecycleBinController({
       query.page?.items.filter((item) => selection.selectedIds.has(item.entry.id)) ?? [],
     [query.page?.items, selection.selectedIds],
   );
-  const busy = mutationBusy || query.isLoadingMore;
+  const busy = mutation.busy || query.isLoadingMore;
+  const latest = useRef({ onFilesystemChanged, onWidgetsClosed });
+  useLayoutEffect(() => {
+    latest.current = { onFilesystemChanged, onWidgetsClosed };
+  });
 
   const runChange = useCallback(
     async (operation: () => Promise<unknown>): Promise<void> => {
-      if (mutationPending.current) return;
-      mutationPending.current = true;
-      setMutationBusy(true);
-      setMutationError(null);
-      try {
-        await operation();
+      await mutation.run(operation, () => {
         setDialog(null);
         selection.clear();
-        onFilesystemChanged();
-      } catch (reason) {
-        setMutationError(messageFromError(reason, FILESYSTEM_COPY.CHANGE_FAILED));
-      } finally {
-        mutationPending.current = false;
-        setMutationBusy(false);
-      }
+        latest.current.onFilesystemChanged();
+      });
     },
-    [onFilesystemChanged, selection.clear],
+    [mutation.run, selection.clear],
   );
 
   const runBatchChange = useCallback(
     async (operation: () => Promise<FilesystemBatchResult>): Promise<void> => {
-      if (mutationPending.current) return;
-      mutationPending.current = true;
-      setMutationBusy(true);
-      setMutationError(null);
-      try {
-        const result = await operation();
-        onWidgetsClosed(result.closedWidgetIds);
+      await mutation.run(operation, (result) => {
+        latest.current.onWidgetsClosed(result.closedWidgetIds);
         setDialog(null);
         setBatchResult(result.failures.length > 0 ? result : null);
         selection.replace(result.failures.map((failure) => failure.id));
-        onFilesystemChanged();
-      } catch (reason) {
-        setMutationError(messageFromError(reason, FILESYSTEM_COPY.CHANGE_FAILED));
-      } finally {
-        mutationPending.current = false;
-        setMutationBusy(false);
-      }
+        latest.current.onFilesystemChanged();
+      });
     },
-    [onFilesystemChanged, onWidgetsClosed, selection.replace],
+    [mutation.run, selection.replace],
   );
 
   const dropIntoTrash = useCallback((event: Pick<DragEvent, "dataTransfer">): void => {
     if (busy) return;
     const payload = readFilesystemDragPayload(event.dataTransfer);
     if (!payload || payload.source !== FILESYSTEM_DRAG_SOURCE.ACTIVE) {
-      setMutationError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
+      mutation.setError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
       return;
     }
     void runBatchChange(() => gateway.trashEntries(payload.ids));
-  }, [busy, gateway, runBatchChange]);
+  }, [busy, gateway, mutation.setError, runBatchChange]);
 
   const restore = useCallback(
     (ids: readonly string[]): Promise<void> =>
@@ -169,7 +151,7 @@ export function useRecycleBinController({
 
   return {
     page: query.page,
-    error: mutationError ?? query.error,
+    error: mutation.error ?? query.error,
     busy,
     dropTargets,
     dropIntoTrash,

@@ -1,5 +1,5 @@
 import { IMAGE_UPLOAD_PROFILE_COPY } from "@client/content/ko/integrations/image-upload-profile";
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import {
   IMAGE_UPLOAD_PROFILE_CLASS_NAME,
@@ -49,13 +49,15 @@ export function ImageUploadProfilesWidget({
     imageUploadLogGateway,
     activeTab === IMAGE_UPLOAD_PROFILES_TAB.LOGS,
   );
+  const refreshLogs = useRef(logs.refresh);
+  useLayoutEffect(() => { refreshLogs.current = logs.refresh; }, [logs.refresh]);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const remove = async (): Promise<void> => {
     if (await profiles.remove()) setConfirmDelete(false);
   };
   const saveLogSettings = async (): Promise<void> => {
-    if (await logSettings.save()) logs.refresh();
+    if (await logSettings.save()) await refreshLogs.current();
   };
 
   const profilePanel = (
@@ -156,6 +158,7 @@ export function ImageUploadProfilesWidget({
           settingsSaving={logSettings.saving}
           settingsError={logSettings.error}
           settingsLoadFailed={logSettings.loadFailed}
+          settingsCanSave={logSettings.canSave}
           hasMore={logs.nextCursor !== null}
           onProfileChange={logs.setProfileId}
           onOutcomeChange={logs.setOutcome}

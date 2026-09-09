@@ -5,7 +5,7 @@ import {
   STORAGE_STATUS_COPY,
   STORAGE_STATUS_DATE_TIME_FORMAT_OPTIONS,
 } from "@client/content/ko/storage/storage-status";
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { type CSSProperties } from "react";
 import {
   STORAGE_FREE_REFERENCE_BYTES,
   STORAGE_MIME_CATEGORY_VALUES,
@@ -29,7 +29,7 @@ import {
   storageUsageLevel,
   storageUsagePercent,
 } from "@client/domain/storage/storage-status";
-import { messageFromError } from "@client/errors/error-message";
+import { useStorageStatus } from "@client/hooks/storage/use-storage-status";
 import type { WidgetWindowControls } from "@client/types/desktop/window";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
 
@@ -46,25 +46,7 @@ export function StorageStatusWidget({
   windowControls,
   storageStatusGateway,
 }: StorageStatusWidgetProps) {
-  const [status, setStatus] = useState<StorageStatusSnapshot | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async (): Promise<void> => {
-    setLoading(true);
-    setError(null);
-    try {
-      setStatus(await storageStatusGateway.getStatus());
-    } catch (caught) {
-      setError(messageFromError(caught, STORAGE_STATUS_COPY.LOAD_FAILED));
-    } finally {
-      setLoading(false);
-    }
-  }, [storageStatusGateway]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  const { status, loading, error, refresh } = useStorageStatus(storageStatusGateway);
 
   return (
     <WidgetCard
@@ -76,7 +58,7 @@ export function StorageStatusWidget({
           action={XP_WIDGET_TOOLBAR_ACTION.REFRESH}
           label={STORAGE_STATUS_COPY.REFRESH}
           disabled={loading}
-          onClick={() => void load()}
+          onClick={() => void refresh()}
         />
       }
     >
@@ -85,7 +67,7 @@ export function StorageStatusWidget({
         {error ? (
           <div className="widget-error" role="alert">
             <p>{error}</p>
-            <button type="button" onClick={() => void load()}>
+            <button type="button" onClick={() => void refresh()}>
               {STORAGE_STATUS_COPY.RETRY}
             </button>
           </div>

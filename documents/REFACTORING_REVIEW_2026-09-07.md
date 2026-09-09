@@ -8,7 +8,7 @@
 
 범위: SOLID, 중복 제거, 비동기 상태, 조회 효율, 타입 계약, 오류 처리와 검증 도구
 
-상태: **진단 완료 · 단계별 개선 진행 중 (R1·R2·R3·R4·R7·R9·R11 및 1·2·3단계 완료)**
+상태: **진단 완료 · 단계별 개선 진행 중 (R1~R9·R11 및 1~4단계 완료)**
 
 ## 1. 종합 판단
 
@@ -60,10 +60,10 @@ import 조사는 문자열 기반이며 type import도 포함했다. 완전한 �
 | R2 | P1 | 모바일 프로그램의 조회·수정 충돌 방지 — **완료 (1-B)** | 상태 일관성 |
 | R3 | P2 | 프로그램 데이터 조회를 요청 ID 범위로 제한 — **완료 (2단계)** | 성능, SRP |
 | R4 | P2 | 프로그램별 props와 gateway 계약 분리 — **완료 (3단계)** | ISP, OCP |
-| R5 | P2 | 파일 변경 명령의 중복과 중복 실행 정책 정리 | DRY, SRP |
-| R6 | P2 | 공통 화면 상태를 기능별 훅으로 공유 | DRY |
+| R5 | P2 | 파일 변경 명령의 중복과 중복 실행 정책 정리 — **완료 (4단계)** | DRY, SRP |
+| R6 | P2 | 공통 화면 상태를 기능별 훅으로 공유 — **완료 (4단계)** | DRY |
 | R7 | P2 | 게스트 새로고침의 요청 순서와 부분 실패 처리 — **완료 (1-C)** | 오류 처리 |
-| R8 | P2 | 이미지 로그 훅의 의존성과 요청 수명 명시 | React 상태 관리 |
+| R8 | P2 | 이미지 로그 훅의 의존성과 요청 수명 명시 — **완료 (4단계)** | React 상태 관리 |
 | R9 | P3 | 보관 설정 훅에 API 포트 주입 — **완료 (3단계)** | DIP, 테스트 용이성 |
 | R10 | P2 | 예기치 않은 API 오류의 로그 형식 통일 | 운영 관측, 정보 최소화 |
 | R11 | P3 | 타입 순환과 과도한 제네릭 보장 축소 — **완료 (3단계)** | 타입 계약 |
@@ -129,6 +129,8 @@ P1은 관찰 가능한 동작의 일관성을 먼저 보강할 항목, P2는 다
 
 ### R5. 파일 변경 명령의 중복이 실행 정책 차이로 이어진다
 
+**완료: 2026-09-09, 4단계.** 아래 내용은 진단 당시 상태이며, 구현·검증 결과는 10절 참조.
+
 근거: [useDocumentsController](../src/client/hooks/filesystem/explorer/use-documents-controller.ts) 115–154행, [useDesktopFilesystemController](../src/client/hooks/desktop/filesystem/use-desktop-filesystem-controller.ts) 136행 및 245행 이후, [useRecycleBinController](../src/client/hooks/filesystem/recycle/use-recycle-bin-controller.ts) 67–108행.
 
 **확인:** busy/error 설정, 성공 후 대화상자 닫기, 선택 갱신, revision 통지, batch 실패 표시가 반복된다. 휴지통에는 `mutationPending` ref로 즉시 중복 실행을 막는 방어가 있지만 탐색기의 `runChange`·`runBatchChange`에는 없다. 데스크톱도 별도 구현이다.
@@ -138,6 +140,8 @@ UI의 disabled 상태만으로 모든 호출 경로의 중복 실행이 차단�
 완료 기준: 같은 명령을 렌더 사이에 연속 호출해도 정한 정책대로 한 번만 실행하거나 순차 실행한다. batch 일부 실패 시 성공 항목은 반영하고 실패 항목은 선택 상태와 오류 목록에 남긴다. 폴더 이동·휴지통 복원·프로그램 창 닫힘 회귀 테스트를 유지한다.
 
 ### R6. 화면은 분리하되 데이터와 편집 상태는 공유할 수 있다
+
+**완료: 2026-09-09, 4단계.** 아래 내용은 진단 당시 상태이며, 구현·검증 결과는 10절 참조.
 
 근거: [데스크톱 저장소](../src/client/components/widgets/storage-status-widget.tsx) 44–65행 / [모바일 저장소](../src/client/components/mobile/widgets/mobile-storage-status.tsx) 17–33행, [데스크톱 메모](../src/client/components/widgets/memo-widget.tsx) / [모바일 메모](../src/client/components/mobile/widgets/mobile-memo.tsx), [디렉터리 페이지 훅](../src/client/hooks/filesystem/directory/use-paginated-directory.ts) / [휴지통 페이지 훅](../src/client/hooks/filesystem/recycle/use-paginated-trash.ts).
 
@@ -162,6 +166,8 @@ UI의 disabled 상태만으로 모든 호출 경로의 중복 실행이 차단�
 완료 기준: A 창 실패 + B 창 성공에도 A의 실패가 보인다. 새 요청 결과보다 늦게 도착한 이전 응답은 무시한다. 문서 변경·창 닫기 후 결과를 다시 반영하지 않는다. 게스트 읽기 전용과 서버의 요청별 공개 검사는 그대로 유지한다.
 
 ### R8. 이미지 로그 effect가 실제 의존성과 맞지 않는다
+
+**완료: 2026-09-09, 4단계.** 아래 내용은 진단 당시 상태이며, 구현·검증 결과는 10절 참조.
 
 근거: [useImageUploadLogs](../src/client/hooks/integrations/use-image-upload-logs.ts) 22–54행, [useImageUploadLogSettings](../src/client/hooks/integrations/use-image-upload-log-settings.ts), [ImageUploadProfilesWidget](../src/client/components/widgets/image-upload-profiles-widget.tsx).
 
@@ -257,7 +263,7 @@ UI의 disabled 상태만으로 모든 호출 경로의 중복 실행이 차단�
 | 1-C | R7 | 게스트 새로고침과 부분 실패 처리 | **완료 · 2026-09-08** |
 | 2 | R3 | 요청한 프로그램 ID 범위로 조회 제한 | **완료 · 2026-09-08** |
 | 3 | R4·R9·R11 | 프로그램별 인터페이스·API 주입·타입 계약 정리 | **완료 · 2026-09-09** |
-| 4 | R5·R6·R8 | 파일 명령과 화면 상태의 중복 제거 | 예정 |
+| 4 | R5·R6·R8 | 파일 명령과 화면 상태의 중복 제거 | **완료 · 2026-09-09** |
 | 5 | R10·R12 | 오류 로그와 자동 검사 보강 | 예정 |
 
 상위 1단계 상태: **완료 · 2026-09-08**. 1-A·1-B·1-C의 구현과 검증을 모두 마쳤다.
@@ -429,3 +435,30 @@ UI의 disabled 상태만으로 모든 호출 경로의 중복 실행이 차단�
 | 수동 브라우저 검사 | 미실행: UI·훅 회귀는 jsdom 테스트로 검증. 필수 자동 검사는 모두 실행 |
 
 **R4·R9·R11과 3단계 완료.** 다음 구현 단위는 4단계(R5·R6·R8)이다. 다른 미완료 항목과 추가 검토 후보는 그대로 남겼으며 배포·원격 push는 수행하지 않았다.
+
+### 4단계 · R5·R6·R8: 파일 명령과 화면 상태의 중복 제거
+
+- 완료일: **2026-09-09 (KST)**
+- 커밋 제목: `refactor(client): 파일 명령과 화면 상태의 중복 제거`
+- 탐색기·휴지통·데스크톱의 파일 변경 실행을 `useFilesystemMutation`으로 공유했다. controller별 즉시 잠금으로 추가 호출을 무시하며, 작업과 성공 결과 적용을 분리한다. gateway 교체·unmount 후 이전 결과를 무효화한다. 업로드·다운로드의 독립 흐름은 유지했다.
+- batch 성공 항목·프로그램 창 닫힘·실패 목록을 반영하고 revision을 한 번 통지한다. 다른 디렉터리로 이동한 경우 현재 선택·대화상자·스크롤을 보호한다. 탐색기 정렬 저장의 통지를 controller로 옮겼다.
+- 저장소 조회를 `useStorageStatus`로 공유했다. 중복 조회 공유, 기존 데이터와 오류 보존, 성공 시 오류 해제, gateway 수명 구분을 적용했다.
+- 메모 편집을 `useMemoEditor`로 공유했다. 편집 중 초안 보존, 최신 원문으로 취소, 저장 잠금, false/예외 시 편집 유지 및 오래된 결과 무시를 적용했다. 데스크톱 저장 결과는 최신 프로그램 메타데이터에 반영한다. 모바일 원격 저장·로컬 초안 저장과 화면별 미리보기·파일 저장·이탈 경고는 기존 UI 책임으로 유지했다.
+- 이미지 로그 첫 페이지와 더 보기를 분리했다. 필터·gateway·탭 활성 상태에 따라 요청을 무효화하고, 더 보기 중 refresh는 이전 append를 무효화한다. 탭 이탈 시 목록·cursor·오류를 초기화하고 복귀 시 필터를 유지해 재조회한다. 미저장 설정 입력은 서버 값으로 다시 초기화한다.
+- 이미지 로그 설정은 조회·저장 잠금을 공유하고 최초 조회 실패 시 저장을 차단한다. 유효한 저장 성공 때만 현재 필터의 목록을 새로 읽는다.
+- **검토 후 보완:** 탐색기 이름 변경의 `onEntryChanged`를 요청 함수 밖의 유효 성공 경로로 이동했다. 설정 저장 중 필터 변경 후 오래된 refresh를 호출하던 문제는 최신 refresh 참조를 사용하도록 수정했다. 두 문제 모두 지연 Promise로 변경 전 실패를 재현하고 회귀 테스트를 추가했다.
+- **테스트 정리:** 기존 모바일 테스트는 focus listener 설치 전 이벤트를 보내 조회 2회를 기다리다 타임아웃될 수 있었다. React effect 처리를 기다린 뒤 이벤트를 보내도록 수정했으며 제한 시간은 늘리지 않았다. 새 테스트 프레임워크·도우미를 추가하지 않고 기존 deferred와 fake를 재사용했다. 불완전한 디렉터리 fixture의 타입 단언을 제거하고, 제목과 달리 예외를 검증하지 않던 메모 테스트에 실제 저장 실패·입력 보존 검증을 보완했다. 훅의 잠금·수명 검사와 화면의 결과 연결 검사를 구분했다.
+- **범위 결정:** R6의 페이지 훅 통합은 제외했다. R10·R12, 추가 검토 후보, 서버·HTTP·DB·인증·공개 판정은 변경하지 않았다. XP Luna와 초기 Android 표현 및 프로그램 지연 로딩을 유지했다.
+
+| 검증 | 결과 |
+| --- | --- |
+| 변경 전 재현 | 이름 변경 후 unmount에도 콜백 1회 실행, 설정 저장 중 필터 변경 후 기대 조회 3회 대신 2회 실행, 모바일 이벤트 준비 경쟁으로 조회 2회 대기 타임아웃 확인 |
+| `npm run check` | 통과: TypeScript, 불변 마이그레이션 17개, 구조·문구·라우트 검사 |
+| `npm run test:unit` | 62개 파일 · 281개 테스트 통과 |
+| `npm run test:client` | 55개 파일 · 225개 테스트 통과, 약 139초. 다른 무거운 검사와 동시에 실행하지 않음. 기존 타임아웃 재발 없음 |
+| `npm run build` | 통과. desktop 초기 JS 392,428 bytes / mobile 280,098 bytes로 각각 500 KiB 예산 이내. 다섯 프로그램 dynamic entry 유지 |
+| `git diff --check` 및 staged diff 검사 | 통과 |
+| Worker 테스트 | 미실행: 서버·바인딩·HTTP·DB 변경 없음 |
+| 수동 브라우저 검사 | 미실행: UI와 비동기 수명 검증은 jsdom 회귀 테스트로 수행 |
+
+**R5·R6·R8과 4단계 완료.** 다음 구현 단위는 5단계(R10·R12)다. 추가 검토 후보는 미완료로 유지한다. 배포와 원격 push는 수행하지 않았다.

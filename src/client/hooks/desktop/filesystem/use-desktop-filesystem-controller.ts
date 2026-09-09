@@ -1,5 +1,5 @@
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
-import { useCallback, useMemo, useState, type DragEvent, type RefObject } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type DragEvent, type RefObject } from "react";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
@@ -16,7 +16,7 @@ import { SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
 import { desktopIconLayout } from "@client/domain/desktop/desktop-icon-layout";
 import { hasInternalFilesystemDrag, readFilesystemDragPayload } from "@client/domain/filesystem/drag";
 import { collectDroppedUploadNodes } from "@client/domain/filesystem/local-file-tree";
-import { messageFromError } from "@client/errors/error-message";
+import { useFilesystemMutation } from "@client/hooks/filesystem/commands/use-filesystem-mutation";
 import { useDesktopEntries } from "@client/hooks/filesystem/use-desktop-entries";
 import { useFilesystemDownload } from "@client/hooks/filesystem/use-filesystem-download";
 import { useFilesystemMarqueeSelection } from "@client/hooks/filesystem/use-filesystem-marquee-selection";
@@ -52,10 +52,9 @@ export function useDesktopFilesystemController({
   onWindowClosed,
 }: DesktopFilesystemControllerOptions) {
   const [revision, setRevision] = useState(0);
-  const [error, setError] = useState<string | null>(null);
+  const mutation = useFilesystemMutation(gateway);
   const [batchResult, setBatchResult] = useState<FilesystemBatchResult | null>(null);
   const [dialog, setDialog] = useState<DesktopFilesystemDialog>(null);
-  const [dialogBusy, setDialogBusy] = useState(false);
   const notifyChanged = useCallback(() => setRevision((current) => current + 1), []);
   const entries = useDesktopEntries(gateway, revision);
   const iconLayout = useMemo(() => desktopIconLayout(desktop), [desktop]);
@@ -90,14 +89,16 @@ export function useDesktopFilesystemController({
     [entries.entries.length, iconLayout.dynamicCapacity],
   );
 
-  const reportError = useCallback((reason: unknown): void => {
-    setError(messageFromError(reason, FILESYSTEM_COPY.CHANGE_FAILED));
-  }, []);
+  const latest = useRef({ widgets, onWidgetChange, onRemoveWidgets, onWindowClosed });
+  useLayoutEffect(() => {
+    latest.current = { widgets, onWidgetChange, onRemoveWidgets, onWindowClosed };
+  });
 
   const synchronizeWidgetFile = useCallback(
     (entry: FilesystemEntry): void => {
       if (entry.kind !== FILESYSTEM_ENTRY_KIND.WIDGET) return;
-      const widget = widgets.find((candidate) => candidate.id === entry.widgetId);
+      const current = latest.current;
+      const widget = current.widgets.find((candidate) => candidate.id === entry.widgetId);
       if (
         !widget ||
         !WIDGET_BEHAVIOR[widget.type].supportsFileStorage ||
@@ -106,21 +107,21 @@ export function useDesktopFilesystemController({
       ) {
         return;
       }
-      onWidgetChange({
+      current.onWidgetChange({
         ...widget,
         file: { entryId: entry.id, parentId: entry.parentId, name: entry.name },
       });
     },
-    [onWidgetChange, widgets],
+    [],
   );
 
   const removeWidgetWindows = useCallback(
     (widgetIds: readonly string[]): void => {
       if (widgetIds.length === 0) return;
-      widgetIds.forEach(onWindowClosed);
-      onRemoveWidgets(widgetIds);
+      widgetIds.forEach(latest.current.onWindowClosed);
+      latest.current.onRemoveWidgets(widgetIds);
     },
-    [onRemoveWidgets, onWindowClosed],
+    [],
   );
 
   const applyBatchResult = useCallback(
@@ -134,16 +135,16 @@ export function useDesktopFilesystemController({
   );
 
   const runFilesystemChange = useCallback(
-    async (operation: () => Promise<unknown>): Promise<void> => {
-      setError(null);
-      try {
-        await operation();
+    async <T,>(
+      operation: () => Promise<T>,
+      onSuccess: (value: T) => void = () => undefined,
+    ): Promise<void> => {
+      await mutation.run(operation, (value) => {
+        onSuccess(value);
         notifyChanged();
-      } catch (reason) {
-        reportError(reason);
-      }
+      });
     },
-    [notifyChanged, reportError],
+    [mutation.run, notifyChanged],
   );
 
   const movePayload = useCallback(
@@ -186,23 +187,23 @@ export function useDesktopFilesystemController({
     (event: DragEvent, parentId: string, targetIndex?: number): void => {
       const payload = readFilesystemDragPayload(event.dataTransfer);
       if (payload) {
-        void runFilesystemChange(async () => {
-          applyBatchResult(await movePayload(payload, parentId, targetIndex));
-        });
+        void runFilesystemChange(
+          () => movePayload(payload, parentId, targetIndex),
+          applyBatchResult,
+        );
       } else if (hasInternalFilesystemDrag(event.dataTransfer)) {
-        setError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
+        mutation.setError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
       } else {
-        void uploadDrop(event, parentId).catch(reportError);
+        void uploadDrop(event, parentId).catch(mutation.reportError);
       }
     },
-    [applyBatchResult, movePayload, reportError, runFilesystemChange, uploadDrop],
+    [applyBatchResult, movePayload, mutation.reportError, mutation.setError, runFilesystemChange, uploadDrop],
   );
 
   const trashEntries = useCallback(
     (targets: readonly FilesystemEntry[]): void => {
-      void runFilesystemChange(async () => {
-        applyBatchResult(await gateway.trashEntries(targets.map(({ id }) => id)));
-      });
+      const ids = targets.map(({ id }) => id);
+      void runFilesystemChange(() => gateway.trashEntries(ids), applyBatchResult);
     },
     [applyBatchResult, gateway, runFilesystemChange],
   );
@@ -210,23 +211,24 @@ export function useDesktopFilesystemController({
   const dropOnSystemApp = useCallback(
     (id: SystemAppId, event: DragEvent<HTMLButtonElement>): void => {
       if (id === SYSTEM_APP_ID.MY_COMPUTER) {
-        setError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
+        mutation.setError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
         return;
       }
       const payload = readFilesystemDragPayload(event.dataTransfer);
       if (id === SYSTEM_APP_ID.RECYCLE_BIN) {
         if (!payload || payload.source === FILESYSTEM_DRAG_SOURCE.TRASH) {
-          setError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
+          mutation.setError(FILESYSTEM_COPY.DROP_NOT_ALLOWED);
           return;
         }
-        void runFilesystemChange(async () => {
-          applyBatchResult(await gateway.trashEntries(payload.ids));
-        });
+        void runFilesystemChange(
+          () => gateway.trashEntries(payload.ids),
+          applyBatchResult,
+        );
       } else {
         handleDrop(event, FILESYSTEM_ROOT_ID.DOCUMENTS);
       }
     },
-    [applyBatchResult, gateway, handleDrop, runFilesystemChange],
+    [applyBatchResult, gateway, handleDrop, mutation.setError, runFilesystemChange],
   );
 
   const dropOnEntry = useCallback(
@@ -242,59 +244,49 @@ export function useDesktopFilesystemController({
     [handleDrop],
   );
 
-  const runDialogChange = useCallback(
-    async (operation: () => Promise<void>): Promise<void> => {
-      setDialogBusy(true);
-      setError(null);
-      try {
-        await operation();
-        setDialog(null);
-        notifyChanged();
-      } catch (reason) {
-        reportError(reason);
-      } finally {
-        setDialogBusy(false);
-      }
-    },
-    [notifyChanged, reportError],
-  );
-
   const createDirectory = useCallback(
     (name: string): void => {
-      void runDialogChange(async () => {
-        await gateway.createDirectory(FILESYSTEM_ROOT_ID.DESKTOP, name, desktopPlacement());
-      });
+      void runFilesystemChange(
+        () => gateway.createDirectory(FILESYSTEM_ROOT_ID.DESKTOP, name, desktopPlacement()),
+        () => setDialog(null),
+      );
     },
-    [desktopPlacement, gateway, runDialogChange],
+    [desktopPlacement, gateway, runFilesystemChange],
   );
 
   const renameEntry = useCallback(
     (name: string): void => {
       if (dialog?.kind !== "rename" || !dialog.entries[0]) return;
       const entryId = dialog.entries[0].id;
-      void runDialogChange(async () => {
-        synchronizeWidgetFile(await gateway.updateEntry(entryId, { name }));
-      });
+      void runFilesystemChange(
+        () => gateway.updateEntry(entryId, { name }),
+        (entry) => {
+          synchronizeWidgetFile(entry);
+          setDialog(null);
+        },
+      );
     },
-    [dialog, gateway, runDialogChange, synchronizeWidgetFile],
+    [dialog, gateway, runFilesystemChange, synchronizeWidgetFile],
   );
 
   const moveDialogEntries = useCallback(
     (parentId: string): void => {
       if (dialog?.kind !== "move") return;
       const ids = dialog.entries.map(({ id }) => id);
-      void runDialogChange(async () => {
-        applyBatchResult(
-          await gateway.moveEntries(ids, {
+      void runFilesystemChange(
+        () => gateway.moveEntries(ids, {
             parentId,
             ...(parentId === FILESYSTEM_ROOT_ID.DESKTOP
               ? { desktopPlacement: desktopPlacement() }
               : {}),
           }),
-        );
-      });
+        (result) => {
+          applyBatchResult(result);
+          setDialog(null);
+        },
+      );
     },
-    [applyBatchResult, desktopPlacement, dialog, gateway, runDialogChange],
+    [applyBatchResult, desktopPlacement, dialog, gateway, runFilesystemChange],
   );
 
   const uploadNodes = useCallback(
@@ -321,14 +313,14 @@ export function useDesktopFilesystemController({
     download,
     folderProperties,
     overflowCount,
-    error,
-    reportError,
-    clearError: () => setError(null),
+    error: mutation.error,
+    reportError: mutation.reportError,
+    clearError: mutation.clearError,
     batchResult,
     setBatchResult,
     dialog,
     setDialog,
-    dialogBusy,
+    dialogBusy: mutation.busy,
     desktopPlacement,
     synchronizeWidgetFile,
     removeWidgetWindows,

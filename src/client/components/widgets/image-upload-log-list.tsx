@@ -28,6 +28,7 @@ interface ImageUploadLogListProps {
   readonly settingsSaving: boolean;
   readonly settingsError: string | null;
   readonly settingsLoadFailed: boolean;
+  readonly settingsCanSave: boolean;
   readonly hasMore: boolean;
   readonly onProfileChange: (profileId: string | null) => void;
   readonly onOutcomeChange: (outcome: ImageUploadLogOutcome | null) => void;
@@ -52,6 +53,7 @@ export function ImageUploadLogList({
   settingsSaving,
   settingsError,
   settingsLoadFailed,
+  settingsCanSave,
   hasMore,
   onProfileChange,
   onOutcomeChange,
@@ -91,7 +93,9 @@ export function ImageUploadLogList({
                 }
               />
             </label>
-            <button type="submit">{IMAGE_UPLOAD_LOG_COPY.SAVE_SETTINGS}</button>
+            <button type="submit" disabled={!settingsCanSave}>
+              {IMAGE_UPLOAD_LOG_COPY.SAVE_SETTINGS}
+            </button>
             <small>{IMAGE_UPLOAD_LOG_COPY.RETENTION_RANGE}</small>
           </div>
           <p className={IMAGE_UPLOAD_LOG_CLASS_NAME.NOTICE}>

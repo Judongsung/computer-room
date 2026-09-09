@@ -1,6 +1,6 @@
 import { LOCAL_WIDGET_DRAFT_DEFAULT_NAME } from "@client/content/ko/widgets/local-widget-draft";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { MAX_ACTIVE_CHECKLIST_ITEMS } from "@/constants/widgets/checklist";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import { normalizeChecklistLabel } from "@/domain/widgets/checklist";
@@ -36,6 +36,7 @@ export function MobileWidgetDraftScreen({
   onSavedFile,
   onDirtyChange,
 }: MobileWidgetDraftScreenProps) {
+  const memoScope = useMemo(() => ({}), [draft.id]);
   const [fileDraft, setFileDraft] = useState<LocalWidgetDraft | null>(null);
   const title =
     draft.type === WIDGET_TYPE.MEMO
@@ -58,6 +59,7 @@ export function MobileWidgetDraftScreen({
     <MobileActivity title={title}>
       {draft.type === WIDGET_TYPE.MEMO ? (
         <MobileMemo
+          scope={memoScope}
           markdown={draft.markdown}
           startEditing
           onDirtyChange={onDirtyChange}

@@ -173,9 +173,7 @@ export function DocumentsWindow({
           initialValue={selected.name}
           busy={controller.busy}
           onSubmit={(name) =>
-            void controller.runChange(async () => {
-              onEntryChanged(await gateway.updateEntry(selected.id, { name }));
-            })
+            void controller.renameEntry(selected.id, name)
           }
           onCancel={() => controller.setDialog(null)}
         />

@@ -1,11 +1,9 @@
 import { STORAGE_STATUS_COPY } from "@client/content/ko/storage/storage-status";
 import { UI_LOCALE } from "@client/content/ko/shared/format";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
-import { useCallback, useEffect, useState } from "react";
-import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
 import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
-import { messageFromError } from "@client/errors/error-message";
+import { useStorageStatus } from "@client/hooks/storage/use-storage-status";
 import type { StorageStatusGateway } from "@client/types/storage/storage-status";
 import { formatFileSize } from "@client/utils/format-file-size";
 
@@ -14,27 +12,13 @@ interface MobileStorageStatusProps {
 }
 
 export function MobileStorageStatus({ gateway }: MobileStorageStatusProps) {
-  const [status, setStatus] = useState<StorageStatusSnapshot | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const load = useCallback(async (): Promise<void> => {
-    setLoading(true);
-    try {
-      setStatus(await gateway.getStatus());
-      setError(null);
-    } catch (caught) {
-      setError(messageFromError(caught, STORAGE_STATUS_COPY.LOAD_FAILED));
-    } finally {
-      setLoading(false);
-    }
-  }, [gateway]);
-  useEffect(() => void load(), [load]);
+  const { status, loading, error, refresh } = useStorageStatus(gateway);
 
   return (
     <MobileActivity
       title={STORAGE_STATUS_COPY.TITLE}
       actions={
-        <button type="button" disabled={loading} onClick={() => void load()}>
+        <button type="button" disabled={loading} onClick={() => void refresh()}>
           {MOBILE_COPY.REFRESH}
         </button>
       }
