@@ -7,6 +7,7 @@ import { MEDIA_WINDOW_CONFIG } from "@client/constants/media/media";
 import { useMediaDirectory } from "@client/hooks/media/use-media-directory";
 import type { MediaViewerWindowProps } from "@client/types/media/media";
 import { downloadFile } from "@client/utils/download-file";
+import { openImageInNewTab } from "@client/utils/open-image-in-new-tab";
 import { DesktopAppWindow } from "@client/components/desktop/desktop-app-window";
 import { PictureViewer } from "@client/components/media/picture-viewer";
 import { WindowsMediaPlayer } from "@client/components/media/windows-media-player";
@@ -77,6 +78,11 @@ export function MediaViewerWindow({
     onDownload: () => downloadFile(gateway.downloadUrl(window.currentFile.id)),
     onContextMenu: (event: Parameters<typeof contextMenu.openFromEvent>[0]) =>
       contextMenu.openFromEvent(event, [
+        ...(kind === MEDIA_KIND.IMAGE ? [contextMenuCommand(
+          XP_CONTEXT_MENU_COMMAND_ID.OPEN_NEW_TAB,
+          MEDIA_VIEWER_COPY.OPEN_NEW_TAB,
+          () => openImageInNewTab(gateway.contentUrl(window.currentFile.id)),
+        )] : []),
         contextMenuCommand(
           XP_CONTEXT_MENU_COMMAND_ID.DOWNLOAD,
           MEDIA_VIEWER_COPY.DOWNLOAD_FILE,
@@ -111,7 +117,7 @@ export function MediaViewerWindow({
       onCommitBounds={onCommitBounds}
     >
       {kind === MEDIA_KIND.IMAGE ? (
-        <PictureViewer {...rendererProps} />
+        <PictureViewer {...rendererProps} onOpenNewTab={() => openImageInNewTab(rendererProps.sourceUrl)} />
       ) : (
         <WindowsMediaPlayer {...rendererProps} />
       )}

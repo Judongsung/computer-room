@@ -17,6 +17,7 @@ export const MEDIA_VIEWER_COPY = {
   ROTATE_LEFT: "왼쪽으로 회전",
   ROTATE_RIGHT: "오른쪽으로 회전",
   DOWNLOAD: "다운로드",
+  OPEN_NEW_TAB: "새 탭에서 열기",
   PLAY: "재생",
   PAUSE: "일시정지",
   MUTE: "음소거",

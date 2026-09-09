@@ -25,6 +25,10 @@ import type {
   MediaViewerToolbarButtonProps,
 } from "@client/types/media/media";
 
+interface PictureViewerProps extends MediaRendererProps {
+  readonly onOpenNewTab: () => void;
+}
+
 export function PictureViewer({
   file,
   sourceUrl,
@@ -34,8 +38,9 @@ export function PictureViewer({
   onPrevious,
   onNext,
   onDownload,
+  onOpenNewTab,
   onContextMenu,
-}: MediaRendererProps) {
+}: PictureViewerProps) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const canvasSize = useElementSize(canvasRef);
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
@@ -190,6 +195,7 @@ export function PictureViewer({
         <span className="media-toolbar__spacer" />
         <output>{Math.round(scale * PERCENT_MULTIPLIER)}%</output>
         <ViewerButton label={MEDIA_VIEWER_COPY.DOWNLOAD} glyph={MEDIA_TOOLBAR_GLYPH.DOWNLOAD} onClick={onDownload} />
+        <ViewerButton label={MEDIA_VIEWER_COPY.OPEN_NEW_TAB} glyph={MEDIA_TOOLBAR_GLYPH.OPEN_NEW_TAB} onClick={onOpenNewTab} />
       </div>
       {navigationError ? <p className="media-viewer__notice" role="alert">{navigationError}</p> : null}
     </div>

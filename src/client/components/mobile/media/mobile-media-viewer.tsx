@@ -1,4 +1,6 @@
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
+import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
+import { openImageInNewTab } from "@client/utils/open-image-in-new-tab";
 import { MEDIA_KIND } from "@/constants/filesystem/media";
 import type { FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import type { MediaKind } from "@/types/filesystem/media";
@@ -109,6 +111,9 @@ function MobileImageViewer({
         </div>
         <div className={MOBILE_CLASS_NAME.MEDIA_ACTIONS}>
           <button type="button" onClick={download}>{MOBILE_COPY.DOWNLOAD}</button>
+          <button type="button" onClick={() => openImageInNewTab(gateway.contentUrl(file.id))}>
+            {MEDIA_VIEWER_COPY.OPEN_NEW_TAB}
+          </button>
         </div>
       </div>
     </MobileActivity>

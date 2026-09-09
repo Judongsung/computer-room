@@ -15,6 +15,7 @@ export const XP_CONTEXT_MENU_CLASS_NAME = {
 export const XP_CONTEXT_MENU_COMMAND_ID = {
   OPEN: "open",
   OPEN_NEW_WINDOW: "open-new-window",
+  OPEN_NEW_TAB: "open-new-tab",
   COPY_ADDRESS: "copy-address",
   CUT: "cut",
   COPY: "copy",

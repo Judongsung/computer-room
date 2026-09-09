@@ -1,7 +1,7 @@
 import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
 import { useState } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
@@ -27,6 +27,23 @@ const VIDEO = file("video", "영상", "video/mp4");
 const TEXT_FILE = file("text", "문서", "text/plain");
 
 describe("MobileMediaViewer", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it.each(["owner", "guest"])("opens the current original after swiping (%s)", async (access) => {
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    const gateway = mediaGateway(vi.fn((id: string) => `/${access}/content/${id}`));
+    render(<ImageViewerHarness gateway={gateway} />);
+    await waitFor(() => expect(gateway.listDirectory).toHaveBeenCalledTimes(2));
+    fireEvent.click(screen.getByRole("button", { name: MEDIA_VIEWER_COPY.OPEN_NEW_TAB }));
+    expect(open).toHaveBeenLastCalledWith(`/${access}/content/${CURRENT_IMAGE.id}`, "_blank", "noopener,noreferrer");
+    swipe(screen.getByAltText(CURRENT_IMAGE.name).parentElement, 260, 120);
+    const image = await screen.findByAltText(LAST_IMAGE.name);
+    fireEvent.error(image);
+    fireEvent.click(screen.getByRole("button", { name: MEDIA_VIEWER_COPY.OPEN_NEW_TAB }));
+    expect(open).toHaveBeenLastCalledWith(`/${access}/content/${LAST_IMAGE.id}`, "_blank", "noopener,noreferrer");
+    expect(image).toBeInTheDocument();
+  });
+
   it("swipes through every image page in directory order and stops at edges", async () => {
     const contentUrl = vi.fn((id: string) => `/content/${id}`);
     const gateway = mediaGateway(contentUrl);
@@ -136,6 +153,7 @@ describe("MobileMediaViewer", () => {
 
     expect(screen.getByRole("heading", { name: VIDEO.name })).toBeInTheDocument();
     expect(gateway.listDirectory).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: MEDIA_VIEWER_COPY.OPEN_NEW_TAB })).not.toBeInTheDocument();
   });
 
   it("shows a directory navigation error without hiding the current image", async () => {

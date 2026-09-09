@@ -43,6 +43,7 @@ export const MEDIA_TOOLBAR_GLYPH = {
   ROTATE_LEFT: "↶",
   ROTATE_RIGHT: "↷",
   DOWNLOAD: "⇩",
+  OPEN_NEW_TAB: "↗",
   PLAY: "▶",
   PAUSE: "Ⅱ",
   MUTE: "◀))",
