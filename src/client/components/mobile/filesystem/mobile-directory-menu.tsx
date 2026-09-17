@@ -14,6 +14,7 @@ interface MobileDirectoryMenuProps {
   readonly open: boolean;
   readonly gateway: FilesystemDirectoryGateway;
   readonly onClose: () => void;
+  readonly onSortChanged: () => void;
   readonly onRefresh: () => void;
 }
 
@@ -25,6 +26,7 @@ export function MobileDirectoryMenu({
   gateway,
   onClose,
   onRefresh,
+  onSortChanged,
 }: MobileDirectoryMenuProps) {
   const properties = useFolderProperties(gateway);
   const [sortOpen, setSortOpen] = useState(false);
@@ -85,7 +87,7 @@ export function MobileDirectoryMenu({
           onClose={() => setSortOpen(false)}
           onSaved={() => {
             setSortOpen(false);
-            onRefresh();
+            onSortChanged();
           }}
         />
       ) : null}

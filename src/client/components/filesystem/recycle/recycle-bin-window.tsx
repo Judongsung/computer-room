@@ -1,3 +1,4 @@
+import { FilesystemScrollRetention } from "@client/components/filesystem/filesystem-scroll-retention";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { UI_LOCALE } from "@client/content/ko/shared/format";
 import type { DragEvent, MouseEvent } from "react";
@@ -80,6 +81,15 @@ export function RecycleBinWindow({
       }
     >
       {controller.error ? <p className="explorer-message" role="alert">{controller.error}</p> : null}
+      {controller.queryError ? (
+        <button
+          type="button"
+          disabled={controller.busy}
+          onClick={() => void controller.retry()}
+        >
+          {FILESYSTEM_COPY.RETRY}
+        </button>
+      ) : null}
       {!page && !controller.error ? <p className="explorer-message">{FILESYSTEM_COPY.BUSY}</p> : null}
       {page ? (
         <div
@@ -104,6 +114,7 @@ export function RecycleBinWindow({
           }}
           onContextMenu={controller.openContextMenu}
         >
+          <FilesystemScrollRetention location="trash" scope={gateway} />
           <div className="recycle-list__header" aria-hidden="true">
             <span>{FILESYSTEM_COPY.NAME}</span>
             <span>{FILESYSTEM_COPY.ORIGINAL_LOCATION}</span>

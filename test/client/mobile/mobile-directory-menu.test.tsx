@@ -105,6 +105,7 @@ describe("mobile directory menu", () => {
     await waitFor(() => expect(listDirectory).toHaveBeenCalledTimes(2));
     expect(listDirectory).toHaveBeenLastCalledWith(
       FILESYSTEM_ROOT_ID.DOCUMENTS,
+      0,
     );
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });

@@ -71,7 +71,9 @@ export function GuestExplorerWindow({
   const page = explorer.page;
   const selected = page?.items.find((entry) => entry.id === selectedId) ?? null;
 
-  useEffect(() => setSelectedId(null), [explorer.directoryId]);
+  useEffect(() => {
+    setSelectedId((id) => page?.items.some((entry) => entry.id === id) ? id : null);
+  }, [page]);
 
   const parent = page?.breadcrumbs.at(-2) ?? null;
   const downloadSelected = useCallback((): void => {
@@ -205,13 +207,22 @@ export function GuestExplorerWindow({
       {explorer.error ? (
         <p className="explorer-message" role="alert">{explorer.error}</p>
       ) : null}
+      {explorer.error ? (
+        <button
+          type="button"
+          disabled={explorer.isRefreshing}
+          onClick={() => void explorer.retry()}
+        >
+          {FILESYSTEM_COPY.RETRY}
+        </button>
+      ) : null}
       {explorer.isInitialLoading && !page ? (
         <p className="explorer-message">{FILESYSTEM_COPY.BUSY}</p>
       ) : null}
       {page ? (
         <ExplorerDirectoryView
           page={page}
-          busy={explorer.isLoadingMore}
+          busy={explorer.isLoadingMore || explorer.isRefreshing}
           currentDirectoryId={explorer.directoryId}
           selection={{
             selectedIds: selectedId ? new Set([selectedId]) : new Set(),

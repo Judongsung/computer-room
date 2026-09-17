@@ -1,12 +1,13 @@
+import { FilesystemScrollRetention } from "@client/components/filesystem/filesystem-scroll-retention";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
-import { useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
   FILESYSTEM_ROOT_NAME,
 } from "@/constants/filesystem/filesystem";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
-import { messageFromError } from "@client/errors/error-message";
+import { usePaginatedDirectory } from "@client/hooks/filesystem/directory/use-paginated-directory";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import { DesktopModal } from "@client/components/desktop/desktop-modal";
 
@@ -113,48 +114,10 @@ export function DirectoryPickerDialog({
   onSelect,
   onCancel,
 }: DirectoryPickerDialogProps) {
-  const [directoryId, setDirectoryId] = useState<string | undefined>();
-  const [page, setPage] = useState<Awaited<ReturnType<FilesystemGateway["listDirectory"]>> | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    setPage(null);
-    setError(null);
-    void gateway
-      .listDirectory(directoryId)
-      .then((value) => {
-        if (active) setPage(value);
-      })
-      .catch((reason: unknown) => {
-        if (active) {
-          setError(messageFromError(reason, FILESYSTEM_COPY.LOAD_FAILED));
-        }
-      });
-    return () => {
-      active = false;
-    };
-  }, [directoryId, gateway]);
-
-  const loadMore = (): void => {
-    if (!page || page.nextOffset === null || isLoadingMore) return;
-    setIsLoadingMore(true);
-    setError(null);
-    void gateway
-      .listDirectory(page.directory.id, page.nextOffset)
-      .then((next) => {
-        setPage((current) =>
-          current?.directory.id === next.directory.id
-            ? { ...next, items: [...current.items, ...next.items] }
-            : current,
-        );
-      })
-      .catch((reason: unknown) =>
-        setError(messageFromError(reason, FILESYSTEM_COPY.LOAD_FAILED)),
-      )
-      .finally(() => setIsLoadingMore(false));
-  };
+  const [directoryId, setDirectoryId] = useState<string>(FILESYSTEM_ROOT_ID.DOCUMENTS);
+  const { page, error, isLoadingMore, retry, loadMore } = usePaginatedDirectory({
+    gateway, directoryId, errorFallback: FILESYSTEM_COPY.LOAD_FAILED,
+  });
 
   return (
     <DesktopModal
@@ -188,6 +151,7 @@ export function DirectoryPickerDialog({
               ))}
             </div>
             <div className="filesystem-picker__folders">
+              <FilesystemScrollRetention location={directoryId} scope={gateway} />
               {page.items
                 .filter(
                   (item) =>
@@ -220,6 +184,14 @@ export function DirectoryPickerDialog({
         ) : (
           <p>{FILESYSTEM_COPY.BUSY}</p>
         )}
+        {error ? (
+          <button
+            type="button"
+            onClick={() => void retry()}
+          >
+            {FILESYSTEM_COPY.RETRY}
+          </button>
+        ) : null}
         <div className="filesystem-dialog__actions">
           <button
             type="button"

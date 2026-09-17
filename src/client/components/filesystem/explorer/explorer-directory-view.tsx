@@ -1,3 +1,4 @@
+import { FilesystemScrollRetention } from "@client/components/filesystem/filesystem-scroll-retention";
 import type {
   DragEvent,
   KeyboardEvent,
@@ -111,6 +112,7 @@ export function ExplorerDirectoryView({
       onKeyDown={(event) => handleSelectionKeyDown(event, selection, properties)}
       onContextMenu={contextMenu?.onDirectory}
     >
+      <FilesystemScrollRetention location={currentDirectoryId} />
       {page.items.map((entry) => (
         <button
           key={entry.id}

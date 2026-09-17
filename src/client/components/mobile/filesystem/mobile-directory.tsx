@@ -39,6 +39,9 @@ export function MobileDirectory({
     isLoadingMore: loadingMore,
     error,
     loadMore,
+    isRefreshing,
+    retry,
+    reset,
   } = usePaginatedDirectory({
     gateway,
     directoryId,
@@ -50,25 +53,31 @@ export function MobileDirectory({
     <>
       <MobileActivity title={page?.directory.name ?? title}>
         <MobileDirectoryContent
+          directoryId={directoryId}
           page={page}
           loading={loading}
-          loadingMore={loadingMore}
+          loadingMore={loadingMore || isRefreshing}
           error={error}
           emptyLabel={MOBILE_COPY.EMPTY_DIRECTORY}
           gateway={gateway}
           onOpenDirectory={onOpenDirectory}
           onOpenEntry={onOpenEntry}
+          onRetry={() => void retry()}
           onLoadMore={() => void loadMore()}
         />
       </MobileActivity>
       <MobileDirectoryMenu
         directoryId={directoryId}
         page={page}
-        busy={loading || loadingMore}
+        busy={loading || loadingMore || isRefreshing}
         open={menuOpen}
         gateway={gateway}
         onClose={onCloseMenu}
         onRefresh={onRefresh}
+        onSortChanged={() => {
+          reset();
+          onRefresh();
+        }}
       />
     </>
   );

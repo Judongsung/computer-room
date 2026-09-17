@@ -4,6 +4,7 @@ export const FILESYSTEM_COPY = {
   RECYCLE_BIN_TOOLBAR: "휴지통 작업",
   WIDGET_TOOLBAR: "프로그램 작업",
   OPEN: "열기",
+  RETRY: "다시 시도",
   REFRESH: "새로 고침",
   BACK: "뒤로",
   UP: "위로",

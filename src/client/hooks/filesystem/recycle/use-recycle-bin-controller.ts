@@ -62,7 +62,7 @@ export function useRecycleBinController({
       query.page?.items.filter((item) => selection.selectedIds.has(item.entry.id)) ?? [],
     [query.page?.items, selection.selectedIds],
   );
-  const busy = mutation.busy || query.isLoadingMore;
+  const busy = mutation.busy || query.isLoadingMore || query.isRefreshing;
   const latest = useRef({ onFilesystemChanged, onWidgetsClosed });
   useLayoutEffect(() => {
     latest.current = { onFilesystemChanged, onWidgetsClosed };
@@ -164,6 +164,8 @@ export function useRecycleBinController({
     marquee,
     selectedItems,
     reload: query.reload,
+    retry: query.retry,
+    queryError: query.error,
     loadMore: query.loadMore,
     setDialog,
     setBatchResult,

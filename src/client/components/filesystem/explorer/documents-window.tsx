@@ -110,6 +110,15 @@ export function DocumentsWindow({
       }
     >
       {controller.error ? <p className="explorer-message" role="alert">{controller.error}</p> : null}
+      {controller.explorer.error ? (
+        <button
+          type="button"
+          disabled={controller.explorer.isRefreshing}
+          onClick={() => void controller.explorer.retry()}
+        >
+          {FILESYSTEM_COPY.RETRY}
+        </button>
+      ) : null}
       {!page && !controller.error ? <p className="explorer-message">{FILESYSTEM_COPY.BUSY}</p> : null}
       {page && currentDirectoryId ? (
         <ExplorerDirectoryView

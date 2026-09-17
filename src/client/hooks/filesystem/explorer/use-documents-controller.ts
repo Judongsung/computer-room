@@ -77,7 +77,7 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
     windowId: options.windowId,
     onDirectoryChanged: options.onDirectoryChanged,
   });
-  const { navigate } = explorer;
+  const { navigate, reset } = explorer;
   const mutation = useFilesystemMutation(gateway);
   const { run: runMutation, reportError, setError: setMutationError } = mutation;
   const [dialog, setDialog] = useState<DocumentsDialog>(null);
@@ -110,7 +110,7 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
   const propertiesTarget =
     selectedEntries.length === 0 ? explorer.page?.directory ?? null : selectedDirectory;
   const currentDirectoryId = explorer.page?.directory.id;
-  const busy = mutation.busy || explorer.isLoadingMore;
+  const busy = mutation.busy || explorer.isLoadingMore || explorer.isRefreshing;
   const latest = useRef({
     currentDirectoryId,
     onFilesystemChanged: options.onFilesystemChanged,
@@ -173,12 +173,13 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
           if (latest.current.currentDirectoryId === originDirectoryId) {
             clearSelection();
             if (contentRef.current) contentRef.current.scrollTop = 0;
+            reset();
           }
           latest.current.onFilesystemChanged();
         },
       );
     },
-    [currentDirectoryId, gateway, runMutation, clearSelection],
+    [currentDirectoryId, gateway, runMutation, clearSelection, reset],
   );
 
   const openEntry = useCallback(

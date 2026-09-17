@@ -1,3 +1,5 @@
+import { FilesystemScrollRetention } from "@client/components/filesystem/filesystem-scroll-retention";
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import type {
   FilesystemDirectoryPage,
@@ -10,6 +12,7 @@ import type { FilesystemContentGateway } from "@client/types/filesystem/ports/tr
 import { formatFileSize } from "@client/utils/format-file-size";
 
 interface MobileDirectoryContentProps {
+  readonly directoryId: string;
   readonly page: FilesystemDirectoryPage | null;
   readonly loading: boolean;
   readonly loadingMore: boolean;
@@ -18,11 +21,13 @@ interface MobileDirectoryContentProps {
   readonly gateway: Pick<FilesystemContentGateway, "thumbnailUrl">;
   readonly onOpenDirectory: (id: string, title: string) => void;
   readonly onOpenEntry: (entry: FilesystemEntry) => void;
+  readonly onRetry: () => void;
   readonly onLoadMore: () => void;
 }
 
 export function MobileDirectoryContent({
   page,
+  directoryId,
   loading,
   loadingMore,
   error,
@@ -31,9 +36,11 @@ export function MobileDirectoryContent({
   onOpenDirectory,
   onOpenEntry,
   onLoadMore,
+  onRetry,
 }: MobileDirectoryContentProps) {
   return (
     <>
+      <FilesystemScrollRetention location={`${directoryId}:${page?.sort.field ?? ""}:${page?.sort.direction ?? ""}`} scope={gateway} />
       {page ? (
         <nav
           className={MOBILE_CLASS_NAME.BREADCRUMBS}
@@ -59,6 +66,15 @@ export function MobileDirectoryContent({
         <p className={MOBILE_CLASS_NAME.ERROR} role="alert">
           {error}
         </p>
+      ) : null}
+      {error ? (
+        <button
+          type="button"
+          disabled={loadingMore || loading}
+          onClick={onRetry}
+        >
+          {FILESYSTEM_COPY.RETRY}
+        </button>
       ) : null}
       {page?.items.length === 0 ? (
         <p className={MOBILE_CLASS_NAME.MESSAGE}>{emptyLabel}</p>

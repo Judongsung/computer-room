@@ -1,11 +1,11 @@
+import { FilesystemScrollRetention } from "@client/components/filesystem/filesystem-scroll-retention";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { UI_LOCALE } from "@client/content/ko/shared/format";
-import { useEffect, useState } from "react";
-import type { FilesystemTrashPage } from "@/types/filesystem/filesystem";
+import { usePaginatedTrash } from "@client/hooks/filesystem/recycle/use-paginated-trash";
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { MobileEntryIcon } from "@client/components/mobile/filesystem/mobile-entry-icon";
 import { MobileActivity } from "@client/components/mobile/shared/mobile-activity";
 import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
-import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
 interface MobileRecycleBinProps {
@@ -14,44 +14,23 @@ interface MobileRecycleBinProps {
 }
 
 export function MobileRecycleBin({ gateway, revision }: MobileRecycleBinProps) {
-  const [page, setPage] = useState<FilesystemTrashPage | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    void gateway.listTrash().then(
-      (next) => {
-        if (!active) return;
-        setPage(next);
-        setError(null);
-      },
-      (caught: unknown) => {
-        if (active) setError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
-      },
-    );
-    return () => {
-      active = false;
-    };
-  }, [gateway, revision]);
-
-  const loadMore = async (): Promise<void> => {
-    if (!page?.nextOffset || loadingMore) return;
-    setLoadingMore(true);
-    try {
-      const next = await gateway.listTrash(page.nextOffset);
-      setPage({ ...next, items: [...page.items, ...next.items] });
-    } catch (caught) {
-      setError(messageFromError(caught, MOBILE_COPY.LOAD_FAILED));
-    } finally {
-      setLoadingMore(false);
-    }
-  };
+  const { page, error, isLoadingMore: loadingMore, isRefreshing, loadMore, retry } = usePaginatedTrash({
+    gateway, revision, errorFallback: MOBILE_COPY.LOAD_FAILED,
+  });
 
   return (
     <MobileActivity title={MOBILE_COPY.RECYCLE_BIN}>
+      <FilesystemScrollRetention location="trash" scope={gateway} />
       {!page && !error ? <p className={MOBILE_CLASS_NAME.MESSAGE}>{MOBILE_COPY.LOADING}</p> : null}
       {error ? <p className={MOBILE_CLASS_NAME.ERROR} role="alert">{error}</p> : null}
+      {error ? (
+        <button
+          type="button"
+          onClick={() => void retry()}
+        >
+          {FILESYSTEM_COPY.RETRY}
+        </button>
+      ) : null}
       {page?.items.length === 0 ? (
         <p className={MOBILE_CLASS_NAME.MESSAGE}>{MOBILE_COPY.EMPTY_TRASH}</p>
       ) : null}
@@ -76,7 +55,7 @@ export function MobileRecycleBin({ gateway, revision }: MobileRecycleBinProps) {
         </ul>
       ) : null}
       {page?.nextOffset !== null && page?.nextOffset !== undefined ? (
-        <button type="button" disabled={loadingMore} onClick={() => void loadMore()}>
+        <button type="button" disabled={loadingMore || isRefreshing} onClick={() => void loadMore()}>
           {loadingMore ? MOBILE_COPY.LOADING : MOBILE_COPY.LOAD_MORE}
         </button>
       ) : null}

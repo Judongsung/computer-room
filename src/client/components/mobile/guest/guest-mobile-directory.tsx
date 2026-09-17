@@ -32,14 +32,16 @@ export function GuestMobileDirectory({
   return (
     <MobileActivity title={page?.directory.name ?? title}>
       <MobileDirectoryContent
+          directoryId={directoryId}
         page={page}
         loading={query.isInitialLoading}
-        loadingMore={query.isLoadingMore}
+        loadingMore={query.isLoadingMore || query.isRefreshing}
         error={query.error}
         emptyLabel={GUEST_COPY.EMPTY_DIRECTORY}
         gateway={gateway}
         onOpenDirectory={onOpenDirectory}
         onOpenEntry={onOpenEntry}
+        onRetry={() => void query.retry()}
         onLoadMore={() => void query.loadMore()}
       />
     </MobileActivity>
