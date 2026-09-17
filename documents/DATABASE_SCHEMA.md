@@ -116,6 +116,7 @@ integration_image_upload_log_settings
 | `restore_parent_id` | `TEXT` | YES | `NULL` | `filesystem_entries.id` FK, `ON DELETE SET NULL` | 휴지통에서 복원할 때 사용하는 원래 부모다. |
 | `restore_path` | `TEXT` | YES | `NULL` | - | 휴지통에 표시하고 복원에 참고하는 원래 경로다. |
 | `trashed_at` | `INTEGER` | YES | `NULL` | - | 최상위 항목이 휴지통으로 이동한 시각이다. |
+| `deletion_started_at` | `INTEGER` | YES | `NULL` | - | 휴지통 최상위 항목의 최초 영구 삭제 시작 시각. 기록 후 복원할 수 없으며 수동 삭제 재시도에도 유지한다. |
 | `created_at` | `INTEGER` | NO | - | - | 항목 생성 시각이다. |
 | `updated_at` | `INTEGER` | NO | - | - | 마지막 메타데이터 변경 시각이다. |
 

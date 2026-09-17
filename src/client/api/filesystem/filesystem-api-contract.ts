@@ -46,6 +46,7 @@ export function isTrashPage(value: unknown): value is FilesystemTrashPage {
   return isRecord(value) && Array.isArray(value.items) && value.items.every((item) =>
     isRecord(item) && isFilesystemEntry(item.entry) &&
     typeof item.deletedAt === "string" &&
+    (item.deletionStartedAt === null || typeof item.deletionStartedAt === "string") &&
     (item.originalParentId === null || typeof item.originalParentId === "string") &&
     typeof item.originalLocation === "string") &&
     (value.nextOffset === null || typeof value.nextOffset === "number");

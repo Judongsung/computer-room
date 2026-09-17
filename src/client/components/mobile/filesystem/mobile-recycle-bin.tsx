@@ -36,13 +36,16 @@ export function MobileRecycleBin({ gateway, revision }: MobileRecycleBinProps) {
       ) : null}
       {page?.items.length ? (
         <ul className={MOBILE_CLASS_NAME.LIST}>
-          {page.items.map(({ entry, deletedAt, originalLocation }) => (
+          {page.items.map(({ entry, deletedAt, originalLocation, deletionStartedAt }) => (
             <li key={entry.id} className={MOBILE_CLASS_NAME.LIST_ITEM}>
               <span className={MOBILE_CLASS_NAME.LIST_ICON}>
                 <MobileEntryIcon entry={entry} gateway={gateway} />
               </span>
               <span className={MOBILE_CLASS_NAME.LIST_TEXT}>
                 <strong>{entry.name}</strong>
+                {deletionStartedAt !== null ? (
+                  <small className={MOBILE_CLASS_NAME.LIST_META}>{FILESYSTEM_COPY.DELETION_INCOMPLETE}</small>
+                ) : null}
                 <small className={MOBILE_CLASS_NAME.LIST_META}>
                   {MOBILE_COPY.ORIGINAL_LOCATION}: {originalLocation}
                 </small>

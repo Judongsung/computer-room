@@ -158,6 +158,7 @@ export class MemoryFileRepository implements FilesystemRepository {
       restoreParentId: null,
       restorePath: null,
       trashedAt: null,
+      deletionStartedAt: null,
       createdAt: directory.createdAt,
       updatedAt: directory.createdAt,
       objectKey: null,
@@ -214,6 +215,7 @@ export class MemoryFileRepository implements FilesystemRepository {
       restoreParentId: null,
       restorePath: null,
       trashedAt: null,
+      deletionStartedAt: null,
       createdAt: file.entry.createdAt,
       updatedAt: file.entry.createdAt,
       objectKey: file.objectKey,
@@ -239,6 +241,7 @@ export class MemoryFileRepository implements FilesystemRepository {
       restoreParentId: null,
       restorePath: null,
       trashedAt: null,
+      deletionStartedAt: null,
       createdAt: widget.createdAt,
       updatedAt: widget.createdAt,
       objectKey: null,
@@ -323,8 +326,9 @@ export class MemoryFileRepository implements FilesystemRepository {
     nameKey: string,
     updatedAt: number,
     desktopOrder?: number,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const entry = this.requireEntry(id);
+    if (entry.parentId !== FILESYSTEM_ROOT_ID.RECYCLE_BIN || entry.deletionStartedAt !== null) return false;
     this.records.set(id, {
       ...entry,
       parentId,
@@ -333,9 +337,18 @@ export class MemoryFileRepository implements FilesystemRepository {
       restoreParentId: null,
       restorePath: null,
       trashedAt: null,
+      deletionStartedAt: null,
       updatedAt,
       desktopOrder: desktopOrder ?? null,
     });
+    return true;
+  }
+
+  async startDeletion(id: string, startedAt: number): Promise<boolean> {
+    const entry = this.records.get(id);
+    if (!entry || entry.parentId !== FILESYSTEM_ROOT_ID.RECYCLE_BIN || entry.trashedAt === null) return false;
+    this.records.set(id, { ...entry, deletionStartedAt: entry.deletionStartedAt ?? startedAt });
+    return true;
   }
 
   async listTrash(offset: number, limit: number): Promise<FilesystemEntryRecord[]> {
@@ -378,6 +391,7 @@ export class MemoryFileRepository implements FilesystemRepository {
       restoreParentId: null,
       restorePath: null,
       trashedAt: null,
+      deletionStartedAt: null,
       createdAt: 0,
       updatedAt: 0,
       objectKey: null,

@@ -28,6 +28,9 @@ export interface UploadFailure {
 export interface UploadTransferState {
   readonly isOpen: boolean;
   readonly isRunning: boolean;
+  readonly isStopping: boolean;
+  readonly succeeded: number;
+  readonly remaining: number;
   readonly total: number;
   readonly completed: number;
   readonly failures: readonly UploadFailure[];

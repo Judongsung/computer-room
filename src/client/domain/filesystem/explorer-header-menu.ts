@@ -182,6 +182,7 @@ export function buildDocumentsExplorerHeaderModel(
 }
 
 interface RecycleHeaderState {
+  readonly restoreBlocked: boolean;
   readonly busy: boolean;
   readonly hasSelection: boolean;
   readonly hasItems: boolean;
@@ -208,7 +209,7 @@ export function buildRecycleExplorerHeaderModel(
   return {
     menus: [
       menu(XP_EXPLORER_MENU_ID.FILE, XP_EXPLORER_HEADER_COPY.FILE_MENU, [
-        contextMenuCommand(XP_CONTEXT_MENU_COMMAND_ID.RESTORE_FILES, FILESYSTEM_COPY.RESTORE, actions.restore, selectionDisabled),
+        contextMenuCommand(XP_CONTEXT_MENU_COMMAND_ID.RESTORE_FILES, FILESYSTEM_COPY.RESTORE, actions.restore, selectionDisabled || state.restoreBlocked),
         contextMenuCommand(XP_CONTEXT_MENU_COMMAND_ID.PERMANENT_DELETE, FILESYSTEM_COPY.PERMANENT_DELETE, actions.permanentlyDelete, selectionDisabled),
         contextMenuCommand(XP_CONTEXT_MENU_COMMAND_ID.EMPTY_RECYCLE_BIN, FILESYSTEM_COPY.EMPTY_RECYCLE_BIN, actions.empty, emptyDisabled),
         contextMenuSeparator("recycle-file-separator-1"),
@@ -222,7 +223,7 @@ export function buildRecycleExplorerHeaderModel(
       ]),
     ],
     toolbarItems: [
-      toolbar(XP_EXPLORER_TOOLBAR_ACTION.RESTORE, FILESYSTEM_COPY.RESTORE, actions.restore, selectionDisabled),
+      toolbar(XP_EXPLORER_TOOLBAR_ACTION.RESTORE, FILESYSTEM_COPY.RESTORE, actions.restore, selectionDisabled || state.restoreBlocked),
       toolbar(XP_EXPLORER_TOOLBAR_ACTION.PERMANENT_DELETE, FILESYSTEM_COPY.PERMANENT_DELETE, actions.permanentlyDelete, selectionDisabled),
       separator("recycle-toolbar-separator-1"),
       toolbar(XP_EXPLORER_TOOLBAR_ACTION.EMPTY_RECYCLE_BIN, FILESYSTEM_COPY.EMPTY_RECYCLE_BIN, actions.empty, emptyDisabled),

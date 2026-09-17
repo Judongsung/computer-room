@@ -62,6 +62,7 @@ export function useRecycleBinController({
       query.page?.items.filter((item) => selection.selectedIds.has(item.entry.id)) ?? [],
     [query.page?.items, selection.selectedIds],
   );
+  const restoreBlocked = selectedItems.some((item) => item.deletionStartedAt !== null);
   const busy = mutation.busy || query.isLoadingMore || query.isRefreshing;
   const latest = useRef({ onFilesystemChanged, onWidgetsClosed });
   useLayoutEffect(() => {
@@ -70,24 +71,26 @@ export function useRecycleBinController({
 
   const runChange = useCallback(
     async (operation: () => Promise<unknown>): Promise<void> => {
-      await runMutation(operation, () => {
+      const outcome = await runMutation(operation, () => {
         setDialog(null);
         clearSelection();
         latest.current.onFilesystemChanged();
       });
+      if (outcome.status === "failed") latest.current.onFilesystemChanged();
     },
     [runMutation, clearSelection],
   );
 
   const runBatchChange = useCallback(
-    async (operation: () => Promise<FilesystemBatchResult>): Promise<void> => {
-      await runMutation(operation, (result) => {
+    async (operation: () => Promise<FilesystemBatchResult>, refreshOnFailure = false): Promise<void> => {
+      const outcome = await runMutation(operation, (result) => {
         latest.current.onWidgetsClosed(result.closedWidgetIds);
         setDialog(null);
         setBatchResult(result.failures.length > 0 ? result : null);
         replaceSelection(result.failures.map((failure) => failure.id));
         latest.current.onFilesystemChanged();
       });
+      if (refreshOnFailure && outcome.status === "failed") latest.current.onFilesystemChanged();
     },
     [runMutation, replaceSelection],
   );
@@ -120,13 +123,18 @@ export function useRecycleBinController({
       if (!selection.selectedIds.has(item.entry.id)) replaceSelection(ids);
       contextMenu.openFromEvent(
         event,
-        buildRecycleItemContextMenu({
-          restore: () => restore(ids),
-          permanentlyDelete: () => setDialog("delete"),
-        }),
+        buildRecycleItemContextMenu(
+          {
+            restore: () => restore(ids),
+            permanentlyDelete: () => setDialog("delete"),
+          },
+          busy || (selection.selectedIds.has(item.entry.id)
+            ? restoreBlocked
+            : item.deletionStartedAt !== null),
+        ),
       );
     },
-    [contextMenu, replaceSelection, restore, selection],
+    [busy, contextMenu, replaceSelection, restore, restoreBlocked, selection],
   );
 
   const openContextMenu = useCallback(
@@ -136,6 +144,7 @@ export function useRecycleBinController({
         buildRecycleContextMenu(
           {
             hasSelection: selection.selectedInOrder.length > 0,
+            restoreBlocked,
             hasItems: Boolean(query.page?.items.length),
             busy,
           },
@@ -148,7 +157,7 @@ export function useRecycleBinController({
         ),
       );
     },
-    [busy, contextMenu, onFilesystemChanged, query.page?.items.length, restore, selection.selectedInOrder],
+    [busy, restoreBlocked, contextMenu, onFilesystemChanged, query.page?.items.length, restore, selection.selectedInOrder],
   );
 
   return {
@@ -163,6 +172,7 @@ export function useRecycleBinController({
     selection,
     marquee,
     selectedItems,
+    restoreBlocked,
     reload: query.reload,
     retry: query.retry,
     queryError: query.error,

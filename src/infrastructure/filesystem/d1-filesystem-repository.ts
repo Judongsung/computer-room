@@ -156,7 +156,7 @@ export class D1FilesystemRepository implements FilesystemRepository {
     nameKey: string,
     updatedAt: number,
     desktopOrder?: number,
-  ): Promise<void> {
+  ): Promise<boolean> {
     return this.recycleBin.restoreEntry(
       id,
       parentId,
@@ -180,6 +180,10 @@ export class D1FilesystemRepository implements FilesystemRepository {
 
   listSubtreeFileObjects(rootId: string): Promise<FilesystemFileObject[]> {
     return this.recycleBin.listSubtreeFileObjects(rootId);
+  }
+
+  startDeletion(id: string, startedAt: number): Promise<boolean> {
+    return this.recycleBin.startDeletion(id, startedAt);
   }
 
   purgeEntry(rootId: string): Promise<void> {

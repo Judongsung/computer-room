@@ -77,6 +77,7 @@ export interface FilesystemDirectoryPage {
 export interface TrashedFilesystemEntry {
   readonly entry: FilesystemEntry;
   readonly deletedAt: string;
+  readonly deletionStartedAt: string | null;
   readonly originalParentId: string | null;
   readonly originalLocation: string;
 }
@@ -97,6 +98,7 @@ export interface FilesystemEntryRecord {
   readonly restoreParentId: string | null;
   readonly restorePath: string | null;
   readonly trashedAt: number | null;
+  readonly deletionStartedAt: number | null;
   readonly createdAt: number;
   readonly updatedAt: number;
   readonly objectKey: string | null;

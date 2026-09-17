@@ -75,10 +75,11 @@ export interface RecycleBinRepository {
     nameKey: string,
     updatedAt: number,
     desktopOrder?: number,
-  ): Promise<void>;
+  ): Promise<boolean>;
   listTrash(offset: number, limit: number): Promise<FilesystemEntryRecord[]>;
   listTrashRootIds(): Promise<string[]>;
   listSubtreeFileObjects(rootId: string): Promise<FilesystemFileObject[]>;
+  startDeletion(id: string, startedAt: number): Promise<boolean>;
   purgeEntry(rootId: string): Promise<void>;
 }
 

@@ -207,6 +207,7 @@ export class FakeFilesystemGateway implements FilesystemGateway {
     this.trash.push({
       entry,
       deletedAt: "2026-08-20T00:00:00.000Z",
+      deletionStartedAt: null,
       originalParentId: entry.parentId,
       originalLocation: "내 문서",
     });

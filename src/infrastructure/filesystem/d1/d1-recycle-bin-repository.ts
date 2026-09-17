@@ -5,10 +5,7 @@ import type {
   FilesystemFileObject,
 } from "@/types/filesystem/filesystem";
 import type { RecycleBinRepository } from "@/types/filesystem/repository";
-import {
-  desktopEntryOrderInsert,
-  desktopEntryOrderReplacement,
-} from "@/infrastructure/filesystem/d1/desktop-entry-order-statements";
+import { desktopEntryOrderReplacement } from "@/infrastructure/filesystem/d1/desktop-entry-order-statements";
 import { mapFilesystemEntryRow } from "@/infrastructure/filesystem/d1/filesystem-entry-row-mapper";
 import { FILESYSTEM_ENTRY_SELECT } from "@/infrastructure/filesystem/d1/filesystem-entry-select";
 
@@ -81,23 +78,43 @@ export class D1RecycleBinRepository implements RecycleBinRepository {
     nameKey: string,
     updatedAt: number,
     desktopOrder?: number,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const statements = [
       this.database
         .prepare(
           `UPDATE filesystem_entries
            SET parent_id = ?2, name = ?3, name_key = ?4,
                restore_parent_id = NULL, restore_path = NULL,
-               trashed_at = NULL, updated_at = ?5 WHERE id = ?1`,
+               trashed_at = NULL, updated_at = ?5 WHERE id = ?1 AND parent_id = ?6
+               AND trashed_at IS NOT NULL AND deletion_started_at IS NULL`,
         )
-        .bind(id, parentId, name, nameKey, updatedAt),
+        .bind(id, parentId, name, nameKey, updatedAt, FILESYSTEM_ROOT_ID.RECYCLE_BIN),
     ];
     if (desktopOrder !== undefined) {
+      // This must immediately follow the guarded UPDATE in the same batch.
       statements.push(
-        desktopEntryOrderInsert(this.database, id, desktopOrder),
+        this.database
+          .prepare(
+            `INSERT INTO desktop_entry_order (entry_id, sort_order)
+             SELECT ?1, ?2 WHERE changes() = 1`,
+          )
+          .bind(id, desktopOrder),
       );
     }
-    await this.database.batch(statements);
+    const results = await this.database.batch(statements);
+    return results[0]?.meta.changes === 1;
+  }
+
+  async startDeletion(id: string, startedAt: number): Promise<boolean> {
+    const result = await this.database
+      .prepare(
+        `UPDATE filesystem_entries
+         SET deletion_started_at = COALESCE(deletion_started_at, ?2)
+         WHERE id = ?1 AND parent_id = ?3 AND trashed_at IS NOT NULL`,
+      )
+      .bind(id, startedAt, FILESYSTEM_ROOT_ID.RECYCLE_BIN)
+      .run();
+    return result.meta.changes === 1;
   }
 
   async listTrash(

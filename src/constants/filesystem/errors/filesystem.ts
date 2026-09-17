@@ -3,6 +3,11 @@ import { HTTP_STATUS } from "@/constants/platform/http";
 import type { AppErrorDefinition } from "@/types/platform/error";
 
 export const FILESYSTEM_ERRORS = {
+  DELETION_STARTED: {
+    status: HTTP_STATUS.CONFLICT,
+    code: "FILESYSTEM_DELETION_STARTED",
+    message: "영구 삭제를 시작한 항목은 복원할 수 없습니다. 삭제를 다시 시도해 주세요.",
+  },
   ENTRY_NOT_FOUND: {
     status: HTTP_STATUS.NOT_FOUND,
     code: "FILESYSTEM_ENTRY_NOT_FOUND",

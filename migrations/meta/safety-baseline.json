@@ -17,6 +17,7 @@
     "0013_guest_access_admin.sql": "3c9109093f9b170aeca8d9715dcd4d935ead298874b27f7317324e38c769bc79",
     "0014_image-upload-log-privacy.sql": "55ce2722edcb2938af8d4aac65dcaff90853beeafe46b528f4871ea684ed17ce",
     "0015_db-indexes-checklist-retention.sql": "dbe0b078bef3cfa5df958bd1291a7f2f949637cccc70a2f5da81289780f24b28",
-    "0016_checklist-periods.sql": "775275b1307f5714586786ebe5991f1e40cbd78ec945d2c9585849a5b18d967b"
+    "0016_checklist-periods.sql": "775275b1307f5714586786ebe5991f1e40cbd78ec945d2c9585849a5b18d967b",
+    "0017_deletion-started.sql": "3a5617f62a45764ef8af5f6a22bfec318341b2892b553770eb7765a213ac2a48"
   }
 }

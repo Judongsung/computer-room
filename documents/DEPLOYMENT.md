@@ -86,3 +86,9 @@ npm run deploy:worker
 데이터는 정리 대상이 아닙니다.
 
 새 작업의 등록과 독립 실행 규칙은 [개발 안내](./DEVELOPMENT.md)를 참고하세요.
+
+### 삭제 상태 컬럼 배포 순서
+
+`0017_deletion-started.sql`은 기존 행을 유지하면서 nullable `deletion_started_at`
+컬럼을 추가합니다. 이 마이그레이션을 애플리케이션 배포보다 먼저 적용해야 합니다.
+기존 행의 값은 `NULL`이며, 새 코드가 기록한 삭제 시작 상태는 복원 차단에 사용됩니다.

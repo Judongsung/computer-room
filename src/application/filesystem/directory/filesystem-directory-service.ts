@@ -136,6 +136,7 @@ function emptyRecord(): Omit<
     restoreParentId: null,
     restorePath: null,
     trashedAt: null,
+    deletionStartedAt: null,
     objectKey: null,
     contentType: null,
     size: null,

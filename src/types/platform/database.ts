@@ -9,6 +9,7 @@ export interface FilesystemEntryRow {
   restore_parent_id: string | null;
   restore_path: string | null;
   trashed_at: number | null;
+  deletion_started_at: number | null;
   created_at: number;
   updated_at: number;
   object_key: string | null;

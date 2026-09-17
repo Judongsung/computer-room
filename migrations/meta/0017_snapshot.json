@@ -1,0 +1,1528 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "7b2e26b3-ea24-49b7-9f60-2bd704ad6697",
+  "prevId": "aafa2a10-d336-4d30-9477-f52c988f1079",
+  "tables": {
+    "checklist_daily_states": {
+      "name": "checklist_daily_states",
+      "columns": {
+        "item_id": {
+          "name": "item_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "business_date": {
+          "name": "business_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "checked": {
+          "name": "checked",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_checklist_daily_states_date": {
+          "name": "idx_checklist_daily_states_date",
+          "columns": [
+            "business_date"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "checklist_daily_states_item_id_checklist_items_id_fk": {
+          "name": "checklist_daily_states_item_id_checklist_items_id_fk",
+          "tableFrom": "checklist_daily_states",
+          "tableTo": "checklist_items",
+          "columnsFrom": [
+            "item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "checklist_daily_states_item_id_business_date_pk": {
+          "columns": [
+            "item_id",
+            "business_date"
+          ],
+          "name": "checklist_daily_states_item_id_business_date_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "checklist_daily_states_checked_check": {
+          "name": "checklist_daily_states_checked_check",
+          "value": "\"checklist_daily_states\".\"checked\" IN (0, 1)"
+        }
+      }
+    },
+    "checklist_events": {
+      "name": "checklist_events",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "widget_id": {
+          "name": "widget_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_id": {
+          "name": "item_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_label": {
+          "name": "item_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "previous_item_label": {
+          "name": "previous_item_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "business_date": {
+          "name": "business_date",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "occurred_at": {
+          "name": "occurred_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_checklist_events_widget_time": {
+          "name": "idx_checklist_events_widget_time",
+          "columns": [
+            "widget_id",
+            "occurred_at",
+            "id"
+          ],
+          "isUnique": false
+        },
+        "idx_checklist_events_item": {
+          "name": "idx_checklist_events_item",
+          "columns": [
+            "item_id"
+          ],
+          "isUnique": false
+        },
+        "idx_checklist_events_time": {
+          "name": "idx_checklist_events_time",
+          "columns": [
+            "occurred_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "checklist_events_widget_id_dashboard_widgets_id_fk": {
+          "name": "checklist_events_widget_id_dashboard_widgets_id_fk",
+          "tableFrom": "checklist_events",
+          "tableTo": "dashboard_widgets",
+          "columnsFrom": [
+            "widget_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "checklist_events_item_id_checklist_items_id_fk": {
+          "name": "checklist_events_item_id_checklist_items_id_fk",
+          "tableFrom": "checklist_events",
+          "tableTo": "checklist_items",
+          "columnsFrom": [
+            "item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "checklist_events_action_check": {
+          "name": "checklist_events_action_check",
+          "value": "\"checklist_events\".\"action\" IN ('added', 'renamed', 'deleted', 'checked', 'unchecked')"
+        },
+        "checklist_events_previous_label_check": {
+          "name": "checklist_events_previous_label_check",
+          "value": "\"checklist_events\".\"previous_item_label\" IS NULL OR length(\"checklist_events\".\"previous_item_label\") BETWEEN 1 AND 200"
+        }
+      }
+    },
+    "checklist_items": {
+      "name": "checklist_items",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "widget_id": {
+          "name": "widget_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_checklist_items_widget_order": {
+          "name": "idx_checklist_items_widget_order",
+          "columns": [
+            "widget_id",
+            "archived_at",
+            "sort_order"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "checklist_items_widget_id_dashboard_widgets_id_fk": {
+          "name": "checklist_items_widget_id_dashboard_widgets_id_fk",
+          "tableFrom": "checklist_items",
+          "tableTo": "dashboard_widgets",
+          "columnsFrom": [
+            "widget_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "checklist_items_label_check": {
+          "name": "checklist_items_label_check",
+          "value": "length(\"checklist_items\".\"label\") BETWEEN 1 AND 200"
+        },
+        "checklist_items_sort_order_check": {
+          "name": "checklist_items_sort_order_check",
+          "value": "\"checklist_items\".\"sort_order\" >= 0"
+        }
+      }
+    },
+    "checklist_period_states": {
+      "name": "checklist_period_states",
+      "columns": {
+        "item_id": {
+          "name": "item_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "settings_version": {
+          "name": "settings_version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "period_start": {
+          "name": "period_start",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "period_end": {
+          "name": "period_end",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "checked": {
+          "name": "checked",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "checked_at": {
+          "name": "checked_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_checklist_period_states_end": {
+          "name": "idx_checklist_period_states_end",
+          "columns": [
+            "period_end"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "checklist_period_states_item_id_checklist_items_id_fk": {
+          "name": "checklist_period_states_item_id_checklist_items_id_fk",
+          "tableFrom": "checklist_period_states",
+          "tableTo": "checklist_items",
+          "columnsFrom": [
+            "item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "checklist_period_states_item_id_settings_version_period_start_pk": {
+          "columns": [
+            "item_id",
+            "settings_version",
+            "period_start"
+          ],
+          "name": "checklist_period_states_item_id_settings_version_period_start_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "checklist_period_checked_check": {
+          "name": "checklist_period_checked_check",
+          "value": "\"checklist_period_states\".\"checked\" IN (0,1)"
+        },
+        "checklist_period_time_check": {
+          "name": "checklist_period_time_check",
+          "value": "(\"checklist_period_states\".\"checked\" = 0 AND \"checklist_period_states\".\"checked_at\" IS NULL) OR (\"checklist_period_states\".\"checked\" = 1 AND \"checklist_period_states\".\"checked_at\" IS NOT NULL)"
+        }
+      }
+    },
+    "checklist_repeat_settings": {
+      "name": "checklist_repeat_settings",
+      "columns": {
+        "widget_id": {
+          "name": "widget_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "repeat_cycle": {
+          "name": "repeat_cycle",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'daily'"
+        },
+        "version": {
+          "name": "version",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 0
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "checklist_repeat_settings_widget_id_dashboard_widgets_id_fk": {
+          "name": "checklist_repeat_settings_widget_id_dashboard_widgets_id_fk",
+          "tableFrom": "checklist_repeat_settings",
+          "tableTo": "dashboard_widgets",
+          "columnsFrom": [
+            "widget_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "checklist_repeat_cycle_check": {
+          "name": "checklist_repeat_cycle_check",
+          "value": "\"checklist_repeat_settings\".\"repeat_cycle\" IN ('daily','weekly','monthly')"
+        },
+        "checklist_repeat_version_check": {
+          "name": "checklist_repeat_version_check",
+          "value": "\"checklist_repeat_settings\".\"version\" >= 0"
+        }
+      }
+    },
+    "checklist_settings": {
+      "name": "checklist_settings",
+      "columns": {
+        "singleton_id": {
+          "name": "singleton_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "retention_days": {
+          "name": "retention_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "checklist_settings_singleton_check": {
+          "name": "checklist_settings_singleton_check",
+          "value": "\"checklist_settings\".\"singleton_id\" = 1"
+        },
+        "checklist_settings_retention_check": {
+          "name": "checklist_settings_retention_check",
+          "value": "\"checklist_settings\".\"retention_days\" IS NULL OR (\"checklist_settings\".\"retention_days\" BETWEEN 1 AND 3650 AND typeof(\"checklist_settings\".\"retention_days\") = 'integer')"
+        }
+      }
+    },
+    "dashboard_widgets": {
+      "name": "dashboard_widgets",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'memo'"
+        },
+        "position_x": {
+          "name": "position_x",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "position_y": {
+          "name": "position_y",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "width": {
+          "name": "width",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "height": {
+          "name": "height",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "window_state": {
+          "name": "window_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'normal'"
+        },
+        "restore_state": {
+          "name": "restore_state",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'normal'"
+        },
+        "stack_order": {
+          "name": "stack_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "is_open": {
+          "name": "is_open",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        }
+      },
+      "indexes": {
+        "idx_dashboard_widgets_stack_order": {
+          "name": "idx_dashboard_widgets_stack_order",
+          "columns": [
+            "stack_order"
+          ],
+          "isUnique": false
+        },
+        "uq_dashboard_widgets_storage_status": {
+          "name": "uq_dashboard_widgets_storage_status",
+          "columns": [
+            "type"
+          ],
+          "isUnique": true,
+          "where": "\"dashboard_widgets\".\"type\" = 'storage-status'"
+        },
+        "uq_dashboard_widgets_image_upload_profiles": {
+          "name": "uq_dashboard_widgets_image_upload_profiles",
+          "columns": [
+            "type"
+          ],
+          "isUnique": true,
+          "where": "\"dashboard_widgets\".\"type\" = 'image-upload-profiles'"
+        },
+        "uq_dashboard_widgets_admin": {
+          "name": "uq_dashboard_widgets_admin",
+          "columns": [
+            "type"
+          ],
+          "isUnique": true,
+          "where": "\"dashboard_widgets\".\"type\" = 'admin'"
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "dashboard_widgets_type_check": {
+          "name": "dashboard_widgets_type_check",
+          "value": "\"dashboard_widgets\".\"type\" IN ('memo', 'daily-checklist', 'storage-status', 'image-upload-profiles', 'admin')"
+        },
+        "dashboard_widgets_position_x_check": {
+          "name": "dashboard_widgets_position_x_check",
+          "value": "\"dashboard_widgets\".\"position_x\" BETWEEN 0 AND 8192"
+        },
+        "dashboard_widgets_position_y_check": {
+          "name": "dashboard_widgets_position_y_check",
+          "value": "\"dashboard_widgets\".\"position_y\" BETWEEN 0 AND 8192"
+        },
+        "dashboard_widgets_width_check": {
+          "name": "dashboard_widgets_width_check",
+          "value": "\"dashboard_widgets\".\"width\" > 0 AND \"dashboard_widgets\".\"width\" <= 4096"
+        },
+        "dashboard_widgets_height_check": {
+          "name": "dashboard_widgets_height_check",
+          "value": "\"dashboard_widgets\".\"height\" > 0 AND \"dashboard_widgets\".\"height\" <= 2160"
+        },
+        "dashboard_widgets_window_state_check": {
+          "name": "dashboard_widgets_window_state_check",
+          "value": "\"dashboard_widgets\".\"window_state\" IN ('normal', 'minimized', 'maximized')"
+        },
+        "dashboard_widgets_restore_state_check": {
+          "name": "dashboard_widgets_restore_state_check",
+          "value": "\"dashboard_widgets\".\"restore_state\" IN ('normal', 'maximized')"
+        },
+        "dashboard_widgets_stack_order_check": {
+          "name": "dashboard_widgets_stack_order_check",
+          "value": "\"dashboard_widgets\".\"stack_order\" >= 0"
+        },
+        "dashboard_widgets_is_open_check": {
+          "name": "dashboard_widgets_is_open_check",
+          "value": "\"dashboard_widgets\".\"is_open\" IN (0, 1)"
+        }
+      }
+    },
+    "desktop_entry_order": {
+      "name": "desktop_entry_order",
+      "columns": {
+        "entry_id": {
+          "name": "entry_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sort_order": {
+          "name": "sort_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "desktop_entry_order_sort_order_unique": {
+          "name": "desktop_entry_order_sort_order_unique",
+          "columns": [
+            "sort_order"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "desktop_entry_order_entry_id_filesystem_entries_id_fk": {
+          "name": "desktop_entry_order_entry_id_filesystem_entries_id_fk",
+          "tableFrom": "desktop_entry_order",
+          "tableTo": "filesystem_entries",
+          "columnsFrom": [
+            "entry_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "desktop_entry_order_value_check": {
+          "name": "desktop_entry_order_value_check",
+          "value": "\"desktop_entry_order\".\"sort_order\" >= 0"
+        }
+      }
+    },
+    "files": {
+      "name": "files",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "object_key": {
+          "name": "object_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "original_name": {
+          "name": "original_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "content_type": {
+          "name": "content_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "size": {
+          "name": "size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "etag": {
+          "name": "etag",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "'pending'"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "files_object_key_unique": {
+          "name": "files_object_key_unique",
+          "columns": [
+            "object_key"
+          ],
+          "isUnique": true
+        },
+        "idx_files_status_created_at": {
+          "name": "idx_files_status_created_at",
+          "columns": [
+            "status",
+            "created_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "files_size_check": {
+          "name": "files_size_check",
+          "value": "\"files\".\"size\" >= 0 AND \"files\".\"size\" <= 100000000"
+        },
+        "files_status_check": {
+          "name": "files_status_check",
+          "value": "\"files\".\"status\" IN ('pending', 'ready')"
+        }
+      }
+    },
+    "filesystem_directory_preferences": {
+      "name": "filesystem_directory_preferences",
+      "columns": {
+        "directory_id": {
+          "name": "directory_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sort_field": {
+          "name": "sort_field",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sort_direction": {
+          "name": "sort_direction",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "filesystem_directory_preferences_directory_id_filesystem_entries_id_fk": {
+          "name": "filesystem_directory_preferences_directory_id_filesystem_entries_id_fk",
+          "tableFrom": "filesystem_directory_preferences",
+          "tableTo": "filesystem_entries",
+          "columnsFrom": [
+            "directory_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "filesystem_directory_preferences_field_check": {
+          "name": "filesystem_directory_preferences_field_check",
+          "value": "\"filesystem_directory_preferences\".\"sort_field\" IN ('name', 'createdAt', 'updatedAt', 'type', 'size')"
+        },
+        "filesystem_directory_preferences_direction_check": {
+          "name": "filesystem_directory_preferences_direction_check",
+          "value": "\"filesystem_directory_preferences\".\"sort_direction\" IN ('ascending', 'descending')"
+        }
+      }
+    },
+    "filesystem_entries": {
+      "name": "filesystem_entries",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name_key": {
+          "name": "name_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "file_id": {
+          "name": "file_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "widget_id": {
+          "name": "widget_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "restore_parent_id": {
+          "name": "restore_parent_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "restore_path": {
+          "name": "restore_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "trashed_at": {
+          "name": "trashed_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "deletion_started_at": {
+          "name": "deletion_started_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "filesystem_entries_file_id_unique": {
+          "name": "filesystem_entries_file_id_unique",
+          "columns": [
+            "file_id"
+          ],
+          "isUnique": true
+        },
+        "filesystem_entries_widget_id_unique": {
+          "name": "filesystem_entries_widget_id_unique",
+          "columns": [
+            "widget_id"
+          ],
+          "isUnique": true
+        },
+        "uq_filesystem_entries_active_parent_name": {
+          "name": "uq_filesystem_entries_active_parent_name",
+          "columns": [
+            "parent_id",
+            "name_key"
+          ],
+          "isUnique": true,
+          "where": "\"filesystem_entries\".\"trashed_at\" IS NULL"
+        },
+        "idx_filesystem_entries_active_name": {
+          "name": "idx_filesystem_entries_active_name",
+          "columns": [
+            "parent_id",
+            "CASE \"kind\" WHEN 'directory' THEN 0 ELSE 1 END",
+            "name_key",
+            "id"
+          ],
+          "isUnique": false,
+          "where": "\"filesystem_entries\".\"trashed_at\" IS NULL"
+        },
+        "idx_filesystem_entries_restore_parent": {
+          "name": "idx_filesystem_entries_restore_parent",
+          "columns": [
+            "restore_parent_id"
+          ],
+          "isUnique": false,
+          "where": "\"filesystem_entries\".\"restore_parent_id\" IS NOT NULL"
+        },
+        "idx_filesystem_entries_trash": {
+          "name": "idx_filesystem_entries_trash",
+          "columns": [
+            "parent_id",
+            "trashed_at"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "filesystem_entries_parent_id_filesystem_entries_id_fk": {
+          "name": "filesystem_entries_parent_id_filesystem_entries_id_fk",
+          "tableFrom": "filesystem_entries",
+          "tableTo": "filesystem_entries",
+          "columnsFrom": [
+            "parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "filesystem_entries_file_id_files_id_fk": {
+          "name": "filesystem_entries_file_id_files_id_fk",
+          "tableFrom": "filesystem_entries",
+          "tableTo": "files",
+          "columnsFrom": [
+            "file_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "filesystem_entries_widget_id_dashboard_widgets_id_fk": {
+          "name": "filesystem_entries_widget_id_dashboard_widgets_id_fk",
+          "tableFrom": "filesystem_entries",
+          "tableTo": "dashboard_widgets",
+          "columnsFrom": [
+            "widget_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "filesystem_entries_restore_parent_id_filesystem_entries_id_fk": {
+          "name": "filesystem_entries_restore_parent_id_filesystem_entries_id_fk",
+          "tableFrom": "filesystem_entries",
+          "tableTo": "filesystem_entries",
+          "columnsFrom": [
+            "restore_parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "filesystem_entries_kind_check": {
+          "name": "filesystem_entries_kind_check",
+          "value": "\"filesystem_entries\".\"kind\" IN ('directory', 'file', 'widget')"
+        },
+        "filesystem_entries_file_check": {
+          "name": "filesystem_entries_file_check",
+          "value": "(\"filesystem_entries\".\"kind\" = 'directory' AND \"filesystem_entries\".\"file_id\" IS NULL AND \"filesystem_entries\".\"widget_id\" IS NULL) OR (\"filesystem_entries\".\"kind\" = 'file' AND \"filesystem_entries\".\"file_id\" IS NOT NULL AND \"filesystem_entries\".\"widget_id\" IS NULL) OR (\"filesystem_entries\".\"kind\" = 'widget' AND \"filesystem_entries\".\"file_id\" IS NULL AND \"filesystem_entries\".\"widget_id\" IS NOT NULL)"
+        }
+      }
+    },
+    "guest_access_settings": {
+      "name": "guest_access_settings",
+      "columns": {
+        "singleton_id": {
+          "name": "singleton_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "guest_access_settings_singleton_check": {
+          "name": "guest_access_settings_singleton_check",
+          "value": "\"guest_access_settings\".\"singleton_id\" = 1"
+        },
+        "guest_access_settings_enabled_check": {
+          "name": "guest_access_settings_enabled_check",
+          "value": "\"guest_access_settings\".\"enabled\" IN (0, 1)"
+        }
+      }
+    },
+    "guest_publications": {
+      "name": "guest_publications",
+      "columns": {
+        "entry_id": {
+          "name": "entry_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "guest_publications_entry_id_filesystem_entries_id_fk": {
+          "name": "guest_publications_entry_id_filesystem_entries_id_fk",
+          "tableFrom": "guest_publications",
+          "tableTo": "filesystem_entries",
+          "columnsFrom": [
+            "entry_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "integration_image_profile_content_types": {
+      "name": "integration_image_profile_content_types",
+      "columns": {
+        "profile_id": {
+          "name": "profile_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "content_type": {
+          "name": "content_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "integration_image_profile_content_types_profile_id_integration_image_profiles_id_fk": {
+          "name": "integration_image_profile_content_types_profile_id_integration_image_profiles_id_fk",
+          "tableFrom": "integration_image_profile_content_types",
+          "tableTo": "integration_image_profiles",
+          "columnsFrom": [
+            "profile_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "integration_image_profile_content_types_profile_id_content_type_pk": {
+          "columns": [
+            "profile_id",
+            "content_type"
+          ],
+          "name": "integration_image_profile_content_types_profile_id_content_type_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "integration_image_profile_content_types_value_check": {
+          "name": "integration_image_profile_content_types_value_check",
+          "value": "\"integration_image_profile_content_types\".\"content_type\" IN ('image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif', 'image/bmp')"
+        }
+      }
+    },
+    "integration_image_profiles": {
+      "name": "integration_image_profiles",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "root_id": {
+          "name": "root_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "path_template": {
+          "name": "path_template",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "file_name_template": {
+          "name": "file_name_template",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "enabled": {
+          "name": "enabled",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "integration_image_profiles_root_check": {
+          "name": "integration_image_profiles_root_check",
+          "value": "\"integration_image_profiles\".\"root_id\" IN ('system-desktop-root', 'system-documents-root')"
+        },
+        "integration_image_profiles_enabled_check": {
+          "name": "integration_image_profiles_enabled_check",
+          "value": "\"integration_image_profiles\".\"enabled\" IN (0, 1)"
+        }
+      }
+    },
+    "integration_image_upload_log_settings": {
+      "name": "integration_image_upload_log_settings",
+      "columns": {
+        "singleton_id": {
+          "name": "singleton_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "retention_days": {
+          "name": "retention_days",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 30
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "integration_image_upload_log_settings_singleton_check": {
+          "name": "integration_image_upload_log_settings_singleton_check",
+          "value": "\"integration_image_upload_log_settings\".\"singleton_id\" = 1"
+        },
+        "integration_image_upload_log_settings_retention_check": {
+          "name": "integration_image_upload_log_settings_retention_check",
+          "value": "\"integration_image_upload_log_settings\".\"retention_days\" BETWEEN 1 AND 365"
+        }
+      }
+    },
+    "integration_image_upload_logs": {
+      "name": "integration_image_upload_logs",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "profile_id": {
+          "name": "profile_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "source_ip": {
+          "name": "source_ip",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "outcome": {
+          "name": "outcome",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "content_type": {
+          "name": "content_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "declared_size": {
+          "name": "declared_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "file_entry_id": {
+          "name": "file_entry_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "file_name": {
+          "name": "file_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "http_status": {
+          "name": "http_status",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "error_code": {
+          "name": "error_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "error_message": {
+          "name": "error_message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "duration_ms": {
+          "name": "duration_ms",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_integration_image_upload_logs_time": {
+          "name": "idx_integration_image_upload_logs_time",
+          "columns": [
+            "received_at",
+            "id"
+          ],
+          "isUnique": false
+        },
+        "idx_integration_image_upload_logs_profile_time": {
+          "name": "idx_integration_image_upload_logs_profile_time",
+          "columns": [
+            "profile_id",
+            "received_at",
+            "id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "integration_image_upload_logs_outcome_check": {
+          "name": "integration_image_upload_logs_outcome_check",
+          "value": "\"integration_image_upload_logs\".\"outcome\" IN ('success', 'failure')"
+        },
+        "integration_image_upload_logs_declared_size_check": {
+          "name": "integration_image_upload_logs_declared_size_check",
+          "value": "\"integration_image_upload_logs\".\"declared_size\" IS NULL OR \"integration_image_upload_logs\".\"declared_size\" >= 0"
+        },
+        "integration_image_upload_logs_http_status_check": {
+          "name": "integration_image_upload_logs_http_status_check",
+          "value": "\"integration_image_upload_logs\".\"http_status\" BETWEEN 100 AND 599"
+        },
+        "integration_image_upload_logs_duration_check": {
+          "name": "integration_image_upload_logs_duration_check",
+          "value": "\"integration_image_upload_logs\".\"duration_ms\" >= 0"
+        },
+        "integration_image_upload_logs_result_check": {
+          "name": "integration_image_upload_logs_result_check",
+          "value": "(\"integration_image_upload_logs\".\"outcome\" = 'success' AND \"integration_image_upload_logs\".\"file_entry_id\" IS NOT NULL AND \"integration_image_upload_logs\".\"file_name\" IS NOT NULL AND \"integration_image_upload_logs\".\"error_code\" IS NULL AND \"integration_image_upload_logs\".\"error_message\" IS NULL) OR (\"integration_image_upload_logs\".\"outcome\" = 'failure' AND \"integration_image_upload_logs\".\"file_entry_id\" IS NULL AND \"integration_image_upload_logs\".\"file_name\" IS NULL AND \"integration_image_upload_logs\".\"error_code\" IS NOT NULL AND \"integration_image_upload_logs\".\"error_message\" IS NOT NULL)"
+        }
+      }
+    },
+    "memo_widgets": {
+      "name": "memo_widgets",
+      "columns": {
+        "widget_id": {
+          "name": "widget_id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "markdown": {
+          "name": "markdown",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "''"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "memo_widgets_widget_id_dashboard_widgets_id_fk": {
+          "name": "memo_widgets_widget_id_dashboard_widgets_id_fk",
+          "tableFrom": "memo_widgets",
+          "tableTo": "dashboard_widgets",
+          "columnsFrom": [
+            "widget_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "mobile_preferences": {
+      "name": "mobile_preferences",
+      "columns": {
+        "singleton_id": {
+          "name": "singleton_id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false,
+          "default": 1
+        },
+        "wallpaper_entry_id": {
+          "name": "wallpaper_entry_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "mobile_preferences_wallpaper_entry_id_filesystem_entries_id_fk": {
+          "name": "mobile_preferences_wallpaper_entry_id_filesystem_entries_id_fk",
+          "tableFrom": "mobile_preferences",
+          "tableTo": "filesystem_entries",
+          "columnsFrom": [
+            "wallpaper_entry_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "mobile_preferences_singleton_check": {
+          "name": "mobile_preferences_singleton_check",
+          "value": "\"mobile_preferences\".\"singleton_id\" = 1"
+        }
+      }
+    }
+  },
+  "views": {},
+  "enums": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {
+      "idx_filesystem_entries_active_name": {
+        "columns": {
+          "CASE \"kind\" WHEN 'directory' THEN 0 ELSE 1 END": {
+            "isExpression": true
+          }
+        }
+      }
+    }
+  }
+}

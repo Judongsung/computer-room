@@ -54,6 +54,9 @@ export class RecycleBinService
     return {
       items: entries.slice(0, limit).map((entry) => ({
         entry: toPublicEntry(entry),
+        deletionStartedAt: entry.deletionStartedAt === null
+          ? null
+          : new Date(entry.deletionStartedAt).toISOString(),
         deletedAt: new Date(requireDeletedAt(entry)).toISOString(),
         originalParentId: entry.restoreParentId,
         originalLocation: entry.restorePath ?? FILESYSTEM_ROOT_NAME.DOCUMENTS,
@@ -108,6 +111,9 @@ export class RecycleBinService
     input: RestoreFilesystemEntryInput = {},
   ): Promise<FilesystemEntry> {
     const entry = await this.requireTrashRoot(id);
+    if (entry.deletionStartedAt !== null) {
+      throw new AppError(FILESYSTEM_ERRORS.DELETION_STARTED);
+    }
     const parentId = input.parentId
       ? await this.requireRestoreDestination(input.parentId)
       : await this.resolveRestoreParent(entry.restoreParentId);
@@ -118,7 +124,7 @@ export class RecycleBinService
       parentId,
       input.desktopPlacement,
     );
-    await this.repository.restoreEntry(
+    const restored = await this.repository.restoreEntry(
       entry.id,
       parentId,
       name,
@@ -126,6 +132,14 @@ export class RecycleBinService
       updatedAt,
       desktopOrder,
     );
+    if (!restored) {
+      const current = await this.requireTrashRoot(id);
+      throw new AppError(
+        current.deletionStartedAt !== null
+          ? FILESYSTEM_ERRORS.DELETION_STARTED
+          : FILESYSTEM_ERRORS.ENTRY_NOT_TRASHED,
+      );
+    }
     return toPublicEntry({
       ...entry,
       parentId,
@@ -165,7 +179,9 @@ export class RecycleBinService
   }
 
   async permanentlyDeleteEntry(id: string): Promise<void> {
-    await this.requireTrashRoot(id);
+    if (!await this.repository.startDeletion(id, this.clock.now())) {
+      throw new AppError(FILESYSTEM_ERRORS.ENTRY_NOT_TRASHED);
+    }
     const objects = await this.repository.listSubtreeFileObjects(id);
     await this.storage.deleteMany(
       objects.flatMap((object) => [

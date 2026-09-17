@@ -16,6 +16,26 @@ import { ORIGIN, TEST_MEDIA_TYPE, createWidget, jsonRequest, resetWorkerState, u
 beforeEach(resetWorkerState);
 
 describe("computer-room filesystem entry API", () => {
+  it("returns a public conflict when restoration follows deletion admission", async () => {
+    const uploaded = await uploadFile("blocked.txt", "content");
+    const { file } = await uploaded.json() as { file: { id: string } };
+    await jsonRequest(`${FILESYSTEM_API_PATHS.ENTRIES}/${file.id}`, HTTP_METHOD.DELETE, {});
+    await env.DB.prepare("UPDATE filesystem_entries SET deletion_started_at = ?2 WHERE id = ?1")
+      .bind(file.id, 1000).run();
+    const restored = await jsonRequest(
+      `${FILESYSTEM_API_PATHS.TRASH}/${file.id}/${API_PATH_SEGMENTS.RESTORE}`,
+      HTTP_METHOD.POST,
+      {},
+    );
+    expect(restored.status).toBe(HTTP_STATUS.CONFLICT);
+    expect(await restored.json()).toMatchObject({ error: {
+      code: FILESYSTEM_ERRORS.DELETION_STARTED.code,
+      message: FILESYSTEM_ERRORS.DELETION_STARTED.message,
+    } });
+    const listing = await SELF.fetch(`${ORIGIN}${FILESYSTEM_API_PATHS.TRASH}`);
+    expect(await listing.json()).toMatchObject({ items: [{ deletionStartedAt: new Date(1000).toISOString() }] });
+  });
+
   it("creates nested folders and moves entries without changing R2 keys", async () => {
     const directoriesPath = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.DIRECTORIES}`;
     const entriesPath = `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.ENTRIES}`;

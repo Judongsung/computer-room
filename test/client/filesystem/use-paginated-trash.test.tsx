@@ -75,6 +75,7 @@ function trashPage(ids: readonly string[], nextOffset: number | null): Filesyste
         desktopOrder: null,
       },
       deletedAt: "2026-08-28T01:00:00.000Z",
+      deletionStartedAt: null,
       originalParentId: "root",
       originalLocation: "내 문서",
     })),

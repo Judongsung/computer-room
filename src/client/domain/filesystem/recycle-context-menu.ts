@@ -15,12 +15,14 @@ interface RecycleItemMenuActions {
 
 export function buildRecycleItemContextMenu(
   actions: RecycleItemMenuActions,
+  restoreBlocked: boolean,
 ): readonly XpContextMenuItem[] {
   return [
     contextMenuCommand(
       XP_CONTEXT_MENU_COMMAND_ID.RESTORE_FILES,
       FILESYSTEM_COPY.RESTORE,
       actions.restore,
+      restoreBlocked,
     ),
     contextMenuSeparator("recycle-item-separator-1"),
     contextMenuCommand(
@@ -33,6 +35,7 @@ export function buildRecycleItemContextMenu(
 
 interface RecycleContextMenuState {
   readonly hasSelection: boolean;
+  readonly restoreBlocked: boolean;
   readonly hasItems: boolean;
   readonly busy: boolean;
 }
@@ -53,7 +56,7 @@ export function buildRecycleContextMenu(
       XP_CONTEXT_MENU_COMMAND_ID.RESTORE_FILES,
       FILESYSTEM_COPY.RESTORE,
       actions.restore,
-      !state.hasSelection || state.busy,
+      !state.hasSelection || state.busy || state.restoreBlocked,
     ),
     contextMenuCommand(
       XP_CONTEXT_MENU_COMMAND_ID.PERMANENT_DELETE,

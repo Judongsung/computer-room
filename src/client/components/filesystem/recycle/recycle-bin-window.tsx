@@ -45,6 +45,7 @@ export function RecycleBinWindow({
   const model = buildRecycleExplorerHeaderModel(
     {
       busy: controller.busy,
+      restoreBlocked: controller.restoreBlocked,
       hasSelection: selectedItems.length > 0,
       hasItems: Boolean(page?.items.length),
     },
@@ -129,6 +130,12 @@ export function RecycleBinWindow({
               onSelect={(event) => selection.select(item.entry.id, event)}
               onDragStart={(event) => {
                 const ids = selection.dragIds(item.entry.id);
+                if (page.items.some((candidate) =>
+                  ids.includes(candidate.entry.id) && candidate.deletionStartedAt !== null,
+                )) {
+                  event.preventDefault();
+                  return;
+                }
                 selection.replace(ids);
                 writeFilesystemDragPayload(event.dataTransfer, {
                   ids,
@@ -159,8 +166,9 @@ export function RecycleBinWindow({
           message={FILESYSTEM_COPY.PERMANENT_DELETE_CONFIRM}
           busy={controller.busy}
           onConfirm={() =>
-            void controller.runBatchChange(() =>
-              gateway.permanentlyDeleteEntries(selection.selectedInOrder),
+            void controller.runBatchChange(
+              () => gateway.permanentlyDeleteEntries(selection.selectedInOrder),
+              true,
             )
           }
           onCancel={() => controller.setDialog(null)}
@@ -201,7 +209,7 @@ function RecycleRow({
   return (
     <button
       type="button"
-      draggable
+      draggable={item.deletionStartedAt === null}
       className={selected ? "recycle-list__row recycle-list__row--selected" : "recycle-list__row"}
       {...{ [FILESYSTEM_SELECTION_DATA_ATTRIBUTE]: item.entry.id }}
       onClick={onSelect}
@@ -211,6 +219,7 @@ function RecycleRow({
       <span>
         <FilesystemEntryIcon entry={item.entry} thumbnailUrl={thumbnailUrl} />
         {item.entry.name}
+        {item.deletionStartedAt !== null ? <small>{FILESYSTEM_COPY.DELETION_INCOMPLETE}</small> : null}
       </span>
       <span>{item.originalLocation}</span>
       <time dateTime={item.deletedAt}>{new Date(item.deletedAt).toLocaleString(UI_LOCALE)}</time>

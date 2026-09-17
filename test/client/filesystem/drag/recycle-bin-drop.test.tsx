@@ -41,3 +41,21 @@ it("serializes trash drops and reports partial failures alongside closed program
   expect(onWidgetsClosed).toHaveBeenCalledExactlyOnceWith(["program"]);
   expect(onFilesystemChanged).toHaveBeenCalledOnce();
 });
+
+
+it.each(["empty", "delete"])("refreshes after %s failure without clearing the mutation error", async (command) => {
+  const gateway = new FakeFilesystemGateway();
+  const onFilesystemChanged = vi.fn();
+  const { result } = renderHook(() => useRecycleBinController({
+    gateway, desktopCapacity: 20, filesystemRevision: 0,
+    onFilesystemChanged, onWidgetsClosed: vi.fn(),
+  }), { wrapper: XpContextMenuProvider });
+  await waitFor(() => expect(result.current.page).not.toBeNull());
+  const fail = async (): Promise<FilesystemBatchResult> => { throw new Error("delete failed"); };
+  await act(() => command === "empty"
+    ? result.current.runChange(fail)
+    : result.current.runBatchChange(fail, true));
+  expect(onFilesystemChanged).toHaveBeenCalledOnce();
+  await act(() => result.current.reload());
+  expect(result.current.error).toBe("delete failed");
+});

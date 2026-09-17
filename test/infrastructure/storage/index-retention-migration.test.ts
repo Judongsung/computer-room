@@ -46,8 +46,13 @@ it("preserves records and constraints while improving index plans and applying o
   const snapshot = async () => Promise.all(tables.map(async ({ name }) =>
     (await db.prepare(`SELECT * FROM "${name}" ORDER BY rowid`).all()).results));
   const before = await snapshot();
+  const expectedAfter = before.map((records, tableIndex) =>
+    tables[tableIndex]?.name === "filesystem_entries"
+      ? records.map((record) => ({ ...record, deletion_started_at: null }))
+      : records,
+  );
   await applyD1Migrations(db, testEnv.TEST_MIGRATIONS.slice(index));
-  expect(await snapshot()).toEqual(before);
+  expect(await snapshot()).toEqual(expectedAfter);
   expect((await db.prepare("PRAGMA foreign_key_check").all()).results).toEqual([]);
 
   expect((await db.prepare("SELECT period_start, checked_at FROM checklist_period_states WHERE item_id = 'retention-item' ORDER BY period_start").all()).results).toEqual([
@@ -80,7 +85,7 @@ it("preserves records and constraints while improving index plans and applying o
   const now = Date.parse("2026-09-05T00:00:00+09:00");
   expect(await repository.getSettings()).toEqual({ retentionDays: null });
   expect(await job.run(now)).toBe(0);
-  expect(await snapshot()).toEqual(before);
+  expect(await snapshot()).toEqual(expectedAfter);
   await repository.saveRetentionDays(1);
   expect(await job.run(now)).toBe(3);
   expect((await db.prepare("SELECT id FROM checklist_events ORDER BY occurred_at").all()).results)

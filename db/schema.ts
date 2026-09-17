@@ -132,6 +132,7 @@ export const filesystemEntries = sqliteTable(
     ),
     restorePath: text("restore_path"),
     trashedAt: integer("trashed_at"),
+    deletionStartedAt: integer("deletion_started_at"),
     createdAt: integer("created_at").notNull(),
     updatedAt: integer("updated_at").notNull(),
   },

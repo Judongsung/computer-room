@@ -120,6 +120,13 @@
       "when": 1788652800000,
       "tag": "0016_checklist-periods",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "6",
+      "when": 1789631424806,
+      "tag": "0017_deletion-started",
+      "breakpoints": true
     }
   ]
 }

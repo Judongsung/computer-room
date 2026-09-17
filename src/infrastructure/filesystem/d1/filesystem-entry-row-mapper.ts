@@ -46,6 +46,7 @@ export function mapFilesystemEntryRow(
     restoreParentId: row.restore_parent_id,
     restorePath: row.restore_path,
     trashedAt: row.trashed_at,
+    deletionStartedAt: row.deletion_started_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     objectKey: row.object_key,

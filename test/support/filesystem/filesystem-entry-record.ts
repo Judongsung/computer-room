@@ -20,6 +20,7 @@ export function filesystemEntryRecord(
     restoreParentId: null,
     restorePath: null,
     trashedAt: null,
+    deletionStartedAt: null,
     createdAt: 0,
     updatedAt: 0,
     objectKey: isFile ? `files/${id}` : null,

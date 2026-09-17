@@ -250,6 +250,7 @@ describe("D1FilesystemRepository recycle bin", () => {
     await expect(repository.findEntry("trash-folder")).resolves.toMatchObject({
       parentId: FILESYSTEM_ROOT_ID.DESKTOP,
       trashedAt: null,
+      deletionStartedAt: null,
     });
     await expect(widgetOpen("memo-widget")).resolves.toBe(1);
     await expect(currentWallpaper()).resolves.toBe("wallpaper");
@@ -313,7 +314,26 @@ describe("D1FilesystemRepository recycle bin", () => {
       restoreParentId: null,
       restorePath: null,
       trashedAt: null,
+      deletionStartedAt: null,
     });
+  });
+
+  it("serializes deletion admission and restoration including desktop order", async () => {
+    await insertDirectory("restore-first", FILESYSTEM_ROOT_ID.DOCUMENTS, "Restore first", 10);
+    await repository.moveToTrash("restore-first", FILESYSTEM_ROOT_ID.DOCUMENTS, "Documents", 20);
+    expect(await repository.restoreEntry("restore-first", FILESYSTEM_ROOT_ID.DESKTOP, "Restored", "restored", 30, 0)).toBe(true);
+    expect(await repository.startDeletion("restore-first", 40)).toBe(false);
+    expect(await repository.listDesktopEntryIds()).toEqual(["restore-first"]);
+
+    await insertDirectory("delete-first", FILESYSTEM_ROOT_ID.DOCUMENTS, "Delete first", 10);
+    await repository.moveToTrash("delete-first", FILESYSTEM_ROOT_ID.DOCUMENTS, "Documents", 20);
+    expect(await repository.startDeletion("delete-first", 30)).toBe(true);
+    expect(await repository.startDeletion("delete-first", 40)).toBe(true);
+    expect(await repository.restoreEntry("delete-first", FILESYSTEM_ROOT_ID.DESKTOP, "Deleted", "deleted", 50, 1)).toBe(false);
+    expect(await repository.findEntry("delete-first")).toMatchObject({
+      parentId: FILESYSTEM_ROOT_ID.RECYCLE_BIN, deletionStartedAt: 30,
+    });
+    expect(await repository.listDesktopEntryIds()).toEqual(["restore-first"]);
   });
 
   it("lists file objects and purges file, widget, and entry subtrees", async () => {

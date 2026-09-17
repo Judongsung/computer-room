@@ -323,6 +323,21 @@ describe("singleton widget migrations", () => {
 
     await insertAdminWidget(database, "admin-widget-one");
     await expect(insertAdminWidget(database, "admin-widget-two")).rejects.toThrow();
+
+    await applyD1Migrations(database, [
+      migrationByName(migrations, "0015_db-indexes-checklist-retention"),
+      migrationByName(migrations, "0016_checklist-periods"),
+    ]);
+    const tables = ["filesystem_entries", "files", "dashboard_widgets", "memo_widgets", "checklist_items", "desktop_entry_order"];
+    const before = await Promise.all(tables.map((table) => rows(database, `SELECT * FROM ${table}`)));
+    await applyD1Migrations(database, [migrationByName(migrations, "0017_deletion-started")]);
+    for (const [index, table] of tables.entries()) {
+      const after = await rows(database, `SELECT * FROM ${table}`);
+      expect(after).toEqual(table === "filesystem_entries"
+        ? before[index]!.map((row) => ({ ...row, deletion_started_at: null }))
+        : before[index]);
+    }
+    await expect(rows(database, "PRAGMA foreign_key_check")).resolves.toEqual([]);
   });
 });
 

@@ -105,7 +105,7 @@ export function DesktopDialogLayer({
           onCancel={widgetFiles.cancelClose}
         />
       ) : null}
-      <UploadTransferDialog state={upload.state} onClose={upload.close} />
+      <UploadTransferDialog state={upload.state} onClose={upload.close} onStop={upload.stop} onRetry={upload.retry} />
       <DownloadTransferDialog state={download.state} onCancel={download.cancel} onClose={download.close} />
       <FilesystemBatchResultDialog result={batchResult} onClose={onCloseBatchResult} />
       <FolderPropertiesDialog controller={folderProperties} />

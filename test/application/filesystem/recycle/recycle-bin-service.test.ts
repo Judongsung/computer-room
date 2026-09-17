@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { FILE_OBJECT_KEY_PREFIX } from "@/constants/filesystem/file";
 import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
@@ -66,6 +66,46 @@ describe("recycle bin use cases", () => {
       "Storage delete failure",
     );
     expect(repository.records.has(file.id)).toBe(true);
+  });
+
+  it("does not delete objects when the start marker cannot be stored", async () => {
+    const { directories, recycleBin, repository, storage } = createFilesystemApplicationFixture();
+    const folder = await directories.createDirectory(null, "protected");
+    await recycleBin.trashEntry(folder.id);
+    vi.spyOn(repository, "startDeletion").mockRejectedValueOnce(new Error("write failed"));
+    const remove = vi.spyOn(storage, "deleteMany");
+    await expect(recycleBin.permanentlyDeleteEntry(folder.id)).rejects.toThrow("write failed");
+    expect(remove).not.toHaveBeenCalled();
+    await expect(recycleBin.restoreEntry(folder.id)).resolves.toMatchObject({ id: folder.id });
+  });
+
+  it.each(["objects", "database"])("blocks restoration after partial %s failure and permits retry", async (failure) => {
+    const { files, recycleBin, repository, storage, clock } = createFilesystemApplicationFixture();
+    const file = await files.uploadFile({
+      originalName: "retry.txt", contentType: "text/plain", declaredSize: 4, body: streamFromText("test"),
+    });
+    await recycleBin.trashEntry(file.id);
+    const startedAt = clock.now();
+    if (failure === "objects") {
+      vi.spyOn(storage, "deleteMany").mockImplementationOnce(async (keys) => {
+        await storage.delete(keys[0]!);
+        throw new Error("partial failure");
+      });
+    } else {
+      vi.spyOn(repository, "purgeEntry").mockRejectedValueOnce(new Error("partial failure"));
+    }
+    await expect(recycleBin.permanentlyDeleteEntry(file.id)).rejects.toThrow("partial failure");
+    expect(repository.records.get(file.id)?.deletionStartedAt).toBe(startedAt);
+    await expect(recycleBin.restoreEntry(file.id)).rejects.toMatchObject({
+      code: FILESYSTEM_ERRORS.DELETION_STARTED.code, status: 409,
+    });
+    clock.timestamp += 100;
+    await repository.startDeletion(file.id, clock.now());
+    expect(repository.records.get(file.id)?.deletionStartedAt).toBe(startedAt);
+    expect((await recycleBin.listTrash(0, 20)).items[0]?.deletionStartedAt).toBe(new Date(startedAt).toISOString());
+    await recycleBin.permanentlyDeleteEntry(file.id);
+    expect(repository.records.has(file.id)).toBe(false);
+    expect(storage.objects.size).toBe(0);
   });
 
   it("restores to My Documents when the original parent remains in trash", async () => {
