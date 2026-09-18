@@ -1,3 +1,4 @@
+import { FILESYSTEM_SEARCH_COPY } from "@client/content/ko/filesystem/search";
 import { DEFAULT_FILESYSTEM_DIRECTORY_SORT } from "@/constants/filesystem/sort";
 import type { FilesystemDirectorySort } from "@/types/filesystem/filesystem";
 import { XP_CONTEXT_MENU_COMMAND_ID } from "@client/constants/context-menu/context-menu";
@@ -42,6 +43,7 @@ interface DocumentsHeaderState {
 }
 interface DocumentsHeaderActions {
   readonly goBack: () => void;
+  readonly search: () => void;
   readonly goUp: () => void;
   readonly createDirectory: () => void;
   readonly uploadFiles: () => void;
@@ -171,6 +173,7 @@ export function buildDocumentsExplorerHeaderModel(
     toolbarItems: [
       toolbar(XP_EXPLORER_TOOLBAR_ACTION.BACK, FILESYSTEM_COPY.BACK, actions.goBack, !state.canGoBack || state.busy),
       toolbar(XP_EXPLORER_TOOLBAR_ACTION.UP, FILESYSTEM_COPY.UP, actions.goUp, !state.canGoUp || state.busy),
+      toolbar(XP_EXPLORER_TOOLBAR_ACTION.SEARCH, FILESYSTEM_SEARCH_COPY.TITLE, actions.search, !state.canMutate),
       separator("documents-toolbar-separator-1"),
       toolbar(XP_EXPLORER_TOOLBAR_ACTION.NEW_FOLDER, FILESYSTEM_COPY.NEW_FOLDER, actions.createDirectory, mutationDisabled),
       toolbar(XP_EXPLORER_TOOLBAR_ACTION.UPLOAD_FILES, FILESYSTEM_COPY.UPLOAD_FILES, actions.uploadFiles, mutationDisabled),

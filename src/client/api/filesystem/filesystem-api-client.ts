@@ -1,3 +1,5 @@
+import type { FilesystemSearchQuery, FilesystemSearchPage } from "@/types/filesystem/search/search";
+import { searchFilesystem } from "@client/api/filesystem/search/search-filesystem";
 import {
   API_PATH_SEGMENTS,
   API_QUERY_PARAMETERS,
@@ -60,6 +62,10 @@ const {
 } = FILESYSTEM_API_PATHS;
 
 export class FilesystemApiClient implements FilesystemGateway {
+  search(query: FilesystemSearchQuery, offset = 0): Promise<FilesystemSearchPage> {
+    return searchFilesystem(query, offset);
+  }
+
   async listDirectory(
     parentId?: string,
     offset = 0,

@@ -148,6 +148,7 @@ function DirectoryHarness({ gateway }: { readonly gateway: DirectoryGateway }) {
       onRefresh={() => setRevision((current) => current + 1)}
       onOpenDirectory={vi.fn()}
       onOpenEntry={vi.fn()}
+      onSearch={vi.fn()}
     />
   );
 }

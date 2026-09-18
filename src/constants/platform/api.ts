@@ -11,6 +11,7 @@ export const API_PATHS = {
 } as const;
 
 export const API_PATH_SEGMENTS = {
+  SEARCH: "search",
   FILESYSTEM: "filesystem",
   MEMO: "memo",
   CHECKLIST: "checklist",
@@ -47,6 +48,7 @@ export const API_PATH_SEGMENTS = {
 } as const;
 
 export const FILESYSTEM_API_PATHS = {
+  SEARCH: `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.SEARCH}`,
   ENTRIES: `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.ENTRIES}`,
   FILES: `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.FILES}`,
   DIRECTORIES: `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.DIRECTORIES}`,
@@ -98,6 +100,9 @@ export const CHECKLIST_SETTINGS_API_PATH =
   `${API_PATHS.PREFERENCES}/${API_PATH_SEGMENTS.CHECKLIST}`;
 
 export const API_QUERY_PARAMETERS = {
+  SEARCH_QUERY: "q",
+  SEARCH_KIND: "kind",
+  SEARCH_DIRECTORY_ID: "directoryId",
   OFFSET: "offset",
   LIMIT: "limit",
   FILE_NAME: "name",

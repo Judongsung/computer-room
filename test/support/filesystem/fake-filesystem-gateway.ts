@@ -1,3 +1,4 @@
+import type { FilesystemSearchQuery, FilesystemSearchPage } from "@/types/filesystem/search/search";
 import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { DEFAULT_FILESYSTEM_DIRECTORY_SORT } from "@/constants/filesystem/sort";
 import { API_PATH_SEGMENTS, FILESYSTEM_API_PATHS } from "@/constants/platform/api";
@@ -9,6 +10,15 @@ import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
 export class FakeFilesystemGateway implements FilesystemGateway {
+  async search(query: FilesystemSearchQuery, offset = 0): Promise<FilesystemSearchPage> {
+    const matching = this.entries.filter((entry) =>
+      entry.name.toLocaleLowerCase("ko-KR").includes(query.q.toLocaleLowerCase("ko-KR")) &&
+      (query.kind === "all" || entry.kind === query.kind) &&
+      (query.directoryId === undefined || entry.parentId === query.directoryId),
+    );
+    return { items: matching.slice(offset).map((entry) => ({ entry, parentPath: "내 문서" })), nextOffset: null };
+  }
+
   private readonly entries: FilesystemEntry[] = [];
   private readonly trash: Array<FilesystemTrashPage["items"][number]> = [];
   private readonly directorySorts = new Map<

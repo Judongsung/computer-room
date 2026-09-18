@@ -12,6 +12,12 @@ const COMMON_SVG_PROPS = {
 } as const;
 
 const TOOLBAR_ICON_BY_ACTION = {
+  [XP_EXPLORER_TOOLBAR_ACTION.SEARCH]: (
+    <svg {...COMMON_SVG_PROPS}>
+      <circle cx="10" cy="10" r="6" fill="#e5f4ff" stroke="#34689b" strokeWidth="2" />
+      <path d="m15 15 6 6" stroke="#735029" strokeWidth="4" />
+    </svg>
+  ),
   [XP_EXPLORER_TOOLBAR_ACTION.BACK]: (
     <svg {...COMMON_SVG_PROPS}>
       <circle cx="12" cy="12" r="10" fill="#3ba322" stroke="#19630d" />

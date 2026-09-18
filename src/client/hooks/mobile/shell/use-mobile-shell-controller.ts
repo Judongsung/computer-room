@@ -187,6 +187,18 @@ export function useMobileShellController({
     goBack,
     goHome,
     openDirectory,
+    openSearch: (directory) => {
+      setMenuOpen(false);
+      navigation.push({ kind: MOBILE_ACTIVITY_KIND.SEARCH, location: { directory } });
+    },
+    rememberSearch: (query) => {
+      if (currentActivity.kind === MOBILE_ACTIVITY_KIND.SEARCH) {
+        navigation.replace({
+          ...currentActivity,
+          location: { ...currentActivity.location, initialQuery: query },
+        });
+      }
+    },
     openComputer: () =>
       navigation.push({ kind: MOBILE_ACTIVITY_KIND.COMPUTER }),
     openTrash: () => navigation.push({ kind: MOBILE_ACTIVITY_KIND.TRASH }),

@@ -1,3 +1,5 @@
+import { FilesystemSearchService } from "@/application/filesystem/search/filesystem-search-service";
+import { D1FilesystemSearchRepository } from "@/infrastructure/filesystem/search/d1-filesystem-search-repository";
 import { ChecklistRetentionApiHandler } from "@/http/widgets/checklist-retention-api-handler";
 import { ChecklistRetentionService } from "@/application/widgets/checklist-retention-service";
 import { ChecklistRetentionJob } from "@/application/widgets/checklist-retention-job";
@@ -172,6 +174,7 @@ export default {
       recycleBinService,
       recycleBinService,
       downloadManifestService,
+      new FilesystemSearchService(new D1FilesystemSearchRepository(env.DB), activeFilesystemEntries),
     );
     const directoryDetailsApiHandler = new DirectoryDetailsApiHandler(
       new DirectoryDetailsService(

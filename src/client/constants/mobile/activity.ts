@@ -1,4 +1,5 @@
 export const MOBILE_ACTIVITY_KIND = {
+  SEARCH: "search",
   HOME: "home",
   DIRECTORY: "directory",
   COMPUTER: "computer",
@@ -12,6 +13,7 @@ export const MOBILE_ACTIVITY_KIND = {
 } as const;
 
 export const MOBILE_ACTIVITY_MENU_AVAILABILITY = {
+  [MOBILE_ACTIVITY_KIND.SEARCH]: false,
   [MOBILE_ACTIVITY_KIND.HOME]: true,
   [MOBILE_ACTIVITY_KIND.DIRECTORY]: true,
   [MOBILE_ACTIVITY_KIND.COMPUTER]: false,

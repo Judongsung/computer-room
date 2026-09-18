@@ -49,6 +49,7 @@ export const XP_EXPLORER_MENU_ACCESS_KEY = {
 } as const;
 
 export const XP_EXPLORER_TOOLBAR_ACTION = {
+  SEARCH: "search",
   BACK: "back",
   UP: "up",
   NEW_FOLDER: "new-folder",

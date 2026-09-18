@@ -1,3 +1,4 @@
+import type { SearchLocation } from "@client/types/filesystem/search/search";
 import type { MOBILE_ACTIVITY_KIND } from "@client/constants/mobile/activity";
 import type { FilesystemFileEntry } from "@/types/filesystem/filesystem";
 
@@ -5,6 +6,7 @@ export type MobileActivityKind =
   (typeof MOBILE_ACTIVITY_KIND)[keyof typeof MOBILE_ACTIVITY_KIND];
 
 export type MobileActivity =
+  | { readonly kind: typeof MOBILE_ACTIVITY_KIND.SEARCH; readonly location: SearchLocation }
   | { readonly kind: typeof MOBILE_ACTIVITY_KIND.HOME }
   | {
       readonly kind: typeof MOBILE_ACTIVITY_KIND.DIRECTORY;

@@ -1,5 +1,11 @@
 import { lazy } from "react";
 
+export const MobileSearch = lazy(() =>
+  import("@client/components/mobile/filesystem/search/mobile-search").then(
+    (module) => ({ default: module.MobileSearch }),
+  ),
+);
+
 export const MobileDirectory = lazy(() =>
   import("@client/components/mobile/filesystem/mobile-directory").then(
     (module) => ({ default: module.MobileDirectory }),

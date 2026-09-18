@@ -5,9 +5,11 @@ import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/
 import type { FilesystemEntryGateway } from "@client/types/filesystem/ports/entry";
 import type { FilesystemRecycleBinGateway } from "@client/types/filesystem/ports/recycle-bin";
 import type { FilesystemTransferGateway } from "@client/types/filesystem/ports/transfer";
+import type { FilesystemSearchGateway } from "@client/types/filesystem/ports/search";
 
 export interface FilesystemGateway
-  extends FilesystemDirectoryGateway,
+  extends FilesystemSearchGateway,
+    FilesystemDirectoryGateway,
     FilesystemEntryGateway,
     FilesystemTransferGateway,
     FilesystemRecycleBinGateway {}

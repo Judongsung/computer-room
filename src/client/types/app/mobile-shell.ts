@@ -1,3 +1,5 @@
+import type { SearchDirectory } from "@client/types/filesystem/search/search";
+import type { FilesystemSearchQuery } from "@/types/filesystem/search/search";
 import type { FilesystemEntry, FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import type { MobilePreferences } from "@/types/platform/mobile-preferences";
 import type { WidgetFileDocument, WidgetFileType } from "@/types/widgets/widget-file";
@@ -20,6 +22,8 @@ export interface MobileShellController {
   readonly preferencesError: string | null;
   readonly pendingDownload: FilesystemFileEntry | null;
   readonly draftConflictOpen: boolean;
+  openSearch(directory: SearchDirectory | null): void;
+  rememberSearch(query: FilesystemSearchQuery): void;
   refresh(): void;
   closeMenu(): void;
   toggleMenu(): void;

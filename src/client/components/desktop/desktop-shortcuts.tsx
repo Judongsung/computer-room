@@ -84,7 +84,7 @@ export function DesktopShortcuts({
 
   return (
     <nav className="desktop-shortcuts" aria-label={FILESYSTEM_COPY.DESKTOP_SHORTCUTS}>
-      {SYSTEM_APP_ID_VALUES.map((id) => {
+      {SYSTEM_APP_ID_VALUES.filter((id) => id !== SYSTEM_APP_ID.SEARCH).map((id) => {
         const app = SYSTEM_APP_CONFIG[id];
         return (
           <ShortcutButton

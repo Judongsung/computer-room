@@ -126,6 +126,7 @@ export interface DesktopWindowProps {
 }
 
 export interface StartMenuProps {
+  readonly onSearch: () => void;
   readonly isOpen: boolean;
   readonly email: string;
   readonly logoutUrl: string;

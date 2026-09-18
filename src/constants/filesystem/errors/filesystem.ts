@@ -3,6 +3,11 @@ import { HTTP_STATUS } from "@/constants/platform/http";
 import type { AppErrorDefinition } from "@/types/platform/error";
 
 export const FILESYSTEM_ERRORS = {
+  INVALID_SEARCH: {
+    status: HTTP_STATUS.BAD_REQUEST,
+    code: "FILESYSTEM_INVALID_SEARCH",
+    message: "검색어와 검색 조건을 확인해 주세요.",
+  },
   DELETION_STARTED: {
     status: HTTP_STATUS.CONFLICT,
     code: "FILESYSTEM_DELETION_STARTED",

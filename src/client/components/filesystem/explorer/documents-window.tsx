@@ -28,6 +28,7 @@ export function DocumentsWindow({
   title,
   iconPath,
   onOpenFile,
+  onSearch,
   initialDirectoryId,
   onDirectoryChanged,
   onOpenWidget,
@@ -65,6 +66,9 @@ export function DocumentsWindow({
       toolbarClassName={XP_EXPLORER_HEADER_CLASS_NAME.FRAME_TOOLBAR}
       toolbar={
         <DocumentsExplorerHeader
+          onSearch={() => {
+            if (page) onSearch(page.directory);
+          }}
           page={page}
           fallbackAddress={title}
           locationIconPath={iconPath}

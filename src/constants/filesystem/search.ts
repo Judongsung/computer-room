@@ -1,0 +1,7 @@
+import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
+export const FILESYSTEM_SEARCH_KIND = {
+  ALL: "all",
+  FILE: FILESYSTEM_ENTRY_KIND.FILE,
+  DIRECTORY: FILESYSTEM_ENTRY_KIND.DIRECTORY,
+  PROGRAM: FILESYSTEM_ENTRY_KIND.WIDGET,
+} as const;

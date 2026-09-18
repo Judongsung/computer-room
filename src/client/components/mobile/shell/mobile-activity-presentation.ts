@@ -1,3 +1,4 @@
+import { FILESYSTEM_SEARCH_COPY } from "@client/content/ko/filesystem/search";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { MOBILE_ACTIVITY_KIND } from "@client/constants/mobile/activity";
 import type { MobileActivity } from "@client/types/app/mobile-navigation";
@@ -18,6 +19,8 @@ export function mobileActivityKey(activity: MobileActivity): string {
 
 export function mobileActivityTitle(activity: MobileActivity): string {
   switch (activity.kind) {
+    case MOBILE_ACTIVITY_KIND.SEARCH:
+      return FILESYSTEM_SEARCH_COPY.TITLE;
     case MOBILE_ACTIVITY_KIND.HOME:
       return MOBILE_COPY.HOME_SCREEN;
     case MOBILE_ACTIVITY_KIND.DIRECTORY:

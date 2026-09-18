@@ -1,0 +1,45 @@
+.mobile-search form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.mobile-search label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.mobile-search input,
+.mobile-search select,
+.mobile-search button {
+  min-height: 40px;
+}
+
+.mobile-search input,
+.mobile-search select {
+  min-width: 0;
+  padding: 4px 8px;
+}
+
+.mobile-search select {
+  border: 1px solid #697169;
+  border-radius: 2px;
+  color: var(--android-text);
+  background: #111411;
+  font: inherit;
+}
+
+.mobile-search__row {
+  padding-bottom: 8px;
+  border-bottom: 1px solid #343a34;
+}
+
+.mobile-search__row > button:last-child {
+  margin: 4px 12px 0;
+}
+
+.mobile-search__row small {
+  overflow-wrap: anywhere;
+}

@@ -1,3 +1,4 @@
+import { FILESYSTEM_SEARCH_COPY } from "@client/content/ko/filesystem/search";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useEffect, useState } from "react";
 import type { FilesystemDirectoryPage } from "@/types/filesystem/filesystem";
@@ -14,6 +15,7 @@ interface MobileDirectoryMenuProps {
   readonly open: boolean;
   readonly gateway: FilesystemDirectoryGateway;
   readonly onClose: () => void;
+  readonly onSearch: () => void;
   readonly onSortChanged: () => void;
   readonly onRefresh: () => void;
 }
@@ -25,6 +27,7 @@ export function MobileDirectoryMenu({
   open,
   gateway,
   onClose,
+  onSearch,
   onRefresh,
   onSortChanged,
 }: MobileDirectoryMenuProps) {
@@ -41,6 +44,16 @@ export function MobileDirectoryMenu({
   return (
     <>
       <MobileMenu open={open} onClose={onClose}>
+        <button
+          type="button"
+          disabled={!available}
+          onClick={() => {
+            onSearch();
+            onClose();
+          }}
+        >
+          {FILESYSTEM_SEARCH_COPY.TITLE}
+        </button>
         <button
           type="button"
           disabled={busy}

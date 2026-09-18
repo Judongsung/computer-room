@@ -26,6 +26,7 @@ interface DocumentsExplorerHeaderProps {
   readonly fileInputRef: RefObject<HTMLInputElement | null>;
   readonly folderInputRef: RefObject<HTMLInputElement | null>;
   readonly onBack: () => void;
+  readonly onSearch: () => void;
   readonly onUp: () => void;
   readonly onCreate: () => void;
   readonly onSelectFiles: () => void;
@@ -55,6 +56,7 @@ export function DocumentsExplorerHeader({
   fileInputRef,
   folderInputRef,
   onBack,
+  onSearch,
   onUp,
   onCreate,
   onSelectFiles,
@@ -90,6 +92,7 @@ export function DocumentsExplorerHeader({
     },
     {
       goBack: onBack,
+      search: onSearch,
       goUp: onUp,
       createDirectory: onCreate,
       uploadFiles: onSelectFiles,

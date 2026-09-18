@@ -1,3 +1,4 @@
+import { FILESYSTEM_SEARCH_COPY } from "@client/content/ko/filesystem/search";
 import { useEffect, useRef } from "react";
 import { DASHBOARD_COPY } from "@client/content/ko/widgets/content";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
@@ -20,6 +21,7 @@ export function StartMenu({
   repositoryUrl,
   onClose,
   onLaunchApplication,
+  onSearch,
 }: StartMenuProps) {
   const contextMenu = useXpContextMenu();
   const menuRef = useRef<HTMLElement>(null);
@@ -110,6 +112,10 @@ export function StartMenu({
               <small>{DASHBOARD_COPY.ACCESS_PROTECTED}</small>
             </span>
           </div>
+          <button type="button" className="start-menu__item" onClick={onSearch}>
+            <img src={DESKTOP_ASSET_PATHS.FOLDER_ICON} alt="" />
+            <span>{FILESYSTEM_SEARCH_COPY.TITLE}</span>
+          </button>
           <a
             className="start-menu__system-item start-menu__system-link"
             href={repositoryUrl}

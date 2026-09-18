@@ -5,6 +5,7 @@ import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
 import { MobileNotepad } from "@client/components/mobile/notepad/mobile-notepad";
 import { MobileHome } from "@client/components/mobile/launcher/mobile-home";
 import {
+  MobileSearch,
   MobileDirectory,
   MobileMediaViewer,
   MobileRecycleBin,
@@ -40,6 +41,16 @@ export function MobileActivityLayer({
 }: MobileActivityLayerProps) {
   const activity = controller.currentActivity;
   switch (activity.kind) {
+    case MOBILE_ACTIVITY_KIND.SEARCH:
+      return (
+        <MobileSearch
+          gateway={filesystem}
+          location={activity.location}
+          onSubmitted={controller.rememberSearch}
+          onOpenEntry={controller.openEntry}
+          onOpenDirectory={controller.openDirectory}
+        />
+      );
     case MOBILE_ACTIVITY_KIND.HOME:
       return (
         <MobileHome
@@ -65,6 +76,7 @@ export function MobileActivityLayer({
     case MOBILE_ACTIVITY_KIND.DIRECTORY:
       return (
         <MobileDirectory
+          onSearch={controller.openSearch}
           directoryId={activity.directoryId}
           title={activity.title}
           revision={controller.revision}

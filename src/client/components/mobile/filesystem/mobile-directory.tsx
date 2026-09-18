@@ -1,3 +1,4 @@
+import type { SearchDirectory } from "@client/types/filesystem/search/search";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import { MobileDirectoryContent } from "@client/components/mobile/filesystem/mobile-directory-content";
@@ -17,6 +18,7 @@ interface MobileDirectoryProps {
   readonly menuOpen: boolean;
   readonly gateway: MobileDirectoryGateway;
   readonly onCloseMenu: () => void;
+  readonly onSearch: (directory: SearchDirectory) => void;
   readonly onRefresh: () => void;
   readonly onOpenDirectory: (id: string, title: string) => void;
   readonly onOpenEntry: (entry: FilesystemEntry) => void;
@@ -29,6 +31,7 @@ export function MobileDirectory({
   menuOpen,
   gateway,
   onCloseMenu,
+  onSearch,
   onRefresh,
   onOpenDirectory,
   onOpenEntry,
@@ -67,6 +70,9 @@ export function MobileDirectory({
         />
       </MobileActivity>
       <MobileDirectoryMenu
+        onSearch={() => {
+          if (page) onSearch(page.directory);
+        }}
         directoryId={directoryId}
         page={page}
         busy={loading || loadingMore || isRefreshing}

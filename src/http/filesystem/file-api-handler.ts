@@ -12,6 +12,9 @@ import { FilesystemDownloadApiRoutes } from "@/http/filesystem/routes/filesystem
 import { FilesystemEntryApiRoutes } from "@/http/filesystem/routes/filesystem-entry-api-routes";
 import { RecycleBinApiRoutes } from "@/http/filesystem/routes/recycle-bin-api-routes";
 
+import type { FilesystemSearchUseCases } from "@/types/filesystem/search/search";
+import { FilesystemSearchApiRoutes } from "@/http/filesystem/routes/filesystem-search-api-routes";
+
 export class FileApiHandler implements FeatureApiHandler {
   private readonly routes: readonly FeatureApiHandler[];
 
@@ -23,8 +26,10 @@ export class FileApiHandler implements FeatureApiHandler {
     trash: FilesystemTrashUseCases,
     recycleBin: RecycleBinUseCases,
     downloadManifests: FilesystemDownloadManifestUseCases,
+    search: FilesystemSearchUseCases,
   ) {
     this.routes = [
+      new FilesystemSearchApiRoutes(search),
       new FileTransferApiRoutes(files, thumbnails),
       new FilesystemDirectoryApiRoutes(directories),
       new FilesystemEntryApiRoutes(entries, trash),
