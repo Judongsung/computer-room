@@ -31,13 +31,13 @@ describe("useFilesystemUpload", () => {
     });
   });
 
-  it("serializes desktop uploads so D1 order allocation cannot race", async () => {
+  it.each([true, false])("serializes desktop uploads with explicit placement=%s so D1 order allocation cannot race", async (explicitPlacement) => {
     const tracker = uploadTracker();
     const gateway = uploadGateway(tracker.upload);
     const { result } = renderHook(() =>
       useFilesystemUpload(gateway, vi.fn()),
     );
-    const placement: DesktopPlacement = { targetIndex: 0, capacity: 10 };
+    const placement: DesktopPlacement | undefined = explicitPlacement ? { targetIndex: 0, capacity: 10 } : undefined;
 
     await act(() =>
       result.current.upload(

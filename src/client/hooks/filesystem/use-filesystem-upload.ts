@@ -1,7 +1,7 @@
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { DesktopPlacement, FilesystemEntry } from "@/types/filesystem/filesystem";
-import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
+import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { FILESYSTEM_UPLOAD_POLICY } from "@client/constants/filesystem/filesystem";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
@@ -151,11 +151,13 @@ export function useFilesystemUpload(
       if (job.node.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) await execute(job);
     }
     const files = jobs.filter((job) => job.node.kind === FILESYSTEM_ENTRY_KIND.FILE);
+    const needsDesktopOrder = (job: UploadJob): boolean => job.placement !== undefined ||
+      (job.parent === null && job.parentId === FILESYSTEM_ROOT_ID.DESKTOP);
     for (const job of files) {
       if (!canStart()) break;
-      if (job.placement !== undefined) await execute(job);
+      if (needsDesktopOrder(job)) await execute(job);
     }
-    const concurrent = files.filter((job) => job.placement === undefined);
+    const concurrent = files.filter((job) => !needsDesktopOrder(job));
     let next = 0;
     const worker = async (): Promise<void> => {
       while (canStart() && next < concurrent.length) {

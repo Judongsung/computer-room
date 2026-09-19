@@ -19,7 +19,7 @@ export function MobileShellMenu({
   return (
     <MobileMenu
       open={
-        controller.menuOpen && activity.kind !== MOBILE_ACTIVITY_KIND.DIRECTORY
+        controller.menuOpen && activity.kind !== MOBILE_ACTIVITY_KIND.DIRECTORY && activity.kind !== MOBILE_ACTIVITY_KIND.TRASH
       }
       onClose={controller.closeMenu}
     >

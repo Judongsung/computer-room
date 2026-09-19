@@ -4,7 +4,9 @@ import {
   FILESYSTEM_SORT_DIRECTION_LABELS,
   FILESYSTEM_SORT_FIELD_OPTIONS,
 } from "@client/content/ko/filesystem/sort";
-import { useState } from "react";
+import { useLayoutEffect, useState } from "react";
+import { useFilesystemMutation } from "@client/hooks/filesystem/commands/use-filesystem-mutation";
+import { useUnsavedChangesWarning } from "@client/hooks/shared/use-unsaved-changes-warning";
 import { FILESYSTEM_SORT_DIRECTION_VALUES } from "@/constants/filesystem/sort";
 import {
   isFilesystemSortDirection,
@@ -16,7 +18,6 @@ import type {
 } from "@/types/filesystem/filesystem";
 import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
 import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
-import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 
 interface MobileDirectorySortDialogProps {
@@ -25,6 +26,7 @@ interface MobileDirectorySortDialogProps {
   readonly gateway: Pick<FilesystemDirectoryGateway, "updateDirectorySort">;
   readonly onClose: () => void;
   readonly onSaved: () => void;
+  readonly onBusyChange: (busy: boolean) => void;
 }
 
 export function MobileDirectorySortDialog({
@@ -33,23 +35,19 @@ export function MobileDirectorySortDialog({
   gateway,
   onClose,
   onSaved,
+  onBusyChange,
 }: MobileDirectorySortDialogProps) {
   const [draft, setDraft] = useState(sort);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const mutation = useFilesystemMutation(gateway);
+  const { busy: saving, error, setError } = mutation;
+  useUnsavedChangesWarning(saving);
+  useLayoutEffect(() => {
+    onBusyChange(saving);
+    return () => onBusyChange(false);
+  }, [saving, onBusyChange]);
 
   const save = async (): Promise<void> => {
-    if (saving) return;
-    setSaving(true);
-    setError(null);
-    try {
-      await gateway.updateDirectorySort(directory.id, draft);
-      setSaving(false);
-      onSaved();
-    } catch (caught) {
-      setError(messageFromError(caught, MOBILE_COPY.SORT_SAVE_FAILED));
-      setSaving(false);
-    }
+    await mutation.run(() => gateway.updateDirectorySort(directory.id, draft), onSaved);
   };
 
   return (

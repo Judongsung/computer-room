@@ -48,6 +48,7 @@ it("shows deletion state on desktop and mobile and disables restoration", async 
   fireEvent.contextMenu(row);
   await waitFor(() => expect(screen.getByRole("menuitem", { name: FILESYSTEM_COPY.RESTORE })).toHaveAttribute("aria-disabled", "true"));
   view.unmount();
-  render(<MobileRecycleBin gateway={gateway} revision={0} />, { wrapper: ThumbnailLoadProvider });
+  render(<MobileRecycleBin gateway={gateway} revision={0} menuOpen={false}
+    onCloseMenu={vi.fn()} onRefresh={vi.fn()} onChanged={vi.fn()} onGuardChange={vi.fn()} />, { wrapper: ThumbnailLoadProvider });
   await screen.findByText(FILESYSTEM_COPY.DELETION_INCOMPLETE);
 });

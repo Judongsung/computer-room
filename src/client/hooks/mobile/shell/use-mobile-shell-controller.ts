@@ -1,5 +1,9 @@
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useFilesystemUpload } from "@client/hooks/filesystem/use-filesystem-upload";
+import { useUnsavedChangesWarning } from "@client/hooks/shared/use-unsaved-changes-warning";
+import { collectSelectedUploadNodes } from "@client/domain/filesystem/local-file-tree";
+import type { MobileNavigationGuard } from "@client/hooks/mobile/filesystem/use-mobile-file-actions";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { createFileOpener } from "@client/domain/filesystem/text/file-opening";
 import type { FilesystemEntry, FilesystemFileEntry } from "@/types/filesystem/filesystem";
@@ -29,13 +33,25 @@ export function useMobileShellController({
 }: UseMobileShellControllerOptions): MobileShellController {
   const localDraft = useLocalWidgetDraft();
   const mobilePreferences = useMobilePreferences(mobilePreferencesGateway);
+  const { refresh: refreshPreferences } = mobilePreferences;
+  const [revision, setRevision] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const refresh = useCallback((): void => {
+    setRevision((current) => current + 1);
+    setMenuOpen(false);
+  }, []);
+  const transfer = useFilesystemUpload(filesystem, refresh);
+  useUnsavedChangesWarning(transfer.state.isOpen);
+  const fileGuard = useRef<MobileNavigationGuard>(null);
+  const setFileNavigationGuard = useCallback((guard: MobileNavigationGuard) => {
+    fileGuard.current = guard;
+  }, []);
   const navigation = useMobileNavigation(
     localDraft.draft
       ? { kind: MOBILE_ACTIVITY_KIND.WIDGET_DRAFT }
       : { kind: MOBILE_ACTIVITY_KIND.HOME },
+    () => !transfer.state.isOpen && (fileGuard.current?.() ?? true),
   );
-  const [revision, setRevision] = useState(0);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [pendingDownload, setPendingDownload] =
     useState<FilesystemFileEntry | null>(null);
   const [draftConflictOpen, setDraftConflictOpen] = useState(false);
@@ -47,10 +63,10 @@ export function useMobileShellController({
   const currentActivity = navigation.current;
   useEffect(() => setMenuOpen(false), [currentActivity]);
 
-  const refresh = useCallback((): void => {
-    setRevision((current) => current + 1);
-    setMenuOpen(false);
-  }, []);
+  const filesChanged = useCallback(() => {
+    refresh();
+    void refreshPreferences();
+  }, [refresh, refreshPreferences]);
 
   const openEntry = useCallback(
     (entry: FilesystemEntry): void => {
@@ -166,7 +182,7 @@ export function useMobileShellController({
   return {
     currentActivity: navigation.current,
     canGoBack: navigation.canGoBack,
-    menuEnabled,
+    menuEnabled: menuEnabled && !transfer.state.isOpen,
     menuOpen,
     revision,
     desktopEntries: desktop.entries,
@@ -180,9 +196,16 @@ export function useMobileShellController({
     pendingDownload,
     draftConflictOpen,
     refresh,
+    filesChanged,
+    transfer,
+    setFileNavigationGuard,
+    uploadFiles: (files, directoryId) => {
+      setMenuOpen(false);
+      void transfer.upload(collectSelectedUploadNodes(files), directoryId);
+    },
     closeMenu: () => setMenuOpen(false),
     toggleMenu: () => {
-      if (menuEnabled) setMenuOpen((current) => !current);
+      if (menuEnabled && !transfer.state.isOpen) setMenuOpen((current) => !current);
     },
     goBack,
     goHome,

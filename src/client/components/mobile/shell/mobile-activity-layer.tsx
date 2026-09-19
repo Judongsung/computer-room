@@ -76,6 +76,8 @@ export function MobileActivityLayer({
     case MOBILE_ACTIVITY_KIND.DIRECTORY:
       return (
         <MobileDirectory
+          onUpload={controller.uploadFiles}
+          onGuardChange={controller.setFileNavigationGuard}
           onSearch={controller.openSearch}
           directoryId={activity.directoryId}
           title={activity.title}
@@ -84,6 +86,7 @@ export function MobileActivityLayer({
           gateway={filesystem}
           onCloseMenu={controller.closeMenu}
           onRefresh={controller.refresh}
+          onChanged={controller.filesChanged}
           onOpenDirectory={controller.openDirectory}
           onOpenEntry={controller.openEntry}
         />
@@ -100,6 +103,11 @@ export function MobileActivityLayer({
         <MobileRecycleBin
           gateway={filesystem}
           revision={controller.revision}
+          menuOpen={controller.menuOpen}
+          onCloseMenu={controller.closeMenu}
+          onRefresh={controller.refresh}
+          onChanged={controller.filesChanged}
+          onGuardChange={controller.setFileNavigationGuard}
         />
       );
     case MOBILE_ACTIVITY_KIND.TEXT_FILE:

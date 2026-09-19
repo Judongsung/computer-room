@@ -1,6 +1,10 @@
 import { FILESYSTEM_SEARCH_COPY } from "@client/content/ko/filesystem/search";
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
+import { MOBILE_FILESYSTEM_COPY } from "@client/content/ko/mobile/filesystem";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { FOLDER_PROPERTIES_STATUS } from "@client/constants/filesystem/details";
+import type { MobileNavigationGuard } from "@client/hooks/mobile/filesystem/use-mobile-file-actions";
 import type { FilesystemDirectoryPage } from "@/types/filesystem/filesystem";
 import { MobileDirectorySortDialog } from "@client/components/mobile/filesystem/mobile-directory-sort-dialog";
 import { MobileFolderPropertiesDialog } from "@client/components/mobile/filesystem/mobile-folder-properties-dialog";
@@ -18,6 +22,11 @@ interface MobileDirectoryMenuProps {
   readonly onSearch: () => void;
   readonly onSortChanged: () => void;
   readonly onRefresh: () => void;
+  readonly selecting: boolean;
+  readonly onSelect: () => void;
+  readonly onCreate: () => void;
+  readonly onUpload: () => void;
+  readonly onGuardChange: (guard: MobileNavigationGuard) => void;
 }
 
 export function MobileDirectoryMenu({
@@ -30,20 +39,44 @@ export function MobileDirectoryMenu({
   onSearch,
   onRefresh,
   onSortChanged,
+  selecting,
+  onSelect,
+  onCreate,
+  onUpload,
+  onGuardChange,
 }: MobileDirectoryMenuProps) {
   const properties = useFolderProperties(gateway);
   const [sortOpen, setSortOpen] = useState(false);
+  const [sortBusy, setSortBusy] = useState(false);
   const closeProperties = properties.close;
 
   useEffect(() => {
     closeProperties();
     setSortOpen(false);
-  }, [closeProperties, directoryId]);
+  }, [closeProperties, directoryId, gateway]);
 
-  const available = page !== null && !busy;
+  useLayoutEffect(() => {
+    onGuardChange(() => {
+      if (sortOpen) {
+        if (!sortBusy) setSortOpen(false);
+        return false;
+      }
+      if (properties.state.status !== FOLDER_PROPERTIES_STATUS.CLOSED) {
+        closeProperties();
+        return false;
+      }
+      return true;
+    });
+    return () => onGuardChange(null);
+  }, [sortOpen, sortBusy, properties.state.status, closeProperties, onGuardChange]);
+
+  const available = page !== null && !busy && !selecting;
   return (
     <>
       <MobileMenu open={open} onClose={onClose}>
+        <button type="button" disabled={!available} onClick={() => { onClose(); onUpload(); }}>{FILESYSTEM_COPY.UPLOAD_FILES}</button>
+        <button type="button" disabled={!available} onClick={() => { onClose(); onCreate(); }}>{FILESYSTEM_COPY.NEW_FOLDER}</button>
+        <button type="button" disabled={!available || !page?.items.length} onClick={() => { onClose(); onSelect(); }}>{MOBILE_FILESYSTEM_COPY.SELECT}</button>
         <button
           type="button"
           disabled={!available}
@@ -93,6 +126,7 @@ export function MobileDirectoryMenu({
       <MobileFolderPropertiesDialog controller={properties} />
       {sortOpen && page ? (
         <MobileDirectorySortDialog
+          onBusyChange={setSortBusy}
           key={`${page.directory.id}:${page.sort.field}:${page.sort.direction}`}
           directory={page.directory}
           sort={page.sort}

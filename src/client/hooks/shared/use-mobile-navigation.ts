@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { MOBILE_ACTIVITY_KIND } from "@client/constants/mobile/activity";
 import type {
   MobileActivity,
@@ -10,6 +10,7 @@ const HISTORY_MARKER = "computerRoomMobileDepth";
 
 export function useMobileNavigation(
   initialActivity: MobileActivity = HOME_ACTIVITY,
+  beforeLeave?: () => boolean,
 ): MobileNavigationController {
   const [stack, setStack] = useState<readonly MobileActivity[]>([
     HOME_ACTIVITY,
@@ -19,15 +20,30 @@ export function useMobileNavigation(
   ]);
   const stackRef = useRef(stack);
   stackRef.current = stack;
+  const leaveGuard = useRef(beforeLeave);
+  useLayoutEffect(() => {
+    leaveGuard.current = beforeLeave;
+  }, [beforeLeave]);
 
   useEffect(() => {
     window.history.replaceState(
       { ...window.history.state, [HISTORY_MARKER]: stackRef.current.length - 1 },
       "",
     );
+    let restoring = false;
     const onPopState = (event: PopStateEvent): void => {
       const depth = readHistoryDepth(event.state);
       if (depth === null) return;
+      if (restoring) {
+        restoring = false;
+        return;
+      }
+      const currentDepth = stackRef.current.length - 1;
+      if (depth !== currentDepth && leaveGuard.current?.() === false) {
+        restoring = true;
+        window.history.go(currentDepth - depth);
+        return;
+      }
       const nextLength = Math.max(
         1,
         Math.min(stackRef.current.length, depth + 1),
@@ -55,6 +71,7 @@ export function useMobileNavigation(
   }, []);
 
   const home = useCallback((): void => {
+    if (leaveGuard.current?.() === false) return;
     const next = [HOME_ACTIVITY];
     stackRef.current = next;
     setStack(next);

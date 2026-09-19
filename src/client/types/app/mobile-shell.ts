@@ -1,4 +1,6 @@
 import type { SearchDirectory } from "@client/types/filesystem/search/search";
+import type { useFilesystemUpload } from "@client/hooks/filesystem/use-filesystem-upload";
+import type { MobileNavigationGuard } from "@client/hooks/mobile/filesystem/use-mobile-file-actions";
 import type { FilesystemSearchQuery } from "@/types/filesystem/search/search";
 import type { FilesystemEntry, FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import type { MobilePreferences } from "@/types/platform/mobile-preferences";
@@ -7,6 +9,10 @@ import type { MobileActivity } from "@client/types/app/mobile-navigation";
 import type { LocalWidgetDraft } from "@client/types/widgets/local-widget-draft";
 
 export interface MobileShellController {
+  readonly transfer: ReturnType<typeof useFilesystemUpload>;
+  filesChanged(): void;
+  uploadFiles(files: FileList, directoryId: string): void;
+  setFileNavigationGuard(guard: MobileNavigationGuard): void;
   readonly currentActivity: MobileActivity;
   readonly canGoBack: boolean;
   readonly menuEnabled: boolean;

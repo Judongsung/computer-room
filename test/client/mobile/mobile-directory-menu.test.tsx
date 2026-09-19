@@ -22,6 +22,8 @@ import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-de
 import { MobileDirectory } from "@client/components/mobile/filesystem/mobile-directory";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 import type { FilesystemContentGateway } from "@client/types/filesystem/ports/transfer";
+import { FakeFilesystemGateway } from "@test/support/filesystem/fake-filesystem-gateway";
+import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
 type DirectoryGateway = FilesystemDirectoryGateway &
   Pick<FilesystemContentGateway, "thumbnailUrl">;
@@ -134,7 +136,7 @@ describe("mobile directory menu", () => {
   });
 });
 
-function DirectoryHarness({ gateway }: { readonly gateway: DirectoryGateway }) {
+function DirectoryHarness({ gateway }: { readonly gateway: FilesystemGateway }) {
   const [revision, setRevision] = useState(0);
   const [menuOpen, setMenuOpen] = useState(true);
   return (
@@ -146,25 +148,28 @@ function DirectoryHarness({ gateway }: { readonly gateway: DirectoryGateway }) {
       gateway={gateway}
       onCloseMenu={() => setMenuOpen(false)}
       onRefresh={() => setRevision((current) => current + 1)}
+      onChanged={() => setRevision((current) => current + 1)}
       onOpenDirectory={vi.fn()}
       onOpenEntry={vi.fn()}
       onSearch={vi.fn()}
+      onUpload={vi.fn()}
+      onGuardChange={vi.fn()}
     />
   );
 }
 
 function directoryGateway(
   overrides: Partial<DirectoryGateway> = {},
-): DirectoryGateway {
-  return {
+): FilesystemGateway {
+  return Object.assign(new FakeFilesystemGateway(), {
     listDirectory: vi.fn(async () =>
       directoryPage(DEFAULT_FILESYSTEM_DIRECTORY_SORT),
     ),
-    updateDirectorySort: vi.fn(async (_directoryId, sort) => sort),
+    updateDirectorySort: vi.fn(async (_directoryId: string, sort: FilesystemDirectorySort) => sort),
     getDirectoryDetails: vi.fn(async () => directoryDetails()),
     thumbnailUrl: (id: string) => `/thumbnail/${id}`,
     ...overrides,
-  };
+  });
 }
 
 function directoryPage(

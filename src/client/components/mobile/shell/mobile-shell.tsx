@@ -1,4 +1,5 @@
 import type { ChecklistRetentionUseCases } from "@/types/widgets/checklist/retention";
+import { MobileUploadDialog } from "@client/components/mobile/filesystem/manage/mobile-upload-dialog";
 import type { SessionInfo } from "@/types/platform/auth";
 import { MobileLazyFeatureBoundary } from "@client/components/mobile/shared/mobile-lazy-feature-boundary";
 import { MobileNavigationBar } from "@client/components/mobile/shared/mobile-navigation-bar";
@@ -70,6 +71,7 @@ export function MobileShell({
       />
       <MobileShellMenu session={session} controller={controller} />
       <MobileShellDialogLayer controller={controller} />
+      {controller.transfer.state.isOpen ? <MobileUploadDialog transfer={controller.transfer} /> : null}
     </div>
   );
 }
