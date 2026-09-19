@@ -22,7 +22,7 @@ export interface MobileShellController {
   readonly preferencesError: string | null;
   readonly pendingDownload: FilesystemFileEntry | null;
   readonly draftConflictOpen: boolean;
-  openSearch(directory: SearchDirectory | null): void;
+  openSearch(directory: SearchDirectory): void;
   rememberSearch(query: FilesystemSearchQuery): void;
   refresh(): void;
   closeMenu(): void;

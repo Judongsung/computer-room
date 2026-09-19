@@ -1,4 +1,3 @@
-import type { SearchDirectory } from "@client/types/filesystem/search/search";
 import type { FilesystemEntry, FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import type { DesktopAppWindowProps } from "@client/types/desktop/desktop";
 import type {
@@ -23,7 +22,6 @@ export interface DocumentsWindowProps
     >,
     FilesystemWindowSyncProps {
   readonly gateway: FilesystemGateway;
-  readonly onSearch: (directory: SearchDirectory) => void;
   readonly windowId: string;
   readonly title: string;
   readonly iconPath: string;

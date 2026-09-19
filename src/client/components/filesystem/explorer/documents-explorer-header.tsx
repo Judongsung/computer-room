@@ -19,6 +19,8 @@ interface DocumentsExplorerHeaderProps {
   readonly fallbackAddress: string;
   readonly locationIconPath: string;
   readonly busy: boolean;
+  readonly searchOpen: boolean;
+  readonly searching: boolean;
   readonly canGoBack: boolean;
   readonly selectedEntries: readonly FilesystemEntry[];
   readonly propertiesTarget: Extract<FilesystemEntry, { readonly kind: "directory" }> | null;
@@ -49,6 +51,8 @@ export function DocumentsExplorerHeader({
   fallbackAddress,
   locationIconPath,
   busy,
+  searchOpen,
+  searching,
   canGoBack,
   selectedEntries,
   propertiesTarget,
@@ -80,15 +84,16 @@ export function DocumentsExplorerHeader({
       busy,
       canGoBack,
       canGoUp: Boolean(page && page.breadcrumbs.length > 1),
-      canMutate: Boolean(page?.directory.id),
-      canDownload: selectedEntries.some(
+      canSearch: searchOpen || Boolean(page && !busy),
+      canMutate: !searching && Boolean(page?.directory.id),
+      canDownload: !searching && selectedEntries.some(
         (entry) => entry.kind !== FILESYSTEM_ENTRY_KIND.WIDGET,
       ),
-      canRename: Boolean(selected),
-      canShowProperties: Boolean(propertiesTarget),
-      hasSelection: selectedEntries.length > 0,
-      hasItems: Boolean(page?.items.length),
-      sort: page?.sort ?? null,
+      canRename: !searching && Boolean(selected),
+      canShowProperties: !searching && Boolean(propertiesTarget),
+      hasSelection: !searching && selectedEntries.length > 0,
+      hasItems: !searching && Boolean(page?.items.length),
+      sort: searching ? null : page?.sort ?? null,
     },
     {
       goBack: onBack,
@@ -122,7 +127,7 @@ export function DocumentsExplorerHeader({
               onNavigate={(item) => onNavigateDirect(item.id)}
               drop={{
                 targets: dropTargets,
-                disabled: busy,
+                disabled: busy || searching,
                 onDrop: onDropIntoDirectory,
               }}
             />
@@ -136,7 +141,10 @@ export function DocumentsExplorerHeader({
         className="visually-hidden"
         type="file"
         multiple
-        onChange={onUpload}
+        disabled={searching}
+        onChange={(event) => {
+          if (!searching) onUpload(event);
+        }}
       />
       <input
         ref={folderInputRef}
@@ -144,7 +152,10 @@ export function DocumentsExplorerHeader({
         type="file"
         multiple
         {...{ webkitdirectory: "" }}
-        onChange={onUpload}
+        disabled={searching}
+        onChange={(event) => {
+          if (!searching) onUpload(event);
+        }}
       />
     </>
   );

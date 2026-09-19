@@ -1,66 +1,28 @@
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { FILESYSTEM_SEARCH_COPY } from "@client/content/ko/filesystem/search";
-import { SYSTEM_APP_ID } from "@client/constants/desktop/system-app";
 import { KEYBOARD_KEY } from "@client/constants/shared/keyboard";
-import { SystemAppWindow } from "@client/components/desktop/system-app-window";
-import { SearchForm } from "@client/components/filesystem/search/search-form";
 import { FilesystemEntryIcon } from "@client/components/filesystem/filesystem-entry-icon";
 import { FilesystemScrollRetention } from "@client/components/filesystem/filesystem-scroll-retention";
-import { useSearchForm, useSearchResults } from "@client/hooks/filesystem/search/use-filesystem-search";
+import type { useSearchResults } from "@client/hooks/filesystem/search/use-filesystem-search";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
-import type { SystemWindowChromeProps } from "@client/types/desktop/system-app";
-import type { SearchLocation } from "@client/types/filesystem/search/search";
 import type { FilesystemEntry } from "@/types/filesystem/filesystem";
 import type { FilesystemSearchQuery } from "@/types/filesystem/search/search";
-import "@client/styles/desktop/filesystem/search.css";
-
-interface SearchWindowProps extends SystemWindowChromeProps {
-  readonly gateway: FilesystemGateway;
-  readonly location: SearchLocation;
-  readonly onOpenEntry: (entry: FilesystemEntry) => void;
-  readonly onOpenDirectory: (id: string, title: string) => void;
-}
-
-export function SearchWindow({
-  gateway,
-  location,
-  onOpenEntry,
-  onOpenDirectory,
-  ...chrome
-}: SearchWindowProps) {
-  const form = useSearchForm(location);
-  return (
-    <SystemAppWindow {...chrome} appId={SYSTEM_APP_ID.SEARCH} bodyClassName="desktop-search">
-      <SearchForm form={form} directory={location.directory} />
-      {form.query ? (
-        <SearchResults
-          gateway={gateway}
-          query={form.query}
-          revision={form.revision}
-          onOpenEntry={onOpenEntry}
-          onOpenDirectory={onOpenDirectory}
-        />
-      ) : null}
-    </SystemAppWindow>
-  );
-}
 
 interface SearchResultsProps {
   readonly gateway: FilesystemGateway;
   readonly query: FilesystemSearchQuery;
-  readonly revision: number;
+  readonly results: ReturnType<typeof useSearchResults>;
   readonly onOpenEntry: (entry: FilesystemEntry) => void;
   readonly onOpenDirectory: (id: string, title: string) => void;
 }
 
-function SearchResults({
+export function ExplorerSearchResults({
   gateway,
   query,
-  revision,
+  results,
   onOpenEntry,
   onOpenDirectory,
 }: SearchResultsProps) {
-  const results = useSearchResults(gateway, query, revision);
   return (
     <div className="desktop-search__results">
       <FilesystemScrollRetention location={JSON.stringify(query)} scope={gateway} />

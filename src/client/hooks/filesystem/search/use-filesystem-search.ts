@@ -7,42 +7,67 @@ import type { FilesystemSearchKind, FilesystemSearchPage, FilesystemSearchQuery 
 import type { FilesystemSearchGateway } from "@client/types/filesystem/ports/search";
 import type { SearchLocation } from "@client/types/filesystem/search/search";
 
-export function useSearchForm(location: SearchLocation, onSubmitted?: (query: FilesystemSearchQuery) => void) {
-  const [q, setQ] = useState(location.initialQuery?.q ?? "");
-  const [kind, setKind] = useState<FilesystemSearchKind>(location.initialQuery?.kind ?? FILESYSTEM_SEARCH_KIND.ALL);
-  const [scoped, setScoped] = useState(
-    location.initialQuery
-      ? location.initialQuery.directoryId !== undefined
-      : location.directory !== null,
-  );
-  const [query, setQuery] = useState<FilesystemSearchQuery | null>(location.initialQuery ?? null);
-  const [revision, setRevision] = useState(0);
-  const [error, setError] = useState<string | null>(null);
-
-  const submit = (): void => {
-    const normalized = q.normalize("NFC").trim();
-    if (!normalized || new TextEncoder().encode(normalized).length > MAX_FILE_NAME_BYTES) {
-      setError(FILESYSTEM_SEARCH_COPY.INVALID);
-      return;
-    }
-    const next: FilesystemSearchQuery = {
-      q: normalized,
-      kind,
-      ...(scoped && location.directory ? { directoryId: location.directory.id } : {}),
-    };
-    setError(null);
-    if (query?.q === next.q && query.kind === next.kind && query.directoryId === next.directoryId) {
-      setRevision((current) => current + 1);
-    } else {
-      setQuery(next);
-    }
-    onSubmitted?.(next);
-  };
-  return { q, setQ, kind, setKind, scoped, setScoped, query, revision, error, submit };
+interface SearchFormState {
+  readonly directoryId: string;
+  readonly q: string;
+  readonly kind: FilesystemSearchKind;
+  readonly query: FilesystemSearchQuery | null;
+  readonly revision: number;
+  readonly error: string | null;
 }
 
-export function useSearchResults(gateway: FilesystemSearchGateway, query: FilesystemSearchQuery, revision: number) {
-  const read = useCallback((offset: number) => gateway.search(query, offset), [gateway, query]);
+export function useSearchForm(location: SearchLocation, onSubmitted?: (query: FilesystemSearchQuery) => void) {
+  const [state, setState] = useState(() => initialFormState(location));
+  let current = state;
+  // Reset before rendering a new folder so its first frame cannot show old results.
+  if (state.directoryId !== location.directory.id) {
+    current = initialFormState({ directory: location.directory });
+    setState(current);
+  }
+
+  const submit = (): void => {
+    const q = current.q.normalize("NFC").trim();
+    if (!q || new TextEncoder().encode(q).length > MAX_FILE_NAME_BYTES) {
+      setState({ ...current, error: FILESYSTEM_SEARCH_COPY.INVALID });
+      return;
+    }
+    const next = { q, kind: current.kind, directoryId: location.directory.id };
+    const repeated = current.query?.q === next.q && current.query.kind === next.kind;
+    setState({
+      ...current,
+      error: null,
+      query: repeated ? current.query : next,
+      revision: repeated ? current.revision + 1 : 0,
+    });
+    onSubmitted?.(next);
+  };
+  return {
+    ...current,
+    setQ: (q: string) => setState((value) => ({ ...value, q })),
+    setKind: (kind: FilesystemSearchKind) => setState((value) => ({ ...value, kind })),
+    reset: () => setState(initialFormState({ directory: location.directory })),
+    submit,
+  };
+}
+
+function initialFormState(location: SearchLocation): SearchFormState {
+  const query = location.initialQuery
+    ? { ...location.initialQuery, directoryId: location.directory.id }
+    : null;
+  return {
+    directoryId: location.directory.id,
+    q: query?.q ?? "",
+    kind: query?.kind ?? FILESYSTEM_SEARCH_KIND.ALL,
+    query,
+    revision: 0,
+    error: null,
+  };
+}
+
+export function useSearchResults(gateway: FilesystemSearchGateway, query: FilesystemSearchQuery | null, revision: number) {
+  const read = useCallback((offset: number): Promise<FilesystemSearchPage> =>
+    query ? gateway.search(query, offset) : Promise.resolve({ items: [], nextOffset: null }),
+  [gateway, query]);
   const results = useFilesystemPages(read, mergeResults, 0, FILESYSTEM_SEARCH_COPY.FAILED);
   const { reload } = results;
   // Repeated submissions share a pending reload instead of forcing a new request.

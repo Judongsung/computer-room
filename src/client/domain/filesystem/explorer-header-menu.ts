@@ -30,6 +30,7 @@ import type {
 } from "@client/types/filesystem/explorer-header";
 
 interface DocumentsHeaderState {
+  readonly canSearch: boolean;
   readonly busy: boolean;
   readonly canGoBack: boolean;
   readonly canGoUp: boolean;
@@ -173,7 +174,7 @@ export function buildDocumentsExplorerHeaderModel(
     toolbarItems: [
       toolbar(XP_EXPLORER_TOOLBAR_ACTION.BACK, FILESYSTEM_COPY.BACK, actions.goBack, !state.canGoBack || state.busy),
       toolbar(XP_EXPLORER_TOOLBAR_ACTION.UP, FILESYSTEM_COPY.UP, actions.goUp, !state.canGoUp || state.busy),
-      toolbar(XP_EXPLORER_TOOLBAR_ACTION.SEARCH, FILESYSTEM_SEARCH_COPY.TITLE, actions.search, !state.canMutate),
+      toolbar(XP_EXPLORER_TOOLBAR_ACTION.SEARCH, FILESYSTEM_SEARCH_COPY.TITLE, actions.search, !state.canSearch),
       separator("documents-toolbar-separator-1"),
       toolbar(XP_EXPLORER_TOOLBAR_ACTION.NEW_FOLDER, FILESYSTEM_COPY.NEW_FOLDER, actions.createDirectory, mutationDisabled),
       toolbar(XP_EXPLORER_TOOLBAR_ACTION.UPLOAD_FILES, FILESYSTEM_COPY.UPLOAD_FILES, actions.uploadFiles, mutationDisabled),

@@ -1,3 +1,9 @@
+import { useState } from "react";
+import { FILESYSTEM_SEARCH_COPY } from "@client/content/ko/filesystem/search";
+import { SearchForm } from "@client/components/filesystem/search/search-form";
+import { ExplorerSearchResults } from "@client/components/desktop/filesystem/explorer-search-results";
+import { useSearchForm, useSearchResults } from "@client/hooks/filesystem/search/use-filesystem-search";
+import "@client/styles/desktop/filesystem/search.css";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import {
@@ -28,7 +34,6 @@ export function DocumentsWindow({
   title,
   iconPath,
   onOpenFile,
-  onSearch,
   initialDirectoryId,
   onDirectoryChanged,
   onOpenWidget,
@@ -55,6 +60,19 @@ export function DocumentsWindow({
     desktopCapacity,
   });
   const { page, selectedEntries, selected, propertiesTarget, currentDirectoryId } = controller;
+  const [searchOpen, setSearchOpen] = useState(false);
+  const directory = {
+    id: controller.explorer.directoryId,
+    name: page?.directory.name ?? FILESYSTEM_COPY.BUSY,
+  };
+  const form = useSearchForm({ directory }, () => controller.selection.clear());
+  const query = searchOpen ? form.query : null;
+  const results = useSearchResults(gateway, query, form.revision);
+  const searching = query !== null;
+  const closeSearch = (): void => {
+    setSearchOpen(false);
+    form.reset();
+  };
 
   return (
     <DesktopAppWindow
@@ -66,9 +84,9 @@ export function DocumentsWindow({
       toolbarClassName={XP_EXPLORER_HEADER_CLASS_NAME.FRAME_TOOLBAR}
       toolbar={
         <DocumentsExplorerHeader
-          onSearch={() => {
-            if (page) onSearch(page.directory);
-          }}
+          searchOpen={searchOpen}
+          searching={searching}
+          onSearch={() => searchOpen ? closeSearch() : setSearchOpen(true)}
           page={page}
           fallbackAddress={title}
           locationIconPath={iconPath}
@@ -97,77 +115,120 @@ export function DocumentsWindow({
             propertiesTarget && controller.folderProperties.open(propertiesTarget)
           }
           onSelectAll={controller.selection.selectAll}
-          onRefresh={controller.explorer.reload}
+          onRefresh={searching ? results.reload : controller.explorer.reload}
           onChangeSort={controller.changeSort}
           onClose={chrome.onClose}
-          onNavigateDirect={controller.explorer.navigateDirect}
+          onNavigateDirect={(id) => {
+            form.reset();
+            controller.explorer.navigateDirect(id);
+          }}
           onDropIntoDirectory={controller.dropIntoDirectory}
         />
       }
       bodyClassName="explorer-window__body"
       footer={
         <footer className="explorer-statusbar">
-          {selectedEntries.length > 0
-            ? FILESYSTEM_COPY.SELECTED_COUNT(selectedEntries.length)
-            : `${page?.items.length ?? 0}${FILESYSTEM_COPY.ITEM_COUNT_SUFFIX}`}
+          {searching
+            ? `${results.page?.items.length ?? 0}${FILESYSTEM_COPY.ITEM_COUNT_SUFFIX}`
+            : selectedEntries.length > 0
+              ? FILESYSTEM_COPY.SELECTED_COUNT(selectedEntries.length)
+              : `${page?.items.length ?? 0}${FILESYSTEM_COPY.ITEM_COUNT_SUFFIX}`}
         </footer>
       }
     >
-      {controller.error ? <p className="explorer-message" role="alert">{controller.error}</p> : null}
-      {controller.explorer.error ? (
-        <button
-          type="button"
-          disabled={controller.explorer.isRefreshing}
-          onClick={() => void controller.explorer.retry()}
-        >
-          {FILESYSTEM_COPY.RETRY}
-        </button>
-      ) : null}
-      {!page && !controller.error ? <p className="explorer-message">{FILESYSTEM_COPY.BUSY}</p> : null}
-      {page && currentDirectoryId ? (
-        <ExplorerDirectoryView
-          page={page}
-          busy={controller.busy}
-          currentDirectoryId={currentDirectoryId}
-          selection={{
-            selectedIds: controller.selection.selectedIds,
-            onSelect: controller.selection.select,
-            onSelectAll: controller.selection.selectAll,
-            onClear: controller.selection.clear,
-          }}
-          marquee={{
-            contentRef: controller.contentRef,
-            ...controller.marquee,
-          }}
-          drag={{
-            targets: controller.dropTargets,
-            disabled: controller.busy,
-            onDrop: controller.dropIntoDirectory,
-            onDragStart: (entry, event) => {
-              const ids = controller.selection.dragIds(entry.id);
-              controller.selection.replace(ids);
-              writeFilesystemDragPayload(event.dataTransfer, {
-                ids,
-                primaryId: entry.id,
-                source: FILESYSTEM_DRAG_SOURCE.ACTIVE,
-              });
-            },
-          }}
-          properties={{
-            selectedDirectory: controller.selectedDirectory,
-            onShow: controller.folderProperties.open,
-          }}
-          contextMenu={{
-            onEntry: controller.openEntryContextMenu,
-            onDirectory: controller.openDirectoryContextMenu,
-          }}
-          thumbnailUrl={gateway.thumbnailUrl.bind(gateway)}
-          emptyLabel={FILESYSTEM_COPY.EMPTY_DIRECTORY}
-          loadMoreLabel={FILESYSTEM_COPY.LOAD_MORE}
-          onOpenEntry={controller.openEntry}
-          onLoadMore={() => void controller.explorer.loadMore()}
-        />
-      ) : null}
+      <div
+        className="explorer-search-layout"
+        {...(searching ? controller.dropTargets.getProps(
+          `${windowId}:search`,
+          () => undefined,
+          { disabled: true },
+        ) : {})}
+      >
+        {searchOpen ? (
+          <aside className="explorer-search-sidebar" aria-label={FILESYSTEM_SEARCH_COPY.TITLE}>
+            <header>
+              <strong>{FILESYSTEM_SEARCH_COPY.TITLE}</strong>
+              <button type="button" onClick={closeSearch}>{FILESYSTEM_SEARCH_COPY.CLOSE}</button>
+            </header>
+            <SearchForm form={form} directory={directory} disabled={!page || controller.busy} />
+          </aside>
+        ) : null}
+        <div className="explorer-search-main">
+          {query ? (
+            <ExplorerSearchResults
+              gateway={gateway}
+              query={query}
+              results={results}
+              onOpenEntry={(entry) => {
+                if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) form.reset();
+                controller.openEntry(entry);
+              }}
+              onOpenDirectory={(id) => {
+                form.reset();
+                controller.explorer.navigate(id);
+              }}
+            />
+          ) : (
+            <>
+              {controller.error ? <p className="explorer-message" role="alert">{controller.error}</p> : null}
+              {controller.explorer.error ? (
+                <button
+                  type="button"
+                  disabled={controller.explorer.isRefreshing}
+                  onClick={() => void controller.explorer.retry()}
+                >
+                  {FILESYSTEM_COPY.RETRY}
+                </button>
+              ) : null}
+              {!page && !controller.error ? <p className="explorer-message">{FILESYSTEM_COPY.BUSY}</p> : null}
+              {page && currentDirectoryId ? (
+                <ExplorerDirectoryView
+                  page={page}
+                  busy={controller.busy}
+                  currentDirectoryId={currentDirectoryId}
+                  selection={{
+                    selectedIds: controller.selection.selectedIds,
+                    onSelect: controller.selection.select,
+                    onSelectAll: controller.selection.selectAll,
+                    onClear: controller.selection.clear,
+                  }}
+                  marquee={{
+                    contentRef: controller.contentRef,
+                    ...controller.marquee,
+                  }}
+                  drag={{
+                    targets: controller.dropTargets,
+                    disabled: controller.busy,
+                    onDrop: controller.dropIntoDirectory,
+                    onDragStart: (entry, event) => {
+                      const ids = controller.selection.dragIds(entry.id);
+                      controller.selection.replace(ids);
+                      writeFilesystemDragPayload(event.dataTransfer, {
+                        ids,
+                        primaryId: entry.id,
+                        source: FILESYSTEM_DRAG_SOURCE.ACTIVE,
+                      });
+                    },
+                  }}
+                  properties={{
+                    selectedDirectory: controller.selectedDirectory,
+                    onShow: controller.folderProperties.open,
+                  }}
+                  contextMenu={{
+                    onEntry: controller.openEntryContextMenu,
+                    onDirectory: controller.openDirectoryContextMenu,
+                  }}
+                  thumbnailUrl={gateway.thumbnailUrl.bind(gateway)}
+                  emptyLabel={FILESYSTEM_COPY.EMPTY_DIRECTORY}
+                  loadMoreLabel={FILESYSTEM_COPY.LOAD_MORE}
+                  onOpenEntry={controller.openEntry}
+                  onLoadMore={() => void controller.explorer.loadMore()}
+                />
+              ) : null}
+            </>
+          )}
+        </div>
+      </div>
       {controller.dialog === "create" && currentDirectoryId ? (
         <NameDialog
           title={FILESYSTEM_COPY.CREATE_FOLDER_TITLE}

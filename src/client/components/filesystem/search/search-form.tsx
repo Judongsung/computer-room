@@ -5,14 +5,15 @@ import type { SearchDirectory } from "@client/types/filesystem/search/search";
 
 interface SearchFormProps {
   readonly form: ReturnType<typeof useSearchForm>;
-  readonly directory: SearchDirectory | null;
+  readonly directory: SearchDirectory;
+  readonly disabled?: boolean;
 }
 
-export function SearchForm({ form, directory }: SearchFormProps) {
+export function SearchForm({ form, directory, disabled = false }: SearchFormProps) {
   const description = form.query
     ? FILESYSTEM_SEARCH_COPY.EXECUTED(
         form.query.q,
-        form.query.directoryId ? directory?.name ?? "" : FILESYSTEM_SEARCH_COPY.ALL,
+        directory.name,
         FILESYSTEM_SEARCH_KIND_LABEL[form.query.kind],
       )
     : FILESYSTEM_SEARCH_COPY.GUIDE;
@@ -20,7 +21,7 @@ export function SearchForm({ form, directory }: SearchFormProps) {
   return (
     <form onSubmit={(event) => {
       event.preventDefault();
-      form.submit();
+      if (!disabled) form.submit();
     }}>
       <label>
         {FILESYSTEM_SEARCH_COPY.QUERY}
@@ -45,19 +46,8 @@ export function SearchForm({ form, directory }: SearchFormProps) {
           ))}
         </select>
       </label>
-      {directory ? (
-        <label>
-          {FILESYSTEM_SEARCH_COPY.SCOPE}
-          <select
-            value={form.scoped ? directory.id : ""}
-            onChange={(event) => form.setScoped(event.target.value !== "")}
-          >
-            <option value="">{FILESYSTEM_SEARCH_COPY.ALL}</option>
-            <option value={directory.id}>{directory.name}</option>
-          </select>
-        </label>
-      ) : null}
-      <button type="submit">{FILESYSTEM_SEARCH_COPY.SUBMIT}</button>
+      <p>{FILESYSTEM_SEARCH_COPY.SCOPE}: {directory.name}</p>
+      <button type="submit" disabled={disabled}>{FILESYSTEM_SEARCH_COPY.SUBMIT}</button>
       {form.error ? <p role="alert">{form.error}</p> : null}
       <p>{description}</p>
     </form>

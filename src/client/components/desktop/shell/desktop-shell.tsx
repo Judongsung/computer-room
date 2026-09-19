@@ -1,4 +1,3 @@
-import type { SearchDirectory } from "@client/types/filesystem/search/search";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import {
   useCallback,
@@ -84,7 +83,6 @@ export function DesktopShell(props: DesktopShellProps) {
   const dropTargets = useFilesystemDropTarget();
   const desktop = useDesktopDimensions(workAreaRef);
   const system = useSystemWindows();
-  const [searchDirectory, setSearchDirectory] = useState<SearchDirectory | null>(null);
   const media = useMediaWindows();
   const notepad = useNotepadWindows();
   const downloadConfirmation = useDownloadConfirmation(filesystemGateway);
@@ -127,11 +125,6 @@ export function DesktopShell(props: DesktopShellProps) {
     onAddWidget: props.onAddWidget,
     onOpenWidget: props.onOpenWidget,
   });
-  const openSearch = (directory: SearchDirectory | null): void => {
-    setSearchDirectory(directory);
-    closeStartMenu();
-    launcher.openSystemApp(SYSTEM_APP_ID.SEARCH);
-  };
   const menus = useDesktopContextMenus({
     selectedEntries: filesystem.selectedEntries,
     selection: filesystem.selection,
@@ -295,9 +288,6 @@ export function DesktopShell(props: DesktopShellProps) {
           onCommitWidgetBounds={props.onCommitWindowBounds}
           onWidgetChange={props.onWidgetChange}
           onSaveWidgetFile={widgetFiles.beginSave}
-          searchDirectory={searchDirectory}
-          onSearch={openSearch}
-          onOpenSearchDirectory={(id, title) => launcher.openDocumentsDirectory(id, title, DESKTOP_ASSET_PATHS.FOLDER_ICON)}
           onLaunchApplication={launcher.launchApplication}
         />
         <NotepadWindowLayer controller={notepad} gateway={filesystemGateway} desktop={desktop} manager={windowManager} />
@@ -356,7 +346,6 @@ export function DesktopShell(props: DesktopShellProps) {
         />
       ) : null}
       <StartMenu
-        onSearch={() => openSearch(null)}
         isOpen={isStartMenuOpen}
         email={session.email}
         logoutUrl={session.logoutUrl}

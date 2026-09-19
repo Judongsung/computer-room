@@ -5,7 +5,7 @@ export const FILESYSTEM_SEARCH_COPY = {
   QUERY: "이름 검색",
   SUBMIT: "검색",
   SCOPE: "검색 위치",
-  ALL: "바탕 화면과 내 문서 전체",
+  CLOSE: "검색 닫기",
   KIND: "종류",
   GUIDE: "이름의 일부를 입력하고 검색해 주세요.",
   EMPTY: "검색 결과가 없습니다.",

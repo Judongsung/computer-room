@@ -1,4 +1,3 @@
-import { FILESYSTEM_SEARCH_COPY } from "@client/content/ko/filesystem/search";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import type { SessionInfo } from "@/types/platform/auth";
 import { MobileMenu } from "@client/components/mobile/shared/mobile-menu";
@@ -26,9 +25,6 @@ export function MobileShellMenu({
     >
       {activity.kind === MOBILE_ACTIVITY_KIND.HOME ? (
         <>
-          <button type="button" onClick={() => controller.openSearch(null)}>
-            {FILESYSTEM_SEARCH_COPY.TITLE}
-          </button>
           <button type="button" onClick={controller.refresh}>
             {MOBILE_COPY.REFRESH}
           </button>

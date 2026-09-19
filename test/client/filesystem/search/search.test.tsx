@@ -20,7 +20,7 @@ describe("file search", () => {
     const submitted = vi.fn();
     const openEntry = vi.fn();
     const openDirectory = vi.fn();
-    const props = { gateway, location: { directory: null }, onSubmitted: submitted, onOpenEntry: openEntry, onOpenDirectory: openDirectory };
+    const props = { gateway, location: { directory: { id: "folder", name: "현재 폴더" } }, onSubmitted: submitted, onOpenEntry: openEntry, onOpenDirectory: openDirectory };
     const view = render(<MobileSearch {...props} />, { wrapper: ThumbnailLoadProvider });
     expect(search).not.toHaveBeenCalled();
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "report" } });
@@ -32,7 +32,7 @@ describe("file search", () => {
     fireEvent.click(screen.getByRole("button", { name: FILESYSTEM_SEARCH_COPY.OPEN_FOLDER }));
     expect(openDirectory).toHaveBeenCalledWith(item.entry.parentId, item.parentPath);
     view.unmount();
-    render(<MobileSearch {...props} location={{ directory: null, initialQuery: submitted.mock.calls[0]![0] }} />, { wrapper: ThumbnailLoadProvider });
+    render(<MobileSearch {...props} location={{ directory: { id: "folder", name: "현재 폴더" }, initialQuery: submitted.mock.calls[0]![0] }} />, { wrapper: ThumbnailLoadProvider });
     await screen.findByText("report.txt");
     expect(screen.getByRole("searchbox")).toHaveValue("report");
     expect(search).toHaveBeenCalledTimes(2);
@@ -44,7 +44,7 @@ describe("file search", () => {
     const search = vi.spyOn(gateway, "search")
       .mockResolvedValueOnce({ items: [item], nextOffset: null })
       .mockReturnValue(pending.promise);
-    render(<MobileSearch gateway={gateway} location={{ directory: null }}
+    render(<MobileSearch gateway={gateway} location={{ directory: { id: "folder", name: "현재 폴더" } }}
       onSubmitted={vi.fn()} onOpenEntry={vi.fn()} onOpenDirectory={vi.fn()} />,
     { wrapper: ThumbnailLoadProvider });
     const input = screen.getByRole("searchbox");
@@ -63,6 +63,34 @@ describe("file search", () => {
     expect(screen.queryByText("report.txt")).not.toBeInTheDocument();
     await act(async () => pending.resolve({ items: [], nextOffset: null }));
     expect(screen.getByText(FILESYSTEM_SEARCH_COPY.EMPTY)).toBeInTheDocument();
+  });
+
+  it("ignores pending responses after closing, replacing the gateway or unmounting", async () => {
+    const first = new FakeFilesystemGateway();
+    const second = new FakeFilesystemGateway();
+    const closed = deferred<FilesystemSearchPage>();
+    const replaced = deferred<FilesystemSearchPage>();
+    const unmounted = deferred<FilesystemSearchPage>();
+    const search = vi.spyOn(first, "search")
+      .mockReturnValueOnce(closed.promise)
+      .mockReturnValueOnce(replaced.promise);
+    vi.spyOn(second, "search").mockReturnValue(unmounted.promise);
+    const query = { q: "report", kind: "all" as const, directoryId: "folder" };
+    const view = renderHook(({ gateway, query: value }) => useSearchResults(gateway, value, 0), {
+      initialProps: { gateway: first, query: query as typeof query | null },
+    });
+    view.rerender({ gateway: first, query: null });
+    await act(async () => closed.resolve({ items: [item], nextOffset: 20 }));
+    expect(view.result.current.page?.items ?? []).toEqual([]);
+    expect(search).toHaveBeenCalledTimes(1);
+    view.rerender({ gateway: first, query });
+    view.rerender({ gateway: second, query });
+    await act(async () => replaced.reject(new Error("old gateway")));
+    expect(view.result.current.error).toBeNull();
+    expect(view.result.current.isInitialLoading).toBe(true);
+    view.unmount();
+    await act(async () => unmounted.resolve({ items: [item], nextOffset: 20 }));
+    expect(second.search).toHaveBeenCalledTimes(1);
   });
 
   it("invalidates stale queries and shares pagination while preserving results on failure", async () => {

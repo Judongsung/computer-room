@@ -1,4 +1,3 @@
-import type { SearchDirectory } from "@client/types/filesystem/search/search";
 import type { ChecklistRetentionUseCases } from "@/types/widgets/checklist/retention";
 import { lazy } from "react";
 
@@ -20,12 +19,6 @@ import { SYSTEM_APP_TITLE_BY_ID } from "@client/content/ko/desktop/system-app";
 import { DESKTOP_LAYOUT } from "@client/constants/desktop/desktop";
 import { DesktopWindow } from "@client/components/desktop/desktop-window";
 import { LazyFeatureBoundary } from "@client/components/shared/lazy-feature-boundary";
-
-const SearchWindow = lazy(() =>
-  import("@client/components/desktop/filesystem/search-window").then((module) => ({
-    default: module.SearchWindow,
-  })),
-);
 
 const DocumentsWindow = lazy(() =>
   import("@client/components/filesystem/explorer/documents-window").then((module) => ({
@@ -49,9 +42,6 @@ const MediaViewerWindow = lazy(() =>
 );
 
 interface DesktopWindowLayerProps {
-  readonly searchDirectory: SearchDirectory | null;
-  readonly onSearch: (directory: SearchDirectory | null) => void;
-  readonly onOpenSearchDirectory: (id: string, title: string) => void;
   readonly desktop: DesktopDimensions;
   readonly widgets: readonly DashboardWidget[];
   readonly activeWindowId: string | null;
@@ -91,9 +81,6 @@ interface DesktopWindowLayerProps {
 }
 
 export function DesktopWindowLayer({
-  searchDirectory,
-  onSearch,
-  onOpenSearchDirectory,
   desktop,
   widgets,
   activeWindowId,
@@ -127,7 +114,7 @@ export function DesktopWindowLayer({
   onSaveWidgetFile,
   onLaunchApplication,
 }: DesktopWindowLayerProps) {
-  const systemChrome = (id: typeof SYSTEM_APP_ID.MY_COMPUTER | typeof SYSTEM_APP_ID.RECYCLE_BIN | typeof SYSTEM_APP_ID.SEARCH) => ({
+  const systemChrome = (id: typeof SYSTEM_APP_ID.MY_COMPUTER | typeof SYSTEM_APP_ID.RECYCLE_BIN) => ({
     window: system.windows[id],
     desktop,
     isActive: activeWindowId === id,
@@ -182,7 +169,6 @@ export function DesktopWindowLayer({
       {explorer.windows.map((window) => (
         <LazyFeatureBoundary key={window.id} title={window.title}>
           <DocumentsWindow
-          onSearch={onSearch}
           windowId={window.id}
           title={window.title}
           iconPath={window.iconPath}
@@ -218,18 +204,6 @@ export function DesktopWindowLayer({
           />
         </LazyFeatureBoundary>
       ))}
-      {system.windows[SYSTEM_APP_ID.SEARCH].isOpen ? (
-        <LazyFeatureBoundary title={SYSTEM_APP_TITLE_BY_ID[SYSTEM_APP_ID.SEARCH]}>
-          <SearchWindow
-            key={searchDirectory?.id ?? SYSTEM_APP_ID.SEARCH}
-            {...systemChrome(SYSTEM_APP_ID.SEARCH)}
-            gateway={filesystemGateway}
-            location={{ directory: searchDirectory }}
-            onOpenEntry={onOpenFilesystemEntry}
-            onOpenDirectory={onOpenSearchDirectory}
-          />
-        </LazyFeatureBoundary>
-      ) : null}
       {system.windows[SYSTEM_APP_ID.MY_COMPUTER].isOpen ? (
         <LazyFeatureBoundary title={SYSTEM_APP_TITLE_BY_ID[SYSTEM_APP_ID.MY_COMPUTER]}>
           <MyComputerWindow

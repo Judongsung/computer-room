@@ -6,6 +6,6 @@ export interface SearchDirectory {
 }
 
 export interface SearchLocation {
-  readonly directory: SearchDirectory | null;
+  readonly directory: SearchDirectory;
   readonly initialQuery?: FilesystemSearchQuery;
 }
