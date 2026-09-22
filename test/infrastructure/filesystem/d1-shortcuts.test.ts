@@ -1,0 +1,41 @@
+import type { D1Migration } from "@cloudflare/vitest-pool-workers";
+import { applyD1Migrations, env } from "cloudflare:test";
+import { beforeAll, expect, it } from "vitest";
+import { D1FilesystemRepository } from "@/infrastructure/filesystem/d1-filesystem-repository";
+import { D1GuestAccessRepository } from "@/infrastructure/admin/d1-guest-access-repository";
+import { D1GuestPublicationRepository } from "@/infrastructure/guest/d1-guest-publication-repository";
+import { D1FilesystemSearchRepository } from "@/infrastructure/filesystem/search/d1-filesystem-search-repository";
+import { FilesystemShortcutService } from "@/application/filesystem/entries/filesystem-shortcut-service";
+import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
+import { DEFAULT_FILESYSTEM_DIRECTORY_SORT } from "@/constants/filesystem/sort";
+import { SequenceIdGenerator, StaticClock } from "@test/support/platform/runtime-fakes";
+
+const testEnv = env as typeof env & { TEST_MIGRATIONS: D1Migration[]; FILESYSTEM_REPOSITORY_TEST_DB: D1Database };
+const db = testEnv.FILESYSTEM_REPOSITORY_TEST_DB;
+beforeAll(() => applyD1Migrations(db, testEnv.TEST_MIGRATIONS));
+
+it("keeps shortcuts independent, excludes them from publication and never searches through targets", async () => {
+  const repository = new D1FilesystemRepository(db);
+  const service = new FilesystemShortcutService(repository, new SequenceIdGenerator(["shortcut"]), new StaticClock(5));
+  const publications = new D1GuestAccessRepository(db);
+  const guest = new D1GuestPublicationRepository(db);
+  await repository.insertDirectory({ id: "outside", parentId: FILESYSTEM_ROOT_ID.DOCUMENTS, name: "Outside", nameKey: "outside", createdAt: 1 });
+  await repository.insertDirectory({ id: "inside", parentId: "outside", name: "Inside", nameKey: "inside", createdAt: 2 });
+  const link = await service.createShortcut({ targetEntryId: "outside", parentId: FILESYSTEM_ROOT_ID.DESKTOP, name: "Outside link" });
+  expect((await repository.listChildren(FILESYSTEM_ROOT_ID.DESKTOP, 0, 10, DEFAULT_FILESYSTEM_DIRECTORY_SORT)).map((e) => e.id)).toEqual([link.id]);
+  const search = new D1FilesystemSearchRepository(db);
+  expect((await search.search({ directoryId: FILESYSTEM_ROOT_ID.DESKTOP, q: "outside", kind: "shortcut" }, 0, 10)).map((e) => e.entry.id)).toEqual([link.id]);
+  expect(await search.search({ directoryId: FILESYSTEM_ROOT_ID.DESKTOP, q: "inside", kind: "all" }, 0, 10)).toEqual([]);
+  await publications.setEntryPublished(FILESYSTEM_ROOT_ID.DESKTOP, true, true, 5);
+  expect(await guest.findPublishedEntry(link.id)).toBeNull();
+  expect(await guest.listVisibleChildren(FILESYSTEM_ROOT_ID.DESKTOP, 0, 10, DEFAULT_FILESYSTEM_DIRECTORY_SORT)).toEqual([]);
+  expect((await publications.findPublicationStates([FILESYSTEM_ROOT_ID.DESKTOP])).get(FILESYSTEM_ROOT_ID.DESKTOP)).toBe("public");
+  await repository.moveToTrash("outside", FILESYSTEM_ROOT_ID.DOCUMENTS, "Documents", 10);
+  await expect(service.resolveShortcut(link.id)).rejects.toMatchObject({ code: "FILESYSTEM_SHORTCUT_TARGET_UNAVAILABLE" });
+  await repository.restoreEntry("outside", FILESYSTEM_ROOT_ID.DOCUMENTS, "Outside", "outside", 11);
+  expect((await service.resolveShortcut(link.id)).id).toBe("outside");
+  await repository.purgeEntry("outside");
+  expect(await repository.findEntry(link.id)).toMatchObject({ targetEntryId: "outside" });
+  await expect(service.resolveShortcut(link.id)).rejects.toMatchObject({ code: "FILESYSTEM_SHORTCUT_TARGET_UNAVAILABLE" });
+  expect((await db.prepare("PRAGMA foreign_key_check").all()).results).toEqual([]);
+});

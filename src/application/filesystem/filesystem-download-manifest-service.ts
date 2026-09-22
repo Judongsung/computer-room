@@ -28,6 +28,7 @@ export class FilesystemDownloadManifestService
     const rootedEntries = await this.repository.listActiveSubtrees(rootIds);
     const grouped = groupByRoot(rootedEntries);
     const entries: FilesystemArchiveSource[] = [];
+    const skippedShortcutIds: string[] = [];
     const skippedWidgetIds: string[] = [];
 
     for (const rootId of rootIds) {
@@ -51,6 +52,9 @@ export class FilesystemDownloadManifestService
         const entry = toPublicEntry(record);
         const path = resolveArchivePath(record, root, subtree, paths);
         switch (entry.kind) {
+          case FILESYSTEM_ENTRY_KIND.SHORTCUT:
+            skippedShortcutIds.push(entry.id);
+            break;
           case FILESYSTEM_ENTRY_KIND.WIDGET:
             skippedWidgetIds.push(entry.id);
             break;
@@ -92,6 +96,7 @@ export class FilesystemDownloadManifestService
       totalFileCount: files.length,
       totalBytes: files.reduce((total, file) => total + file.size, 0),
       skippedWidgetIds,
+      skippedShortcutIds,
     };
   }
 }

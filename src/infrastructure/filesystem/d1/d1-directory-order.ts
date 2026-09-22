@@ -19,7 +19,7 @@ const SORT_EXPRESSION_SQL = {
   [FILESYSTEM_SORT_FIELD.CREATED_AT]: "e.created_at",
   [FILESYSTEM_SORT_FIELD.UPDATED_AT]: "e.updated_at",
   [FILESYSTEM_SORT_FIELD.TYPE]:
-    `CASE WHEN e.kind = '${FILESYSTEM_ENTRY_KIND.WIDGET}' ` +
+    `CASE WHEN e.kind = '${FILESYSTEM_ENTRY_KIND.SHORTCUT}' THEN 'shortcut' WHEN e.kind = '${FILESYSTEM_ENTRY_KIND.WIDGET}' ` +
     "THEN 'widget:' || COALESCE(w.type, '') " +
     "ELSE LOWER(TRIM(CASE " +
     "WHEN INSTR(f.content_type, ';') > 0 " +

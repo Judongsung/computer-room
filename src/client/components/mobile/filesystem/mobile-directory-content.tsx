@@ -1,3 +1,4 @@
+import { SHORTCUT_COPY } from "@client/content/ko/filesystem/shortcut";
 import { FilesystemScrollRetention } from "@client/components/filesystem/filesystem-scroll-retention";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
@@ -102,7 +103,7 @@ export function MobileDirectoryContent({
                       ? MOBILE_COPY.DIRECTORY_KIND
                       : entry.kind === FILESYSTEM_ENTRY_KIND.FILE
                         ? `${entry.contentType} · ${formatFileSize(entry.size)}`
-                        : MOBILE_COPY.WIDGET_KIND}
+                        : entry.kind === FILESYSTEM_ENTRY_KIND.SHORTCUT ? SHORTCUT_COPY.KIND : MOBILE_COPY.WIDGET_KIND}
                   </small>
                 </span>
               </button>

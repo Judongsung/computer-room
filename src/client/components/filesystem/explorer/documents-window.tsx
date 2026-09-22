@@ -1,3 +1,4 @@
+import { ShortcutCreateDialog } from "@client/components/desktop/filesystem/shortcut-create-dialog";
 import { useState } from "react";
 import { FILESYSTEM_SEARCH_COPY } from "@client/content/ko/filesystem/search";
 import { SearchForm } from "@client/components/filesystem/search/search-form";
@@ -154,6 +155,7 @@ export function DocumentsWindow({
           </aside>
         ) : null}
         <div className="explorer-search-main">
+          {query && controller.error ? <p className="explorer-message" role="alert">{controller.error}</p> : null}
           {query ? (
             <ExplorerSearchResults
               gateway={gateway}
@@ -229,6 +231,10 @@ export function DocumentsWindow({
           )}
         </div>
       </div>
+      {controller.dialog === "shortcut" && selected ? <ShortcutCreateDialog
+        key={selected.id} gateway={gateway} entry={selected} desktopCapacity={desktopCapacity}
+        onCreated={() => { controller.setDialog(null); onFilesystemChanged(); }}
+        onCancel={() => controller.setDialog(null)} /> : null}
       {controller.dialog === "create" && currentDirectoryId ? (
         <NameDialog
           title={FILESYSTEM_COPY.CREATE_FOLDER_TITLE}

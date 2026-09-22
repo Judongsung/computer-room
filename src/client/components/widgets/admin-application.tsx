@@ -247,7 +247,7 @@ function PublicationCheckbox({
   return (
     <XpCheckbox
       checked={item.publicationState === GUEST_PUBLICATION_STATE.PUBLIC}
-      disabled={busy}
+      disabled={busy || item.entry.kind === FILESYSTEM_ENTRY_KIND.SHORTCUT}
       indeterminate={partial}
       label={`${item.entry.name} ${GUEST_ACCESS_COPY.STATE[item.publicationState]}`}
       labelVisuallyHidden

@@ -4,6 +4,7 @@ export interface FilesystemEntryRow {
   kind: string;
   name: string;
   name_key: string;
+  target_entry_id: string | null;
   file_id: string | null;
   widget_id: string | null;
   restore_parent_id: string | null;

@@ -56,10 +56,35 @@ export interface FilesystemWidgetEntry {
   readonly desktopOrder: number | null;
 }
 
+export interface FilesystemShortcutEntry {
+  readonly id: string;
+  readonly parentId: string;
+  readonly kind: typeof FILESYSTEM_ENTRY_KIND.SHORTCUT;
+  readonly name: string;
+  readonly targetEntryId: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly desktopOrder: number | null;
+}
+
+export interface CreateFilesystemShortcutInput {
+  readonly targetEntryId: string;
+  readonly parentId: string;
+  readonly name: string;
+  readonly desktopPlacement?: DesktopPlacement;
+}
+
+export interface NewFilesystemShortcut extends NewFilesystemDirectory {
+  readonly targetEntryId: string;
+}
+
+export type FilesystemShortcutTarget = FilesystemDirectoryEntry | FilesystemFileEntry | FilesystemWidgetEntry;
+
 export type FilesystemEntry =
   | FilesystemDirectoryEntry
   | FilesystemFileEntry
-  | FilesystemWidgetEntry;
+  | FilesystemWidgetEntry
+  | FilesystemShortcutEntry;
 
 export interface FilesystemBreadcrumb {
   readonly id: string;
@@ -93,6 +118,7 @@ export interface FilesystemEntryRecord {
   readonly kind: FilesystemEntryKind;
   readonly name: string;
   readonly nameKey: string;
+  readonly targetEntryId: string | null;
   readonly fileId: string | null;
   readonly widgetId: string | null;
   readonly restoreParentId: string | null;

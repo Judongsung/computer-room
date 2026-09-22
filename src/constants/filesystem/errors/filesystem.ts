@@ -3,6 +3,16 @@ import { HTTP_STATUS } from "@/constants/platform/http";
 import type { AppErrorDefinition } from "@/types/platform/error";
 
 export const FILESYSTEM_ERRORS = {
+  SHORTCUT_TARGET_UNAVAILABLE: {
+    status: HTTP_STATUS.NOT_FOUND,
+    code: "FILESYSTEM_SHORTCUT_TARGET_UNAVAILABLE",
+    message: "바로가기의 원본이 삭제되었거나 사용할 수 없습니다.",
+  },
+  INVALID_SHORTCUT_TARGET: {
+    status: HTTP_STATUS.BAD_REQUEST,
+    code: "FILESYSTEM_INVALID_SHORTCUT_TARGET",
+    message: "이 항목의 바로가기는 만들 수 없습니다.",
+  },
   INVALID_SEARCH: {
     status: HTTP_STATUS.BAD_REQUEST,
     code: "FILESYSTEM_INVALID_SEARCH",

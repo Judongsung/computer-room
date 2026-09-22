@@ -108,7 +108,7 @@ integration_image_upload_log_settings
 |---|---|---:|---|---|---|
 | `id` | `TEXT` | NO | - | 기본 키 | 파일 시스템 항목 ID다. |
 | `parent_id` | `TEXT` | YES | `NULL` | `filesystem_entries.id` FK, `ON DELETE CASCADE` | 부모 폴더다. 시스템 루트는 부모가 없다. |
-| `kind` | `TEXT` | NO | - | `directory`, `file`, `widget` | 항목 종류다. |
+| `kind` | `TEXT` | NO | - | `directory`, `file`, `widget`, `shortcut` | 항목 종류다. |
 | `name` | `TEXT` | NO | - | - | 사용자에게 표시하는 이름이다. |
 | `name_key` | `TEXT` | NO | - | 활성 형제 이름 UNIQUE에 사용 | 대소문자를 무시한 이름 충돌 검사에 사용하는 정규화 키다. |
 | `file_id` | `TEXT` | YES | `NULL` | UNIQUE, `files.id` FK, `ON DELETE CASCADE` | 일반 파일의 메타데이터 참조다. |
@@ -116,17 +116,19 @@ integration_image_upload_log_settings
 | `restore_parent_id` | `TEXT` | YES | `NULL` | `filesystem_entries.id` FK, `ON DELETE SET NULL` | 휴지통에서 복원할 때 사용하는 원래 부모다. |
 | `restore_path` | `TEXT` | YES | `NULL` | - | 휴지통에 표시하고 복원에 참고하는 원래 경로다. |
 | `trashed_at` | `INTEGER` | YES | `NULL` | - | 최상위 항목이 휴지통으로 이동한 시각이다. |
+| `target_entry_id` | `TEXT` | YES | `NULL` | 외래 키 없음 | 바로가기의 원본 항목 ID. 원본 삭제 후에도 보존한다. |
 | `deletion_started_at` | `INTEGER` | YES | `NULL` | - | 휴지통 최상위 항목의 최초 영구 삭제 시작 시각. 기록 후 복원할 수 없으며 수동 삭제 재시도에도 유지한다. |
 | `created_at` | `INTEGER` | NO | - | - | 항목 생성 시각이다. |
 | `updated_at` | `INTEGER` | NO | - | - | 마지막 메타데이터 변경 시각이다. |
 
 ### 종류별 무결성 규칙
 
-| `kind` | `file_id` | `widget_id` |
-|---|---|---|
-| `directory` | 반드시 `NULL` | 반드시 `NULL` |
-| `file` | 필수 | 반드시 `NULL` |
-| `widget` | 반드시 `NULL` | 필수 |
+| `kind` | `file_id` | `widget_id` | `target_entry_id` |
+|---|---|---|---|
+| `directory` | 반드시 `NULL` | 반드시 `NULL` | 반드시 `NULL` |
+| `file` | 필수 | 반드시 `NULL` | 반드시 `NULL` |
+| `widget` | 반드시 `NULL` | 필수 | 반드시 `NULL` |
+| `shortcut` | 반드시 `NULL` | 반드시 `NULL` | 필수 |
 
 ### 시스템 루트 행
 
@@ -457,3 +459,16 @@ Cloudflare Access audience 값은 이 테이블에 저장하지 않는다.
 `idx_checklist_period_states_end`는 보관 정리를 지원한다. 기존 보관 작업에서
 종료 시각이 보관 경계 이하인 기간 상태만 삭제하여 진행 중인 월간 상태를 보호한다.
 초기화를 위한 Cron이나 조회 시 DB 쓰기는 없다.
+
+
+### 바로가기 항목 (0018)
+
+`filesystem_entries.kind`에 `shortcut`, nullable `target_entry_id`를 추가한다.
+바로가기는 `target_entry_id`를 필수로 가지며 `file_id`·`widget_id`는 null이다.
+기존 종류는 `target_entry_id`가 null이어야 한다. 원본 영구 삭제 후에도 연결 정보를
+보존하기 위해 대상 ID에 외래 키를 설정하지 않는다. 생성·열기 시 application에서
+대상 종류와 활성 루트 소속을 검증한다. 대상 재귀 추적과 R2 데이터 복제는 하지 않는다.
+
+0018은 종류 제약을 변경하기 위해 파일 시스템 테이블을 재구성한다. 기존 파일 시스템
+행, 바탕 화면 순서, 폴더 정렬, 모바일 설정, 게스트 공개 행을 별도 테이블에 보존한 뒤
+복원한다. 복원 부모와 삭제 시작 시각도 유지한다. 기존 마이그레이션은 수정하지 않는다.

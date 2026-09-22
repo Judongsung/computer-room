@@ -12,6 +12,7 @@ export function mapFilesystemEntryRow(
   if (
     row.kind !== FILESYSTEM_ENTRY_KIND.DIRECTORY &&
     row.kind !== FILESYSTEM_ENTRY_KIND.FILE &&
+    row.kind !== FILESYSTEM_ENTRY_KIND.SHORTCUT &&
     row.kind !== FILESYSTEM_ENTRY_KIND.WIDGET
   ) {
     throw new AppError(FILESYSTEM_ERRORS.INVALID_STORED_ENTRY);
@@ -41,6 +42,7 @@ export function mapFilesystemEntryRow(
     kind: row.kind,
     name: row.name,
     nameKey: row.name_key,
+    targetEntryId: row.target_entry_id,
     fileId: row.file_id,
     widgetId: row.widget_id,
     restoreParentId: row.restore_parent_id,

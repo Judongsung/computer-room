@@ -8,7 +8,9 @@ import type {
 } from "@/types/filesystem/filesystem";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 
-export interface FilesystemEntryGateway {
+import type { FilesystemShortcutUseCases } from "@/types/filesystem/services/shortcut-service";
+
+export interface FilesystemEntryGateway extends FilesystemShortcutUseCases {
   createDirectory(
     parentId: string,
     name: string,

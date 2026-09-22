@@ -27,6 +27,7 @@ const IDLE_STATE: FilesystemDownloadState = {
   totalFiles: 0,
   transferredBytes: 0,
   totalBytes: 0,
+  skippedShortcutCount: 0,
   skippedWidgetCount: 0,
   error: null,
 };
@@ -38,7 +39,7 @@ export function useFilesystemDownload(gateway: FilesystemDownloadGateway) {
   const start = useCallback(
     async (entries: readonly FilesystemEntry[]): Promise<void> => {
       const downloadable = entries.filter(
-        (entry) => entry.kind !== FILESYSTEM_ENTRY_KIND.WIDGET,
+        (entry) => entry.kind !== FILESYSTEM_ENTRY_KIND.WIDGET && entry.kind !== FILESYSTEM_ENTRY_KIND.SHORTCUT,
       );
       if (downloadable.length === 0) {
         setState({
@@ -98,6 +99,7 @@ export function useFilesystemDownload(gateway: FilesystemDownloadGateway) {
           transferredBytes: 0,
           totalBytes: manifest.totalBytes,
           skippedWidgetCount: manifest.skippedWidgetIds.length,
+          skippedShortcutCount: manifest.skippedShortcutIds.length,
           error: null,
         });
         const writable = await handle.createWritable();

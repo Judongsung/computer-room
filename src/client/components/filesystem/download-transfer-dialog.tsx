@@ -1,3 +1,4 @@
+import { SHORTCUT_COPY } from "@client/content/ko/filesystem/shortcut";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { FILESYSTEM_DOWNLOAD_STATUS } from "@client/constants/filesystem/download";
 import { DESKTOP_MODAL_VARIANT } from "@client/constants/desktop/modal";
@@ -51,6 +52,7 @@ export function DownloadTransferDialog({
             )}
           </small>
         ) : null}
+        {state.skippedShortcutCount > 0 ? <small>{SHORTCUT_COPY.SKIPPED(state.skippedShortcutCount)}</small> : null}
         {state.skippedWidgetCount > 0 ? (
           <small>
             {FILESYSTEM_COPY.DOWNLOAD_SKIPPED_WIDGETS(

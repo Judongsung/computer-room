@@ -9,6 +9,7 @@ import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
 import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
 import type {
+  FilesystemShortcutEntry,
   FilesystemDirectoryEntry,
   FilesystemDirectoryPage,
   FilesystemEntry,
@@ -53,7 +54,12 @@ export function isTrashPage(value: unknown): value is FilesystemTrashPage {
 }
 
 export function isFilesystemEntry(value: unknown): value is FilesystemEntry {
-  return isDirectoryEntry(value) || isFileEntry(value) || isWidgetEntry(value);
+  return isDirectoryEntry(value) || isFileEntry(value) || isWidgetEntry(value) || isShortcutEntry(value);
+}
+
+export function isShortcutEntry(value: unknown): value is FilesystemShortcutEntry {
+  return isBaseEntry(value) && value.kind === FILESYSTEM_ENTRY_KIND.SHORTCUT &&
+    typeof value.parentId === "string" && typeof value.targetEntryId === "string";
 }
 
 export function isDirectoryEntry(value: unknown): value is FilesystemDirectoryEntry {
@@ -98,6 +104,7 @@ export function isDownloadManifest(value: unknown): value is FilesystemDownloadM
         entry.downloadUrl ===
           `${FILESYSTEM_API_PATHS.FILES}/${encodeURIComponent(entry.id)}/${API_PATH_SEGMENTS.DOWNLOAD}`;
     }) && isNonNegativeInteger(value.totalFileCount) && isNonNegativeInteger(value.totalBytes) &&
+    Array.isArray(value.skippedShortcutIds) && value.skippedShortcutIds.every(isString) &&
     Array.isArray(value.skippedWidgetIds) && value.skippedWidgetIds.every(isString);
 }
 

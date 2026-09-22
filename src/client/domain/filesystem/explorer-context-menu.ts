@@ -1,3 +1,4 @@
+import { SHORTCUT_COPY } from "@client/content/ko/filesystem/shortcut";
 import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
@@ -12,6 +13,7 @@ import {
 import type { XpContextMenuItem } from "@client/types/context-menu/context-menu";
 
 interface ExplorerEntryMenuActions {
+  readonly createShortcut: () => void;
   readonly open: () => void;
   readonly download: () => void | Promise<unknown>;
   readonly rename: () => void;
@@ -38,7 +40,11 @@ export function buildExplorerEntryContextMenu(
       XP_CONTEXT_MENU_COMMAND_ID.DOWNLOAD,
       FILESYSTEM_COPY.DOWNLOAD,
       actions.download,
-      entries.every((entry) => entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET),
+      entries.every((entry) => entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET || entry.kind === FILESYSTEM_ENTRY_KIND.SHORTCUT),
+    ),
+    contextMenuCommand(
+      XP_CONTEXT_MENU_COMMAND_ID.CREATE_SHORTCUT, SHORTCUT_COPY.CREATE, actions.createShortcut,
+      entries.length !== 1 || entries[0]?.kind === FILESYSTEM_ENTRY_KIND.SHORTCUT,
     ),
     contextMenuSeparator("explorer-entry-separator-1"),
     contextMenuCommand(

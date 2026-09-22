@@ -26,6 +26,8 @@ export interface MobileShellController {
   readonly preferencesLoading: boolean;
   readonly preferencesSaving: boolean;
   readonly preferencesError: string | null;
+  readonly shortcutError: string | null;
+  readonly clearShortcutError: () => void;
   readonly pendingDownload: FilesystemFileEntry | null;
   readonly draftConflictOpen: boolean;
   openSearch(directory: SearchDirectory): void;

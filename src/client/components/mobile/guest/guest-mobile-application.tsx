@@ -64,6 +64,7 @@ function GuestMobileContent({ session, gateway }: GuestApplicationProps) {
     navigation.push({ kind: MOBILE_ACTIVITY_KIND.DIRECTORY, directoryId, title });
   };
   const openEntry = (entry: FilesystemEntry, directoryId: string): void => {
+    if (entry.kind === FILESYSTEM_ENTRY_KIND.SHORTCUT) return;
     setMenuOpen(false);
     if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
       openDirectory(entry.id, entry.name);

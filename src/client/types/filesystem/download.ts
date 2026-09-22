@@ -9,6 +9,7 @@ export interface FilesystemDownloadState {
   readonly totalFiles: number;
   readonly transferredBytes: number;
   readonly totalBytes: number;
+  readonly skippedShortcutCount: number;
   readonly skippedWidgetCount: number;
   readonly error: string | null;
 }

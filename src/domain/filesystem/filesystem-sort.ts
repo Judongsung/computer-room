@@ -106,6 +106,7 @@ function entryDirectoryRank(entry: FilesystemEntryRecord): number {
 
 function entryTypeKey(entry: FilesystemEntryRecord): string {
   if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) return "";
+  if (entry.kind === FILESYSTEM_ENTRY_KIND.SHORTCUT) return "shortcut";
   if (entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET) {
     return `widget:${entry.widgetType ?? ""}`;
   }

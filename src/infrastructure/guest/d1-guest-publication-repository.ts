@@ -35,7 +35,7 @@ const VISIBLE_ENTRIES_CTE = `WITH RECURSIVE visible_entries(id) AS (
   SELECT publication.entry_id
   FROM guest_publications publication
   JOIN filesystem_entries published ON published.id = publication.entry_id
-  WHERE published.trashed_at IS NULL
+  WHERE published.trashed_at IS NULL AND published.kind != '${FILESYSTEM_ENTRY_KIND.SHORTCUT}'
   UNION
   SELECT entry.parent_id
   FROM filesystem_entries entry

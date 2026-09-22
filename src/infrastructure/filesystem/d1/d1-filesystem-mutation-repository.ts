@@ -10,6 +10,7 @@ import type {
   FilesystemEntryRecord,
   NewExactFilesystemDirectory,
   NewFilesystemDirectory,
+  NewFilesystemShortcut,
   NewFilesystemFile,
   NewFilesystemWidget,
 } from "@/types/filesystem/filesystem";
@@ -25,6 +26,19 @@ export class D1FilesystemMutationRepository
   implements FilesystemMutationRepository
 {
   constructor(private readonly database: D1Database) {}
+
+  async insertShortcut(shortcut: NewFilesystemShortcut): Promise<void> {
+    const statements = [this.database.prepare(
+      `INSERT INTO filesystem_entries
+       (id, parent_id, kind, name, name_key, target_entry_id, created_at, updated_at)
+       VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?7)`,
+    ).bind(shortcut.id, shortcut.parentId, FILESYSTEM_ENTRY_KIND.SHORTCUT,
+      shortcut.name, shortcut.nameKey, shortcut.targetEntryId, shortcut.createdAt)];
+    if (shortcut.desktopOrder !== undefined) {
+      statements.push(desktopEntryOrderInsert(this.database, shortcut.id, shortcut.desktopOrder));
+    }
+    await this.database.batch(statements);
+  }
 
   async insertDirectory(directory: NewFilesystemDirectory): Promise<void> {
     const statements = [

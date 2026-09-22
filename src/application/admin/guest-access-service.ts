@@ -76,6 +76,9 @@ export class GuestAccessService implements GuestAccessUseCases {
       notFound: GUEST_ACCESS_ERRORS.ENTRY_NOT_FOUND,
       inactive: GUEST_ACCESS_ERRORS.ENTRY_NOT_ACTIVE,
     });
+    if (entry.kind === FILESYSTEM_ENTRY_KIND.SHORTCUT) {
+      throw new AppError(GUEST_ACCESS_ERRORS.ENTRY_TYPE_NOT_SUPPORTED);
+    }
     if (
       entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET &&
       (!entry.widgetType || !PUBLISHABLE_WIDGET_TYPES.has(entry.widgetType))

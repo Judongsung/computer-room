@@ -337,6 +337,14 @@ describe("singleton widget migrations", () => {
         ? before[index]!.map((row) => ({ ...row, deletion_started_at: null }))
         : before[index]);
     }
+    await database.prepare("INSERT INTO guest_publications(entry_id, published_at) VALUES (?1, 5)").bind(MEMO_ENTRY_ID).run();
+    const preservedTables = ["filesystem_entries", "files", "dashboard_widgets", "memo_widgets", "checklist_items", "desktop_entry_order", "filesystem_directory_preferences", "mobile_preferences", "guest_publications"];
+    const preserved = await Promise.all(preservedTables.map((table) => rows(database, `SELECT * FROM ${table} ORDER BY rowid`)));
+    await applyD1Migrations(database, [migrationByName(migrations, "0018_filesystem-shortcuts")]);
+    for (const [index, table] of preservedTables.entries()) {
+      expect(await rows(database, `SELECT * FROM ${table} ORDER BY rowid`)).toEqual(table === "filesystem_entries"
+        ? preserved[index]!.map((row) => ({ ...row, target_entry_id: null })) : preserved[index]);
+    }
     await expect(rows(database, "PRAGMA foreign_key_check")).resolves.toEqual([]);
   });
 });

@@ -1,6 +1,6 @@
 import { FilesystemScrollRetention } from "@client/components/filesystem/filesystem-scroll-retention";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
-import { useState, type FormEvent } from "react";
+import { useState, type ReactNode, type FormEvent } from "react";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
@@ -100,6 +100,11 @@ export function ConfirmDialog({
 }
 
 interface DirectoryPickerDialogProps {
+  readonly title?: string;
+  readonly selectLabel?: string;
+  readonly initialDirectoryId?: string;
+  readonly extraContent?: ReactNode;
+  readonly selectDisabled?: boolean;
   readonly gateway: FilesystemGateway;
   readonly excludedEntryIds?: readonly string[];
   readonly busy: boolean;
@@ -108,25 +113,31 @@ interface DirectoryPickerDialogProps {
 }
 
 export function DirectoryPickerDialog({
+  title = FILESYSTEM_COPY.MOVE_TITLE,
+  selectLabel = FILESYSTEM_COPY.MOVE_HERE,
+  initialDirectoryId = FILESYSTEM_ROOT_ID.DOCUMENTS,
+  extraContent,
+  selectDisabled = false,
   gateway,
   excludedEntryIds = [],
   busy,
   onSelect,
   onCancel,
 }: DirectoryPickerDialogProps) {
-  const [directoryId, setDirectoryId] = useState<string>(FILESYSTEM_ROOT_ID.DOCUMENTS);
+  const [directoryId, setDirectoryId] = useState<string>(initialDirectoryId);
   const { page, error, isLoadingMore, retry, loadMore } = usePaginatedDirectory({
     gateway, directoryId, errorFallback: FILESYSTEM_COPY.LOAD_FAILED,
   });
 
   return (
     <DesktopModal
-      title={FILESYSTEM_COPY.MOVE_TITLE}
+      title={title}
       iconPath={DESKTOP_ASSET_PATHS.FOLDER_ICON}
       onRequestClose={onCancel}
       closeDisabled={busy}
     >
       <section className="filesystem-dialog filesystem-dialog--picker">
+        {extraContent}
         <div className="filesystem-save-roots">
           <button
             type="button"
@@ -195,10 +206,10 @@ export function DirectoryPickerDialog({
         <div className="filesystem-dialog__actions">
           <button
             type="button"
-            disabled={busy || isLoadingMore || !page}
+            disabled={busy || selectDisabled || isLoadingMore || !page}
             onClick={() => page && onSelect(page.directory.id)}
           >
-            {busy ? FILESYSTEM_COPY.BUSY : FILESYSTEM_COPY.MOVE_HERE}
+            {busy ? FILESYSTEM_COPY.BUSY : selectLabel}
           </button>
           <button type="button" disabled={busy} onClick={onCancel}>
             {FILESYSTEM_COPY.CANCEL}

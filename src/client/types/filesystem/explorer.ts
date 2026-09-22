@@ -6,7 +6,7 @@ import type {
 } from "@client/types/filesystem/filesystem";
 import type { LocalUploadNode } from "@client/types/filesystem/upload";
 
-export type DocumentsDialog = "create" | "rename" | "move" | null;
+export type DocumentsDialog = "create" | "rename" | "move" | "shortcut" | null;
 
 export interface DocumentsWindowProps
   extends Omit<

@@ -2,12 +2,14 @@ export const FILESYSTEM_ENTRY_KIND = {
   DIRECTORY: "directory",
   FILE: "file",
   WIDGET: "widget",
+  SHORTCUT: "shortcut",
 } as const;
 
 export const FILESYSTEM_ENTRY_KIND_VALUES = [
   FILESYSTEM_ENTRY_KIND.DIRECTORY,
   FILESYSTEM_ENTRY_KIND.FILE,
   FILESYSTEM_ENTRY_KIND.WIDGET,
+  FILESYSTEM_ENTRY_KIND.SHORTCUT,
 ] as const;
 
 export const FILESYSTEM_ROOT_ID = {

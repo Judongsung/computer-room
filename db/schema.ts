@@ -130,6 +130,7 @@ export const filesystemEntries = sqliteTable(
       (): AnySQLiteColumn => filesystemEntries.id,
       { onDelete: "set null" },
     ),
+    targetEntryId: text("target_entry_id"),
     restorePath: text("restore_path"),
     trashedAt: integer("trashed_at"),
     deletionStartedAt: integer("deletion_started_at"),
@@ -143,7 +144,7 @@ export const filesystemEntries = sqliteTable(
     ),
     check(
       "filesystem_entries_file_check",
-      sql`(${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.DIRECTORY}'`)} AND ${table.fileId} IS NULL AND ${table.widgetId} IS NULL) OR (${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.FILE}'`)} AND ${table.fileId} IS NOT NULL AND ${table.widgetId} IS NULL) OR (${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.WIDGET}'`)} AND ${table.fileId} IS NULL AND ${table.widgetId} IS NOT NULL)`,
+      sql`(${table.kind} != ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.SHORTCUT}'`)} AND ${table.targetEntryId} IS NULL AND ((${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.DIRECTORY}'`)} AND ${table.fileId} IS NULL AND ${table.widgetId} IS NULL) OR (${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.FILE}'`)} AND ${table.fileId} IS NOT NULL AND ${table.widgetId} IS NULL) OR (${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.WIDGET}'`)} AND ${table.fileId} IS NULL AND ${table.widgetId} IS NOT NULL))) OR (${table.kind} = ${sql.raw(`'${FILESYSTEM_ENTRY_KIND.SHORTCUT}'`)} AND ${table.targetEntryId} IS NOT NULL AND ${table.fileId} IS NULL AND ${table.widgetId} IS NULL)`,
     ),
     uniqueIndex("uq_filesystem_entries_active_parent_name")
       .on(table.parentId, table.nameKey)

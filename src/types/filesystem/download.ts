@@ -23,6 +23,7 @@ export interface FilesystemArchiveSourceManifest {
   readonly entries: readonly FilesystemArchiveSource[];
   readonly totalFileCount: number;
   readonly totalBytes: number;
+  readonly skippedShortcutIds: readonly string[];
   readonly skippedWidgetIds: readonly string[];
 }
 

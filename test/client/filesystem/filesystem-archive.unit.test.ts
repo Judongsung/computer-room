@@ -83,6 +83,7 @@ function manifest(): FilesystemDownloadManifest {
     ],
     totalFileCount: 1,
     totalBytes: 4,
+    skippedShortcutIds: [],
     skippedWidgetIds: [],
   };
 }

@@ -4,6 +4,7 @@ import type {
   FilesystemEntryRecord,
   FilesystemFileObject,
   NewFilesystemDirectory,
+  NewFilesystemShortcut,
   NewExactFilesystemDirectory,
   NewFilesystemFile,
   NewFilesystemWidget,
@@ -42,6 +43,7 @@ export interface DesktopEntryOrderRepository {
 }
 
 export interface FilesystemMutationRepository {
+  insertShortcut(shortcut: NewFilesystemShortcut): Promise<void>;
   insertDirectory(directory: NewFilesystemDirectory): Promise<void>;
   ensureDirectory(
     directory: NewExactFilesystemDirectory,

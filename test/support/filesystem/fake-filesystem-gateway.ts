@@ -9,7 +9,27 @@ import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-de
 import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 
+import type { CreateFilesystemShortcutInput, FilesystemShortcutEntry, FilesystemShortcutTarget } from "@/types/filesystem/filesystem";
+
 export class FakeFilesystemGateway implements FilesystemGateway {
+  async createShortcut(input: CreateFilesystemShortcutInput): Promise<FilesystemShortcutEntry> {
+    const entry: FilesystemShortcutEntry = {
+      id: `shortcut-${this.nextId++}`, parentId: input.parentId, kind: FILESYSTEM_ENTRY_KIND.SHORTCUT,
+      name: input.name, targetEntryId: input.targetEntryId, createdAt: this.root.createdAt,
+      updatedAt: this.root.updatedAt, desktopOrder: input.parentId === this.desktopRoot.id ? this.entries.length : null,
+    };
+    this.entries.push(entry);
+    return entry;
+  }
+
+  async resolveShortcut(id: string): Promise<FilesystemShortcutTarget> {
+    const shortcut = this.entries.find((entry) => entry.id === id);
+    const target = shortcut?.kind === FILESYSTEM_ENTRY_KIND.SHORTCUT
+      ? this.entries.find((entry) => entry.id === shortcut.targetEntryId) : undefined;
+    if (!target || target.kind === FILESYSTEM_ENTRY_KIND.SHORTCUT) throw new Error("Shortcut target unavailable");
+    return target;
+  }
+
   async search(query: FilesystemSearchQuery, offset = 0): Promise<FilesystemSearchPage> {
     const matching = this.entries.filter((entry) =>
       entry.name.toLocaleLowerCase("ko-KR").includes(query.q.toLocaleLowerCase("ko-KR")) &&
@@ -253,6 +273,7 @@ export class FakeFilesystemGateway implements FilesystemGateway {
       })),
       totalFileCount: files.length,
       totalBytes: files.reduce((total, entry) => total + entry.size, 0),
+      skippedShortcutIds: [],
       skippedWidgetIds: selected
         .filter((entry) => entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET)
         .map((entry) => entry.id),

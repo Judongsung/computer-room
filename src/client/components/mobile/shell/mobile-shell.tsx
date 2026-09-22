@@ -1,3 +1,6 @@
+import { MobileDialog } from "@client/components/mobile/shared/mobile-dialog";
+import { SHORTCUT_COPY } from "@client/content/ko/filesystem/shortcut";
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import type { ChecklistRetentionUseCases } from "@/types/widgets/checklist/retention";
 import { MobileUploadDialog } from "@client/components/mobile/filesystem/manage/mobile-upload-dialog";
 import type { SessionInfo } from "@/types/platform/auth";
@@ -71,6 +74,10 @@ export function MobileShell({
       />
       <MobileShellMenu session={session} controller={controller} />
       <MobileShellDialogLayer controller={controller} />
+      {controller.shortcutError ? <MobileDialog title={SHORTCUT_COPY.KIND}
+        actions={<button type="button" onClick={controller.clearShortcutError}>{FILESYSTEM_COPY.CONFIRM}</button>}>
+        <p role="alert">{controller.shortcutError}</p>
+      </MobileDialog> : null}
       {controller.transfer.state.isOpen ? <MobileUploadDialog transfer={controller.transfer} /> : null}
     </div>
   );

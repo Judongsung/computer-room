@@ -136,7 +136,7 @@ export class D1FilesystemQueryRepository
            WHERE child.trashed_at IS NULL
          )
          ${ROOTED_FILESYSTEM_ENTRY_SELECT}
-         WHERE e.kind = ?4
+         WHERE e.kind = '${FILESYSTEM_ENTRY_KIND.SHORTCUT}' OR e.kind = ?4
             OR (e.kind = ?5 AND f.status = ?6)
             OR (e.kind = ?7 AND w.id IS NOT NULL)
          ORDER BY subtree.root_id, e.id`,
@@ -178,7 +178,7 @@ export class D1FilesystemQueryRepository
       .prepare(
         `${FILESYSTEM_ENTRY_SELECT}
          WHERE e.parent_id = ?1 AND e.trashed_at IS NULL
-           AND (e.kind = ?2 OR (e.kind = ?3 AND f.status = ?4)
+           AND (e.kind = '${FILESYSTEM_ENTRY_KIND.SHORTCUT}' OR e.kind = ?2 OR (e.kind = ?3 AND f.status = ?4)
                 OR (e.kind = ?5 AND w.id IS NOT NULL))
          ORDER BY ${orderClause}
          LIMIT ?6 OFFSET ?7`,

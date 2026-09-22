@@ -96,3 +96,11 @@ namespace ID는 같은 계정의 다른 Rate Limiting 바인딩과 겹치지 않
 이 제한은 Cloudflare 처리 위치별로 적용되는 완화된 제한이며 전 세계 요청을
 합산하는 정확한 할당량은 아닙니다.
 [Workers Rate Limiting](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
+
+
+### 바로가기 제외
+
+바로가기는 소유자 전용이다. 공개 관리에서 직접 공개할 수 없고 서버도 거부한다.
+폴더 일괄 공개는 바로가기를 제외하며 연결 대상의 공개 상태를 변경하지 않는다.
+게스트 목록과 경로 가시성에서도 제외한다. 원본이 별도로 공개되어 있다면 원본의
+기존 게스트 경로로만 접근할 수 있다.

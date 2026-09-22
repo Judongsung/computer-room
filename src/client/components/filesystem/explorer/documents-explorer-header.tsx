@@ -87,7 +87,7 @@ export function DocumentsExplorerHeader({
       canSearch: searchOpen || Boolean(page && !busy),
       canMutate: !searching && Boolean(page?.directory.id),
       canDownload: !searching && selectedEntries.some(
-        (entry) => entry.kind !== FILESYSTEM_ENTRY_KIND.WIDGET,
+        (entry) => entry.kind !== FILESYSTEM_ENTRY_KIND.WIDGET && entry.kind !== FILESYSTEM_ENTRY_KIND.SHORTCUT,
       ),
       canRename: !searching && Boolean(selected),
       canShowProperties: !searching && Boolean(propertiesTarget),

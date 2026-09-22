@@ -11,6 +11,8 @@ export const API_PATHS = {
 } as const;
 
 export const API_PATH_SEGMENTS = {
+  SHORTCUTS: "shortcuts",
+  TARGET: "target",
   SEARCH: "search",
   FILESYSTEM: "filesystem",
   MEMO: "memo",
@@ -48,6 +50,7 @@ export const API_PATH_SEGMENTS = {
 } as const;
 
 export const FILESYSTEM_API_PATHS = {
+  SHORTCUTS: `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.SHORTCUTS}`,
   SEARCH: `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.SEARCH}`,
   ENTRIES: `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.ENTRIES}`,
   FILES: `${API_PATHS.FILESYSTEM}/${API_PATH_SEGMENTS.FILES}`,

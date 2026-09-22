@@ -28,7 +28,8 @@ export function FilesystemEntryIcon({
   const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
   const [thumbnailVisible, setThumbnailVisible] = useState(false);
   const [thumbnailRequested, setThumbnailRequested] = useState(false);
-  const fallbackPath = customFallbackPath ?? fallbackIconPath(entry);
+  const fallbackPath = entry.kind === FILESYSTEM_ENTRY_KIND.SHORTCUT
+    ? DESKTOP_ASSET_PATHS.SHORTCUT_ICON : customFallbackPath ?? fallbackIconPath(entry);
   const canUseThumbnail =
     entry.kind === FILESYSTEM_ENTRY_KIND.FILE &&
     isThumbnailSourceSupported(entry.contentType, entry.size);

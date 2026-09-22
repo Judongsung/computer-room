@@ -13,6 +13,7 @@ export const XP_CONTEXT_MENU_CLASS_NAME = {
 } as const;
 
 export const XP_CONTEXT_MENU_COMMAND_ID = {
+  CREATE_SHORTCUT: "create-shortcut",
   OPEN: "open",
   OPEN_NEW_WINDOW: "open-new-window",
   OPEN_NEW_TAB: "open-new-tab",

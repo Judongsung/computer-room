@@ -5,6 +5,7 @@ import type {
   FilesystemFileObject,
   NewExactFilesystemDirectory,
   NewFilesystemDirectory,
+  NewFilesystemShortcut,
   NewFilesystemFile,
   NewFilesystemWidget,
   RootedFilesystemEntryRecord,
@@ -87,6 +88,10 @@ export class D1FilesystemRepository implements FilesystemRepository {
 
   replaceDesktopEntryOrder(entryIds: readonly string[]): Promise<void> {
     return this.desktopOrder.replaceDesktopEntryOrder(entryIds);
+  }
+
+  insertShortcut(shortcut: NewFilesystemShortcut): Promise<void> {
+    return this.mutations.insertShortcut(shortcut);
   }
 
   insertDirectory(directory: NewFilesystemDirectory): Promise<void> {

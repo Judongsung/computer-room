@@ -61,6 +61,7 @@ export function useDesktopContextMenus({
         buildExplorerEntryContextMenu(entries, {
           open: () => openFilesystemEntry(entries[0] ?? entry),
           download: () => download.start(entries),
+          createShortcut: () => setDialog({ kind: "shortcut", entries }),
           rename: () => setDialog({ kind: "rename", entries }),
           move: () => setDialog({ kind: "move", entries }),
           trash: () => trashEntries(entries),

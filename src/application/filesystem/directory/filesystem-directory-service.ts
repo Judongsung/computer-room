@@ -131,6 +131,7 @@ function emptyRecord(): Omit<
   | "desktopOrder"
 > {
   return {
+    targetEntryId: null,
     fileId: null,
     widgetId: null,
     restoreParentId: null,

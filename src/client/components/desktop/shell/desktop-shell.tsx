@@ -114,6 +114,7 @@ export function DesktopShell(props: DesktopShellProps) {
   });
   const closeStartMenu = useCallback(() => setIsStartMenuOpen(false), []);
   const launcher = useDesktopLauncher({
+    gateway: filesystemGateway,
     desktop,
     system,
     explorer,
@@ -294,6 +295,8 @@ export function DesktopShell(props: DesktopShellProps) {
       </main>
       {downloadConfirmation.file ? <DesktopDownloadConfirmation file={downloadConfirmation.file} onConfirm={downloadConfirmation.confirm} onCancel={downloadConfirmation.cancel} /> : null}
       <DesktopDialogLayer
+        desktopCapacity={filesystem.desktopPlacement().capacity}
+        onFilesystemChanged={filesystem.notifyChanged}
         gateway={filesystemGateway}
         widgets={widgets}
         dialog={filesystem.dialog}
@@ -316,6 +319,9 @@ export function DesktopShell(props: DesktopShellProps) {
           actionLabel={DASHBOARD_COPY.RETRY}
           onAction={props.onRetrySave}
         />
+      ) : launcher.shortcutOpening.error ? (
+        <DesktopNotification title={SITE_COPY.TITLE} message={launcher.shortcutOpening.error}
+          actionLabel={DASHBOARD_COPY.CONFIRM} onAction={launcher.shortcutOpening.clearError} />
       ) : filesystem.error || filesystem.entries.error ? (
         <DesktopNotification
           title={SITE_COPY.TITLE}

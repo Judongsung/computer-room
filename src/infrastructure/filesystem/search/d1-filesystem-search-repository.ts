@@ -28,7 +28,7 @@ export class D1FilesystemSearchRepository implements FilesystemSearchRepository 
        JOIN tree ON tree.id = e.id
        WHERE tree.included = 1 AND instr(e.name_key, ?4) > 0
          AND (?5 = ?6 OR e.kind = ?5)
-         AND (e.kind = ?7
+         AND (e.kind = '${FILESYSTEM_ENTRY_KIND.SHORTCUT}' OR e.kind = ?7
            OR (e.kind = ?8 AND e.file_status = ?9)
            OR (e.kind = ?10 AND e.widget_type IS NOT NULL))
        ORDER BY e.name_key ASC, e.id ASC LIMIT ?11 OFFSET ?12`,

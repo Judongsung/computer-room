@@ -2,7 +2,7 @@ import { FILE_STATUS } from "@/constants/filesystem/file";
 import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID, FILESYSTEM_ROOT_NAME } from "@/constants/filesystem/filesystem";
 import { compareFilesystemEntries } from "@/domain/filesystem/filesystem-sort";
 import type { DirectorySortRepository } from "@/types/filesystem/directory-sort-repository";
-import type { FilesystemBreadcrumb, FilesystemDirectorySort, FilesystemEntryRecord, FilesystemFileObject, NewFilesystemDirectory, NewExactFilesystemDirectory, NewFilesystemFile, NewFilesystemWidget, RootedFilesystemEntryRecord } from "@/types/filesystem/filesystem";
+import type { FilesystemBreadcrumb, FilesystemDirectorySort, FilesystemEntryRecord, FilesystemFileObject, NewFilesystemShortcut, NewFilesystemDirectory, NewExactFilesystemDirectory, NewFilesystemFile, NewFilesystemWidget, RootedFilesystemEntryRecord } from "@/types/filesystem/filesystem";
 import type { FilesystemRepository } from "@/types/filesystem/repository";
 
 export class MemoryDirectorySortRepository implements DirectorySortRepository {
@@ -146,6 +146,12 @@ export class MemoryFileRepository implements FilesystemRepository {
     return false;
   }
 
+  async insertShortcut(shortcut: NewFilesystemShortcut): Promise<void> {
+    await this.insertDirectory(shortcut);
+    const entry = this.requireEntry(shortcut.id);
+    this.records.set(shortcut.id, { ...entry, kind: FILESYSTEM_ENTRY_KIND.SHORTCUT, targetEntryId: shortcut.targetEntryId });
+  }
+
   async insertDirectory(directory: NewFilesystemDirectory): Promise<void> {
     this.records.set(directory.id, {
       id: directory.id,
@@ -153,6 +159,7 @@ export class MemoryFileRepository implements FilesystemRepository {
       kind: FILESYSTEM_ENTRY_KIND.DIRECTORY,
       name: directory.name,
       nameKey: directory.nameKey,
+      targetEntryId: null,
       fileId: null,
       widgetId: null,
       restoreParentId: null,
@@ -210,6 +217,7 @@ export class MemoryFileRepository implements FilesystemRepository {
       kind: FILESYSTEM_ENTRY_KIND.FILE,
       name: file.entry.name,
       nameKey: file.entry.nameKey,
+      targetEntryId: null,
       fileId: file.entry.id,
       widgetId: null,
       restoreParentId: null,
@@ -236,6 +244,7 @@ export class MemoryFileRepository implements FilesystemRepository {
       kind: FILESYSTEM_ENTRY_KIND.WIDGET,
       name: widget.name,
       nameKey: widget.nameKey,
+      targetEntryId: null,
       fileId: null,
       widgetId: widget.widgetId,
       restoreParentId: null,
@@ -386,6 +395,7 @@ export class MemoryFileRepository implements FilesystemRepository {
       kind: FILESYSTEM_ENTRY_KIND.DIRECTORY,
       name,
       nameKey: name,
+      targetEntryId: null,
       fileId: null,
       widgetId: null,
       restoreParentId: null,

@@ -140,6 +140,7 @@ function GuestDesktopContent({ session, gateway }: GuestApplicationProps) {
   );
   const openEntry = useCallback(
     async (entry: FilesystemEntry, directoryId: string): Promise<void> => {
+      if (entry.kind === FILESYSTEM_ENTRY_KIND.SHORTCUT) return;
       try {
         setError(null);
         if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {

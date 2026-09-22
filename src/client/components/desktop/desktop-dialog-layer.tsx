@@ -1,3 +1,4 @@
+import { ShortcutCreateDialog } from "@client/components/desktop/filesystem/shortcut-create-dialog";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
@@ -17,6 +18,8 @@ import { FolderPropertiesDialog } from "@client/components/filesystem/details/fo
 
 interface DesktopDialogLayerProps {
   readonly gateway: FilesystemGateway;
+  readonly desktopCapacity: number;
+  readonly onFilesystemChanged: () => void;
   readonly widgets: readonly DashboardWidget[];
   readonly dialog: DesktopFilesystemDialog;
   readonly dialogBusy: boolean;
@@ -33,6 +36,8 @@ interface DesktopDialogLayerProps {
 }
 
 export function DesktopDialogLayer({
+  desktopCapacity,
+  onFilesystemChanged,
   gateway,
   widgets,
   dialog,
@@ -57,6 +62,9 @@ export function DesktopDialogLayer({
 
   return (
     <>
+      {dialog?.kind === "shortcut" && dialog.entries[0] ? <ShortcutCreateDialog
+        key={dialog.entries[0].id} gateway={gateway} entry={dialog.entries[0]} desktopCapacity={desktopCapacity}
+        onCreated={() => { onCloseDialog(); onFilesystemChanged(); }} onCancel={onCloseDialog} /> : null}
       {dialog?.kind === "create" ? (
         <NameDialog
           title={FILESYSTEM_COPY.CREATE_FOLDER_TITLE}

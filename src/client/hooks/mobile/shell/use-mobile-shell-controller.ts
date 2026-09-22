@@ -1,3 +1,4 @@
+import { useShortcutOpening } from "@client/hooks/filesystem/shortcuts/use-shortcut-opening";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFilesystemUpload } from "@client/hooks/filesystem/use-filesystem-upload";
@@ -6,7 +7,7 @@ import { collectSelectedUploadNodes } from "@client/domain/filesystem/local-file
 import type { MobileNavigationGuard } from "@client/hooks/mobile/filesystem/use-mobile-file-actions";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { createFileOpener } from "@client/domain/filesystem/text/file-opening";
-import type { FilesystemEntry, FilesystemFileEntry } from "@/types/filesystem/filesystem";
+import type { FilesystemShortcutTarget, FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import type { WidgetFileDocument, WidgetFileType } from "@/types/widgets/widget-file";
 import {
   MOBILE_ACTIVITY_KIND,
@@ -68,8 +69,8 @@ export function useMobileShellController({
     void refreshPreferences();
   }, [refresh, refreshPreferences]);
 
-  const openEntry = useCallback(
-    (entry: FilesystemEntry): void => {
+  const openTarget = useCallback(
+    (entry: FilesystemShortcutTarget): void => {
       if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
         navigation.push({
           kind: MOBILE_ACTIVITY_KIND.DIRECTORY,
@@ -94,6 +95,9 @@ export function useMobileShellController({
     },
     [navigation],
   );
+
+  const shortcutOpening = useShortcutOpening(filesystem, currentActivity, openTarget);
+  const openEntry = shortcutOpening.open;
 
   const createDraft = useCallback(
     (type: WidgetFileType): void => {
@@ -181,6 +185,8 @@ export function useMobileShellController({
 
   return {
     currentActivity: navigation.current,
+    shortcutError: shortcutOpening.error,
+    clearShortcutError: shortcutOpening.clearError,
     canGoBack: navigation.canGoBack,
     menuEnabled: menuEnabled && !transfer.state.isOpen,
     menuOpen,

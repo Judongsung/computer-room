@@ -12,6 +12,9 @@ import {
   HTTP_METHOD,
 } from "@/constants/platform/http";
 import type {
+  CreateFilesystemShortcutInput,
+  FilesystemShortcutEntry,
+  FilesystemShortcutTarget,
   FilesystemDirectoryEntry,
   FilesystemDirectoryPage,
   FilesystemDirectorySort,
@@ -29,6 +32,7 @@ import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import type { FilesystemDownloadManifest } from "@/types/filesystem/download";
 import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
 import {
+  isShortcutEntry,
   isBatchResult,
   isDirectoryEntry,
   isDirectoryDetails,
@@ -64,6 +68,30 @@ const {
 export class FilesystemApiClient implements FilesystemGateway {
   search(query: FilesystemSearchQuery, offset = 0): Promise<FilesystemSearchPage> {
     return searchFilesystem(query, offset);
+  }
+
+  async createShortcut(input: CreateFilesystemShortcutInput): Promise<FilesystemShortcutEntry> {
+    const value = await requestJson(
+      FILESYSTEM_API_PATHS.SHORTCUTS,
+      jsonRequest(HTTP_METHOD.POST, {
+        targetEntryId: input.targetEntryId,
+        parentId: input.parentId,
+        name: input.name,
+        ...placementBody(input.desktopPlacement),
+      }),
+    );
+    if (!isRecord(value) || !isShortcutEntry(value.entry)) {
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
+    }
+    return value.entry;
+  }
+
+  async resolveShortcut(id: string): Promise<FilesystemShortcutTarget> {
+    const value = await requestJson(`${FILESYSTEM_API_PATHS.SHORTCUTS}/${encodeURIComponent(id)}/${API_PATH_SEGMENTS.TARGET}`);
+    if (!isRecord(value) || !isFilesystemEntry(value.entry) || isShortcutEntry(value.entry)) {
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
+    }
+    return value.entry;
   }
 
   async listDirectory(

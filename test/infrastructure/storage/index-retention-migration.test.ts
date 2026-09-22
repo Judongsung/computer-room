@@ -48,7 +48,7 @@ it("preserves records and constraints while improving index plans and applying o
   const before = await snapshot();
   const expectedAfter = before.map((records, tableIndex) =>
     tables[tableIndex]?.name === "filesystem_entries"
-      ? records.map((record) => ({ ...record, deletion_started_at: null }))
+      ? records.map((record) => ({ ...record, deletion_started_at: null, target_entry_id: null }))
       : records,
   );
   await applyD1Migrations(db, testEnv.TEST_MIGRATIONS.slice(index));

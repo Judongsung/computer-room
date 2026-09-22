@@ -1,3 +1,4 @@
+import { SHORTCUT_COPY } from "@client/content/ko/filesystem/shortcut";
 import { FilesystemScrollRetention } from "@client/components/filesystem/filesystem-scroll-retention";
 import type {
   DragEvent,
@@ -157,6 +158,7 @@ export function ExplorerDirectoryView({
         >
           <FilesystemEntryIcon entry={entry} thumbnailUrl={thumbnailUrl} />
           <span>{entry.name}</span>
+          {entry.kind === FILESYSTEM_ENTRY_KIND.SHORTCUT ? <small>{SHORTCUT_COPY.KIND}</small> : null}
           {entry.kind === FILESYSTEM_ENTRY_KIND.FILE ? (
             <small>{formatFileSize(entry.size)}</small>
           ) : null}

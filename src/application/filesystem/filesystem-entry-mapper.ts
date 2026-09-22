@@ -12,6 +12,16 @@ import type {
 export function toPublicEntry(entry: FilesystemEntryRecord): FilesystemEntry {
   const kind = entry.kind;
   switch (kind) {
+    case FILESYSTEM_ENTRY_KIND.SHORTCUT:
+      if (!entry.targetEntryId || !entry.parentId) {
+        throw new AppError(FILESYSTEM_ERRORS.INVALID_STORED_ENTRY);
+      }
+      return {
+        id: entry.id, parentId: entry.parentId, kind, name: entry.name,
+        targetEntryId: entry.targetEntryId,
+        createdAt: toIsoString(entry.createdAt), updatedAt: toIsoString(entry.updatedAt),
+        desktopOrder: entry.desktopOrder,
+      };
     case FILESYSTEM_ENTRY_KIND.DIRECTORY:
       return toPublicDirectory(entry);
     case FILESYSTEM_ENTRY_KIND.WIDGET:

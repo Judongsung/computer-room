@@ -1,3 +1,4 @@
+import { useShortcutOpening } from "@client/hooks/filesystem/shortcuts/use-shortcut-opening";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import {
   useCallback,
@@ -15,6 +16,7 @@ import {
 import type {
   FilesystemDirectorySort,
   FilesystemEntry,
+  FilesystemShortcutTarget,
 } from "@/types/filesystem/filesystem";
 import type { FilesystemBatchResult } from "@/types/filesystem/batch";
 import {
@@ -182,8 +184,8 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
     [currentDirectoryId, gateway, runMutation, clearSelection, reset],
   );
 
-  const openEntry = useCallback(
-    (entry: FilesystemEntry): void => {
+  const openTarget = useCallback(
+    (entry: FilesystemShortcutTarget): void => {
       if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
         navigate(entry.id);
       } else if (entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET) {
@@ -194,6 +196,9 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
     },
     [navigate, onOpenFile, onOpenWidget],
   );
+
+  const shortcutOpening = useShortcutOpening(gateway, explorer.directoryId, openTarget);
+  const openEntry = shortcutOpening.open;
 
   const uploadSelection = useCallback(
     (event: ChangeEvent<HTMLInputElement>): void => {
@@ -263,6 +268,7 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
         buildExplorerEntryContextMenu(entries, {
           open: () => openEntry(entries[0] ?? entry),
           download: () => download.start(entries),
+          createShortcut: () => setDialog("shortcut"),
           rename: () => setDialog("rename"),
           move: () => setDialog("move"),
           trash: () => runBatchChange(() => gateway.trashEntries(entries.map(({ id }) => id))),
@@ -302,7 +308,7 @@ export function useDocumentsController(options: DocumentsControllerOptions) {
   return {
     explorer,
     page: explorer.page,
-    error: mutation.error ?? explorer.error,
+    error: mutation.error ?? shortcutOpening.error ?? explorer.error,
     busy,
     dialog,
     dropTargets,

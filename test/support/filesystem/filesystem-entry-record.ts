@@ -10,6 +10,7 @@ export function filesystemEntryRecord(
 ): FilesystemEntryRecord {
   const isFile = kind === FILESYSTEM_ENTRY_KIND.FILE;
   return {
+    targetEntryId: null,
     id,
     parentId: FILESYSTEM_ROOT_ID.DOCUMENTS,
     kind,

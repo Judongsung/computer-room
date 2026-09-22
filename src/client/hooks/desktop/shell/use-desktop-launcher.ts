@@ -1,9 +1,11 @@
+import { useShortcutOpening } from "@client/hooks/filesystem/shortcuts/use-shortcut-opening";
+import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
 import { useCallback, useMemo } from "react";
 import {
   FILESYSTEM_ENTRY_KIND,
   FILESYSTEM_ROOT_ID,
 } from "@/constants/filesystem/filesystem";
-import type { FilesystemEntry, FilesystemFileEntry } from "@/types/filesystem/filesystem";
+import type { FilesystemShortcutTarget, FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import { createFileOpener } from "@client/domain/filesystem/text/file-opening";
 import type { WidgetType } from "@/types/widgets/widget";
 import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
@@ -20,6 +22,7 @@ import type { SystemAppId } from "@client/types/desktop/system-app";
 import type { WidgetOpenResult } from "@client/types/widgets/dashboard";
 
 interface DesktopLauncherOptions {
+  readonly gateway: FilesystemGateway;
   readonly desktop: DesktopDimensions;
   readonly system: ReturnType<typeof useSystemWindows>;
   readonly explorer: ReturnType<typeof useExplorerWindows>;
@@ -36,6 +39,7 @@ interface DesktopLauncherOptions {
 }
 
 export function useDesktopLauncher({
+  gateway,
   desktop,
   system,
   explorer,
@@ -114,8 +118,8 @@ export function useDesktopLauncher({
     media: openMediaViewer, text: onOpenText, download: onRequestDownload,
   }), [openMediaViewer, onOpenText, onRequestDownload]);
 
-  const openFilesystemEntry = useCallback(
-    (entry: FilesystemEntry): void => {
+  const openTarget = useCallback(
+    (entry: FilesystemShortcutTarget): void => {
       if (entry.kind === FILESYSTEM_ENTRY_KIND.DIRECTORY) {
         openDocumentsDirectory(entry.id, entry.name, DESKTOP_ASSET_PATHS.FOLDER_ICON);
       } else if (entry.kind === FILESYSTEM_ENTRY_KIND.WIDGET) {
@@ -127,13 +131,16 @@ export function useDesktopLauncher({
     [openFile, openDocumentsDirectory, openWidget],
   );
 
+  const shortcutOpening = useShortcutOpening(gateway, null, openTarget);
+
   return {
+    shortcutOpening,
     launchApplication,
     openSystemApp,
     openDocumentsDirectory,
     openSystemShortcut,
     openMediaViewer,
     openWidget,
-    openFilesystemEntry,
+    openFilesystemEntry: shortcutOpening.open,
   } as const;
 }

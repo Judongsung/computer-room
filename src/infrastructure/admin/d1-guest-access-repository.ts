@@ -1,3 +1,4 @@
+import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import {
   GUEST_ACCESS_SETTINGS_SINGLETON_ID,
   GUEST_PUBLICATION_STATE,
@@ -66,6 +67,7 @@ export class D1GuestAccessRepository implements GuestAccessRepository {
          FROM subtree
          LEFT JOIN guest_publications publication
            ON publication.entry_id = subtree.id
+         WHERE subtree.id IN (SELECT id FROM filesystem_entries WHERE kind != '${FILESYSTEM_ENTRY_KIND.SHORTCUT}')
          GROUP BY subtree.root_id`,
       )
       .bind(JSON.stringify(entryIds))
@@ -100,7 +102,7 @@ export class D1GuestAccessRepository implements GuestAccessRepository {
           .prepare(
             `${subtree}
              INSERT OR IGNORE INTO guest_publications(entry_id, published_at)
-             SELECT id, ?2 FROM subtree`,
+             SELECT id, ?2 FROM subtree WHERE id IN (SELECT id FROM filesystem_entries WHERE kind != '${FILESYSTEM_ENTRY_KIND.SHORTCUT}')`,
           )
           .bind(entryId, publishedAt)
       : this.database

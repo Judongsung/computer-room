@@ -15,6 +15,9 @@ import { RecycleBinApiRoutes } from "@/http/filesystem/routes/recycle-bin-api-ro
 import type { FilesystemSearchUseCases } from "@/types/filesystem/search/search";
 import { FilesystemSearchApiRoutes } from "@/http/filesystem/routes/filesystem-search-api-routes";
 
+import type { FilesystemShortcutUseCases } from "@/types/filesystem/services/shortcut-service";
+import { FilesystemShortcutApiRoutes } from "@/http/filesystem/routes/filesystem-shortcut-api-routes";
+
 export class FileApiHandler implements FeatureApiHandler {
   private readonly routes: readonly FeatureApiHandler[];
 
@@ -27,8 +30,10 @@ export class FileApiHandler implements FeatureApiHandler {
     recycleBin: RecycleBinUseCases,
     downloadManifests: FilesystemDownloadManifestUseCases,
     search: FilesystemSearchUseCases,
+    shortcuts: FilesystemShortcutUseCases,
   ) {
     this.routes = [
+      new FilesystemShortcutApiRoutes(shortcuts),
       new FilesystemSearchApiRoutes(search),
       new FileTransferApiRoutes(files, thumbnails),
       new FilesystemDirectoryApiRoutes(directories),

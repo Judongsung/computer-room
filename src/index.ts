@@ -7,6 +7,7 @@ import { D1ChecklistRetentionRepository } from "@/infrastructure/widgets/d1-chec
 import { ChecklistService } from "@/application/widgets/checklist-service";
 import { FileService } from "@/application/filesystem/file-service";
 import { FilesystemDirectoryService } from "@/application/filesystem/directory/filesystem-directory-service";
+import { FilesystemShortcutService } from "@/application/filesystem/entries/filesystem-shortcut-service";
 import { FilesystemEntryService } from "@/application/filesystem/entries/filesystem-entry-service";
 import { FilesystemPathService } from "@/application/filesystem/filesystem-path-service";
 import { FilesystemDownloadManifestService } from "@/application/filesystem/filesystem-download-manifest-service";
@@ -175,6 +176,7 @@ export default {
       recycleBinService,
       downloadManifestService,
       new FilesystemSearchService(new D1FilesystemSearchRepository(env.DB), activeFilesystemEntries),
+      new FilesystemShortcutService(fileRepository, ids, clock),
     );
     const directoryDetailsApiHandler = new DirectoryDetailsApiHandler(
       new DirectoryDetailsService(

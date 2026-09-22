@@ -53,6 +53,7 @@ export const DESKTOP_ASSET_PATHS = {
   COMPUTER_ICON: "/assets/windows-xp/computer.png",
   RECYCLE_BIN_ICON: "/assets/windows-xp/recycle.png",
   FOLDER_ICON: "/assets/windows-xp/folder.png",
+  SHORTCUT_ICON: "/assets/shortcut.svg",
   FILE_ICON: "/assets/windows-xp/file.png",
   PICTURE_VIEWER_ICON: "/assets/computer-room/picture-viewer.svg",
   MEDIA_PLAYER_ICON: "/assets/computer-room/media-player.svg",
