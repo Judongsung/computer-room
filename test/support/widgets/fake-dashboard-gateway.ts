@@ -1,5 +1,6 @@
 import type { ChecklistRepeatCycle } from "@/constants/widgets/checklist-repeat";
 import { CHECKLIST_EVENT_ACTION } from "@/constants/widgets/checklist";
+import { MAX_MEMO_VERSIONS } from "@/constants/widgets/memo";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import {
   WIDGET_BEHAVIOR,
@@ -12,6 +13,7 @@ import type { SessionInfo } from "@/types/platform/auth";
 import type { ChecklistItem, ChecklistLogEvent, ChecklistLogPage, DailyChecklistData, DashboardWidget, CreateWidgetInput, MemoData, WidgetLayout } from "@/types/widgets/widget";
 import type { FilesystemWidgetEntry, SaveWidgetFileInput } from "@/types/filesystem/filesystem";
 import type { DashboardGateway } from "@client/types/widgets/api";
+import type { MemoVersion, MemoVersionList } from "@/types/widgets/memo";
 import { SESSION } from "@test/support/desktop/app-test-session";
 
 export class FakeDashboardGateway implements DashboardGateway {
@@ -20,6 +22,7 @@ export class FakeDashboardGateway implements DashboardGateway {
   readonly layoutSaveCalls: WidgetLayout[][] = [];
   readonly checklistLabels = new Map<string, string>();
   readonly checklistLogs: ChecklistLogEvent[] = [];
+  readonly memoVersions = new Map<string, MemoVersion[]>();
   private nextChecklistItem = 1;
   private nextLayoutSaveGate: Promise<void> | null = null;
   private nextWidget = 1;
@@ -125,13 +128,28 @@ export class FakeDashboardGateway implements DashboardGateway {
   }
 
   async updateMemo(widgetId: string, markdown: string): Promise<MemoData> {
+    const current = this.savedWidgets.find((widget) => widget.id === widgetId);
+    if (current?.type === WIDGET_TYPE.MEMO && current.data.markdown === markdown) return current.data;
     const data = { markdown, updatedAt: "2026-08-20T01:00:00.000Z" };
     this.savedWidgets = this.savedWidgets.map((widget) =>
       widget.id === widgetId && widget.type === WIDGET_TYPE.MEMO
         ? { ...widget, data }
         : widget,
     );
+    const versions = this.memoVersions.get(widgetId) ?? [];
+    versions.unshift({ version: (versions[0]?.version ?? 0) + 1, savedAt: data.updatedAt, markdown });
+    this.memoVersions.set(widgetId, versions.slice(0, MAX_MEMO_VERSIONS));
     return data;
+  }
+
+  async listMemoVersions(widgetId: string): Promise<MemoVersionList> {
+    return { items: (this.memoVersions.get(widgetId) ?? []).map(({ version, savedAt }) => ({ version, savedAt })) };
+  }
+
+  async getMemoVersion(widgetId: string, version: number): Promise<MemoVersion> {
+    const found = this.memoVersions.get(widgetId)?.find((item) => item.version === version);
+    if (!found) throw new Error("Memo version not found");
+    return { ...found };
   }
 
   async changeChecklistRepeatCycle(widgetId: string, repeatCycle: ChecklistRepeatCycle): Promise<DailyChecklistData> {

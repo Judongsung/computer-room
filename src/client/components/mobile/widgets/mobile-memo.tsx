@@ -1,11 +1,19 @@
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MarkdownContent } from "@client/components/widgets/markdown-content";
 import { ReadOnlyMemoContent } from "@client/components/widgets/read-only-program-content";
 import { MOBILE_CLASS_NAME } from "@client/constants/mobile/class-names";
 import { MEMO_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { useUnsavedChangesWarning } from "@client/hooks/shared/use-unsaved-changes-warning";
 import { useMemoEditor } from "@client/hooks/widgets/memo/use-memo-editor";
+import { MobileMemoHistoryDialog } from "@client/components/mobile/widgets/mobile-memo-history-dialog";
+import { MEMO_HISTORY_COPY } from "@client/content/ko/widgets/memo-history";
+import type { MemoHistoryGateway } from "@client/types/widgets/ports/memo";
+
+interface MobileMemoHistoryConfig {
+  readonly widgetId: string;
+  readonly gateway: MemoHistoryGateway;
+}
 
 interface MobileMemoProps {
   readonly scope: object;
@@ -14,6 +22,7 @@ interface MobileMemoProps {
   readonly onSave: (markdown: string) => Promise<void | boolean>;
   readonly onRequestFileSave?: (markdown: string) => void;
   readonly onDirtyChange?: (dirty: boolean) => void;
+  readonly history?: MobileMemoHistoryConfig;
 }
 
 export function MobileMemo({
@@ -23,8 +32,14 @@ export function MobileMemo({
   onSave,
   onRequestFileSave,
   onDirtyChange,
+  history,
 }: MobileMemoProps) {
   const [preview, setPreview] = useState(false);
+  const [historyScope, setHistoryScope] = useState<
+    { scope: object; widgetId: string; gateway: MemoHistoryGateway } | null
+  >(null);
+  const currentHistory = useRef({ scope, widgetId: history?.widgetId, gateway: history?.gateway });
+  currentHistory.current = { scope, widgetId: history?.widgetId, gateway: history?.gateway };
   const editor = useMemoEditor({ scope, markdown, startEditing, onSave });
   useUnsavedChangesWarning(editor.dirty);
 
@@ -38,7 +53,14 @@ export function MobileMemo({
     <div className={MOBILE_CLASS_NAME.WIDGET}>
       <div className={MOBILE_CLASS_NAME.TOOLBAR}>
         {!editor.editing ? (
-          <button type="button" onClick={editor.beginEditing}>{MOBILE_COPY.EDIT}</button>
+          <>
+            <button type="button" onClick={editor.beginEditing}>{MOBILE_COPY.EDIT}</button>
+            {history ? (
+              <button type="button" onClick={() => setHistoryScope({ scope, ...history })}>
+                {MEMO_HISTORY_COPY.OPEN}
+              </button>
+            ) : null}
+          </>
         ) : (
           <>
             <button type="button" disabled={editor.saving} onClick={() => setPreview(false)}>
@@ -83,6 +105,21 @@ export function MobileMemo({
         <ReadOnlyMemoContent markdown={markdown} />
       )}
       {editor.error ? <p className={MOBILE_CLASS_NAME.ERROR} role="alert">{editor.error}</p> : null}
+      {history && historyScope?.scope === scope && historyScope.widgetId === history.widgetId &&
+        historyScope.gateway === history.gateway ? (
+          <MobileMemoHistoryDialog
+            widgetId={history.widgetId}
+            gateway={history.gateway}
+            onClose={() => setHistoryScope(null)}
+            onLoadDraft={(draft) => {
+              if (currentHistory.current.scope !== scope || currentHistory.current.widgetId !== history.widgetId ||
+                currentHistory.current.gateway !== history.gateway) return false;
+              const loaded = editor.loadDraft(draft);
+              if (loaded) setPreview(false);
+              return loaded;
+            }}
+          />
+        ) : null}
     </div>
   );
 }

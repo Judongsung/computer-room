@@ -1,7 +1,7 @@
 import { XpTabs } from "@client/components/shared/xp-tabs";
 import { ProgramStatusBar } from "@client/components/desktop/application/program-status-bar";
 import { PROGRAM_DOCUMENT_COPY as COPY } from "@client/content/ko/desktop/program-documents";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { MemoWidget as MemoWidgetData } from "@/types/widgets/widget";
 import { MEMO_WIDGET_COPY } from "@client/content/ko/widgets/content";
@@ -16,6 +16,8 @@ import { XpWidgetToolbarButton } from "@client/components/shared/xp-widget-toolb
 import { WidgetCard } from "@client/components/widgets/widget-card";
 import { MarkdownContent } from "@client/components/widgets/markdown-content";
 import { ReadOnlyMemoContent } from "@client/components/widgets/read-only-program-content";
+import { DesktopMemoHistoryDialog } from "@client/components/desktop/widgets/desktop-memo-history-dialog";
+import { MEMO_HISTORY_COPY } from "@client/content/ko/widgets/memo-history";
 
 export interface MemoWidgetProps {
   readonly widget: MemoWidgetData;
@@ -34,6 +36,9 @@ export function MemoWidget({
     (typeof MEMO_EDITOR_MODE)[keyof typeof MEMO_EDITOR_MODE]
   >(MEMO_EDITOR_MODE.WRITE);
   const scope = useMemo(() => ({ gateway, widgetId: widget.id }), [gateway, widget.id]);
+  const currentScope = useRef(scope);
+  currentScope.current = scope;
+  const [historyScope, setHistoryScope] = useState<object | null>(null);
   const editor = useMemoEditor({
     scope,
     markdown: widget.data.markdown,
@@ -56,14 +61,21 @@ export function MemoWidget({
       windowControls={windowControls}
       toolbarActions={
         !editor.editing ? (
-          <XpWidgetToolbarButton
-            action={XP_WIDGET_TOOLBAR_ACTION.EDIT}
-            label={MEMO_WIDGET_COPY.EDIT}
-            onClick={() => {
-              setEditorMode(MEMO_EDITOR_MODE.WRITE);
-              editor.beginEditing();
-            }}
-          />
+          <>
+            <XpWidgetToolbarButton
+              action={XP_WIDGET_TOOLBAR_ACTION.EDIT}
+              label={MEMO_WIDGET_COPY.EDIT}
+              onClick={() => {
+                setEditorMode(MEMO_EDITOR_MODE.WRITE);
+                editor.beginEditing();
+              }}
+            />
+            <XpWidgetToolbarButton
+              action={XP_WIDGET_TOOLBAR_ACTION.HISTORY}
+              label={MEMO_HISTORY_COPY.OPEN}
+              onClick={() => setHistoryScope(scope)}
+            />
+          </>
         ) : null
       }
     >
@@ -117,6 +129,19 @@ export function MemoWidget({
       ) : (
         <div className="desktop-document-paper"><ReadOnlyMemoContent markdown={widget.data.markdown} /></div>
       )}
+      {historyScope === scope ? (
+        <DesktopMemoHistoryDialog
+          widgetId={widget.id}
+          gateway={gateway}
+          onClose={() => setHistoryScope(null)}
+          onLoadDraft={(markdown) => {
+            if (currentScope.current !== scope) return false;
+            const loaded = editor.loadDraft(markdown);
+            if (loaded) setEditorMode(MEMO_EDITOR_MODE.WRITE);
+            return loaded;
+          }}
+        />
+      ) : null}
     </WidgetCard>
   );
 }

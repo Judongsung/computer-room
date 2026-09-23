@@ -9,7 +9,7 @@ import type {
   ChecklistCheckInput,
   ChecklistLabelInput,
 } from "@/types/widgets/checklist";
-import type { MemoUpdateInput } from "@/types/widgets/memo";
+import type { MemoUpdateInput, MemoVersion, MemoVersionList, MemoVersionSummary } from "@/types/widgets/memo";
 import type {
   ChecklistLogEvent,
   ChecklistLogPage,
@@ -46,6 +46,25 @@ export function isChecklistLogPage(value: unknown): value is ChecklistLogPage {
 
 export function isMemoUpdateInput(value: unknown): value is MemoUpdateInput {
   return isRecord(value) && typeof value.markdown === "string";
+}
+
+export function isMemoVersionList(value: unknown): value is MemoVersionList {
+  return isRecord(value) && Array.isArray(value.items) && value.items.every(isMemoVersionSummary);
+}
+
+export function isMemoVersion(value: unknown): value is MemoVersion {
+  return isRecord(value) && isMemoVersionSummary(value) && typeof value.markdown === "string";
+}
+
+function isMemoVersionSummary(value: unknown): value is MemoVersionSummary {
+  return (
+    isRecord(value) &&
+    typeof value.version === "number" &&
+    Number.isSafeInteger(value.version) &&
+    value.version > 0 &&
+    (value.savedAt === null ||
+      (typeof value.savedAt === "string" && Number.isFinite(Date.parse(value.savedAt))))
+  );
 }
 
 export function isChecklistLabelInput(

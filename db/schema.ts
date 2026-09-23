@@ -440,6 +440,18 @@ export const memoWidgets = sqliteTable("memo_widgets", {
   updatedAt: integer("updated_at"),
 });
 
+export const memoVersions = sqliteTable("memo_versions", {
+  widgetId: text("widget_id")
+    .notNull()
+    .references(() => dashboardWidgets.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  markdown: text("markdown").notNull(),
+  savedAt: integer("saved_at"),
+}, (table) => [
+  primaryKey({ columns: [table.widgetId, table.version] }),
+  check("memo_versions_positive_version_check", sql`${table.version} > 0`),
+]);
+
 export const checklistItems = sqliteTable(
   "checklist_items",
   {

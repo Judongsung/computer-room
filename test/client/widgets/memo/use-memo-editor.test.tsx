@@ -4,6 +4,48 @@ import { useMemoEditor } from "@client/hooks/widgets/memo/use-memo-editor";
 import { deferred } from "@test/support/widgets/deferred";
 
 describe("useMemoEditor", () => {
+  it("loads one historical draft only from reading and cancels to the latest source", () => {
+    const scope = {};
+    const { result, rerender } = renderHook(
+      ({ markdown }) => useMemoEditor({ scope, markdown, onSave: async () => undefined }),
+      { initialProps: { markdown: "current" } },
+    );
+    act(() => {
+      expect(result.current.loadDraft("older")).toBe(true);
+      expect(result.current.loadDraft("different")).toBe(false);
+      result.current.setDraft("changed older");
+      expect(result.current.loadDraft("overwrite")).toBe(false);
+    });
+    expect(result.current.draft).toBe("changed older");
+    rerender({ markdown: "new current" });
+    act(() => result.current.cancel());
+    expect(result.current.draft).toBe("new current");
+    expect(result.current.editing).toBe(false);
+    act(() => expect(result.current.loadDraft("another old version")).toBe(true));
+    expect(result.current.draft).toBe("another old version");
+  });
+
+  it("refuses loading during a save or after its scope ends", async () => {
+    const pending = deferred<boolean>();
+    const oldScope = {};
+    const { result, rerender, unmount } = renderHook(
+      ({ scope }) => useMemoEditor({ scope, markdown: "current", onSave: () => pending.promise }),
+      { initialProps: { scope: oldScope } },
+    );
+    const oldLoad = result.current.loadDraft;
+    act(() => {
+      result.current.beginEditing();
+      expect(result.current.loadDraft("blocked")).toBe(false);
+      void result.current.save();
+      expect(result.current.loadDraft("still blocked")).toBe(false);
+    });
+    rerender({ scope: {} });
+    expect(oldLoad("stale")).toBe(false);
+    await act(async () => pending.resolve(false));
+    unmount();
+    expect(result.current.loadDraft("unmounted")).toBe(false);
+  });
+
   it("preserves an edited draft and cancels to the latest source", () => {
     const scope = {};
     const onSave = vi.fn(async () => undefined);

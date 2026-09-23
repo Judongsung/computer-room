@@ -52,6 +52,13 @@ describe("widget file API", () => {
       .bind(document.widget.id)
       .first<{ is_open: number }>();
     expect(stored?.is_open).toBe(0);
+    expect((await env.DB.prepare(
+      "SELECT version, markdown, saved_at FROM memo_versions WHERE widget_id = ?1",
+    ).bind(document.widget.id).all()).results).toEqual([{
+      version: 1,
+      markdown: "# 휴대폰에서 작성",
+      saved_at: expect.any(Number),
+    }]);
 
     const getResponse = await SELF.fetch(
       `${ORIGIN}${API_PATHS.WIDGET_FILES}/${document.entry.id}`,

@@ -3,11 +3,11 @@
 [문서 목차로 돌아가기](./INDEX.md)
 
 이 문서는 `migrations/0000_superb_hitman.sql`부터
-`migrations/0015_db-indexes-checklist-retention.sql`까지 모든 마이그레이션을 적용한
+`migrations/0019_memo_versions.sql`까지 모든 마이그레이션을 적용한
 최종 애플리케이션 스키마를 설명한다.
 
 Wrangler가 관리하는 마이그레이션 이력 등의 내부 테이블은 제외한다.
-애플리케이션이 직접 관리하는 테이블은 총 17개다.
+애플리케이션이 직접 관리하는 테이블은 총 20개다.
 
 ## 공통 규칙
 
@@ -31,10 +31,13 @@ Wrangler가 관리하는 마이그레이션 이력 등의 내부 테이블은 �
 | 파일 시스템 | `filesystem_directory_preferences` | 폴더별 정렬 설정을 저장한다. |
 | 프로그램 | `dashboard_widgets` | 프로그램 창 배치와 복원 가능한 열림 상태를 저장한다. |
 | 프로그램 | `memo_widgets` | 메모 프로그램의 마크다운 본문을 저장한다. |
+| 프로그램 | `memo_versions` | 메모별 최근 50개의 저장 본문 사본을 보관한다. |
 | 체크리스트 | `checklist_items` | 일일 체크리스트 항목을 저장한다. |
 | 체크리스트 | `checklist_daily_states` | 날짜별 체크 상태를 저장한다. |
 | 체크리스트 | `checklist_events` | 체크리스트 변경 이력을 저장한다. |
 | 체크리스트 | `checklist_settings` | 계정 공통 기록 보관 기간을 저장한다. 기본값은 무기한이다. |
+| 체크리스트 | `checklist_repeat_settings` | 문서별 반복 주기와 설정 버전을 저장한다. |
+| 체크리스트 | `checklist_period_states` | 설정 버전과 반복 기간별 체크 상태를 저장한다. |
 | 모바일 | `mobile_preferences` | 계정 공용 모바일 설정을 저장한다. |
 | 관리자 | `guest_access_settings` | 게스트 접속 마스터 설정을 저장한다. |
 | 관리자 | `guest_publications` | 게스트에게 공개하도록 선택한 파일 시스템 항목을 저장한다. |
@@ -51,6 +54,7 @@ files
 
 dashboard_widgets
 ├── memo_widgets.widget_id
+├── memo_versions.widget_id
 ├── checklist_items.widget_id
 │   └── checklist_daily_states.item_id
 ├── checklist_events.widget_id
@@ -220,6 +224,32 @@ integration_image_upload_log_settings
 | `widget_id` | `TEXT` | NO | - | 기본 키, `dashboard_widgets.id` FK, `ON DELETE CASCADE` | 소유 메모 프로그램이다. |
 | `markdown` | `TEXT` | NO | `''` | - | 마크다운 원문이다. |
 | `updated_at` | `INTEGER` | YES | `NULL` | - | 마지막 본문 수정 시각이다. |
+
+## `memo_versions`
+
+메모 본문의 전체 사본을 저장한다. 파일 이름이나 창 배치는 버전 대상이 아니다.
+
+| 컬럼 | 타입 | Nullable | 기본값 | 키·제약조건 | 설명 |
+|---|---|---:|---|---|---|
+| `widget_id` | `TEXT` | NO | - | 복합 기본 키, `dashboard_widgets.id` FK, `ON DELETE CASCADE` | 원본 메모 프로그램이다. |
+| `version` | `INTEGER` | NO | - | 복합 기본 키, 양의 정수 | 메모별 저장 순서로 증가하는 버전 번호다. |
+| `markdown` | `TEXT` | NO | - | - | 해당 버전에 저장한 마크다운 원문이다. |
+| `saved_at` | `INTEGER` | YES | - | - | 본문 저장 시각이다. 기존 메모의 시각이 없으면 `NULL`을 유지한다. |
+
+최초 저장과 본문 변경 때 버전을 추가한다. 같은 본문을 다시 저장하면 버전과
+`memo_widgets.updated_at`을 유지한다. 본문 비교, 버전 번호 결정, 이력 추가,
+현재 본문 저장과 최근 50개를 넘는 이력 정리를 하나의 D1 batch에서 처리한다.
+목록은 버전 번호 내림차순이며, 복합 기본 키로 메모별 범위를 제한한다.
+
+마이그레이션은 기존 `memo_widgets` 행의 본문과 수정 시각을 버전 1로 옮겨
+기준 이력을 만든다. 기존 본문은 유지하며, 테이블 재구성은 하지 않는다.
+새 메모 생성도 본문과 버전 1을 같은 생성 batch에서 저장한다.
+휴지통 이동과 복원은 이력을 유지하며 원본 프로그램 영구 삭제 시 함께 삭제한다.
+
+소유자만 `/api/widgets/:widgetId/memo/versions`에서 최대 50개의 버전 번호와
+저장 시각을 조회하고, `/api/widgets/:widgetId/memo/versions/:version`에서 본문을
+조회한다. 게스트 응답에는 과거 본문을 포함하지 않는다. 과거 내용을 편집기에
+불러오는 것은 조회이며, 저장 버튼을 누르면 기존 메모 저장 API로 새 버전을 만든다.
 
 ## `checklist_items`
 

@@ -2,7 +2,8 @@ import type { StoredWidgetLayout, WidgetLayout } from "@/types/widgets/widget";
 import type { WidgetType } from "@/types/widgets/widget";
 import type { WidgetLayoutRepository } from "@/types/widgets/widget-repository";
 import type { MemoRepository } from "@/types/widgets/memo-repository";
-import type { MemoRecord } from "@/types/widgets/memo";
+import type { MemoRecord, MemoVersionRecord, MemoVersionSummaryRecord } from "@/types/widgets/memo";
+import { MAX_MEMO_VERSIONS } from "@/constants/widgets/memo";
 
 export class MemoryWidgetLayoutRepository implements WidgetLayoutRepository {
   records: StoredWidgetLayout[] = [];
@@ -77,6 +78,7 @@ export class MemoryWidgetLayoutRepository implements WidgetLayoutRepository {
 
 export class MemoryMemoRepository implements MemoRepository {
   readonly records = new Map<string, MemoRecord>();
+  readonly versions = new Map<string, MemoVersionRecord[]>();
 
   async listByWidgetIds(widgetIds: readonly string[]): Promise<MemoRecord[]> {
     const ids = new Set(widgetIds);
@@ -85,5 +87,25 @@ export class MemoryMemoRepository implements MemoRepository {
 
   async upsert(record: MemoRecord): Promise<void> {
     this.records.set(record.widgetId, { ...record });
+  }
+
+  async saveWithVersion(record: MemoRecord): Promise<MemoRecord> {
+    const current = this.records.get(record.widgetId);
+    if (current?.markdown === record.markdown) return { ...current };
+    const history = this.versions.get(record.widgetId) ?? [];
+    history.push({ version: (history.at(-1)?.version ?? 0) + 1, markdown: record.markdown, savedAt: record.updatedAt });
+    if (history.length > MAX_MEMO_VERSIONS) history.shift();
+    this.versions.set(record.widgetId, history);
+    this.records.set(record.widgetId, { ...record });
+    return { ...record };
+  }
+
+  async listVersions(widgetId: string): Promise<MemoVersionSummaryRecord[]> {
+    return [...(this.versions.get(widgetId) ?? [])].reverse().map(({ version, savedAt }) => ({ version, savedAt }));
+  }
+
+  async findVersion(widgetId: string, version: number): Promise<MemoVersionRecord | null> {
+    const record = this.versions.get(widgetId)?.find(item => item.version === version);
+    return record ? { ...record } : null;
   }
 }

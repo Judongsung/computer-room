@@ -96,6 +96,12 @@ const WIDGET_FILE_STATEMENT_BUILDERS = {
          VALUES (?1, ?2, ?3)`,
       )
       .bind(widgetId, content.markdown, createdAt),
+    database
+      .prepare(
+        `INSERT INTO memo_versions (widget_id, version, markdown, saved_at)
+         VALUES (?1, 1, ?2, ?3)`,
+      )
+      .bind(widgetId, content.markdown, createdAt),
   ],
   [WIDGET_TYPE.DAILY_CHECKLIST]: (
     database: D1Database,

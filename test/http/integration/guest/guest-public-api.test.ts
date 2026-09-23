@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { GUEST_ERRORS } from "@/constants/guest/errors/guest";
 import {
   API_PATHS,
+  API_PATH_SEGMENTS,
   FILESYSTEM_API_PATHS,
   GUEST_ACCESS_API_PATH,
   GUEST_ACCESS_API_PATHS,
@@ -23,6 +24,7 @@ import {
   jsonRequest,
   resetWorkerState,
   uploadFile,
+  widgetPath,
 } from "@test/support/http/worker-api-harness";
 
 beforeEach(resetWorkerState);
@@ -126,12 +128,18 @@ describe("guest public API", () => {
         type: WIDGET_TYPE.MEMO,
         parentId: FILESYSTEM_ROOT_ID.DOCUMENTS,
         name: "public memo",
-        data: { markdown: "# shared" },
+        data: { markdown: "# private earlier body" },
       },
     );
     const body = (await created.json()) as {
       entry: { id: string };
+      widget: { id: string };
     };
+    await jsonRequest(
+      `${widgetPath(body.widget.id)}/${API_PATH_SEGMENTS.MEMO}`,
+      HTTP_METHOD.PUT,
+      { markdown: "# shared" },
+    );
     await setPublished(body.entry.id, true);
     await setGuestEnabled(true);
 
@@ -142,8 +150,13 @@ describe("guest public API", () => {
     const document = (await response.json()) as GuestProgramDocument;
     expect(document.type).toBe(WIDGET_TYPE.MEMO);
     expect(document.data).toMatchObject({ markdown: "# shared" });
+    expect(JSON.stringify(document)).not.toContain("# private earlier body");
     expect(document).not.toHaveProperty("widget");
     expect(document).not.toHaveProperty("layout");
+    expect(document).not.toHaveProperty("versions");
+    expect((await SELF.fetch(
+      `${ORIGIN}${GUEST_API_PATHS.PROGRAM_DOCUMENTS}/${body.entry.id}/${API_PATH_SEGMENTS.VERSIONS}`,
+    )).status).toBe(HTTP_STATUS.NOT_FOUND);
   });
 
   it("does not expose owner routes through the guest namespace", async () => {

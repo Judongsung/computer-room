@@ -12,7 +12,10 @@ import {
   isDashboardWidgetCollection,
   isDashboardWidget,
   isMemoData,
+  isMemoVersion,
+  isMemoVersionList,
 } from "@/domain/widgets/widget-contract";
+import type { MemoVersion, MemoVersionList } from "@/types/widgets/memo";
 import type { SessionInfo } from "@/types/platform/auth";
 import type {
   ChecklistItem,
@@ -125,6 +128,20 @@ export class DashboardApiClient implements DashboardGateway {
       jsonRequest(HTTP_METHOD.PUT, { markdown }),
     );
     if (!isMemoData(value)) {
+      throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
+    }
+    return value;
+  }
+
+  async listMemoVersions(widgetId: string): Promise<MemoVersionList> {
+    const value = await requestJson(`${memoPath(widgetId)}/${API_PATH_SEGMENTS.VERSIONS}`);
+    if (!isMemoVersionList(value)) throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
+    return value;
+  }
+
+  async getMemoVersion(widgetId: string, version: number): Promise<MemoVersion> {
+    const value = await requestJson(`${memoPath(widgetId)}/${API_PATH_SEGMENTS.VERSIONS}/${encodeURIComponent(String(version))}`);
+    if (!isMemoVersion(value) || value.version !== version) {
       throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
     }
     return value;

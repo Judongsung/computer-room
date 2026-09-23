@@ -16,6 +16,7 @@ export const API_PATH_SEGMENTS = {
   SEARCH: "search",
   FILESYSTEM: "filesystem",
   MEMO: "memo",
+  VERSIONS: "versions",
   CHECKLIST: "checklist",
   ITEMS: "items",
   CHECK: "check",

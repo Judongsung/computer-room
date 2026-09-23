@@ -81,6 +81,15 @@
   gap: 10px;
 }
 
+.android-mobile .memo-history-content { display: grid; gap: 10px; max-height: 65dvh; overflow: auto; }
+.android-mobile .memo-history-list { max-height: 180px; overflow: auto; }
+.android-mobile .memo-history-list ol { margin: 0; padding: 0; list-style: none; }
+.android-mobile .memo-history-list button { display: grid; width: 100%; text-align: left; }
+.android-mobile .memo-history-list button[aria-pressed="true"] { color: var(--android-green); }
+.android-mobile .memo-history-list span { font-size: 12px; }
+.android-mobile .memo-history-preview { min-height: 100px; max-height: 32dvh; overflow: auto; padding: 10px; border: 1px solid #454c45; }
+.android-mobile .memo-history-notice { margin: 0; color: var(--android-muted); }
+
 .android-mobile .checklist-checked-at { color: var(--android-muted); margin-left: 31px; }
 .android-widget__checklist input[type="checkbox"] { flex: none; }
 .android-widget__checklist label > span, .android-widget__checklist label > del { min-width: 0; overflow-wrap: anywhere; }

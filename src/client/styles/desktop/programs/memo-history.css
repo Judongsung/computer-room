@@ -1,0 +1,26 @@
+.desktop-memo-history { width: min(760px, calc(100vw - 32px)); }
+.desktop-memo-history .memo-history-content {
+  display: grid;
+  grid-template-columns: minmax(180px, 32%) minmax(0, 1fr);
+  gap: 8px;
+  min-height: 280px;
+  max-height: min(65vh, 560px);
+  padding: 8px;
+  background: var(--luna-surface);
+}
+.desktop-memo-history .memo-history-list,
+.desktop-memo-history .memo-history-preview {
+  min-width: 0;
+  overflow: auto;
+  border: 1px solid #7f9db9;
+  background: #fff;
+  padding: 8px;
+}
+.desktop-memo-history .memo-history-list ol { margin: 0; padding: 0; list-style: none; }
+.desktop-memo-history .memo-history-list button { display: grid; width: 100%; text-align: left; }
+.desktop-memo-history .memo-history-list button[aria-pressed="true"] { background: #316ac5; color: #fff; }
+.desktop-memo-history .memo-history-list span { font-size: var(--luna-font-size-small); }
+.desktop-memo-history .memo-history-notice { grid-column: 1 / -1; margin: 0; }
+@media (max-width: 540px) {
+  .desktop-memo-history .memo-history-content { grid-template-columns: 1fr; }
+}

@@ -77,6 +77,7 @@ export function MobileWidgetFileScreen({
       {widget?.type === WIDGET_TYPE.MEMO ? (
         <MobileMemo
           scope={scope}
+          history={{ widgetId: widget.id, gateway: dashboard }}
           markdown={widget.data.markdown}
           onDirtyChange={onDirtyChange}
           onSave={(markdown) => requests.mutate({

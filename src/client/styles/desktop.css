@@ -27,5 +27,6 @@
 @import "./media/viewers.css";
 @import "./desktop/notepad/notepad.css";
 @import "./desktop/programs/documents.css";
+@import "./desktop/programs/memo-history.css";
 @import "./desktop/programs/checklist.css";
 @import "./desktop/forms.css";

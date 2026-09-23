@@ -14,6 +14,7 @@ interface MemoEditorSession {
   readonly scope: object;
   active: boolean;
   pending: object | null;
+  editing: boolean;
 }
 
 interface MemoEditorState {
@@ -37,7 +38,7 @@ export function useMemoEditor<TResult>({
 }: MemoEditorOptions<TResult>) {
   const handlers = useRef({ markdown, startEditing, onSave, onSaved });
   const session = useMemo<MemoEditorSession>(
-    () => ({ scope, active: false, pending: null }),
+    () => ({ scope, active: false, pending: null, editing: false }),
     [scope],
   );
   const [state, setState] = useState(() => initialState(session, markdown, startEditing));
@@ -48,6 +49,7 @@ export function useMemoEditor<TResult>({
   });
   useLayoutEffect(() => {
     session.active = true;
+    session.editing = handlers.current.startEditing;
     setState(initialState(session, handlers.current.markdown, handlers.current.startEditing));
     return () => {
       session.active = false;
@@ -67,8 +69,16 @@ export function useMemoEditor<TResult>({
   }, [current.editing, markdown, update]);
 
   const beginEditing = useCallback((): void => {
-    if (!session.active || session.pending) return;
+    if (!session.active || session.pending || session.editing) return;
+    session.editing = true;
     update({ editing: true, draft: handlers.current.markdown, error: null });
+  }, [session, update]);
+
+  const loadDraft = useCallback((draft: string): boolean => {
+    if (!session.active || session.pending || session.editing) return false;
+    session.editing = true;
+    update({ editing: true, draft, error: null });
+    return true;
   }, [session, update]);
 
   const setDraft = useCallback((draft: string): void => {
@@ -78,6 +88,7 @@ export function useMemoEditor<TResult>({
 
   const cancel = useCallback((): void => {
     if (!session.active || session.pending) return;
+    session.editing = false;
     update({
       editing: false,
       draft: handlers.current.markdown,
@@ -97,6 +108,7 @@ export function useMemoEditor<TResult>({
       if (!isCurrent() || result === false) return false;
       handlers.current.onSaved?.(result as Exclude<TResult, false>);
       update({ editing: false });
+      session.editing = false;
       return true;
     } catch (reason) {
       if (isCurrent()) {
@@ -118,6 +130,7 @@ export function useMemoEditor<TResult>({
     saving: current.saving,
     error: current.error,
     beginEditing,
+    loadDraft,
     setDraft,
     cancel,
     save,
