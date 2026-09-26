@@ -65,10 +65,12 @@ File System Access API를 지원하는 최신 데스크톱 Edge·Chrome이 필�
 
 ```sh
 npm install
-npm run typegen
-npm run db:migrate:local
 npm run dev
 ```
+
+이후에는 `npm run dev`만 실행하면 Worker 타입 생성, 마이그레이션 안전성 검사와
+미적용 로컬 D1 마이그레이션 적용을 마친 뒤 개발 서버를 시작합니다. 어느 단계든 실패하면
+서버를 시작하지 않습니다. 실행 중 새 마이그레이션이 추가되면 서버를 재시작하세요.
 
 필요한 로컬 환경 변수는 [.dev.vars.example](./.dev.vars.example)을 참고하세요.
 인증 우회는 로컬 `localhost`에서만 허용됩니다.

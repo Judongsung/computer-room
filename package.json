@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "npm run typegen && npm run check:migrations && npm run db:migrate:local",
     "dev": "vite",
     "preview": "vite preview",
     "typegen": "wrangler types src/types/platform/generated/worker-configuration.d.ts --env-file .dev.vars.example",

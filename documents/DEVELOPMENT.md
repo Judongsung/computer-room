@@ -59,6 +59,12 @@ barrel 파일을 만들지 않고 소유 모듈을 직접 import합니다.
 - `ENVIRONMENT=development`와 `DEV_AUTH_BYPASS=true`는 로컬 개발용입니다.
 - 인증 우회는 로컬 `localhost` 요청에만 허용됩니다.
 - `npm run typegen`은 Worker 바인딩 타입을 생성합니다.
+- `npm run dev`는 npm의 `predev` 단계에서 Worker 타입을 생성하고 마이그레이션 안전성을 검사한 뒤,
+  미적용 로컬 D1 마이그레이션을 적용한 뒤 Vite 개발 서버를 시작합니다.
+  타입 생성·검사·마이그레이션 중 하나라도 실패하면 서버 실행을 중단합니다. 이미 적용한 마이그레이션은
+  다시 적용하지 않으며 원격 DB에는 적용하지 않습니다.
+- 실행 중 바인딩 설정이나 마이그레이션이 변경되면 서버를 재시작해 반영합니다.
+  스키마 변경에 필요한 신규 마이그레이션 작성·검토는 별도로 수행합니다.
 - `npm run db:migrate:local`은 로컬 D1에 마이그레이션을 적용합니다.
 - 운영 바인딩과 Access 설정은 [배포 문서](./DEPLOYMENT.md)에서 관리합니다.
 
