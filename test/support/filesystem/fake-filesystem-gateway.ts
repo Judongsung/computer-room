@@ -32,11 +32,11 @@ export class FakeFilesystemGateway implements FilesystemGateway {
 
   async search(query: FilesystemSearchQuery, offset = 0): Promise<FilesystemSearchPage> {
     const matching = this.entries.filter((entry) =>
-      entry.name.toLocaleLowerCase("ko-KR").includes(query.q.toLocaleLowerCase("ko-KR")) &&
+      query.mode !== "content" && entry.name.toLocaleLowerCase("ko-KR").includes(query.q.toLocaleLowerCase("ko-KR")) &&
       (query.kind === "all" || entry.kind === query.kind) &&
       (query.directoryId === undefined || entry.parentId === query.directoryId),
     );
-    return { items: matching.slice(offset).map((entry) => ({ entry, parentPath: "내 문서" })), nextOffset: null };
+    return { items: matching.slice(offset).map((entry) => ({ entry, parentPath: "내 문서", contentMatch: null })), nextOffset: null };
   }
 
   private readonly entries: FilesystemEntry[] = [];

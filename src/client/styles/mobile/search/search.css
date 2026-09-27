@@ -43,3 +43,9 @@
 .mobile-search__row small {
   overflow-wrap: anywhere;
 }
+
+.mobile-search__excerpt {
+  display: block;
+  margin-top: 4px;
+  white-space: pre-wrap;
+}

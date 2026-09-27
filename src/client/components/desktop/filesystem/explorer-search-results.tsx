@@ -36,7 +36,7 @@ export function ExplorerSearchResults({
         </p>
       ) : null}
       {results.page?.items.length === 0 ? <p>{FILESYSTEM_SEARCH_COPY.EMPTY}</p> : null}
-      {results.page?.items.map(({ entry, parentPath }) => (
+      {results.page?.items.map(({ entry, parentPath, contentMatch }) => (
         <div key={entry.id} className="desktop-search__row">
           <button
             type="button"
@@ -49,6 +49,7 @@ export function ExplorerSearchResults({
             <span>
               <strong>{entry.name}</strong>
               <small>{parentPath}</small>
+              {contentMatch ? <small className="desktop-search__excerpt">{contentMatch.excerpt}</small> : null}
             </span>
           </button>
           <button

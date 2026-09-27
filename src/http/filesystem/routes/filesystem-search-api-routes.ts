@@ -3,8 +3,8 @@ import { HTTP_METHOD } from "@/constants/platform/http";
 import { HTTP_ERRORS } from "@/constants/platform/errors/http";
 import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import { FILESYSTEM_PAGE_LIMIT } from "@/constants/filesystem/pagination";
-import { FILESYSTEM_SEARCH_KIND } from "@/constants/filesystem/search";
-import { isFilesystemSearchKind } from "@/domain/filesystem/search/search-query";
+import { FILESYSTEM_SEARCH_KIND, FILESYSTEM_SEARCH_MODE } from "@/constants/filesystem/search";
+import { isFilesystemSearchKind, isFilesystemSearchMode } from "@/domain/filesystem/search/search-query";
 import { AppError } from "@/domain/shared/errors";
 import { assertMethod, readPageParameters } from "@/http/filesystem/filesystem-request";
 import { jsonResponse } from "@/http/shared/responses";
@@ -18,7 +18,8 @@ export class FilesystemSearchApiRoutes implements FeatureApiHandler {
     if (url.pathname !== FILESYSTEM_API_PATHS.SEARCH) return null;
     assertMethod(request, HTTP_METHOD.GET);
     const kind = url.searchParams.get(API_QUERY_PARAMETERS.SEARCH_KIND) ?? FILESYSTEM_SEARCH_KIND.ALL;
-    if (!isFilesystemSearchKind(kind)) {
+    const mode = url.searchParams.get(API_QUERY_PARAMETERS.SEARCH_MODE) ?? FILESYSTEM_SEARCH_MODE.NAME;
+    if (!isFilesystemSearchKind(kind) || !isFilesystemSearchMode(mode)) {
       throw new AppError(FILESYSTEM_ERRORS.INVALID_SEARCH);
     }
     const directoryId = url.searchParams.get(API_QUERY_PARAMETERS.SEARCH_DIRECTORY_ID);
@@ -27,6 +28,7 @@ export class FilesystemSearchApiRoutes implements FeatureApiHandler {
       {
         q: url.searchParams.get(API_QUERY_PARAMETERS.SEARCH_QUERY) ?? "",
         kind,
+        mode,
         ...(directoryId === null ? {} : { directoryId }),
       },
       offset,

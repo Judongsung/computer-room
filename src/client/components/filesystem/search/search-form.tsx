@@ -1,5 +1,6 @@
-import { FILESYSTEM_SEARCH_COPY, FILESYSTEM_SEARCH_KIND_LABEL } from "@client/content/ko/filesystem/search";
-import { isFilesystemSearchKind } from "@/domain/filesystem/search/search-query";
+import { FILESYSTEM_SEARCH_COPY, FILESYSTEM_SEARCH_KIND_LABEL, FILESYSTEM_SEARCH_MODE_LABEL } from "@client/content/ko/filesystem/search";
+import { isFilesystemSearchKind, isFilesystemSearchMode } from "@/domain/filesystem/search/search-query";
+import { FILESYSTEM_SEARCH_MODE } from "@/constants/filesystem/search";
 import type { useSearchForm } from "@client/hooks/filesystem/search/use-filesystem-search";
 import type { SearchDirectory } from "@client/types/filesystem/search/search";
 
@@ -15,6 +16,7 @@ export function SearchForm({ form, directory, disabled = false }: SearchFormProp
         form.query.q,
         directory.name,
         FILESYSTEM_SEARCH_KIND_LABEL[form.query.kind],
+        FILESYSTEM_SEARCH_MODE_LABEL[form.query.mode ?? FILESYSTEM_SEARCH_MODE.NAME],
       )
     : FILESYSTEM_SEARCH_COPY.GUIDE;
 
@@ -31,6 +33,17 @@ export function SearchForm({ form, directory, disabled = false }: SearchFormProp
           onChange={(event) => form.setQ(event.target.value)}
         />
       </label>
+      <label>
+        {FILESYSTEM_SEARCH_COPY.MODE}
+        <select value={form.mode} onChange={(event) => {
+          if (isFilesystemSearchMode(event.target.value)) form.setMode(event.target.value);
+        }}>
+          {Object.entries(FILESYSTEM_SEARCH_MODE_LABEL).map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
+      </label>
+      {form.mode !== FILESYSTEM_SEARCH_MODE.NAME ? <p>{FILESYSTEM_SEARCH_COPY.CONTENT_GUIDE}</p> : null}
       <label>
         {FILESYSTEM_SEARCH_COPY.KIND}
         <select

@@ -11,7 +11,7 @@ import { fileEntry } from "@test/support/filesystem/file-entry";
 import { deferred } from "@test/support/widgets/deferred";
 import type { FilesystemSearchPage } from "@/types/filesystem/search/search";
 
-const item = { entry: fileEntry("one", "report.txt", "text/plain"), parentPath: "내 문서" };
+const item = { entry: fileEntry("one", "report.txt", "text/plain"), parentPath: "내 문서", contentMatch: null };
 
 describe("file search", () => {
   it("waits for submission, opens entries and parents, and restores submitted conditions", async () => {
@@ -113,8 +113,8 @@ describe("file search", () => {
     expect(result.current.error).toBeNull();
     act(() => { void result.current.loadMore(); void result.current.loadMore(); });
     expect(search).toHaveBeenCalledTimes(3);
-    await act(async () => more.resolve({ items: [{ ...item, parentPath: "latest" }], nextOffset: null }));
-    expect(result.current.page?.items).toEqual([{ ...item, parentPath: "latest" }]);
+    await act(async () => more.resolve({ items: [{ ...item, parentPath: "latest", contentMatch: null }], nextOffset: null }));
+    expect(result.current.page?.items).toEqual([{ ...item, parentPath: "latest", contentMatch: null }]);
     await act(() => result.current.reload());
     expect(result.current.error).toBe("failed");
     expect(result.current.page?.items).toHaveLength(1);
@@ -136,4 +136,27 @@ describe("file search", () => {
     expect(result.current.page).toBeNull();
     expect(result.current.error).toBe(error.message);
   });
+});
+
+it("preserves raw content criteria, ignores stale modes and renders excerpts as text", async () => {
+  const gateway = new FakeFilesystemGateway();
+  const stale = deferred<FilesystemSearchPage>();
+  const search = vi.spyOn(gateway, "search").mockReturnValueOnce(stale.promise)
+    .mockResolvedValue({ items: [{ ...item, contentMatch: { excerpt: "<img src=x onerror=alert(1)>" } }], nextOffset: null });
+  const submitted = vi.fn();
+  render(<MobileSearch gateway={gateway} location={{ directory: { id: "folder", name: "folder" } }}
+    onSubmitted={submitted} onOpenEntry={vi.fn()} onOpenDirectory={vi.fn()} />, { wrapper: ThumbnailLoadProvider });
+  const input = screen.getByRole("searchbox");
+  fireEvent.change(input, { target: { value: "  한 É  " } });
+  fireEvent.submit(input.closest("form")!);
+  const mode = screen.getByRole("combobox", { name: FILESYSTEM_SEARCH_COPY.MODE });
+  fireEvent.change(mode, { target: { value: "content" } });
+  expect(search).toHaveBeenCalledTimes(1);
+  fireEvent.submit(input.closest("form")!);
+  await screen.findByText("<img src=x onerror=alert(1)>");
+  expect(search).toHaveBeenLastCalledWith({ q: "한 É", kind: "all", mode: "content", directoryId: "folder" }, 0);
+  expect(document.querySelector(".mobile-search__excerpt img")).toBeNull();
+  await act(async () => stale.reject(new Error("old name search")));
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(screen.getByText("report.txt")).toBeInTheDocument();
 });

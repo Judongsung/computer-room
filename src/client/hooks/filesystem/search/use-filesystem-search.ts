@@ -1,9 +1,9 @@
 import { useCallback, useLayoutEffect, useState } from "react";
 import { MAX_FILE_NAME_BYTES } from "@/constants/filesystem/file";
-import { FILESYSTEM_SEARCH_KIND } from "@/constants/filesystem/search";
+import { FILESYSTEM_SEARCH_KIND, FILESYSTEM_SEARCH_MODE } from "@/constants/filesystem/search";
 import { FILESYSTEM_SEARCH_COPY } from "@client/content/ko/filesystem/search";
 import { mergeFilesystemItems, useFilesystemPages } from "@client/hooks/filesystem/use-filesystem-pages";
-import type { FilesystemSearchKind, FilesystemSearchPage, FilesystemSearchQuery } from "@/types/filesystem/search/search";
+import type { FilesystemSearchKind, FilesystemSearchMode, FilesystemSearchPage, FilesystemSearchQuery } from "@/types/filesystem/search/search";
 import type { FilesystemSearchGateway } from "@client/types/filesystem/ports/search";
 import type { SearchLocation } from "@client/types/filesystem/search/search";
 
@@ -11,6 +11,7 @@ interface SearchFormState {
   readonly directoryId: string;
   readonly q: string;
   readonly kind: FilesystemSearchKind;
+  readonly mode: FilesystemSearchMode;
   readonly query: FilesystemSearchQuery | null;
   readonly revision: number;
   readonly error: string | null;
@@ -26,13 +27,14 @@ export function useSearchForm(location: SearchLocation, onSubmitted?: (query: Fi
   }
 
   const submit = (): void => {
-    const q = current.q.normalize("NFC").trim();
+    const q = (current.mode === FILESYSTEM_SEARCH_MODE.NAME ? current.q.normalize("NFC") : current.q).trim();
     if (!q || new TextEncoder().encode(q).length > MAX_FILE_NAME_BYTES) {
       setState({ ...current, error: FILESYSTEM_SEARCH_COPY.INVALID });
       return;
     }
-    const next = { q, kind: current.kind, directoryId: location.directory.id };
-    const repeated = current.query?.q === next.q && current.query.kind === next.kind;
+    const next = { q, kind: current.kind, mode: current.mode, directoryId: location.directory.id };
+    const repeated = current.query?.q === next.q && current.query.kind === next.kind &&
+      (current.query.mode ?? FILESYSTEM_SEARCH_MODE.NAME) === next.mode;
     setState({
       ...current,
       error: null,
@@ -45,6 +47,7 @@ export function useSearchForm(location: SearchLocation, onSubmitted?: (query: Fi
     ...current,
     setQ: (q: string) => setState((value) => ({ ...value, q })),
     setKind: (kind: FilesystemSearchKind) => setState((value) => ({ ...value, kind })),
+    setMode: (mode: FilesystemSearchMode) => setState((value) => ({ ...value, mode })),
     reset: () => setState(initialFormState({ directory: location.directory })),
     submit,
   };
@@ -58,6 +61,7 @@ function initialFormState(location: SearchLocation): SearchFormState {
     directoryId: location.directory.id,
     q: query?.q ?? "",
     kind: query?.kind ?? FILESYSTEM_SEARCH_KIND.ALL,
+    mode: query?.mode ?? FILESYSTEM_SEARCH_MODE.NAME,
     query,
     revision: 0,
     error: null,

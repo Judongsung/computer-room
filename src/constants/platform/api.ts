@@ -106,6 +106,7 @@ export const CHECKLIST_SETTINGS_API_PATH =
 export const API_QUERY_PARAMETERS = {
   SEARCH_QUERY: "q",
   SEARCH_KIND: "kind",
+  SEARCH_MODE: "mode",
   SEARCH_DIRECTORY_ID: "directoryId",
   OFFSET: "offset",
   LIMIT: "limit",

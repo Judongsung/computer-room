@@ -64,7 +64,7 @@ function MobileSearchResults({
         <p className={MOBILE_CLASS_NAME.MESSAGE}>{FILESYSTEM_SEARCH_COPY.EMPTY}</p>
       ) : null}
       <ul className={MOBILE_CLASS_NAME.LIST}>
-        {results.page?.items.map(({ entry, parentPath }) => (
+        {results.page?.items.map(({ entry, parentPath, contentMatch }) => (
           <li key={entry.id} className="mobile-search__row">
             <button
               className={MOBILE_CLASS_NAME.LIST_ITEM}
@@ -77,6 +77,7 @@ function MobileSearchResults({
               <span className={MOBILE_CLASS_NAME.LIST_TEXT}>
                 <strong>{entry.name}</strong>
                 <small className={MOBILE_CLASS_NAME.LIST_META}>{parentPath}</small>
+                {contentMatch ? <small className="mobile-search__excerpt">{contentMatch.excerpt}</small> : null}
               </span>
             </button>
             <button

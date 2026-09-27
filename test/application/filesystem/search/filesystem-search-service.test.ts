@@ -16,12 +16,12 @@ describe("filesystem name search", () => {
 
   it("passes normalized filters and one extra row to the repository and maps public entries", async () => {
     const fixture = createFilesystemApplicationFixture();
-    const rows = ["a", "b"].map((id) => ({ entry: filesystemEntryRecord(id, "file", id), parentPath: "내 문서" }));
+    const rows = ["a", "b"].map((id) => ({ entry: filesystemEntryRecord(id, "file", id), parentPath: "내 문서", contentMatch: null }));
     const search = vi.fn(async () => rows);
     const service = new FilesystemSearchService({ search }, new ActiveFilesystemEntryResolver(fixture.repository));
     const page = await service.search({ q: " A ", kind: "all", directoryId: FILESYSTEM_ROOT_ID.DOCUMENTS }, 0, 1);
-    expect(search).toHaveBeenCalledExactlyOnceWith({ q: "a", kind: "all", directoryId: FILESYSTEM_ROOT_ID.DOCUMENTS }, 0, 2);
-    expect(page).toMatchObject({ items: [{ entry: { id: "a" }, parentPath: "내 문서" }], nextOffset: 1 });
+    expect(search).toHaveBeenCalledExactlyOnceWith({ q: "a", kind: "all", mode: "name", directoryId: FILESYSTEM_ROOT_ID.DOCUMENTS }, 0, 2);
+    expect(page).toMatchObject({ items: [{ entry: { id: "a" }, parentPath: "내 문서", contentMatch: null }], nextOffset: 1 });
     expect(page.items[0]?.entry).not.toHaveProperty("objectKey");
   });
 
@@ -36,4 +36,14 @@ describe("filesystem name search", () => {
     }
     expect(search).not.toHaveBeenCalled();
   });
+});
+
+it("preserves raw body queries while defaulting omitted modes to name search", async () => {
+  const fixture = createFilesystemApplicationFixture();
+  const search = vi.fn(async () => []);
+  const service = new FilesystemSearchService({ search }, new ActiveFilesystemEntryResolver(fixture.repository));
+  for (const mode of ["content", "all"] as const) {
+    await service.search({ q: "  한 É CODE  ", kind: "all", mode }, 0, 10);
+    expect(search).toHaveBeenLastCalledWith({ q: "한 É CODE", kind: "all", mode }, 0, 11);
+  }
 });

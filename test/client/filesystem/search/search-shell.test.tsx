@@ -32,7 +32,7 @@ it("searches inside the explorer, blocks hidden-list commands and restores the l
   filesystem.addFile("일반 목록.txt", "text/plain");
   const file = filesystem.addFile("찾은 파일.txt", "text/plain", folder.id);
   const search = vi.spyOn(filesystem, "search").mockResolvedValue({
-    items: [{ entry: file, parentPath: "내 문서/대상 폴더" }], nextOffset: null,
+    items: [{ entry: file, parentPath: "내 문서/대상 폴더", contentMatch: { excerpt: "<b>본문 발췌</b>" } }], nextOffset: null,
   });
   const upload = vi.spyOn(filesystem, "uploadFile");
   const list = vi.spyOn(filesystem, "listDirectory");
@@ -48,10 +48,13 @@ it("searches inside the explorer, blocks hidden-list commands and restores the l
   expect(within(explorer).getByText("일반 목록.txt")).toBeInTheDocument();
   expect(search).not.toHaveBeenCalled();
   const input = within(explorer).getByRole("searchbox");
+  fireEvent.change(within(explorer).getByRole("combobox", { name: FILESYSTEM_SEARCH_COPY.MODE }), { target: { value: "all" } });
   fireEvent.change(input, { target: { value: "찾은" } });
   fireEvent.submit(input.closest("form")!);
   await within(explorer).findByText("찾은 파일.txt");
-  expect(search).toHaveBeenLastCalledWith({ q: "찾은", kind: "all", directoryId: FILESYSTEM_ROOT_ID.DOCUMENTS }, 0);
+  expect(search).toHaveBeenLastCalledWith({ q: "찾은", kind: "all", mode: "all", directoryId: FILESYSTEM_ROOT_ID.DOCUMENTS }, 0);
+  expect(within(explorer).getByText("<b>본문 발췌</b>")).toBeInTheDocument();
+  expect(explorer.querySelector(".desktop-search__excerpt b")).toBeNull();
   expect(desktopWindowTitles()).toEqual(["내 문서"]);
   expect(within(explorer).queryByText("일반 목록.txt")).not.toBeInTheDocument();
   for (const name of [FILESYSTEM_COPY.NEW_FOLDER, FILESYSTEM_COPY.UPLOAD_FILES, FILESYSTEM_COPY.DELETE, FILESYSTEM_COPY.DOWNLOAD]) {
@@ -80,7 +83,7 @@ it("keeps windows independent and resets search on same-window folder navigation
   const child = await filesystem.createDirectory(FILESYSTEM_ROOT_ID.DOCUMENTS, "하위 폴더");
   const pending = deferred<FilesystemSearchPage>();
   const search = vi.spyOn(filesystem, "search")
-    .mockResolvedValueOnce({ items: [{ entry: child, parentPath: "내 문서" }], nextOffset: null })
+    .mockResolvedValueOnce({ items: [{ entry: child, parentPath: "내 문서", contentMatch: null }], nextOffset: null })
     .mockReturnValue(pending.promise);
   const user = userEvent.setup();
   render(<App api={new FakeDashboardGateway()} filesystemApi={filesystem} />);
@@ -100,7 +103,7 @@ it("keeps windows independent and resets search on same-window folder navigation
   expect(search).toHaveBeenCalledTimes(1);
   fireEvent.change(input, { target: { value: "늦은" } });
   fireEvent.submit(input.closest("form")!);
-  expect(search).toHaveBeenLastCalledWith({ q: "늦은", kind: "all", directoryId: child.id }, 0);
+  expect(search).toHaveBeenLastCalledWith({ q: "늦은", kind: "all", mode: "name", directoryId: child.id }, 0);
   await user.click(within(explorer).getByRole("button", { name: FILESYSTEM_COPY.UP }));
   await waitFor(() => expect(input).toHaveValue(""));
   await act(async () => pending.reject(new Error("stale folder")));
@@ -114,7 +117,7 @@ it("opens mobile search only from a folder and restores criteria after viewing a
   const folder = await filesystem.createDirectory(FILESYSTEM_ROOT_ID.DOCUMENTS, "사진 폴더");
   const picture = filesystem.addFile("검색 사진.png", "image/png", folder.id);
   const search = vi.spyOn(filesystem, "search").mockResolvedValue({
-    items: [{ entry: picture, parentPath: "내 문서/사진 폴더" }], nextOffset: 20,
+    items: [{ entry: picture, parentPath: "내 문서/사진 폴더", contentMatch: null }], nextOffset: 20,
   });
   const list = vi.spyOn(filesystem, "listDirectory");
   const user = userEvent.setup();
@@ -128,6 +131,7 @@ it("opens mobile search only from a folder and restores criteria after viewing a
   await user.click(screen.getByRole("button", { name: MOBILE_COPY.MENU }));
   await user.click(screen.getByRole("button", { name: FILESYSTEM_SEARCH_COPY.TITLE }));
   const input = await screen.findByRole("searchbox");
+  fireEvent.change(screen.getByRole("combobox", { name: FILESYSTEM_SEARCH_COPY.MODE }), { target: { value: "all" } });
   fireEvent.change(input, { target: { value: "사진" } });
   fireEvent.submit(input.closest("form")!);
   await user.click(await screen.findByRole("button", { name: /검색 사진.png/ }));
@@ -135,8 +139,9 @@ it("opens mobile search only from a folder and restores criteria after viewing a
   await waitFor(() => expect(list).toHaveBeenCalledWith(folder.id, 0));
   await user.click(screen.getByRole("button", { name: MOBILE_COPY.BACK }));
   expect(await screen.findByRole("searchbox")).toHaveValue("사진");
+  expect(screen.getByRole("combobox", { name: FILESYSTEM_SEARCH_COPY.MODE })).toHaveValue("all");
   await waitFor(() => expect(search).toHaveBeenCalledTimes(2));
-  expect(search).toHaveBeenLastCalledWith({ q: "사진", kind: "all", directoryId: FILESYSTEM_ROOT_ID.DOCUMENTS }, 0);
+  expect(search).toHaveBeenLastCalledWith({ q: "사진", kind: "all", mode: "all", directoryId: FILESYSTEM_ROOT_ID.DOCUMENTS }, 0);
   await user.click(await screen.findByRole("button", { name: FILESYSTEM_SEARCH_COPY.OPEN_FOLDER }));
   await screen.findByRole("heading", { name: folder.name });
   await user.click(screen.getByRole("button", { name: MOBILE_COPY.MENU }));

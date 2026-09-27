@@ -86,3 +86,8 @@
   display: block;
   overflow-wrap: anywhere;
 }
+
+.desktop-search__excerpt {
+  margin-top: 4px;
+  white-space: pre-wrap;
+}

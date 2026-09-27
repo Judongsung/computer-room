@@ -1,4 +1,11 @@
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
+export const FILESYSTEM_SEARCH_MODE = {
+  NAME: "name",
+  CONTENT: "content",
+  ALL: "all",
+} as const;
+export const SEARCH_EXCERPT_CONTEXT = 40;
+export const SEARCH_EXCERPT_LENGTH = 320;
 export const FILESYSTEM_SEARCH_KIND = {
   ALL: "all",
   SHORTCUT: FILESYSTEM_ENTRY_KIND.SHORTCUT,

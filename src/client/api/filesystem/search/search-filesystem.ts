@@ -15,6 +15,9 @@ export async function searchFilesystem(query: FilesystemSearchQuery, offset: num
   if (query.directoryId !== undefined) {
     parameters.set(API_QUERY_PARAMETERS.SEARCH_DIRECTORY_ID, query.directoryId);
   }
+  if (query.mode !== undefined) {
+    parameters.set(API_QUERY_PARAMETERS.SEARCH_MODE, query.mode);
+  }
   const value = await requestJson(`${FILESYSTEM_API_PATHS.SEARCH}?${parameters}`);
   if (!isSearchPage(value)) throw new ClientError(CLIENT_ERROR_CODE.INVALID_RESPONSE);
   return value;
@@ -25,7 +28,8 @@ function isSearchPage(value: unknown): value is FilesystemSearchPage {
     isRecord(value) &&
     Array.isArray(value.items) &&
     value.items.every((item) =>
-      isRecord(item) && isFilesystemEntry(item.entry) && typeof item.parentPath === "string",
+      isRecord(item) && isFilesystemEntry(item.entry) && typeof item.parentPath === "string" &&
+      (item.contentMatch === null || (isRecord(item.contentMatch) && typeof item.contentMatch.excerpt === "string")),
     ) &&
     (value.nextOffset === null || (
       typeof value.nextOffset === "number" &&
