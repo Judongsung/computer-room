@@ -191,6 +191,56 @@ it("does not apply an old rename after the gateway changes", async () => {
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
+
+it("retains only failed items for the next batch request", async () => {
+  const gateway = new FakeFilesystemGateway();
+  const first = gateway.addFile("success.txt", "text/plain");
+  const second = gateway.addFile("failure.txt", "text/plain");
+  const original = gateway.trashEntries.bind(gateway);
+  const trash = vi.spyOn(gateway, "trashEntries").mockImplementationOnce(async () => {
+    await original([first.id]);
+    return { succeededIds: [first.id], entries: [], closedWidgetIds: [],
+      failures: [{ id: second.id, code: "FAILED", message: "try again" }] };
+  });
+  render(<DirectoryHarness gateway={gateway} />, { wrapper: ThumbnailLoadProvider });
+  fireEvent.click(await screen.findByRole("button", { name: MOBILE_FILES.SELECT }));
+  fireEvent.click(screen.getByRole("button", { name: MOBILE_FILES.SELECT_ALL }));
+  fireEvent.click(screen.getByRole("button", { name: COPY.DELETE }));
+  fireEvent.click(screen.getByRole("button", { name: COPY.CONFIRM }));
+  await screen.findByText(/try again/);
+  fireEvent.click(screen.getByRole("button", { name: COPY.CLOSE }));
+  expect(screen.getByRole("checkbox", { name: second.name })).toBeChecked();
+  fireEvent.click(screen.getByRole("button", { name: COPY.DELETE }));
+  fireEvent.click(screen.getByRole("button", { name: COPY.CONFIRM }));
+  await waitFor(() => expect(trash).toHaveBeenCalledTimes(2));
+  expect(trash).toHaveBeenNthCalledWith(1, [first.id, second.id]);
+  expect(trash).toHaveBeenNthCalledWith(2, [second.id]);
+});
+
+it("empties trash including entries on pages that were never loaded", async () => {
+  const gateway = new FakeFilesystemGateway();
+  const visible = gateway.addFile("visible.txt", "text/plain");
+  const hidden = gateway.addFile("hidden.txt", "text/plain");
+  await gateway.trashEntries([visible.id, hidden.id]);
+  const list = gateway.listTrash.bind(gateway);
+  vi.spyOn(gateway, "listTrash").mockImplementation(async (offset = 0) => {
+    const page = await list();
+    return offset === 0 && page.items.length > 1
+      ? { ...page, items: [page.items[0]!], nextOffset: 1 }
+      : { ...page, items: page.items.slice(offset), nextOffset: null };
+  });
+  const empty = vi.spyOn(gateway, "emptyTrash");
+  render(<TrashHarness gateway={gateway} />, { wrapper: ThumbnailLoadProvider });
+  await screen.findByText(visible.name);
+  expect(screen.queryByText(hidden.name)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: COPY.EMPTY_RECYCLE_BIN }));
+  expect(screen.getByRole("dialog")).toHaveTextContent(MOBILE_FILES.LOADED_COUNT(1));
+  fireEvent.click(screen.getByRole("button", { name: COPY.CONFIRM }));
+  await screen.findByText(MOBILE_COPY.EMPTY_TRASH);
+  expect(empty).toHaveBeenCalledOnce();
+  expect((await list()).items).toEqual([]);
+});
+
 function DirectoryHarness({ gateway }: { readonly gateway: FakeFilesystemGateway }) {
   const [revision, setRevision] = useState(0);
   const [menuOpen, setMenuOpen] = useState(true);
