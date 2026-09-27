@@ -7,6 +7,8 @@ import { CLIENT_ACCESS_MODE } from "@client/constants/platform/access";
 import { CLIENT_INTERFACE_MODE } from "@client/constants/shared/interface-mode";
 import { GUEST_COPY } from "@client/content/ko/guest/guest";
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
+import { MOBILE_FILESYSTEM_COPY } from "@client/content/ko/mobile/filesystem";
 import { DASHBOARD_COPY } from "@client/content/ko/widgets/content";
 import { PROJECT_EXTERNAL_LINKS } from "@client/constants/platform/external-links";
 import {
@@ -72,6 +74,9 @@ describe("guest application", () => {
     expect(screen.queryByRole("button", { name: MOBILE_COPY.RECYCLE_BIN })).not.toBeInTheDocument();
     await user.click(documents);
     expect(await screen.findByRole("heading", { name: FILESYSTEM_ROOT_NAME.DOCUMENTS })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: MOBILE_FILESYSTEM_COPY.SELECT })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: FILESYSTEM_COPY.UPLOAD_FILES })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: FILESYSTEM_COPY.NEW_FOLDER })).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: MOBILE_COPY.HOME }));
     await user.click(await screen.findByRole("button", { name: "공개 메모" }));
     expect(await screen.findByRole("heading", { name: "공개 내용" })).toBeInTheDocument();
