@@ -1,3 +1,8 @@
+import { DocumentsWindow } from "@client/components/filesystem/explorer/documents-window";
+import { XpContextMenuProvider } from "@client/state/context-menu/context-menu-context";
+import { ThumbnailLoadProvider } from "@client/state/filesystem/thumbnail-load-context";
+import { DESKTOP_ASSET_PATHS } from "@client/constants/desktop/desktop";
+import { WINDOW_STATE, WINDOW_RESTORE_STATE } from "@/constants/widgets/widget";
 import { XP_EXPLORER_HEADER_COPY } from "@client/content/ko/filesystem/explorer-header";
 import {
   FILESYSTEM_SORT_DIRECTION_LABELS,
@@ -5,7 +10,7 @@ import {
 } from "@client/content/ko/filesystem/sort";
 import { FOLDER_PROPERTIES_COPY } from "@client/content/ko/filesystem/details";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import {
   fireEvent,
   render,
@@ -258,16 +263,14 @@ describe("App desktop filesystem", () => {
   });
 
   it("preserves a multi-selection when an Explorer item opens its XP menu", async () => {
-    const api = new FakeDashboardGateway();
     const filesystem = new FakeFilesystemGateway();
     filesystem.addFile("첫째.txt", "text/plain");
     filesystem.addFile("둘째.txt", "text/plain");
     filesystem.addFile("셋째.txt", "text/plain");
     const user = userEvent.setup();
-    render(<App api={api} filesystemApi={filesystem} />);
+    render(<Explorer gateway={filesystem} />);
 
-    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
-    const documentsWindow = await waitFor(() => desktopWindowByTitle("내 문서"));
+    const documentsWindow = screen.getByTestId("desktop-window");
     const first = await within(documentsWindow).findByRole("button", {
       name: /첫째\.txt/,
     });
@@ -292,16 +295,14 @@ describe("App desktop filesystem", () => {
   });
 
   it("selects filesystem ranges and batches a multi-item delete", async () => {
-    const api = new FakeDashboardGateway();
     const filesystem = new FakeFilesystemGateway();
     filesystem.addFile("첫째.txt", "text/plain");
     filesystem.addFile("둘째.txt", "text/plain");
     filesystem.addFile("셋째.txt", "text/plain");
     const user = userEvent.setup();
-    render(<App api={api} filesystemApi={filesystem} />);
+    render(<Explorer gateway={filesystem} />);
 
-    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
-    const documentsWindow = await waitFor(() => desktopWindowByTitle("내 문서"));
+    const documentsWindow = screen.getByTestId("desktop-window");
     const first = await within(documentsWindow).findByRole("button", {
       name: /첫째\.txt/,
     });
@@ -487,3 +488,19 @@ describe("App desktop filesystem", () => {
     ).toBeInTheDocument();
   });
 });
+
+function Explorer({ gateway }: { readonly gateway: FakeFilesystemGateway }) {
+  const [revision, setRevision] = useState(0);
+  return <XpContextMenuProvider><ThumbnailLoadProvider>
+    <DocumentsWindow gateway={gateway} windowId="documents" title="내 문서" iconPath={DESKTOP_ASSET_PATHS.DOCUMENTS_ICON}
+      initialDirectoryId={FILESYSTEM_ROOT_ID.DOCUMENTS} filesystemRevision={revision}
+      onFilesystemChanged={() => setRevision((value) => value + 1)}
+      onDirectoryChanged={vi.fn()} onOpenFile={vi.fn()} onOpenWidget={vi.fn()}
+      onEntryChanged={vi.fn()} onWidgetsClosed={vi.fn()} onUploadNodes={vi.fn(async () => undefined)}
+      desktopCapacity={20} desktop={{ width: 1024, height: 768 }}
+      window={{ position: { x: 0, y: 0 }, size: { width: 640, height: 480 },
+        windowState: WINDOW_STATE.NORMAL, restoreState: WINDOW_RESTORE_STATE.NORMAL }}
+      isActive zIndex={1} onFocus={vi.fn()} onMinimize={vi.fn()}
+      onToggleMaximize={vi.fn()} onClose={vi.fn()} onCommitBounds={vi.fn()} />
+  </ThumbnailLoadProvider></XpContextMenuProvider>;
+}

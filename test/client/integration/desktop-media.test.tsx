@@ -1,5 +1,4 @@
 import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
-import { NOTEPAD_COPY } from "@client/content/ko/filesystem/text/notepad";
 import type { ReactNode } from "react";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -133,32 +132,5 @@ describe("App desktop media", () => {
     expect(pause).toHaveBeenCalled();
   });
 
-  it("offers a download instead of opening an unsupported media type", async () => {
-    const click = vi
-      .spyOn(HTMLAnchorElement.prototype, "click")
-      .mockImplementation(() => undefined);
-    const api = new FakeDashboardGateway();
-    const filesystem = new FakeFilesystemGateway();
-    filesystem.addFile("photo.heic", "image/heic");
-    const user = userEvent.setup();
-    render(<App api={api} filesystemApi={filesystem} />);
 
-    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
-    const documentsWindow = await waitFor(() => desktopWindowByTitle("내 문서"));
-    await user.dblClick(
-      await within(documentsWindow).findByRole("button", { name: /photo\.heic/ }),
-    );
-    const dialog = screen.getByRole("dialog", {
-      name: NOTEPAD_COPY.DOWNLOAD_TITLE,
-    });
-    await user.click(
-      within(dialog).getByRole("button", {
-        name: NOTEPAD_COPY.DOWNLOAD,
-      }),
-    );
-    expect(click).toHaveBeenCalledOnce();
-    expect(desktopWindowTitles().some((title) => title?.includes("photo.heic"))).toBe(
-      false,
-    );
-  });
 });

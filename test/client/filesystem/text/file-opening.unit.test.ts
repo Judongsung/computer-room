@@ -14,6 +14,7 @@ describe("file associations", () => {
     expect(fileOpenKind({ name: "photo.txt", contentType: "image/png" })).toBe(FILE_OPEN_KIND.IMAGE);
     expect(fileOpenKind({ name: "video.json", contentType: "video/mp4" })).toBe(FILE_OPEN_KIND.VIDEO);
     expect(fileOpenKind({ name: "vector.txt", contentType: "image/svg+xml" })).toBe(FILE_OPEN_KIND.DOWNLOAD);
+    expect(fileOpenKind({ name: "photo.heic", contentType: "image/heic" })).toBe(FILE_OPEN_KIND.DOWNLOAD);
     expect(fileOpenKind({ name: "archive.zip", contentType: "application/zip" })).toBe(FILE_OPEN_KIND.DOWNLOAD);
   });
   it("dispatches through the common handlers without starting a download itself", () => {

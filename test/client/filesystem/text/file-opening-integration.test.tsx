@@ -11,7 +11,7 @@ import { NOTEPAD_COPY } from "@client/content/ko/filesystem/text/notepad";
 import { DASHBOARD_COPY } from "@client/content/ko/widgets/content";
 import { FakeFilesystemGateway } from "@test/support/filesystem/fake-filesystem-gateway";
 import { FakeDashboardGateway } from "@test/support/widgets/fake-dashboard-gateway";
-import { desktopWindowByTitle } from "@test/client/support/desktop/app-integration-helpers";
+import { desktopWindowByTitle, desktopWindowTitles } from "@test/client/support/desktop/app-integration-helpers";
 import type { GuestGateway } from "@client/types/guest/guest";
 
 vi.mock("react-rnd", () => ({ Rnd: ({ children, style }: { children: ReactNode; style?: CSSProperties }) => <div data-testid="desktop-window" style={style}>{children}</div> }));
@@ -21,7 +21,8 @@ afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 function setup(guest: boolean, mobile: boolean) {
   const filesystem = new FakeFilesystemGateway();
   const text = filesystem.addFile("문서.md", "application/octet-stream", FILESYSTEM_ROOT_ID.DESKTOP);
-  const binary = filesystem.addFile("archive.zip", "application/zip", FILESYSTEM_ROOT_ID.DESKTOP);
+  const binary = filesystem.addFile(!guest && !mobile ? "photo.heic" : "archive.zip",
+    !guest && !mobile ? "image/heic" : "application/zip", FILESYSTEM_ROOT_ID.DESKTOP);
   const guestGateway: GuestGateway = {
     getSession: async () => ({ enabled: true, loginUrl: "/auth/login" }),
     listDirectory: filesystem.listDirectory.bind(filesystem),
@@ -80,6 +81,7 @@ describe.each([
       "href", (guest ? guestGateway : filesystem).downloadUrl(binary.id),
     );
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    if (!mobile) expect(desktopWindowTitles().some((title) => title?.includes(binary.name))).toBe(false);
   });
 });
 
