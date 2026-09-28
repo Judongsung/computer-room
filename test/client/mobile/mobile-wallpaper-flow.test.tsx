@@ -65,10 +65,10 @@ describe("mobile wallpaper flow", () => {
     ).toBe("");
   });
 
-  it("selects an existing server image and hides non-image files", async () => {
+  it("preserves the selected image after save failure and retries successfully", async () => {
     const wallpaper = pictureEntry();
     const textFile = fileEntry("notes", "메모.txt", "text/plain");
-    const updateWallpaper = vi.fn(async () => ({ wallpaper }));
+    const updateWallpaper = vi.fn(async () => ({ wallpaper })).mockRejectedValueOnce(new Error("save failed"));
     const user = userEvent.setup();
     renderMobile({
       filesystem: filesystemGateway([wallpaper, textFile]),
@@ -101,6 +101,10 @@ describe("mobile wallpaper flow", () => {
       screen.getByRole("button", { name: MOBILE_COPY.SET_WALLPAPER }),
     );
 
+    expect(await screen.findByRole("alert")).toHaveTextContent("save failed");
+    expect(screen.getByAltText(wallpaper.name)).toBe(preview);
+    expect(screen.getByRole("button", { name: wallpaper.name })).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("button", { name: MOBILE_COPY.SET_WALLPAPER }));
     await waitFor(() =>
       expect(updateWallpaper).toHaveBeenCalledWith(wallpaper.id),
     );
