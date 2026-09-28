@@ -1,5 +1,6 @@
+import { CHECKLIST_WIDGET_COPY } from "@client/content/ko/widgets/content";
 import { fakeChecklistRetentionGateway } from "@test/support/widgets/checklist-retention-gateway";
-import { act, render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
@@ -100,6 +101,79 @@ describe("DailyChecklistWidget", () => {
     await act(async () => vi.advanceTimersByTimeAsync(6_000));
 
     expect(gateway.getChecklist).toHaveBeenCalledWith(widget.id);
+  });
+  it("edits checklist items only in edit state and opens the event log", async () => {
+    // Keep CRUD within the fake gateway's business date; reset behavior has separate coverage.
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-08-20T00:00:00.000Z"));
+    const api = new FakeDashboardGateway();
+    const user = userEvent.setup();
+    const widget = widgetWithData({ items: [] });
+    api.savedWidgets = [widget];
+    render(<ChecklistHarness widget={widget} gateway={api} />);
+
+    expect(
+      screen.queryByRole("textbox", {
+        name: CHECKLIST_WIDGET_COPY.NEW_ITEM_PLACEHOLDER,
+      }),
+    ).not.toBeInTheDocument();
+    await user.click(
+      await screen.findByRole("button", { name: CHECKLIST_WIDGET_COPY.EDIT }),
+    );
+    await user.type(
+      screen.getByRole("textbox", {
+        name: CHECKLIST_WIDGET_COPY.NEW_ITEM_PLACEHOLDER,
+      }),
+      "물 마시기",
+    );
+    await user.click(
+      screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.ADD_ITEM }),
+    );
+    const checkbox = await screen.findByRole("checkbox", { name: "물 마시기" });
+
+    await user.click(
+      screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.EDIT_ITEM }),
+    );
+    const itemEditor = screen.getByRole("textbox", {
+      name: CHECKLIST_WIDGET_COPY.EDIT_ITEM,
+    });
+    await user.clear(itemEditor);
+    await user.type(itemEditor, "물 두 잔 마시기");
+    await user.click(
+      screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.SAVE_ITEM }),
+    );
+    const renamedCheckbox = await screen.findByRole("checkbox", {
+      name: "물 두 잔 마시기",
+    });
+    expect(checkbox).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole("button", {
+        name: CHECKLIST_WIDGET_COPY.FINISH_EDITING,
+      }),
+    );
+    expect(
+      screen.queryByRole("button", { name: CHECKLIST_WIDGET_COPY.EDIT_ITEM }),
+    ).not.toBeInTheDocument();
+    await user.click(renamedCheckbox);
+    await waitFor(() =>
+      expect(screen.getByText("물 두 잔 마시기").tagName).toBe("DEL"),
+    );
+
+    await user.click(
+      screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.DETAILS }),
+    );
+    const logDialog = await screen.findByRole("dialog", {
+      name: CHECKLIST_WIDGET_COPY.LOG_TITLE,
+    });
+    expect(logDialog.querySelectorAll(".xp-window-frame")).toHaveLength(1);
+    expect(logDialog.querySelector(".checklist-log-dialog")).toBe(
+      logDialog.querySelector(".xp-window-frame"),
+    );
+    expect(logDialog.querySelector(".sunken-panel")).toBeNull();
+    expect(screen.getByText(CHECKLIST_WIDGET_COPY.ADDED)).toBeInTheDocument();
+    expect(screen.getByText(CHECKLIST_WIDGET_COPY.RENAMED)).toBeInTheDocument();
+    expect(screen.getByText("물 마시기 → 물 두 잔 마시기")).toBeInTheDocument();
+    expect(screen.getByText(CHECKLIST_WIDGET_COPY.CHECKED)).toBeInTheDocument();
   });
 });
 

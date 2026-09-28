@@ -75,30 +75,6 @@ describe("App desktop widgets", () => {
     });
   });
 
-  it("preserves a memo draft across keyboard preview navigation and cancels edits", async () => {
-    const api = new FakeDashboardGateway();
-    const user = userEvent.setup();
-    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
-    await launchApplication(user, APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.MEMO]);
-    await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT);
-    await user.click(screen.getByRole("button", { name: MEMO_WIDGET_COPY.EDIT }));
-    await user.type(screen.getByRole("textbox", { name: MEMO_WIDGET_COPY.EDITOR_LABEL }), "# 초안 제목");
-    const editor = screen.getByRole<HTMLTextAreaElement>("textbox", { name: MEMO_WIDGET_COPY.EDITOR_LABEL });
-    await user.keyboard("{Control>}a{/Control}");
-    expect(editor.selectionStart).toBe(0);
-    expect(editor.selectionEnd).toBe(editor.value.length);
-    expect(fireEvent.keyDown(editor, { key: "a", metaKey: true })).toBe(true);
-    await user.click(screen.getByRole("tab", { name: MEMO_WIDGET_COPY.WRITE }));
-    await user.keyboard("{ArrowRight}");
-    expect(screen.getByRole("tab", { name: MEMO_WIDGET_COPY.PREVIEW })).toHaveFocus();
-    expect(screen.getByRole("heading", { name: "초안 제목" })).toBeInTheDocument();
-    await user.keyboard("{ArrowLeft}");
-    expect(screen.getByRole("textbox", { name: MEMO_WIDGET_COPY.EDITOR_LABEL })).toHaveValue("# 초안 제목");
-    await user.click(screen.getByRole("button", { name: MEMO_WIDGET_COPY.CANCEL }));
-    expect(screen.getAllByText(MEMO_WIDGET_COPY.EMPTY_CONTENT)).toHaveLength(1);
-    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
-  });
-
   it("creates a widget from My Computer", async () => {
     const api = new FakeDashboardGateway();
     const filesystem = new FakeFilesystemGateway();
@@ -336,130 +312,39 @@ describe("App desktop widgets", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("edits and renders a memo with GFM markdown", async () => {
+  it("saves an edited memo through the application gateway", async () => {
     const api = new FakeDashboardGateway();
     const user = userEvent.setup();
-    const markdown =
-      "# 오늘\n\n**중요**\n다음 줄\n\n~~완료~~\n\n- [x] 확인\n\n<script>alert('x')</script>";
     render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
-    await launchApplication(
-      user,
-      APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.MEMO],
-    );
-    await waitFor(() => expect(api.savedWidgets).toHaveLength(1));
-
-    await user.click(
-      screen.getByRole("button", { name: MEMO_WIDGET_COPY.EDIT }),
-    );
-    const writeTab = screen.getByRole("tab", { name: MEMO_WIDGET_COPY.WRITE });
-    const previewTab = screen.getByRole("tab", {
-      name: MEMO_WIDGET_COPY.PREVIEW,
+    await launchApplication(user, APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.MEMO]);
+    await user.click(await screen.findByRole("button", { name: MEMO_WIDGET_COPY.EDIT }));
+    fireEvent.change(screen.getByRole("textbox", { name: MEMO_WIDGET_COPY.EDITOR_LABEL }), {
+      target: { value: "# 저장한 메모" },
     });
-    writeTab.focus();
-    await user.keyboard("{ArrowRight}");
-    expect(previewTab).toHaveAttribute("aria-selected", "true");
-    await user.keyboard("{ArrowLeft}");
-    const editor = screen.getByRole("textbox", {
-      name: MEMO_WIDGET_COPY.EDITOR_LABEL,
-    });
-    await user.click(editor);
-    await user.paste(markdown);
-    await user.click(previewTab);
-    expect(screen.getByRole("heading", { name: "오늘" })).toBeInTheDocument();
-    expect(screen.getByText("중요").tagName).toBe("STRONG");
-    expect(screen.getByText("완료").tagName).toBe("DEL");
-    const markdownContent = document.querySelector(".markdown-content");
-    expect(markdownContent?.querySelectorAll("br")).toHaveLength(1);
-    expect(markdownContent?.querySelector("script")).toBeNull();
-
-    await user.click(
-      screen.getByRole("button", { name: MEMO_WIDGET_COPY.SAVE }),
-    );
-    await waitFor(() =>
-      expect(
-        api.savedWidgets[0]?.type === WIDGET_TYPE.MEMO
-          ? api.savedWidgets[0].data.markdown
-          : null,
-      ).toBe(markdown),
-    );
+    await user.click(screen.getByRole("button", { name: MEMO_WIDGET_COPY.SAVE }));
+    expect(await screen.findByRole("heading", { name: "저장한 메모" })).toBeInTheDocument();
+    expect(api.savedWidgets[0]).toMatchObject({ data: { markdown: "# 저장한 메모" } });
   });
 
-  it("edits checklist items only in edit state and opens the event log", async () => {
-    // Keep CRUD within the fake gateway's business date; reset behavior has separate coverage.
+  it("adds a checklist item through the application gateway and opens its log", async () => {
     vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-08-20T00:00:00.000Z"));
     const api = new FakeDashboardGateway();
+    const add = vi.spyOn(api, "addChecklistItem");
     const user = userEvent.setup();
     render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
-    await launchApplication(
-      user,
-      APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.DAILY_CHECKLIST],
-    );
-    await waitFor(() => expect(api.savedWidgets).toHaveLength(1));
-
-    expect(
-      screen.queryByRole("textbox", {
-        name: CHECKLIST_WIDGET_COPY.NEW_ITEM_PLACEHOLDER,
-      }),
-    ).not.toBeInTheDocument();
-    await user.click(
-      await screen.findByRole("button", { name: CHECKLIST_WIDGET_COPY.EDIT }),
-    );
-    await user.type(
-      screen.getByRole("textbox", {
-        name: CHECKLIST_WIDGET_COPY.NEW_ITEM_PLACEHOLDER,
-      }),
-      "물 마시기",
-    );
-    await user.click(
-      screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.ADD_ITEM }),
-    );
-    const checkbox = await screen.findByRole("checkbox", { name: "물 마시기" });
-
-    await user.click(
-      screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.EDIT_ITEM }),
-    );
-    const itemEditor = screen.getByRole("textbox", {
-      name: CHECKLIST_WIDGET_COPY.EDIT_ITEM,
+    await launchApplication(user, APPLICATION_NAME_BY_TYPE[WIDGET_TYPE.DAILY_CHECKLIST]);
+    await user.click(await screen.findByRole("button", { name: CHECKLIST_WIDGET_COPY.EDIT }));
+    fireEvent.change(screen.getByRole("textbox", { name: CHECKLIST_WIDGET_COPY.NEW_ITEM_PLACEHOLDER }), {
+      target: { value: "물 마시기" },
     });
-    await user.clear(itemEditor);
-    await user.type(itemEditor, "물 두 잔 마시기");
-    await user.click(
-      screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.SAVE_ITEM }),
-    );
-    const renamedCheckbox = await screen.findByRole("checkbox", {
-      name: "물 두 잔 마시기",
-    });
-    expect(checkbox).not.toBeInTheDocument();
-
-    await user.click(
-      screen.getByRole("button", {
-        name: CHECKLIST_WIDGET_COPY.FINISH_EDITING,
-      }),
-    );
-    expect(
-      screen.queryByRole("button", { name: CHECKLIST_WIDGET_COPY.EDIT_ITEM }),
-    ).not.toBeInTheDocument();
-    await user.click(renamedCheckbox);
-    await waitFor(() =>
-      expect(screen.getByText("물 두 잔 마시기").tagName).toBe("DEL"),
-    );
-
-    await user.click(
-      screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.DETAILS }),
-    );
-    const logDialog = await screen.findByRole("dialog", {
-      name: CHECKLIST_WIDGET_COPY.LOG_TITLE,
-    });
-    expect(logDialog.querySelectorAll(".xp-window-frame")).toHaveLength(1);
-    expect(logDialog.querySelector(".checklist-log-dialog")).toBe(
-      logDialog.querySelector(".xp-window-frame"),
-    );
-    expect(logDialog.querySelector(".sunken-panel")).toBeNull();
-    expect(screen.getByText(CHECKLIST_WIDGET_COPY.ADDED)).toBeInTheDocument();
-    expect(screen.getByText(CHECKLIST_WIDGET_COPY.RENAMED)).toBeInTheDocument();
-    expect(screen.getByText("물 마시기 → 물 두 잔 마시기")).toBeInTheDocument();
-    expect(screen.getByText(CHECKLIST_WIDGET_COPY.CHECKED)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.ADD_ITEM }));
+    expect(await screen.findByRole("checkbox", { name: "물 마시기" })).toBeInTheDocument();
+    expect(add).toHaveBeenCalledWith(api.savedWidgets[0]?.id, "물 마시기");
+    await user.click(screen.getByRole("button", { name: CHECKLIST_WIDGET_COPY.DETAILS }));
+    expect(await screen.findByRole("dialog", { name: CHECKLIST_WIDGET_COPY.LOG_TITLE })).toBeInTheDocument();
+    expect(screen.getByRole("cell", { name: CHECKLIST_WIDGET_COPY.ADDED })).toBeInTheDocument();
   });
+
 });
 
 function windowZIndex(window: HTMLElement): number {

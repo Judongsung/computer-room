@@ -1,4 +1,7 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { useState } from "react";
+import type { MemoWidget as MemoWidgetData } from "@/types/widgets/widget";
+import { FakeDashboardGateway } from "@test/support/widgets/fake-dashboard-gateway";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { expect, it, vi } from "vitest";
 import { MemoWidget } from "@client/components/widgets/memo-widget";
@@ -91,3 +94,85 @@ it("applies a delayed save to the latest memo metadata", async () => {
     data: { markdown: "saved", updatedAt: null },
   }));
 });
+
+  it("preserves a memo draft across keyboard preview navigation and cancels edits", async () => {
+    renderMemoEditor();
+    const user = userEvent.setup();
+    await screen.findByText(COPY.EMPTY_CONTENT);
+    await user.click(screen.getByRole("button", { name: COPY.EDIT }));
+    await user.type(screen.getByRole("textbox", { name: COPY.EDITOR_LABEL }), "# 초안 제목");
+    const editor = screen.getByRole<HTMLTextAreaElement>("textbox", { name: COPY.EDITOR_LABEL });
+    await user.keyboard("{Control>}a{/Control}");
+    expect(editor.selectionStart).toBe(0);
+    expect(editor.selectionEnd).toBe(editor.value.length);
+    expect(fireEvent.keyDown(editor, { key: "a", metaKey: true })).toBe(true);
+    await user.click(screen.getByRole("tab", { name: COPY.WRITE }));
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("tab", { name: COPY.PREVIEW })).toHaveFocus();
+    expect(screen.getByRole("heading", { name: "초안 제목" })).toBeInTheDocument();
+    await user.keyboard("{ArrowLeft}");
+    expect(screen.getByRole("textbox", { name: COPY.EDITOR_LABEL })).toHaveValue("# 초안 제목");
+    await user.click(screen.getByRole("button", { name: COPY.CANCEL }));
+    expect(screen.getAllByText(COPY.EMPTY_CONTENT)).toHaveLength(1);
+    expect(screen.queryByRole("tablist")).not.toBeInTheDocument();
+  });
+
+
+  it("edits and renders a memo with GFM markdown", async () => {
+    const api = renderMemoEditor();
+    const user = userEvent.setup();
+    const markdown =
+      "# 오늘\n\n**중요**\n다음 줄\n\n~~완료~~\n\n- [x] 확인\n\n<script>alert('x')</script>";
+
+    await user.click(
+      screen.getByRole("button", { name: COPY.EDIT }),
+    );
+    const writeTab = screen.getByRole("tab", { name: COPY.WRITE });
+    const previewTab = screen.getByRole("tab", {
+      name: COPY.PREVIEW,
+    });
+    writeTab.focus();
+    await user.keyboard("{ArrowRight}");
+    expect(previewTab).toHaveAttribute("aria-selected", "true");
+    await user.keyboard("{ArrowLeft}");
+    const editor = screen.getByRole("textbox", {
+      name: COPY.EDITOR_LABEL,
+    });
+    await user.click(editor);
+    await user.paste(markdown);
+    await user.click(previewTab);
+    expect(screen.getByRole("heading", { name: "오늘" })).toBeInTheDocument();
+    expect(screen.getByText("중요").tagName).toBe("STRONG");
+    expect(screen.getByText("완료").tagName).toBe("DEL");
+    const markdownContent = document.querySelector(".markdown-content");
+    expect(markdownContent?.querySelectorAll("br")).toHaveLength(1);
+    expect(markdownContent?.querySelector("script")).toBeNull();
+
+    await user.click(
+      screen.getByRole("button", { name: COPY.SAVE }),
+    );
+    await waitFor(() =>
+      expect(
+        api.savedWidgets[0]?.type === WIDGET_TYPE.MEMO
+          ? api.savedWidgets[0].data.markdown
+          : null,
+      ).toBe(markdown),
+    );
+  });
+
+
+function renderMemoEditor() {
+  const widget = memoWidget("memo-editor");
+  if (widget.type !== WIDGET_TYPE.MEMO) throw new Error("memo fixture required");
+  const initial: MemoWidgetData = widget;
+  const gateway = new FakeDashboardGateway();
+  gateway.savedWidgets = [widget];
+  function Editor() {
+    const [current, setCurrent] = useState(initial);
+    return <MemoWidget widget={current} gateway={gateway} onWidgetChange={setCurrent}
+      windowControls={{ isActive: true, isMaximized: false, canSaveFile: false,
+        onFocus: vi.fn(), onMinimize: vi.fn(), onToggleMaximize: vi.fn(), onClose: vi.fn(), onSaveFile: vi.fn() }} />;
+  }
+  render(<Editor />);
+  return gateway;
+}
