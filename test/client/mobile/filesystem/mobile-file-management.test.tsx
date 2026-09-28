@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
+import { MobileDirectoryPicker } from "@client/components/mobile/filesystem/manage/mobile-directory-picker";
 import { MobileDirectory } from "@client/components/mobile/filesystem/mobile-directory";
 import { MobileRecycleBin } from "@client/components/mobile/filesystem/mobile-recycle-bin";
 import { ThumbnailLoadProvider } from "@client/state/filesystem/thumbnail-load-context";
@@ -145,12 +146,17 @@ it("restores selected entries with the server's default destination", async () =
   expect((await gateway.listDirectory(FILESYSTEM_ROOT_ID.DOCUMENTS)).items).toContainEqual(expect.objectContaining({ id: entry.id, name: entry.name }));
 });
 
-it("keeps an empty-trash failure visible after refresh and allows retry", async () => {
+it("retries empty-trash failure and removes entries beyond the loaded page", async () => {
   const gateway = new FakeFilesystemGateway();
   const entry = gateway.addFile("empty.txt", "text/plain");
-  await gateway.trashEntries([entry.id]);
+  const unseen = gateway.addFile("unseen.txt", "text/plain");
+  await gateway.trashEntries([entry.id, unseen.id]);
   const empty = vi.spyOn(gateway, "emptyTrash").mockRejectedValueOnce(new Error("empty failed"));
-  const list = vi.spyOn(gateway, "listTrash");
+  const allTrash = gateway.listTrash.bind(gateway);
+  const list = vi.spyOn(gateway, "listTrash").mockImplementation(async () => {
+    const page = await allTrash();
+    return { items: page.items.slice(0, 1), nextOffset: page.items.length > 1 ? 1 : null };
+  });
   render(<TrashHarness gateway={gateway} />, { wrapper: ThumbnailLoadProvider });
   await screen.findByText(entry.name);
   fireEvent.click(screen.getByRole("button", { name: COPY.EMPTY_RECYCLE_BIN }));
@@ -162,6 +168,9 @@ it("keeps an empty-trash failure visible after refresh and allows retry", async 
   fireEvent.click(screen.getByRole("button", { name: COPY.CONFIRM }));
   await screen.findByText(MOBILE_COPY.EMPTY_TRASH);
   expect(empty).toHaveBeenCalledTimes(2);
+  expect(screen.queryByText(unseen.name)).not.toBeInTheDocument();
+  expect((await allTrash()).items).toEqual([]);
+  expect(list).toHaveBeenCalledTimes(3);
 });
 
 it("does not apply an old rename after the gateway changes", async () => {
@@ -208,3 +217,25 @@ function TrashHarness({ gateway }: { readonly gateway: FakeFilesystemGateway }) 
     onCloseMenu={() => setMenuOpen(false)} onRefresh={() => setRevision((value) => value + 1)}
     onChanged={() => setRevision((value) => value + 1)} onGuardChange={vi.fn()} />;
 }
+
+it("blocks a move destination whose breadcrumbs contain a selected ancestor", async () => {
+  const gateway = new FakeFilesystemGateway();
+  const ancestor = await gateway.createDirectory(FILESYSTEM_ROOT_ID.DOCUMENTS, "ancestor");
+  const child = await gateway.createDirectory(ancestor.id, "child");
+  const selectedPage = await gateway.listDirectory(child.id);
+  vi.spyOn(gateway, "listDirectory").mockResolvedValue({
+    ...selectedPage,
+    breadcrumbs: [{ id: ancestor.id, name: ancestor.name }, { id: child.id, name: child.name }],
+  });
+  const select = vi.fn();
+  const view = render(<MobileDirectoryPicker gateway={gateway} sourceId={FILESYSTEM_ROOT_ID.DESKTOP} excludedIds={[ancestor.id]}
+    busy={false} error={null} onSelect={select} onClose={vi.fn()} />);
+  await screen.findByRole("button", { name: ancestor.name });
+  await act(async () => { fireEvent.click(screen.getByRole("button", { name: child.name })); });
+  expect(screen.getByRole("button", { name: COPY.MOVE_HERE })).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: COPY.MOVE_HERE }));
+  expect(select).not.toHaveBeenCalled();
+  view.rerender(<MobileDirectoryPicker gateway={gateway} sourceId={FILESYSTEM_ROOT_ID.DESKTOP} excludedIds={[]}
+    busy={false} error={null} onSelect={select} onClose={vi.fn()} />);
+  expect(screen.getByRole("button", { name: COPY.MOVE_HERE })).toBeEnabled();
+});

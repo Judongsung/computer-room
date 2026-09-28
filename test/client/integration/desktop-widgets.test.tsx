@@ -1,7 +1,9 @@
+import { useWidgetLayoutAutoSave } from "@client/hooks/widgets/use-widget-layout-auto-save";
+import { LAYOUT_SAVE_DEBOUNCE_MILLISECONDS } from "@client/constants/desktop/layout-save";
 import { XP_EXPLORER_HEADER_COPY } from "@client/content/ko/filesystem/explorer-header";
 import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
 import type { CSSProperties, ReactNode } from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "@client/app";
@@ -280,44 +282,34 @@ describe("App desktop widgets", () => {
   });
 
   it("serializes auto-saves and sends only the latest queued window state", async () => {
+    vi.useFakeTimers();
     const api = new FakeDashboardGateway();
-    api.savedWidgets = [
-      memoWidget("00000000-0000-4000-8000-000000000301"),
-      checklistWidget("00000000-0000-4000-8000-000000000302", 1),
-    ];
+    const memo = memoWidget("00000000-0000-4000-8000-000000000301");
+    const checklist = checklistWidget("00000000-0000-4000-8000-000000000302", 1);
     const releaseFirstSave = api.blockNextLayoutSave();
-    const user = userEvent.setup();
-    render(<App api={api} filesystemApi={new FakeFilesystemGateway()} />);
-
-    await screen.findByText(MEMO_WIDGET_COPY.EMPTY_CONTENT);
-    await user.click(
-      screen.getByRole("button", { name: MEMO_WIDGET_COPY.TITLE }),
-    );
-    await waitFor(() => expect(api.layoutSaveCalls).toHaveLength(1));
-
-    const memoWindow = await waitFor(() =>
-      desktopWindowByTitle(MEMO_WIDGET_COPY.TITLE),
-    );
-    await user.click(
-      within(memoWindow).getByRole("button", {
-        name: DASHBOARD_COPY.MAXIMIZE,
-      }),
-    );
-    await user.click(
-      within(memoWindow).getByRole("button", {
-        name: DASHBOARD_COPY.MINIMIZE,
-      }),
-    );
-    releaseFirstSave();
-
-    await waitFor(() => expect(api.layoutSaveCalls).toHaveLength(2));
-    const latestMemo = api.layoutSaveCalls[1]?.find(
-      (widget) => widget.type === WIDGET_TYPE.MEMO,
-    );
-    expect(latestMemo).toMatchObject({
-      windowState: WINDOW_STATE.MINIMIZED,
-      restoreState: WINDOW_RESTORE_STATE.MAXIMIZED,
-    });
+    const onSaved = vi.fn();
+    const view = renderHook(() => useWidgetLayoutAutoSave(api, {
+      onSaved, fallbackErrorMessage: "save failed",
+    }));
+    try {
+      act(() => view.result.current.schedule([memo, checklist]));
+      await act(async () => { await vi.advanceTimersByTimeAsync(LAYOUT_SAVE_DEBOUNCE_MILLISECONDS); });
+      expect(api.layoutSaveCalls).toHaveLength(1);
+      act(() => view.result.current.schedule([{ ...memo, windowState: WINDOW_STATE.MAXIMIZED }, checklist]));
+      act(() => view.result.current.schedule([{ ...memo, windowState: WINDOW_STATE.MINIMIZED,
+        restoreState: WINDOW_RESTORE_STATE.MAXIMIZED }, checklist]));
+      await act(async () => { await vi.advanceTimersByTimeAsync(LAYOUT_SAVE_DEBOUNCE_MILLISECONDS); });
+      expect(api.layoutSaveCalls).toHaveLength(1);
+      await act(async () => { releaseFirstSave(); });
+      expect(api.layoutSaveCalls).toHaveLength(2);
+      expect(api.layoutSaveCalls[1]?.find((widget) => widget.id === memo.id)).toMatchObject({
+        windowState: WINDOW_STATE.MINIMIZED, restoreState: WINDOW_RESTORE_STATE.MAXIMIZED,
+      });
+      expect(onSaved).toHaveBeenCalledTimes(2);
+    } finally {
+      view.unmount();
+      vi.useRealTimers();
+    }
   });
 
   it("keeps local windows after an auto-save failure and retries", async () => {

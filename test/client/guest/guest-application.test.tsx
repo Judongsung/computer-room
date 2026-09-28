@@ -1,3 +1,5 @@
+import { FILESYSTEM_COPY } from "@client/content/ko/filesystem/filesystem";
+import { MOBILE_FILESYSTEM_COPY } from "@client/content/ko/mobile/filesystem";
 import type { CSSProperties, ReactNode } from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -72,6 +74,13 @@ describe("guest application", () => {
     expect(screen.queryByRole("button", { name: MOBILE_COPY.RECYCLE_BIN })).not.toBeInTheDocument();
     await user.click(documents);
     expect(await screen.findByRole("heading", { name: FILESYSTEM_ROOT_NAME.DOCUMENTS })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: MOBILE_COPY.MENU }));
+    for (const name of [FILESYSTEM_COPY.NEW_FOLDER, FILESYSTEM_COPY.UPLOAD_FILES,
+      FILESYSTEM_COPY.RENAME, FILESYSTEM_COPY.MOVE, FILESYSTEM_COPY.DELETE, MOBILE_FILESYSTEM_COPY.SELECT]) {
+      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+    }
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: MOBILE_COPY.MENU }));
     await user.click(screen.getByRole("button", { name: MOBILE_COPY.HOME }));
     await user.click(await screen.findByRole("button", { name: "공개 메모" }));
     expect(await screen.findByRole("heading", { name: "공개 내용" })).toBeInTheDocument();

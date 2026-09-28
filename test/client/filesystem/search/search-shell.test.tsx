@@ -1,3 +1,4 @@
+import { MOBILE_FILESYSTEM_COPY } from "@client/content/ko/mobile/filesystem";
 import type { ReactNode } from "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -125,6 +126,10 @@ it("opens mobile search only from a folder and restores criteria after viewing a
   await screen.findByRole("main", { name: MOBILE_COPY.HOME_SCREEN });
   await user.click(screen.getByRole("button", { name: MOBILE_COPY.MENU }));
   expect(screen.queryByRole("button", { name: FILESYSTEM_SEARCH_COPY.TITLE })).not.toBeInTheDocument();
+  for (const name of [FILESYSTEM_COPY.NEW_FOLDER, FILESYSTEM_COPY.UPLOAD_FILES,
+    FILESYSTEM_COPY.RENAME, FILESYSTEM_COPY.MOVE, FILESYSTEM_COPY.DELETE, MOBILE_FILESYSTEM_COPY.SELECT]) {
+    expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+  }
   await user.click(screen.getByRole("button", { name: MOBILE_COPY.MENU }));
   await user.click(screen.getByRole("button", { name: MOBILE_COPY.MY_DOCUMENTS }));
   await screen.findByRole("button", { name: /사진 폴더/ });
@@ -134,6 +139,15 @@ it("opens mobile search only from a folder and restores criteria after viewing a
   fireEvent.change(screen.getByRole("combobox", { name: FILESYSTEM_SEARCH_COPY.MODE }), { target: { value: "all" } });
   fireEvent.change(input, { target: { value: "사진" } });
   fireEvent.submit(input.closest("form")!);
+  await screen.findByRole("button", { name: /검색 사진.png/ });
+  await user.click(screen.getByRole("button", { name: MOBILE_COPY.MENU }));
+  for (const name of [FILESYSTEM_COPY.NEW_FOLDER, FILESYSTEM_COPY.UPLOAD_FILES,
+    FILESYSTEM_COPY.RENAME, FILESYSTEM_COPY.MOVE, FILESYSTEM_COPY.DELETE, MOBILE_FILESYSTEM_COPY.SELECT]) {
+    expect(screen.queryByRole("button", { name })).not.toBeInTheDocument();
+  }
+  expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  expect(document.querySelector('input[type="file"]')).toBeNull();
+  await user.click(screen.getByRole("button", { name: MOBILE_COPY.MENU }));
   await user.click(await screen.findByRole("button", { name: /검색 사진.png/ }));
   await screen.findByRole("heading", { name: picture.name });
   await waitFor(() => expect(list).toHaveBeenCalledWith(folder.id, 0));
