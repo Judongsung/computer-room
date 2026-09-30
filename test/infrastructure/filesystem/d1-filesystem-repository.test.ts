@@ -1,6 +1,6 @@
 import type { D1Migration } from "@cloudflare/vitest-pool-workers";
 import { applyD1Migrations, env } from "cloudflare:test";
-import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_FILESYSTEM_DIRECTORY_SORT } from "@/constants/filesystem/sort";
 import {
   FILESYSTEM_ENTRY_KIND,
@@ -209,6 +209,58 @@ describe("D1FilesystemRepository mutations and desktop order", () => {
 });
 
 describe("D1FilesystemRepository recycle bin", () => {
+  it.each([0, 100, 101, 199])("moves a nested subtree of %i programs with bounded parameters and preserves unrelated data", async (count) => {
+    const ids = await prepareLargeTrashSubtree(count);
+    const bindings: { sql: string; count: number }[] = [];
+    const prepare = database.prepare.bind(database);
+    const bindSpies: { mockRestore(): void }[] = [];
+    const prepareSpy = vi.spyOn(database, "prepare").mockImplementation((sql) => {
+      const statement = prepare(sql);
+      const bind = statement.bind.bind(statement);
+      bindSpies.push(vi.spyOn(statement, "bind").mockImplementation((...values) => {
+        bindings.push({ sql, count: values.length });
+        return bind(...values);
+      }));
+      return statement;
+    });
+    try {
+      expect(await repository.moveToTrash("large-trash", FILESYSTEM_ROOT_ID.DESKTOP, "Desktop", 40, ["outside"])).toEqual(ids);
+    } finally {
+      prepareSpy.mockRestore();
+      bindSpies.forEach((spy) => spy.mockRestore());
+    }
+    expect(Math.max(...bindings.map((binding) => binding.count))).toBeLessThanOrEqual(100);
+    const close = bindings.filter(({ sql }) => sql.startsWith("UPDATE dashboard_widgets SET is_open = 0"));
+    expect(close.map(({ count: parameterCount }) => parameterCount)).toEqual(count ? [1] : []);
+    expect(await repository.findEntry("large-trash")).toMatchObject({
+      parentId: FILESYSTEM_ROOT_ID.RECYCLE_BIN, restoreParentId: FILESYSTEM_ROOT_ID.DESKTOP,
+      restorePath: "Desktop", trashedAt: 40, updatedAt: 40,
+    });
+    expect(await subtreeProgramStates()).toEqual(ids.map((id) => ({ id, is_open: 0 })));
+    expect(await widgetOpen("outside-widget")).toBe(1);
+    expect(await currentWallpaper()).toBeNull();
+    expect(await publishedEntryIds()).toEqual(["outside"]);
+    expect(await repository.listDesktopEntryIds()).toEqual(["outside"]);
+    expect(await repository.findEntry("large-wallpaper")).toMatchObject({ parentId: "large-inner" });
+    expect(await repository.findEntry("outside")).toMatchObject({ parentId: FILESYSTEM_ROOT_ID.DESKTOP, trashedAt: null });
+  });
+
+  it("rolls back a large subtree when a later desktop-order statement fails", async () => {
+    await prepareLargeTrashSubtree(101);
+    const before = await subtreeProgramStates();
+    const publications = await publishedEntryIds();
+    await expect(repository.moveToTrash("large-trash", FILESYSTEM_ROOT_ID.DESKTOP, "Desktop", 40, ["outside", "outside"])).rejects.toThrow();
+    expect(await repository.findEntry("large-trash")).toMatchObject({
+      parentId: FILESYSTEM_ROOT_ID.DESKTOP, restoreParentId: null,
+      restorePath: null, trashedAt: null, updatedAt: 10,
+    });
+    expect(await subtreeProgramStates()).toEqual(before);
+    expect(await widgetOpen("outside-widget")).toBe(1);
+    expect(await currentWallpaper()).toBe("large-wallpaper");
+    expect(await publishedEntryIds()).toEqual(publications);
+    expect(await repository.listDesktopEntryIds()).toEqual(["large-trash", "outside"]);
+  });
+
   it("moves a subtree atomically, closes widgets, clears wallpaper, and restores it", async () => {
     await insertDirectory(
       "trash-folder",
@@ -452,4 +504,45 @@ async function publishedEntryIds(): Promise<string[]> {
     .prepare("SELECT entry_id FROM guest_publications ORDER BY entry_id")
     .all<{ entry_id: string }>();
   return result.results.map((row) => row.entry_id);
+}
+
+async function prepareLargeTrashSubtree(count: number): Promise<string[]> {
+  await insertDirectory("large-trash", FILESYSTEM_ROOT_ID.DESKTOP, "Large trash", 10, 0);
+  await insertDirectory("large-inner", "large-trash", "Inner", 10);
+  await insertDirectory("large-deep", "large-inner", "Deep", 10);
+  await insertDirectory("outside", FILESYSTEM_ROOT_ID.DESKTOP, "Outside", 10, 1);
+  await insertWidget("outside-widget", "outside-program", "outside", 10);
+  await insertReadyFile("large-wallpaper", "large-inner", "wallpaper.png", 10);
+  await database.batch([
+    database.prepare("UPDATE mobile_preferences SET wallpaper_entry_id = ?1 WHERE singleton_id = 1").bind("large-wallpaper"),
+    ...["large-trash", "large-wallpaper", "outside"].map((id) => database.prepare("INSERT INTO guest_publications(entry_id, published_at) VALUES (?1, 10)").bind(id)),
+  ]);
+  const ids = Array.from({ length: count }, (_, index) => `large-widget-${String(index).padStart(3, "0")}`);
+  for (let start = 0; start < count; start += 25) {
+    const statements = ids.slice(start, start + 25).flatMap((id, offset) => {
+      const index = start + offset;
+      const type = index % 2 ? WIDGET_TYPE.DAILY_CHECKLIST : WIDGET_TYPE.MEMO;
+      const policy = WIDGET_WINDOW_POLICY[type];
+      const parentId = ["large-trash", "large-inner", "large-deep"][index % 3]!;
+      return [
+        database.prepare(`INSERT INTO dashboard_widgets (
+          id, type, position_x, position_y, width, height, window_state, restore_state, stack_order, is_open
+        ) VALUES (?1, ?2, 0, 0, ?3, ?4, 'normal', 'normal', 0, ?5)`)
+          .bind(id, type, policy.DEFAULT_WIDTH, policy.DEFAULT_HEIGHT, index % 2),
+        database.prepare(`INSERT INTO filesystem_entries (
+          id, parent_id, kind, name, name_key, widget_id, created_at, updated_at
+        ) VALUES (?1, ?2, ?3, ?1, ?1, ?4, 10, 10)`)
+          .bind(`${id}-entry`, parentId, FILESYSTEM_ENTRY_KIND.WIDGET, id),
+        database.prepare("INSERT INTO guest_publications(entry_id, published_at) VALUES (?1, 10)").bind(`${id}-entry`),
+      ];
+    });
+    await database.batch(statements);
+  }
+  return ids;
+}
+
+async function subtreeProgramStates(): Promise<{ id: string; is_open: number }[]> {
+  const result = await database.prepare("SELECT id, is_open FROM dashboard_widgets WHERE id LIKE 'large-widget-%' ORDER BY id")
+    .all<{ id: string; is_open: number }>();
+  return result.results;
 }

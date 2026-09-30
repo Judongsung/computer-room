@@ -51,15 +51,19 @@ export class D1RecycleBinRepository implements RecycleBinRepository {
       this.clearGuestPublicationsWithinSubtree(id),
     ];
     if (widgetIds.length > 0) {
-      const placeholders = widgetIds
-        .map((_, index) => `?${index + 1}`)
-        .join(", ");
       statements.push(
         this.database
           .prepare(
-            `UPDATE dashboard_widgets SET is_open = 0 WHERE id IN (${placeholders})`,
+            `UPDATE dashboard_widgets SET is_open = 0 WHERE id IN (
+               WITH RECURSIVE subtree(id, widget_id) AS (
+                 SELECT id, widget_id FROM filesystem_entries WHERE id = ?1
+                 UNION ALL
+                 SELECT child.id, child.widget_id FROM filesystem_entries child
+                 JOIN subtree parent ON child.parent_id = parent.id
+               ) SELECT widget_id FROM subtree WHERE widget_id IS NOT NULL
+             )`,
           )
-          .bind(...widgetIds),
+          .bind(id),
       );
     }
     if (desktopEntryIds) {
