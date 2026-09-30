@@ -24,24 +24,27 @@ describe("MobileLazyFeatureBoundary", () => {
 
   it("offers a retry after a mobile feature chunk fails", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const FailedFeature = lazy(() => Promise.reject(new Error("chunk failed")));
+    try {
+      const FailedFeature = lazy(() => Promise.reject(new Error("chunk failed")));
 
-    render(
-      <MobileLazyFeatureBoundary title={MOBILE_COPY.RECYCLE_BIN}>
-        <FailedFeature />
-      </MobileLazyFeatureBoundary>,
-    );
+      render(
+        <MobileLazyFeatureBoundary title={MOBILE_COPY.RECYCLE_BIN}>
+          <FailedFeature />
+        </MobileLazyFeatureBoundary>,
+      );
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
-      MOBILE_COPY.LOAD_FAILED,
-    );
-    expect(
-      screen.getByRole("button", { name: MOBILE_COPY.RETRY }),
-    ).toBeInTheDocument();
-    expect(error).toHaveBeenCalled();
-    for (const args of error.mock.calls) {
-      expect(args).toContainEqual(expect.objectContaining({ message: "chunk failed" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        MOBILE_COPY.LOAD_FAILED,
+      );
+      expect(
+        screen.getByRole("button", { name: MOBILE_COPY.RETRY }),
+      ).toBeInTheDocument();
+      expect(error).toHaveBeenCalled();
+      for (const args of error.mock.calls) {
+        expect(args).toContainEqual(expect.objectContaining({ message: "chunk failed" }));
+      }
+    } finally {
+      error.mockRestore();
     }
-    vi.restoreAllMocks();
   });
 });

@@ -22,22 +22,25 @@ describe("LazyFeatureBoundary", () => {
 
   it("offers a page reload after a feature chunk fails", async () => {
     const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const FailedFeature = lazy(() => Promise.reject(new Error("chunk failed")));
+    try {
+      const FailedFeature = lazy(() => Promise.reject(new Error("chunk failed")));
 
-    render(
-      <LazyFeatureBoundary title="휴지통">
-        <FailedFeature />
-      </LazyFeatureBoundary>,
-    );
+      render(
+        <LazyFeatureBoundary title="휴지통">
+          <FailedFeature />
+        </LazyFeatureBoundary>,
+      );
 
-    expect(await screen.findByText(LAZY_FEATURE_LABEL.LOAD_FAILED)).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: LAZY_FEATURE_LABEL.RELOAD }),
-    ).toBeInTheDocument();
-    expect(error).toHaveBeenCalled();
-    for (const args of error.mock.calls) {
-      expect(args).toContainEqual(expect.objectContaining({ message: "chunk failed" }));
+      expect(await screen.findByText(LAZY_FEATURE_LABEL.LOAD_FAILED)).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: LAZY_FEATURE_LABEL.RELOAD }),
+      ).toBeInTheDocument();
+      expect(error).toHaveBeenCalled();
+      for (const args of error.mock.calls) {
+        expect(args).toContainEqual(expect.objectContaining({ message: "chunk failed" }));
+      }
+    } finally {
+      error.mockRestore();
     }
-    vi.restoreAllMocks();
   });
 });

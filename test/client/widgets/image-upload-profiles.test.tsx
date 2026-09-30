@@ -4,7 +4,7 @@ import {
   IMAGE_UPLOAD_PROFILE_COPY,
 } from "@client/content/ko/integrations/image-upload-profile";
 import { IMAGE_UPLOAD_LOG_COPY } from "@client/content/ko/integrations/image-upload-log";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -78,8 +78,7 @@ describe("image upload profiles widget", () => {
     await user.click(jpegCheckbox);
     expect(screen.getByText(/바탕 화면\\NovelAI\\2026-08-28/)).toBeInTheDocument();
     const nameInput = screen.getByLabelText(IMAGE_UPLOAD_PROFILE_COPY.DISPLAY_NAME);
-    await user.clear(nameInput);
-    await user.type(nameInput, "NovelAI 자동 저장");
+    fireEvent.change(nameInput, { target: { value: "NovelAI 자동 저장" } });
     await user.click(screen.getByRole("button", { name: IMAGE_UPLOAD_PROFILE_COPY.SAVE }));
 
     await waitFor(() => expect(gateway.updateProfile).toHaveBeenCalledOnce());
@@ -109,11 +108,8 @@ describe("image upload profiles widget", () => {
     await user.click(
       screen.getByRole("button", { name: IMAGE_UPLOAD_PROFILE_COPY.NEW_PROFILE }),
     );
-    await user.type(screen.getByLabelText(/프로필 ID/), "camera");
-    await user.type(
-      screen.getByLabelText(IMAGE_UPLOAD_PROFILE_COPY.DISPLAY_NAME),
-      "Camera",
-    );
+    fireEvent.change(screen.getByLabelText(/프로필 ID/), { target: { value: "camera" } });
+    fireEvent.change(screen.getByLabelText(IMAGE_UPLOAD_PROFILE_COPY.DISPLAY_NAME), { target: { value: "Camera" } });
     await user.click(screen.getByRole("button", { name: IMAGE_UPLOAD_PROFILE_COPY.SAVE }));
     await waitFor(() => expect(gateway.createProfile).toHaveBeenCalledOnce());
 

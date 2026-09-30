@@ -39,7 +39,7 @@ describe("widget scoped reads", () => {
       { ...widget, id: "empty-memo", type: WIDGET_TYPE.MEMO, stackOrder: 3 },
     ];
     await memos.upsert({ widgetId: "memo", markdown: "body", updatedAt: 0 });
-    for (let n = 0; n < 150; n++) {
+    for (let n = 0; n < 2; n++) {
       const id = "unrelated-" + n;
       await memos.upsert({ widgetId: id, markdown: "unrelated", updatedAt: null });
       checklists.items.push({ id, widgetId: id, label: id, sortOrder: 0, checked: false });

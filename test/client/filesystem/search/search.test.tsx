@@ -27,6 +27,7 @@ describe("file search", () => {
     expect(search).not.toHaveBeenCalled();
     fireEvent.submit(screen.getByRole("searchbox").closest("form")!);
     await screen.findByText("report.txt");
+    expect(search).toHaveBeenCalledWith({ q: "report", kind: "all", mode: "name", directoryId: "folder" }, 0);
     fireEvent.click(screen.getByRole("button", { name: /report.txt/ }));
     expect(openEntry).toHaveBeenCalledWith(item.entry);
     fireEvent.click(screen.getByRole("button", { name: FILESYSTEM_SEARCH_COPY.OPEN_FOLDER }));

@@ -30,6 +30,8 @@ export class FakeFilesystemGateway implements FilesystemGateway {
     return target;
   }
 
+  // UI fixture only: name matching and direct-parent filtering, without recursive
+  // search, content matching, or pagination. Inject search pages for those scenarios.
   async search(query: FilesystemSearchQuery, offset = 0): Promise<FilesystemSearchPage> {
     const matching = this.entries.filter((entry) =>
       query.mode !== "content" && entry.name.toLocaleLowerCase("ko-KR").includes(query.q.toLocaleLowerCase("ko-KR")) &&

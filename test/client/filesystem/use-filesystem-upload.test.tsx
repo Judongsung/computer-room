@@ -19,9 +19,14 @@ describe("useFilesystemUpload", () => {
       useFilesystemUpload(gateway, onChanged),
     );
 
-    await act(() =>
-      result.current.upload(fileNodes(7), FILESYSTEM_ROOT_ID.DOCUMENTS),
-    );
+    let running!: Promise<void>;
+    act(() => { running = result.current.upload(fileNodes(7), FILESYSTEM_ROOT_ID.DOCUMENTS); });
+    expect(tracker.upload).toHaveBeenCalledTimes(3);
+    for (let index = 0; index < 7; index++) {
+      await act(() => tracker.complete(index));
+      expect(tracker.upload).toHaveBeenCalledTimes(Math.min(index + 4, 7));
+    }
+    await act(() => running);
 
     expect(tracker.maximum()).toBe(3);
     expect(onChanged).toHaveBeenCalledOnce();
@@ -39,13 +44,14 @@ describe("useFilesystemUpload", () => {
     );
     const placement: DesktopPlacement | undefined = explicitPlacement ? { targetIndex: 0, capacity: 10 } : undefined;
 
-    await act(() =>
-      result.current.upload(
-        fileNodes(4),
-        FILESYSTEM_ROOT_ID.DESKTOP,
-        placement,
-      ),
-    );
+    let running!: Promise<void>;
+    act(() => { running = result.current.upload(fileNodes(4), FILESYSTEM_ROOT_ID.DESKTOP, placement); });
+    for (let index = 0; index < 4; index++) {
+      expect(tracker.upload).toHaveBeenCalledTimes(index + 1);
+      await act(() => tracker.complete(index));
+      expect(tracker.upload).toHaveBeenCalledTimes(Math.min(index + 2, 4));
+    }
+    await act(() => running);
 
     expect(tracker.maximum()).toBe(1);
     expect(tracker.placements()).toEqual([
@@ -178,6 +184,7 @@ function fileNodes(count: number): LocalUploadNode[] {
 function uploadTracker() {
   let active = 0;
   let maximum = 0;
+  const pending: ReturnType<typeof deferred<void>>[] = [];
   const receivedPlacements: Array<DesktopPlacement | undefined> = [];
   return {
     upload: vi.fn(
@@ -189,7 +196,9 @@ function uploadTracker() {
         active += 1;
         maximum = Math.max(maximum, active);
         receivedPlacements.push(placement);
-        await new Promise((resolve) => window.setTimeout(resolve, 1));
+        const request = deferred<void>();
+        pending.push(request);
+        await request.promise;
         active -= 1;
         return {
           id: file.name,
@@ -204,6 +213,7 @@ function uploadTracker() {
         };
       },
     ),
+    complete: (index: number) => { pending[index]!.resolve(); return pending[index]!.promise; },
     maximum: () => maximum,
     placements: () => receivedPlacements,
   };

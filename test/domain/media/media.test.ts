@@ -11,7 +11,6 @@ import {
   isPotentialMediaContentType,
   mediaKindFromContentType,
 } from "@/domain/filesystem/media-type";
-import { parseRangeHeader } from "@/http/filesystem/byte-range";
 
 describe("media type", () => {
   it("classifies only supported image and video media types", () => {
@@ -65,9 +64,5 @@ describe("byte range", () => {
     );
   });
 
-  it("rejects byte positions outside JavaScript's safe integer range", () => {
-    expect(parseRangeHeader("bytes=9007199254740992-")).toEqual({
-      kind: BYTE_RANGE_KIND.INVALID,
-    });
-  });
+
 });

@@ -1,5 +1,5 @@
 import { MOBILE_COPY } from "@client/content/ko/mobile/mobile";
-import { screen } from "@testing-library/react";
+import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
@@ -115,7 +115,8 @@ describe("mobile widget flow", () => {
     await user.click(
       await screen.findByRole("button", { name: MOBILE_COPY.EDIT }),
     );
-    await user.type(screen.getByRole("textbox"), " changed");
+    const editor = screen.getByRole("textbox") as HTMLTextAreaElement;
+    fireEvent.change(editor, { target: { value: editor.value + " changed" } });
 
     await user.click(screen.getByRole("button", { name: MOBILE_COPY.HOME }));
     expect(confirm).toHaveBeenCalledWith(MOBILE_COPY.UNSAVED_CHANGES);

@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { useChecklistRetention } from "@client/hooks/widgets/checklist/use-checklist-retention";
 import { fakeChecklistRetentionGateway } from "@test/support/widgets/checklist-retention-gateway";
@@ -8,10 +8,13 @@ import type { ChecklistRetentionSettings } from "@/types/widgets/checklist/reten
 describe("retention request lifetime", () => {
   it("preserves input after save failure and permits retry", async () => {
     const gateway = fakeChecklistRetentionGateway();
+    const load = deferred<ChecklistRetentionSettings>();
+    gateway.getSettings.mockReturnValueOnce(load.promise);
     gateway.updateRetentionDays.mockRejectedValueOnce(new Error("save failed"));
     const { result } = renderHook(() => useChecklistRetention(gateway));
     act(() => result.current.setExpanded(true));
-    await waitFor(() => expect(result.current.loaded).toBe(true));
+    await act(async () => { load.resolve({ retentionDays: null }); await load.promise; });
+    expect(result.current.loaded).toBe(true);
     act(() => { result.current.setUnlimited(false); result.current.setDays("90"); });
     await act(() => result.current.save());
     expect(result.current.error).toBe("save failed");
@@ -25,12 +28,15 @@ describe("retention request lifetime", () => {
   it.each(["resolve", "reject"] as const)("ignores a closed load that later %s", async (outcome) => {
     const old = deferred<ChecklistRetentionSettings>();
     const gateway = fakeChecklistRetentionGateway();
-    gateway.getSettings.mockReturnValueOnce(old.promise).mockResolvedValue({ retentionDays: 90 });
+    const fresh = deferred<ChecklistRetentionSettings>();
+    gateway.getSettings.mockReturnValueOnce(old.promise).mockReturnValueOnce(fresh.promise);
     const { result } = renderHook(() => useChecklistRetention(gateway));
     act(() => result.current.setExpanded(true));
     act(() => result.current.setExpanded(false));
     act(() => result.current.setExpanded(true));
-    await waitFor(() => expect(result.current.days).toBe("90"));
+    expect(result.current.busy).toBe(true);
+    await act(async () => { fresh.resolve({ retentionDays: 90 }); await fresh.promise; });
+    expect(result.current.days).toBe("90");
     await act(async () => { if (outcome === "resolve") old.resolve({ retentionDays: 7 }); else old.reject(new Error("old")); });
     expect(result.current.days).toBe("90");
     expect(result.current.error).toBeNull();
@@ -42,11 +48,14 @@ describe("retention request lifetime", () => {
     const next = deferred<ChecklistRetentionSettings>();
     const gateway = fakeChecklistRetentionGateway();
     const replacement = fakeChecklistRetentionGateway();
+    const load = deferred<ChecklistRetentionSettings>();
+    gateway.getSettings.mockReturnValueOnce(load.promise);
     gateway.updateRetentionDays.mockReturnValue(old.promise);
     replacement.getSettings.mockReturnValue(next.promise);
     const { result, rerender } = renderHook(({ port }) => useChecklistRetention(port), { initialProps: { port: gateway } });
     act(() => result.current.setExpanded(true));
-    await waitFor(() => expect(result.current.loaded).toBe(true));
+    await act(async () => { load.resolve({ retentionDays: null }); await load.promise; });
+    expect(result.current.loaded).toBe(true);
     let saving!: Promise<void>;
     act(() => { saving = result.current.save(); });
     rerender({ port: replacement });
@@ -62,11 +71,15 @@ describe("retention request lifetime", () => {
     const old = deferred<ChecklistRetentionSettings>();
     const gateway = fakeChecklistRetentionGateway();
     const replacement = fakeChecklistRetentionGateway();
+    const fresh = deferred<ChecklistRetentionSettings>();
+    replacement.getSettings.mockReturnValueOnce(fresh.promise);
     gateway.getSettings.mockReturnValue(old.promise);
     const { result, rerender, unmount } = renderHook(({ port }) => useChecklistRetention(port), { initialProps: { port: gateway } });
     act(() => result.current.setExpanded(true));
     rerender({ port: replacement });
-    await waitFor(() => expect(result.current.loaded).toBe(true));
+    expect(result.current.busy).toBe(true);
+    await act(async () => { fresh.resolve({ retentionDays: null }); await fresh.promise; });
+    expect(result.current.loaded).toBe(true);
     await act(async () => old.resolve({ retentionDays: 7 }));
     expect(result.current.unlimited).toBe(true);
     act(() => result.current.setExpanded(false));
