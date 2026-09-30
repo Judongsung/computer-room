@@ -13,9 +13,8 @@ import {
   dashboardGateway,
   filesystemGateway,
   renderMobile,
-  widgetDocument,
-  widgetEntry,
 } from "@test/support/mobile/mobile-app-test-helpers";
+import { widgetDocument, widgetEntry } from "@test/support/mobile/mobile-fixtures";
 
 describe("mobile widget flow", () => {
   beforeEach(() => {

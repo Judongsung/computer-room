@@ -6,9 +6,9 @@ import { POINTER_TYPE } from "@client/constants/shared/pointer";
 import {
   dashboardGateway,
   filesystemGateway,
-  pictureEntry,
   renderMobile,
 } from "@test/support/mobile/mobile-app-test-helpers";
+import { pictureEntry } from "@test/support/mobile/mobile-fixtures";
 import { fileEntry } from "@test/support/filesystem/file-entry";
 
 describe("mobile shell navigation", () => {

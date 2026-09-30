@@ -5,6 +5,9 @@ import { DEFAULT_CONTENT_TYPE, FILE_OBJECT_KEY_PREFIX, MAX_FILE_SIZE_BYTES } fro
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { HTTP_HEADERS, HTTP_METHOD, HTTP_STATUS } from "@/constants/platform/http";
 import { ORIGIN, TEST_MEDIA_TYPE, resetWorkerState, uploadFile } from "@test/support/http/worker-api-harness";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 beforeEach(resetWorkerState);
 

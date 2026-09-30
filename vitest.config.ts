@@ -34,7 +34,6 @@ export default defineConfig(async () => {
     ],
     test: {
       include: [...WORKER_TEST_PATTERNS],
-      setupFiles: ["./test/setup.ts"],
     },
   };
 });

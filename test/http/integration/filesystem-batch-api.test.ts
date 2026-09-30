@@ -5,6 +5,9 @@ import { FILESYSTEM_ERRORS } from "@/constants/filesystem/errors/filesystem";
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { HTTP_METHOD, HTTP_STATUS } from "@/constants/platform/http";
 import { ORIGIN, jsonRequest, resetWorkerState, uploadFile } from "@test/support/http/worker-api-harness";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 beforeEach(resetWorkerState);
 

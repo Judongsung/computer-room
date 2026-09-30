@@ -3,6 +3,9 @@ import { beforeEach, expect, it } from "vitest";
 import { CHECKLIST_SETTINGS_API_PATH } from "@/constants/platform/api";
 import { HTTP_METHOD, HTTP_STATUS } from "@/constants/platform/http";
 import { ORIGIN, jsonRequest } from "@test/support/http/worker-api-harness";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 beforeEach(async () => {
   await env.DB.prepare("UPDATE checklist_settings SET retention_days = NULL WHERE singleton_id = 1").run();

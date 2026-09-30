@@ -15,6 +15,9 @@ import {
   resetWorkerState,
   widgetPath,
 } from "@test/support/http/worker-api-harness";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 beforeEach(resetWorkerState);
 

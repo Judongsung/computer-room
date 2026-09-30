@@ -96,6 +96,12 @@ ESLint 10과 Babel 8 parser를 사용하며, TypeScript 7의 타입 검사는 �
 합니다. 스키마 변경은 마이그레이션 회귀 테스트와 안전성 검사를 추가하며,
 적용된 마이그레이션을 수정하지 않습니다.
 
+기본 `env.DB` 또는 `SELF`를 사용하는 Worker 테스트는
+`@test/support/platform/worker-database`의 `registerWorkerDatabaseSetup()`을
+파일 최상위에서 호출해 DB 마이그레이션을 등록합니다. 전용 DB만 사용하는
+테스트는 이 helper를 호출하지 않고 해당 DB의 준비와 마이그레이션 순서를
+파일에서 관리합니다. 사례별 데이터 초기화는 각 테스트의 책임으로 유지합니다.
+
 의존 검사는 별칭과 상대 경로를 정규화하여 타입·런타임 import, 재수출,
 동적 import와 require를 검사합니다. domain은 domain·constants·공용 types만,
 application은 여기에 application을 더한 영역만 참조할 수 있습니다.

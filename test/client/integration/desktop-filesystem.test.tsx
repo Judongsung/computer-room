@@ -413,37 +413,12 @@ describe("App desktop filesystem", () => {
   it("confirms permanent deletion and emptying the Recycle Bin", async () => {
     const api = new FakeDashboardGateway();
     const filesystem = new FakeFilesystemGateway();
+    const folder = await filesystem.createDirectory(FILESYSTEM_ROOT_ID.DOCUMENTS, "삭제할 폴더");
+    await filesystem.trashEntry(folder.id);
     const user = userEvent.setup();
     render(<App api={api} filesystemApi={filesystem} />);
 
-    await user.dblClick(await screen.findByRole("button", { name: "내 문서" }));
-    const documentsWindow = await waitFor(() => desktopWindowByTitle("내 문서"));
-    await user.click(
-      within(documentsWindow).getByRole("button", {
-        name: FILESYSTEM_COPY.NEW_FOLDER,
-      }),
-    );
-    const nameDialog = screen.getByRole("dialog", {
-      name: FILESYSTEM_COPY.CREATE_FOLDER_TITLE,
-    });
-    await user.type(within(nameDialog).getByRole("textbox"), "삭제할 폴더");
-    await user.click(
-      within(nameDialog).getByRole("button", {
-        name: FILESYSTEM_COPY.CONFIRM,
-      }),
-    );
-    await user.click(
-      await within(documentsWindow).findByRole("button", {
-        name: "삭제할 폴더",
-      }),
-    );
-    await user.click(
-      within(documentsWindow).getByRole("button", {
-        name: FILESYSTEM_COPY.DELETE,
-      }),
-    );
-
-    await user.dblClick(screen.getByRole("button", { name: "휴지통" }));
+    await user.dblClick(await screen.findByRole("button", { name: "휴지통" }));
     const recycleBinWindow = await waitFor(() => desktopWindowByTitle("휴지통"));
     await user.click(
       await within(recycleBinWindow).findByRole("button", {

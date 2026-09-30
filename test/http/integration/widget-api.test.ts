@@ -18,6 +18,9 @@ import {
 } from "@/constants/widgets/widget";
 import type { DashboardWidget } from "@/types/widgets/widget";
 import { MEMO_WINDOW_POLICY, ORIGIN, checklistPath, createWidget, discardWidget, jsonRequest, resetWorkerState, saveWidgets, toLayout, widgetPath } from "@test/support/http/worker-api-harness";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 beforeEach(resetWorkerState);
 

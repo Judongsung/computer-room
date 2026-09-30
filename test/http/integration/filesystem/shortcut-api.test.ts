@@ -4,6 +4,9 @@ import { API_PATH_SEGMENTS, FILESYSTEM_API_PATHS, GUEST_ACCESS_API_PATHS } from 
 import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { HTTP_METHOD } from "@/constants/platform/http";
 import { ORIGIN, jsonRequest, resetWorkerState, uploadFile } from "@test/support/http/worker-api-harness";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 beforeEach(resetWorkerState);
 

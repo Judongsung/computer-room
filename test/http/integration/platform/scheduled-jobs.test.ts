@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it } from "vitest";
 import worker from "@/index";
 import { resetWorkerState } from "@test/support/http/worker-api-harness";
 import { CapturingExecutionContext } from "@test/support/platform/runtime-fakes";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 const SCHEDULED_TIME = Date.parse("2026-08-30T15:00:00.000Z");
 const RETENTION_CUTOFF = Date.parse("2026-08-23T15:00:00.000Z");

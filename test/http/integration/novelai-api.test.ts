@@ -14,6 +14,9 @@ import {
 } from "@/constants/integrations/image-upload-profile";
 import { filesystemNameKey } from "@/domain/filesystem/filesystem-name";
 import { ORIGIN, TEST_MEDIA_TYPE, jsonRequest, resetWorkerState, uploadFile, uploadNovelAiImage } from "@test/support/http/worker-api-harness";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 beforeEach(resetWorkerState);
 

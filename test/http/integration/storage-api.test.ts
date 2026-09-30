@@ -7,6 +7,9 @@ import { WIDGET_TYPE, WIDGET_WINDOW_POLICY } from "@/constants/widgets/widget";
 import type { DashboardWidget } from "@/types/widgets/widget";
 import type { StorageStatusSnapshot } from "@/types/storage/storage-status";
 import { ORIGIN, jsonRequest, resetWorkerState, widgetPath } from "@test/support/http/worker-api-harness";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 beforeEach(resetWorkerState);
 

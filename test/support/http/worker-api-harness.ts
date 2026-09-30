@@ -18,20 +18,18 @@ export const ONE_PIXEL_PNG_BASE64 =
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 
 export async function resetWorkerState(): Promise<void> {
-  await env.DB.prepare("DELETE FROM guest_publications").run();
-  await env.DB
-    .prepare(
-      "UPDATE guest_access_settings SET enabled = 0 WHERE singleton_id = 1",
-    )
-    .run();
-  await env.DB.prepare("DELETE FROM integration_image_upload_logs").run();
-  await env.DB
-    .prepare(
-      "UPDATE integration_image_upload_log_settings SET retention_days = 30 WHERE singleton_id = 1",
-    )
-    .run();
-  await env.DB.prepare("DELETE FROM integration_image_profiles").run();
   await env.DB.batch([
+    env.DB.prepare("DELETE FROM guest_publications"),
+    env.DB
+      .prepare(
+        "UPDATE guest_access_settings SET enabled = 0 WHERE singleton_id = 1",
+      ),
+    env.DB.prepare("DELETE FROM integration_image_upload_logs"),
+    env.DB
+      .prepare(
+        "UPDATE integration_image_upload_log_settings SET retention_days = 30 WHERE singleton_id = 1",
+      ),
+    env.DB.prepare("DELETE FROM integration_image_profiles"),
     env.DB
       .prepare(
         `INSERT INTO integration_image_profiles (
@@ -55,24 +53,22 @@ export async function resetWorkerState(): Promise<void> {
         )
         .bind(DEFAULT_NOVELAI_IMAGE_UPLOAD_PROFILE.ID, contentType),
     ),
+    env.DB
+      .prepare(
+        "UPDATE mobile_preferences SET wallpaper_entry_id = NULL WHERE singleton_id = 1",
+      ),
+    env.DB.prepare("DELETE FROM filesystem_directory_preferences"),
+    env.DB.prepare("DELETE FROM desktop_entry_order"),
+    env.DB.prepare("DELETE FROM files"),
+    env.DB
+      .prepare("DELETE FROM filesystem_entries WHERE id NOT IN (?1, ?2, ?3)")
+      .bind(
+        FILESYSTEM_ROOT_ID.DESKTOP,
+        FILESYSTEM_ROOT_ID.DOCUMENTS,
+        FILESYSTEM_ROOT_ID.RECYCLE_BIN,
+      ),
+    env.DB.prepare("DELETE FROM dashboard_widgets"),
   ]);
-  await env.DB
-    .prepare(
-      "UPDATE mobile_preferences SET wallpaper_entry_id = NULL WHERE singleton_id = 1",
-    )
-    .run();
-  await env.DB.prepare("DELETE FROM filesystem_directory_preferences").run();
-  await env.DB.prepare("DELETE FROM desktop_entry_order").run();
-  await env.DB.prepare("DELETE FROM files").run();
-  await env.DB
-    .prepare("DELETE FROM filesystem_entries WHERE id NOT IN (?1, ?2, ?3)")
-    .bind(
-      FILESYSTEM_ROOT_ID.DESKTOP,
-      FILESYSTEM_ROOT_ID.DOCUMENTS,
-      FILESYSTEM_ROOT_ID.RECYCLE_BIN,
-    )
-    .run();
-  await env.DB.prepare("DELETE FROM dashboard_widgets").run();
   const objects = await env.FILES.list();
   if (objects.objects.length > 0) {
     await env.FILES.delete(objects.objects.map((object) => object.key));

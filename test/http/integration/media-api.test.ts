@@ -8,6 +8,9 @@ import { THUMBNAIL_SPEC } from "@/constants/filesystem/thumbnail";
 import { filesystemNameKey } from "@/domain/filesystem/filesystem-name";
 import { thumbnailObjectKey } from "@/domain/filesystem/thumbnail";
 import { ONE_PIXEL_PNG_BASE64, ORIGIN, TEST_MEDIA_TYPE, decodeResponseBody, resetWorkerState, uploadFile } from "@test/support/http/worker-api-harness";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 beforeEach(resetWorkerState);
 

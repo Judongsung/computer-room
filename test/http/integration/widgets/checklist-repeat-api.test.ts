@@ -3,6 +3,9 @@ import { expect, it } from "vitest";
 import { API_PATHS, API_PATH_SEGMENTS } from "@/constants/platform/api";
 import { HTTP_METHOD, HTTP_STATUS } from "@/constants/platform/http";
 import { ORIGIN, jsonRequest } from "@test/support/http/worker-api-harness";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 it("validates repeat settings and hydrates them without writes on GET", async () => {
   const id = crypto.randomUUID();

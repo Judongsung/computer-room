@@ -1,8 +1,14 @@
 import { env } from "cloudflare:test";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { D1MemoRepository } from "@/infrastructure/widgets/d1-memo-repository";
 import { D1ChecklistRepository } from "@/infrastructure/widgets/d1-checklist-repository";
 import { D1GuestPublicationRepository } from "@/infrastructure/guest/d1-guest-publication-repository";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
+
+const SEED_BATCH_PROGRAMS = 25;
+const CLEANUP_BATCH_PROGRAMS = 100;
 
 const date = "2026-09-08";
 
@@ -17,8 +23,7 @@ describe("D1 scoped program reads", () => {
   });
 
   it.each([1, 99, 100, 199])("returns only %i requested programs using bounded queries", async count => {
-    const ids = await seed(count + 1);
-    try {
+    await withPrograms(count + 1, async (ids) => {
       const requested = ids.slice(0, count);
       const input = [...requested, requested[0]!];
       const { database, calls } = observe(env.DB);
@@ -37,12 +42,11 @@ describe("D1 scoped program reads", () => {
         expect(call.values).not.toContain(ids[count]);
       }
       expect(items.every(item => item.checked === false && item.checkedAt === null)).toBe(true);
-    } finally { await remove(ids); }
+    });
   });
 
   it("keeps item order, archived exclusion and active period/version state", async () => {
-    const [id, unrelated] = await seed(2);
-    try {
+    await withPrograms(2, async ([id]) => {
       const db = env.DB;
       await db.batch([
         db.prepare("UPDATE checklist_items SET sort_order = 3 WHERE widget_id = ?1").bind(id),
@@ -65,25 +69,68 @@ describe("D1 scoped program reads", () => {
       expect(await publications.checklistRepeatCycle(id!)).toBe("daily");
       expect(observed.calls).toHaveLength(1);
       expect(observed.calls[0]!.values).toEqual([id]);
-    } finally { await remove([id!, unrelated!]); }
+    });
+  });
+  it("cleans committed seed chunks after a later batch fails without deleting unrelated programs", async () => {
+    await withPrograms(1, async ([unrelated]) => {
+      const failure = new Error("second seed batch failed");
+      const originalBatch = env.DB.batch.bind(env.DB);
+      const body = vi.fn();
+      const batch = vi.spyOn(env.DB, "batch")
+        .mockImplementationOnce(originalBatch)
+        .mockRejectedValueOnce(failure);
+      try {
+        await expect(withPrograms(26, body)).rejects.toBe(failure);
+      } finally {
+        batch.mockRestore();
+      }
+      expect(body).not.toHaveBeenCalled();
+      for (const [table, column] of [
+        ["dashboard_widgets", "id"], ["memo_widgets", "widget_id"],
+        ["checklist_items", "widget_id"], ["checklist_repeat_settings", "widget_id"],
+      ]) {
+        const rows = await env.DB.prepare(`SELECT ${column} AS id FROM ${table}`).all<{ id: string }>();
+        expect(rows.results.map(row => row.id)).toEqual([unrelated]);
+      }
+    });
   });
 });
 
-async function seed(count: number): Promise<string[]> {
+async function withPrograms(count: number, run: (ids: string[]) => Promise<void>): Promise<void> {
   const ids = Array.from({ length: count }, () => crypto.randomUUID());
-  for (const id of ids) {
-    await env.DB.batch([
+  const errors: unknown[] = [];
+  try {
+    await seed(ids);
+    await run(ids);
+  } catch (error) {
+    errors.push(error);
+  }
+  try {
+    await remove(ids);
+  } catch (error) {
+    errors.push(error);
+  }
+  if (errors.length === 1) throw errors[0];
+  if (errors.length > 1) throw new AggregateError(errors, "Program fixture and cleanup failed");
+}
+
+async function seed(ids: readonly string[]): Promise<void> {
+  for (let offset = 0; offset < ids.length; offset += SEED_BATCH_PROGRAMS) {
+    await env.DB.batch(ids.slice(offset, offset + SEED_BATCH_PROGRAMS).flatMap(id => [
       env.DB.prepare("INSERT INTO dashboard_widgets(id,type,position_x,position_y,width,height,stack_order) VALUES (?1,'daily-checklist',0,0,320,300,0)").bind(id),
       env.DB.prepare("INSERT INTO memo_widgets(widget_id,markdown,updated_at) VALUES (?1,'body',NULL)").bind(id),
       env.DB.prepare("INSERT INTO checklist_items(id,widget_id,label,sort_order,created_at,updated_at) VALUES (?1,?2,'task',0,0,0)").bind(id + "-item", id),
       env.DB.prepare("INSERT INTO checklist_repeat_settings(widget_id,repeat_cycle,version) VALUES (?1,'daily',0)").bind(id),
-    ]);
+    ]));
   }
-  return ids;
 }
 
 async function remove(ids: readonly string[]): Promise<void> {
-  for (const id of ids) await env.DB.prepare("DELETE FROM dashboard_widgets WHERE id = ?1").bind(id).run();
+  for (let offset = 0; offset < ids.length; offset += CLEANUP_BATCH_PROGRAMS) {
+    await env.DB.batch(ids.slice(offset, offset + CLEANUP_BATCH_PROGRAMS).map(id =>
+      env.DB.prepare("DELETE FROM dashboard_widgets WHERE id = ?1").bind(id),
+    ));
+  }
 }
 
 function observe(db: D1Database) {

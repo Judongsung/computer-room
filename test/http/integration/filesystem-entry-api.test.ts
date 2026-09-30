@@ -12,6 +12,9 @@ import { HTTP_HEADERS, HTTP_METHOD, HTTP_STATUS } from "@/constants/platform/htt
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { FilesystemDirectoryDetails } from "@/types/filesystem/directory-details";
 import { ORIGIN, TEST_MEDIA_TYPE, createWidget, jsonRequest, resetWorkerState, uploadFile, widgetPath } from "@test/support/http/worker-api-harness";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 beforeEach(resetWorkerState);
 

@@ -2,6 +2,9 @@ import { env } from "cloudflare:test";
 import { expect, it } from "vitest";
 import { D1ChecklistRepository } from "@/infrastructure/widgets/d1-checklist-repository";
 import { D1ChecklistRetentionRepository } from "@/infrastructure/widgets/d1-checklist-retention-repository";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 it("preserves checks across cycle changes without resurrecting old versions", async () => {
   const widgetId = crypto.randomUUID();

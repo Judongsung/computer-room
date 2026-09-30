@@ -6,6 +6,9 @@ import { HTTP_METHOD, HTTP_STATUS } from "@/constants/platform/http";
 import { MEMO_ERRORS } from "@/constants/widgets/errors/memo";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import { ORIGIN, createWidget, jsonRequest, resetWorkerState, widgetPath } from "@test/support/http/worker-api-harness";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 beforeEach(resetWorkerState);
 

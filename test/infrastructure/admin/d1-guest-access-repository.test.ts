@@ -21,23 +21,23 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await database.prepare("DELETE FROM guest_publications").run();
-  await database
-    .prepare(
-      "UPDATE guest_access_settings SET enabled = 0 WHERE singleton_id = 1",
-    )
-    .run();
-  await database.prepare("DELETE FROM desktop_entry_order").run();
-  await database.prepare("DELETE FROM files").run();
-  await database
-    .prepare("DELETE FROM filesystem_entries WHERE id NOT IN (?1, ?2, ?3)")
-    .bind(
-      FILESYSTEM_ROOT_ID.DESKTOP,
-      FILESYSTEM_ROOT_ID.DOCUMENTS,
-      FILESYSTEM_ROOT_ID.RECYCLE_BIN,
-    )
-    .run();
-  await database.prepare("DELETE FROM dashboard_widgets").run();
+  await database.batch([
+    database.prepare("DELETE FROM guest_publications"),
+    database
+      .prepare(
+        "UPDATE guest_access_settings SET enabled = 0 WHERE singleton_id = 1",
+      ),
+    database.prepare("DELETE FROM desktop_entry_order"),
+    database.prepare("DELETE FROM files"),
+    database
+      .prepare("DELETE FROM filesystem_entries WHERE id NOT IN (?1, ?2, ?3)")
+      .bind(
+        FILESYSTEM_ROOT_ID.DESKTOP,
+        FILESYSTEM_ROOT_ID.DOCUMENTS,
+        FILESYSTEM_ROOT_ID.RECYCLE_BIN,
+      ),
+    database.prepare("DELETE FROM dashboard_widgets"),
+  ]);
 });
 
 describe("D1GuestAccessRepository", () => {

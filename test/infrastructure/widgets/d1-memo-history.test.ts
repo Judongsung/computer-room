@@ -2,6 +2,9 @@ import { env } from "cloudflare:test";
 import { beforeEach, expect, it } from "vitest";
 import { MAX_MEMO_VERSIONS } from "@/constants/widgets/memo";
 import { D1MemoRepository } from "@/infrastructure/widgets/d1-memo-repository";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 beforeEach(async () => {
   await env.DB.prepare("DELETE FROM dashboard_widgets").run();

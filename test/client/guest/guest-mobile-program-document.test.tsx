@@ -97,4 +97,19 @@ describe("guest mobile document", () => {
     await act(async () => pending.resolve({ ...doc, data: { ...doc.data, businessDate: "2026-09-09" } }));
     expect(screen.getByText(/2026-09-09 체크리스트/)).toBeInTheDocument();
   });
+
+  it("ignores a mobile refresh that finishes after switching documents", async () => {
+    const gateway = guestGateway();
+    const { rerender } = render(<GuestMobileProgramDocument entryId="a" title="a" gateway={gateway} />);
+    await screen.findByText("a", { selector: "span" });
+    await act(async () => {});
+    const old = deferred<GuestProgramDocument>();
+    gateway.getProgramDocument.mockImplementationOnce(() => old.promise);
+    act(() => window.dispatchEvent(new Event("focus")));
+    expect(gateway.getProgramDocument).toHaveBeenCalledTimes(2);
+    rerender(<GuestMobileProgramDocument entryId="b" title="b" gateway={gateway} />);
+    await screen.findByText("b", { selector: "span" });
+    await act(async () => old.resolve(program("a")));
+    expect(screen.getByText("b", { selector: "span" })).toBeInTheDocument();
+  });
 });

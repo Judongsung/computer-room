@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { WIDGET_TYPE } from "@/constants/widgets/widget";
 import type { WidgetFileDocument } from "@/types/widgets/widget-file";
 import { MobileWidgetFileScreen } from "@client/components/mobile/widgets/mobile-widget-file-screen";
-import { widgetEntry } from "@test/support/mobile/mobile-app-test-helpers";
+import { widgetEntry } from "@test/support/mobile/mobile-fixtures";
 import { checklistWidget } from "@test/support/widgets/dashboard-fixtures";
 import { FakeDashboardGateway } from "@test/support/widgets/fake-dashboard-gateway";
 import { deferred } from "@test/support/widgets/deferred";

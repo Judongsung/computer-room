@@ -1,6 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import * as textFileApi from "@client/api/filesystem/text/read-text-file";
+import { deferred } from "@test/support/widgets/deferred";
 import { TextDocument } from "@client/components/shared/text/text-document";
 import { NOTEPAD_COPY, TEXT_FILE_ERROR_MESSAGE } from "@client/content/ko/filesystem/text/notepad";
 import { TEXT_FILE_ERROR_CODE } from "@client/constants/filesystem/text/text-file";
@@ -35,17 +37,23 @@ describe("read-only text document", () => {
     expect(await screen.findByRole("textbox")).toHaveValue("recovered");
   });
   it("aborts closed and replaced reads and ignores their late response", async () => {
-    let firstResolve!: (response: Response) => void;
-    const fetch = vi.fn().mockImplementationOnce(() => new Promise<Response>((resolve) => { firstResolve = resolve; }))
+    const first = deferred<Response>();
+    const readTextFile = vi.spyOn(textFileApi, "readTextFile");
+    const fetch = vi.fn().mockImplementationOnce(() => first.promise)
       .mockResolvedValueOnce(new Response("new file"));
     vi.stubGlobal("fetch", fetch);
     const { rerender, unmount } = render(<TextDocument file={file} gateway={gateway} />);
+    const firstRead = readTextFile.mock.results[0]!.value as Promise<string>;
     const firstSignal = fetch.mock.calls[0]?.[1].signal as AbortSignal;
     rerender(<TextDocument file={{ ...file, id: "next" }} gateway={gateway} />);
     expect(firstSignal.aborted).toBe(true);
     expect(await screen.findByRole("textbox")).toHaveValue("new file");
-    firstResolve(new Response("old file"));
-    await waitFor(() => expect(screen.getByRole("textbox")).toHaveValue("new file"));
+    await act(async () => {
+      first.resolve(new Response("old file"));
+      await expect(firstRead).rejects.toBe(firstSignal.reason);
+    });
+    expect(screen.getByRole("textbox")).toHaveValue("new file");
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     const lastSignal = fetch.mock.calls.at(-1)?.[1].signal as AbortSignal;
     unmount(); expect(lastSignal.aborted).toBe(true);
   });

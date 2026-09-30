@@ -5,20 +5,24 @@ import { FILESYSTEM_ROOT_ID } from "@/constants/filesystem/filesystem";
 import { HTTP_HEADERS, HTTP_MEDIA_TYPE, HTTP_METHOD, HTTP_STATUS } from "@/constants/platform/http";
 import { WIDGET_TYPE, WIDGET_WINDOW_POLICY } from "@/constants/widgets/widget";
 import type { WidgetFileDocument } from "@/types/widgets/widget-file";
+import { registerWorkerDatabaseSetup } from "@test/support/platform/worker-database";
+
+registerWorkerDatabaseSetup();
 
 const ORIGIN = "http://localhost";
 
 beforeEach(async () => {
-  await env.DB.prepare("DELETE FROM desktop_entry_order").run();
-  await env.DB
-    .prepare("DELETE FROM filesystem_entries WHERE id NOT IN (?1, ?2, ?3)")
-    .bind(
-      FILESYSTEM_ROOT_ID.DESKTOP,
-      FILESYSTEM_ROOT_ID.DOCUMENTS,
-      FILESYSTEM_ROOT_ID.RECYCLE_BIN,
-    )
-    .run();
-  await env.DB.prepare("DELETE FROM dashboard_widgets").run();
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM desktop_entry_order"),
+    env.DB
+      .prepare("DELETE FROM filesystem_entries WHERE id NOT IN (?1, ?2, ?3)")
+      .bind(
+        FILESYSTEM_ROOT_ID.DESKTOP,
+        FILESYSTEM_ROOT_ID.DOCUMENTS,
+        FILESYSTEM_ROOT_ID.RECYCLE_BIN,
+      ),
+    env.DB.prepare("DELETE FROM dashboard_widgets"),
+  ]);
 });
 
 describe("widget file API", () => {
