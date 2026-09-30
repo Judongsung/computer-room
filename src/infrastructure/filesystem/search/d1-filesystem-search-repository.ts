@@ -30,12 +30,43 @@ const SCOPED_ENTRIES = `WITH RECURSIVE tree(id, path, parent_path, included) AS 
       OR (e.kind = ?10 AND e.widget_type IS NOT NULL))
 )`;
 
-const NAME_SEARCH = `${SCOPED_ENTRIES}
+// Walk only the scope's ancestors for its full path, then visit its descendants.
+// Reaching an active root preserves exclusion of trash and disconnected scopes.
+const DIRECTORY_TREE = `WITH RECURSIVE ancestors(id, parent_id, path) AS (
+  SELECT id, parent_id, name FROM filesystem_entries
+  WHERE id = ?3 AND trashed_at IS NULL
+  UNION ALL
+  SELECT parent.id, parent.parent_id, parent.name || '/' || ancestors.path
+  FROM filesystem_entries parent JOIN ancestors ON parent.id = ancestors.parent_id
+  WHERE parent.trashed_at IS NULL
+), tree(id, path, parent_path, included) AS (
+  SELECT ?3, path, '', 0 FROM ancestors WHERE id IN (?1, ?2)
+  UNION ALL
+  SELECT child.id, tree.path || '/' || child.name, tree.path, 1
+  FROM filesystem_entries child JOIN tree ON child.parent_id = tree.id
+  WHERE child.trashed_at IS NULL
+)`;
+
+function scopedEntries(hasDirectoryScope: boolean): string {
+  if (!hasDirectoryScope) return SCOPED_ENTRIES;
+  // Keep a small scope from becoming a full entry-table scan at the join.
+  const entries = `${FILESYSTEM_ENTRY_SELECT} WHERE e.id IN (SELECT id FROM tree WHERE included = 1)`;
+  return `${DIRECTORY_TREE}, scoped AS (
+  SELECT e.*, tree.parent_path FROM (${entries}) e
+  JOIN tree ON tree.id = e.id
+  WHERE tree.included = 1 AND (?5 = ?6 OR e.kind = ?5)
+    AND (e.kind = '${FILESYSTEM_ENTRY_KIND.SHORTCUT}' OR e.kind = ?7
+      OR (e.kind = ?8 AND e.file_status = ?9)
+      OR (e.kind = ?10 AND e.widget_type IS NOT NULL))
+)`;
+}
+
+const NAME_SEARCH = `
   SELECT scoped.*, NULL AS excerpt FROM scoped WHERE instr(name_key, ?4) > 0
   ORDER BY name_key ASC, id ASC LIMIT ?11 OFFSET ?12`;
 
 // Keep source bodies inside SQL; only a bounded excerpt crosses the repository boundary.
-const CONTENT_SEARCH = `${SCOPED_ENTRIES}, bodies AS MATERIALIZED (
+const CONTENT_SEARCH = `, bodies AS MATERIALIZED (
   SELECT id, name_key, CASE WHEN kind = ?10 THEN CASE widget_type
     WHEN ?17 THEN (
       SELECT markdown FROM memo_widgets WHERE widget_id = scoped.widget_id
@@ -73,7 +104,9 @@ export class D1FilesystemSearchRepository implements FilesystemSearchRepository 
     if (mode !== FILESYSTEM_SEARCH_MODE.NAME) {
       bindings.push(query.q, mode, SEARCH_EXCERPT_CONTEXT, SEARCH_EXCERPT_LENGTH, WIDGET_TYPE.MEMO, WIDGET_TYPE.DAILY_CHECKLIST);
     }
-    const result = await this.database.prepare(mode === FILESYSTEM_SEARCH_MODE.NAME ? NAME_SEARCH : CONTENT_SEARCH)
+    const hasDirectoryScope = query.directoryId !== undefined;
+    const sql = scopedEntries(hasDirectoryScope) + (mode === FILESYSTEM_SEARCH_MODE.NAME ? NAME_SEARCH : CONTENT_SEARCH);
+    const result = await this.database.prepare(sql)
       .bind(...bindings).all<SearchRow>();
     return result.results.map((row) => ({
       entry: mapFilesystemEntryRow(row),
