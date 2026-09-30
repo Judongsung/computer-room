@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   cloneWidgetLayouts,
   normalizeWidgetStackOrders,
@@ -16,108 +16,125 @@ import type {
   WidgetLayoutAutoSaveOptions,
 } from "@client/types/widgets/dashboard";
 
+interface SaveTimer {
+  id: number;
+}
+
 export function useWidgetLayoutAutoSave(
   api: WidgetLayoutGateway,
   options: WidgetLayoutAutoSaveOptions,
 ): WidgetLayoutAutoSaveController {
-  const [status, setStatus] = useState<LayoutSaveStatus>(
-    LAYOUT_SAVE_STATUS.IDLE,
-  );
-  const [error, setError] = useState<string | null>(null);
-  const latestSnapshot = useRef<WidgetLayout[] | null>(null);
-  const timer = useRef<number | null>(null);
-  const isSaving = useRef(false);
-  const isMounted = useRef(true);
+  const session = useMemo(() => ({
+    api,
+    active: false,
+    snapshot: null as WidgetLayout[] | null,
+    saving: null as object | null,
+    timer: null as SaveTimer | null,
+  }), [api]);
+  const [state, setState] = useState({
+    session,
+    status: LAYOUT_SAVE_STATUS.IDLE as LayoutSaveStatus,
+    error: null as string | null,
+  });
+  const currentOptions = useRef(options);
+  useLayoutEffect(() => {
+    currentOptions.current = options;
+  }, [options]);
+
+  const publish = useCallback((
+    status: LayoutSaveStatus,
+    error: string | null = null,
+  ): void => {
+    if (session.active) setState({ session, status, error });
+  }, [session]);
+  const clearTimer = useCallback((): void => {
+    if (session.timer) window.clearTimeout(session.timer.id);
+    session.timer = null;
+  }, [session]);
 
   const flush = useCallback(async (): Promise<void> => {
-    if (isSaving.current || latestSnapshot.current === null) {
-      return;
-    }
-
-    const snapshot = latestSnapshot.current;
-    latestSnapshot.current = null;
-    isSaving.current = true;
-    setStatus(LAYOUT_SAVE_STATUS.SAVING);
-    setError(null);
-
+    if (!session.active || session.saving || session.snapshot === null) return;
+    clearTimer();
+    const snapshot = session.snapshot;
+    const token = {};
+    session.snapshot = null;
+    session.saving = token;
+    publish(LAYOUT_SAVE_STATUS.SAVING);
+    const current = () => session.active && session.saving === token;
     try {
-      const savedWidgets = await api.replaceWidgets(snapshot);
-      if (!isMounted.current) {
-        return;
-      }
-      options.onSaved(savedWidgets);
-      isSaving.current = false;
-      if (latestSnapshot.current === null) {
-        setStatus(LAYOUT_SAVE_STATUS.SAVED);
+      const savedWidgets = await session.api.replaceWidgets(snapshot);
+      if (!current()) return;
+      currentOptions.current.onSaved(savedWidgets);
+      if (!current()) return;
+      session.saving = null;
+      if (session.snapshot === null) {
+        publish(LAYOUT_SAVE_STATUS.SAVED);
       } else {
-        setStatus(LAYOUT_SAVE_STATUS.PENDING);
+        publish(LAYOUT_SAVE_STATUS.PENDING);
         void flush();
       }
     } catch (saveError) {
-      if (!isMounted.current) {
-        return;
-      }
-      isSaving.current = false;
-      latestSnapshot.current ??= snapshot;
-      setStatus(LAYOUT_SAVE_STATUS.ERROR);
-      setError(messageFromError(saveError, options.fallbackErrorMessage));
-    }
-  }, [api, options]);
-
-  const schedule = useCallback(
-    (widgets: readonly WidgetLayout[]): void => {
-      latestSnapshot.current = cloneWidgetLayouts(
-        normalizeWidgetStackOrders(widgets),
+      if (!current()) return;
+      clearTimer();
+      session.saving = null;
+      session.snapshot ??= snapshot;
+      publish(
+        LAYOUT_SAVE_STATUS.ERROR,
+        messageFromError(saveError, currentOptions.current.fallbackErrorMessage),
       );
-      setStatus(LAYOUT_SAVE_STATUS.PENDING);
-      setError(null);
-      if (timer.current !== null) {
-        window.clearTimeout(timer.current);
-      }
-      timer.current = window.setTimeout(() => {
-        timer.current = null;
-        void flush();
-      }, LAYOUT_SAVE_DEBOUNCE_MILLISECONDS);
-    },
-    [flush],
-  );
+    }
+  }, [clearTimer, publish, session]);
+
+  const schedule = useCallback((widgets: readonly WidgetLayout[]): void => {
+    if (!session.active) return;
+    session.snapshot = cloneWidgetLayouts(
+      normalizeWidgetStackOrders(widgets),
+    );
+    publish(LAYOUT_SAVE_STATUS.PENDING);
+    clearTimer();
+    const timer: SaveTimer = { id: 0 };
+    session.timer = timer;
+    timer.id = window.setTimeout(() => {
+      if (!session.active || session.timer !== timer) return;
+      session.timer = null;
+      void flush();
+    }, LAYOUT_SAVE_DEBOUNCE_MILLISECONDS);
+  }, [clearTimer, flush, publish, session]);
 
   const retry = useCallback((): void => {
-    if (latestSnapshot.current === null) {
-      return;
-    }
-    if (timer.current !== null) {
-      window.clearTimeout(timer.current);
-      timer.current = null;
-    }
+    if (!session.active || session.snapshot === null) return;
+    clearTimer();
     void flush();
-  }, [flush]);
-
+  }, [clearTimer, flush, session]);
   const forget = useCallback((widgetIds: readonly string[]): void => {
-    if (latestSnapshot.current === null) return;
+    if (!session.active || session.snapshot === null) return;
     const ids = new Set(widgetIds);
-    latestSnapshot.current = normalizeWidgetStackOrders(
-      latestSnapshot.current.filter((widget) => !ids.has(widget.id)),
+    session.snapshot = normalizeWidgetStackOrders(
+      session.snapshot.filter((widget) => !ids.has(widget.id)),
     );
-  }, []);
+  }, [session]);
 
-  useEffect(() => {
-    isMounted.current = true;
+  useLayoutEffect(() => {
+    session.active = true;
+    publish(LAYOUT_SAVE_STATUS.IDLE);
     return () => {
-      isMounted.current = false;
-      if (timer.current !== null) {
-        window.clearTimeout(timer.current);
-      }
+      session.active = false;
+      clearTimer();
+      session.snapshot = null;
+      session.saving = null;
     };
-  }, []);
+  }, [clearTimer, publish, session]);
 
+  const visible = state.session === session
+    ? state
+    : { status: LAYOUT_SAVE_STATUS.IDLE, error: null };
   return {
-    status,
-    error,
+    status: visible.status,
+    error: visible.error,
     hasUnsavedChanges:
-      status === LAYOUT_SAVE_STATUS.PENDING ||
-      status === LAYOUT_SAVE_STATUS.SAVING ||
-      status === LAYOUT_SAVE_STATUS.ERROR,
+      visible.status === LAYOUT_SAVE_STATUS.PENDING ||
+      visible.status === LAYOUT_SAVE_STATUS.SAVING ||
+      visible.status === LAYOUT_SAVE_STATUS.ERROR,
     schedule,
     forget,
     retry,

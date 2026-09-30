@@ -1,12 +1,13 @@
 import { MEDIA_VIEWER_COPY } from "@client/content/ko/media/media";
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useMemo, useState } from "react";
 import { FILESYSTEM_ENTRY_KIND } from "@/constants/filesystem/filesystem";
 import { mediaKindFromContentType } from "@/domain/filesystem/media-type";
-import type { FilesystemFileEntry } from "@/types/filesystem/filesystem";
+import type { FilesystemEntry, FilesystemFileEntry } from "@/types/filesystem/filesystem";
 import type { MediaKind } from "@/types/filesystem/media";
 import { MEDIA_NAVIGATION_INITIAL_OFFSET } from "@client/constants/media/media";
 import type { FilesystemDirectoryGateway } from "@client/types/filesystem/ports/directory";
 import { messageFromError } from "@client/errors/error-message";
+import { mergeFilesystemItems } from "@client/hooks/filesystem/use-filesystem-pages";
 
 export function useMediaDirectory(
   gateway: Pick<FilesystemDirectoryGateway, "listDirectory">,
@@ -14,47 +15,66 @@ export function useMediaDirectory(
   filesystemRevision: number,
   mediaKind?: MediaKind,
 ) {
-  const [entries, setEntries] = useState<readonly FilesystemFileEntry[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const target = useMemo(
+    () => ({ gateway, directoryId, mediaKind }),
+    [gateway, directoryId, mediaKind],
+  );
+  const initial = {
+    entries: [] as readonly FilesystemFileEntry[],
+    error: null as string | null,
+    isLoading: true,
+  };
+  const [state, setState] = useState({ target, ...initial });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     let active = true;
-    setIsLoading(true);
-    setError(null);
-    void loadAllMedia(gateway, directoryId, mediaKind)
+    setState((current) => ({
+      target,
+      entries: current.target === target ? current.entries : [],
+      error: null,
+      isLoading: true,
+    }));
+    void loadAllMedia(
+      target.gateway, target.directoryId, () => active, target.mediaKind,
+    )
       .then((items) => {
-        if (active) setEntries(items);
+        if (!active || items === null) return;
+        setState({ target, entries: items, error: null, isLoading: false });
       })
       .catch((reason: unknown) => {
         if (active) {
-          setError(
-            messageFromError(reason, MEDIA_VIEWER_COPY.NAVIGATION_FAILED),
-          );
+          setState((current) => ({
+            target,
+            entries: current.target === target ? current.entries : [],
+            error: messageFromError(reason, MEDIA_VIEWER_COPY.NAVIGATION_FAILED),
+            isLoading: false,
+          }));
         }
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
       });
     return () => {
       active = false;
     };
-  }, [directoryId, filesystemRevision, gateway, mediaKind]);
+  }, [filesystemRevision, target]);
 
-  return { entries, error, isLoading };
+  return state.target === target
+    ? { entries: state.entries, error: state.error, isLoading: state.isLoading }
+    : initial;
 }
 
 async function loadAllMedia(
   gateway: Pick<FilesystemDirectoryGateway, "listDirectory">,
   directoryId: string,
+  isCurrent: () => boolean,
   mediaKind?: MediaKind,
-): Promise<readonly FilesystemFileEntry[]> {
-  const entries: FilesystemFileEntry[] = [];
+): Promise<readonly FilesystemFileEntry[] | null> {
+  let entries: FilesystemEntry[] = [];
   let offset = MEDIA_NAVIGATION_INITIAL_OFFSET;
   while (true) {
     const page = await gateway.listDirectory(directoryId, offset);
-    entries.push(
-      ...page.items.filter(
+    if (!isCurrent()) return null;
+    entries = mergeFilesystemItems(entries, page.items, (entry) => entry.id);
+    if (page.nextOffset === null) {
+      return entries.filter(
         (entry): entry is FilesystemFileEntry => {
           if (entry.kind !== FILESYSTEM_ENTRY_KIND.FILE) return false;
           const entryMediaKind = mediaKindFromContentType(entry.contentType);
@@ -63,10 +83,7 @@ async function loadAllMedia(
             (mediaKind === undefined || entryMediaKind === mediaKind)
           );
         },
-      ),
-    );
-    if (page.nextOffset === null) {
-      return entries;
+      );
     }
     offset = page.nextOffset;
   }
