@@ -1,4 +1,5 @@
 import { FakeFilesystemGateway } from "@test/support/filesystem/fake-filesystem-gateway";
+import { StrictMode, useLayoutEffect } from "react";
 import { deferred } from "@test/support/widgets/deferred";
 import { fileEntry } from "@test/support/filesystem/file-entry";
 import type { FilesystemFileEntry } from "@/types/filesystem/filesystem";
@@ -166,6 +167,62 @@ describe("useFilesystemUpload", () => {
     if (change === "gateway") expect(result.current.state.isOpen).toBe(false);
   });
 
+  it("publishes correct intermediate counts and preserves earlier failure snapshots in job order", async () => {
+    const pending = Array.from({ length: 3 }, () => deferred<FilesystemFileEntry>());
+    const attempts = [0, 0, 0];
+    const upload = vi.fn(async (_parent: string, file: File) => {
+      const index = Number(file.name.match(/\d+/)![0]);
+      attempts[index]! += 1;
+      return attempts[index] === 1 ? pending[index]!.promise : fileEntry(file.name, file.name, "text/plain");
+    });
+    const changed = vi.fn();
+    const gateway = uploadGateway(upload);
+    const { result } = renderHook(() => useFilesystemUpload(gateway, changed));
+    let running!: Promise<void>;
+    act(() => { running = result.current.upload(fileNodes(3), FILESYSTEM_ROOT_ID.DOCUMENTS); });
+    await act(async () => { pending[2]!.resolve(fileEntry("last", "file-2.txt", "text/plain")); await pending[2]!.promise; });
+    expect(result.current.state).toMatchObject({ total: 3, completed: 1, succeeded: 1, remaining: 2, failures: [] });
+    await act(async () => { pending[1]!.reject(new Error("second failed")); await expect(pending[1]!.promise).rejects.toThrow("second failed"); });
+    const earlier = result.current.state;
+    expect(earlier).toMatchObject({ completed: 2, succeeded: 1, remaining: 1, failures: [{ path: "file-1.txt", message: "second failed" }] });
+    await act(async () => { pending[0]!.reject(new Error("first failed")); await running; });
+    expect(result.current.state).toMatchObject({ completed: 3, succeeded: 1, remaining: 0, failures: [
+      { path: "file-0.txt", message: "first failed" }, { path: "file-1.txt", message: "second failed" },
+    ] });
+    expect(earlier.remaining).toBe(1);
+    expect(earlier.failures).toEqual([{ path: "file-1.txt", message: "second failed", skipped: false }]);
+    await act(() => result.current.retry());
+    expect(attempts).toEqual([2, 2, 1]);
+    expect(result.current.state).toMatchObject({ isOpen: false, total: 0, completed: 0, succeeded: 0, failures: [] });
+    expect(earlier.failures).toHaveLength(1);
+    expect(changed).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps StrictMode replay progress independent of completions from the disposed run", async () => {
+    const tracker = uploadTracker();
+    const gateway = uploadGateway(tracker.upload);
+    const changed = vi.fn();
+    const runs: Promise<void>[] = [];
+    const nodes = fileNodes(3);
+    const { result } = renderHook(() => {
+      const controller = useFilesystemUpload(gateway, changed);
+      useLayoutEffect(() => { runs.push(controller.upload(nodes, FILESYSTEM_ROOT_ID.DOCUMENTS)); }, [controller.upload]);
+      return controller;
+    }, { wrapper: StrictMode });
+    expect(tracker.upload).toHaveBeenCalledTimes(6);
+    await act(async () => {
+      for (let i = 0; i < 3; i++) await tracker.complete(i);
+      await runs[0];
+    });
+    expect(result.current.state).toMatchObject({ isRunning: true, total: 3, completed: 0, succeeded: 0, remaining: 3 });
+    expect(changed).not.toHaveBeenCalled();
+    await act(async () => {
+      for (let i = 3; i < 6; i++) await tracker.complete(i);
+      await runs[1];
+    });
+    expect(result.current.state.isOpen).toBe(false);
+    expect(changed).toHaveBeenCalledOnce();
+  });
 });
 
 function fileNodes(count: number): LocalUploadNode[] {

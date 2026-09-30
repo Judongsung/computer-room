@@ -5,7 +5,7 @@ import { FILESYSTEM_ENTRY_KIND, FILESYSTEM_ROOT_ID } from "@/constants/filesyste
 import { FILESYSTEM_UPLOAD_POLICY } from "@client/constants/filesystem/filesystem";
 import { messageFromError } from "@client/errors/error-message";
 import type { FilesystemGateway } from "@client/types/filesystem/filesystem";
-import type { LocalUploadNode, UploadTransferState } from "@client/types/filesystem/upload";
+import type { LocalUploadNode, UploadFailure, UploadTransferState } from "@client/types/filesystem/upload";
 
 const INITIAL_TRANSFER_STATE: UploadTransferState = {
   isOpen: false,
@@ -39,6 +39,9 @@ interface UploadSession {
   running: boolean;
   stopping: boolean;
   jobs: UploadJob[];
+  succeeded: number;
+  failures: readonly UploadFailure[];
+  failuresDirty: boolean;
   notice: string | null;
 }
 
@@ -54,6 +57,9 @@ export function useFilesystemUpload(
       running: false,
       stopping: false,
       jobs: [],
+      succeeded: 0,
+      failures: [],
+      failuresDirty: false,
       notice: null,
     }),
     [gateway],
@@ -71,20 +77,25 @@ export function useFilesystemUpload(
       session.active = false;
       session.token = null;
       session.running = false;
-      session.jobs = [];
+      clearJobs(session);
     };
   }, [session]);
 
   const publish = useCallback(() => {
     if (!session.active) return;
-    const succeeded = session.jobs.filter((job) => job.status === "succeeded").length;
-    const failures = session.jobs
-      .filter((job) => job.status === "failed" || job.status === "skipped")
-      .map((job) => ({
-        path: job.path,
-        message: job.error ?? FILESYSTEM_COPY.TRANSFER_FAILED,
-        skipped: job.status === "skipped",
-      }));
+    const succeeded = session.succeeded;
+    // Preserve published snapshots; rebuild failures only when their details change.
+    if (session.failuresDirty) {
+      session.failures = session.jobs
+        .filter((job) => job.status === "failed" || job.status === "skipped")
+        .map((job) => ({
+          path: job.path,
+          message: job.error ?? FILESYSTEM_COPY.TRANSFER_FAILED,
+          skipped: job.status === "skipped",
+        }));
+      session.failuresDirty = false;
+    }
+    const failures = session.failures;
     setSnapshot({
       session,
       state: {
@@ -114,6 +125,8 @@ export function useFilesystemUpload(
         job.error = null;
       }
     }
+    session.failures = [];
+    session.failuresDirty = false;
     publish();
     let changed = false;
     const isCurrent = () => session.active && session.token === token;
@@ -123,6 +136,7 @@ export function useFilesystemUpload(
       if (job.parent && job.parent.status !== "succeeded") {
         job.status = "skipped";
         job.error = job.parent.error;
+        session.failuresDirty = true;
         publish();
         return;
       }
@@ -136,11 +150,13 @@ export function useFilesystemUpload(
         if (!isCurrent()) return;
         job.result = result;
         job.status = "succeeded";
+        session.succeeded += 1;
         changed = true;
       } catch (error) {
         if (!isCurrent()) return;
         job.status = "failed";
         job.error = messageFromError(error, FILESYSTEM_COPY.TRANSFER_FAILED);
+        session.failuresDirty = true;
       }
       publish();
     };
@@ -179,7 +195,7 @@ export function useFilesystemUpload(
       session.notice = null;
     }
     if (complete && session.notice === null) {
-      session.jobs = [];
+      clearJobs(session);
       setSnapshot({ session, state: INITIAL_TRANSFER_STATE });
     } else {
       publish();
@@ -198,6 +214,7 @@ export function useFilesystemUpload(
       publish();
       return;
     }
+    clearJobs(session);
     session.jobs = createJobs(nodes, parentId, desktopPlacement);
     session.notice = notice;
     await run();
@@ -211,7 +228,7 @@ export function useFilesystemUpload(
 
   const close = useCallback(() => {
     if (!session.active || session.running) return;
-    session.jobs = [];
+    clearJobs(session);
     session.notice = null;
     setSnapshot({ session, state: INITIAL_TRANSFER_STATE });
   }, [session]);
@@ -223,6 +240,13 @@ export function useFilesystemUpload(
     stop,
     close,
   };
+}
+
+function clearJobs(session: UploadSession): void {
+  session.jobs = [];
+  session.succeeded = 0;
+  session.failures = [];
+  session.failuresDirty = false;
 }
 
 function createJobs(
